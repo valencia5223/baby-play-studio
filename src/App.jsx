@@ -133,6 +133,16 @@ class BabySoundEngine {
     } catch (e) { }
   }
 
+  stopAllSounds() {
+    if (this.currentAudio) {
+      try {
+        this.currentAudio.pause();
+        this.currentAudio.currentTime = 0;
+      } catch (e) {}
+      this.currentAudio = null;
+    }
+  }
+
   playYum() {
     this.playFreq(587.33, 'triangle', 0.2, 0.5);
     setTimeout(() => this.playFreq(880, 'triangle', 0.2, 0.5), 120);
@@ -511,6 +521,7 @@ export default function App() {
   };
 
   const generateQuizQuestion = () => {
+    audioEngine.stopAllSounds();
     const target = REAL_ANIMALS[Math.floor(Math.random() * REAL_ANIMALS.length)];
     const others = REAL_ANIMALS.filter(i => i.id !== target.id);
     const shuffledOthers = [...others].sort(() => 0.5 - Math.random()).slice(0, 3);
@@ -535,7 +546,10 @@ export default function App() {
           audioEngine.playItemSound(quizQuestion.target);
         }, 300);
       }
-      setTimeout(() => generateQuizQuestion(), 3000);
+      setTimeout(() => {
+        audioEngine.stopAllSounds();
+        generateQuizQuestion();
+      }, 3000);
     } else {
       setQuizFeedback('wrong');
       audioEngine.playFreq(200, 'sawtooth', 0.3);
