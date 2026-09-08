@@ -14,6 +14,7 @@ class BabySoundEngine {
     this.ctx = null;
     this.muted = false;
     this.currentAudio = null;
+    this.audioCache = new Map();
   }
 
   init() {
@@ -26,7 +27,28 @@ class BabySoundEngine {
     }
   }
 
-  // 실제 동물 녹음 MP3 파일 재생 (/sounds/ 및 /songs/ 대소문자 구분 없이 100% 재생)
+  // 앱 진입 시 모든 동물 울음소리를 백그라운드에서 사전 프리로드 및 메모리 캐싱 (딜레이 0초 달성)
+  preloadItemSounds(items) {
+    items.forEach(item => {
+      const candidates = [
+        `/sounds/${item.id}.mp3`,
+        item.soundUrl
+      ].filter(Boolean);
+
+      candidates.forEach(url => {
+        if (!this.audioCache.has(url)) {
+          try {
+            const audio = new Audio(url);
+            audio.preload = 'auto';
+            audio.load();
+            this.audioCache.set(url, audio);
+          } catch (e) {}
+        }
+      });
+    });
+  }
+
+  // 실제 동물 녹음 MP3 파일 재생 (지연 없는 0초 반응)
   playItemSound(item) {
     if (this.muted) return;
     this.init();
@@ -53,8 +75,17 @@ class BabySoundEngine {
 
       const tryNext = (index) => {
         if (index >= candidates.length) return;
-        const audio = new Audio(candidates[index]);
+        const src = candidates[index];
+        let audio;
+
+        if (this.audioCache.has(src)) {
+          audio = this.audioCache.get(src).cloneNode(true);
+        } else {
+          audio = new Audio(src);
+        }
+
         audio.volume = 0.85;
+        audio.currentTime = 0;
         audio.play().then(() => {
           this.currentAudio = audio;
         }).catch(() => {
@@ -395,6 +426,10 @@ export default function App() {
   useEffect(() => {
     audioEngine.muted = !soundEnabled;
   }, [soundEnabled]);
+
+  useEffect(() => {
+    audioEngine.preloadItemSounds(REAL_ANIMALS);
+  }, []);
 
   // 동요 탭 변경 시 오디오 정지 및 재생 처리
   useEffect(() => {
