@@ -30,21 +30,15 @@ class BabySoundEngine {
   // 앱 진입 시 모든 동물 울음소리를 백그라운드에서 사전 프리로드 및 메모리 캐싱 (딜레이 0초 달성)
   preloadItemSounds(items) {
     items.forEach(item => {
-      const candidates = [
-        `/sounds/${item.id}.mp3`,
-        item.soundUrl
-      ].filter(Boolean);
-
-      candidates.forEach(url => {
-        if (!this.audioCache.has(url)) {
-          try {
-            const audio = new Audio(url);
-            audio.preload = 'auto';
-            audio.load();
-            this.audioCache.set(url, audio);
-          } catch (e) {}
-        }
-      });
+      const url = item.soundUrl || `/sounds/${item.id}.mp3`;
+      if (url && !this.audioCache.has(url)) {
+        try {
+          const audio = new Audio(url);
+          audio.preload = 'auto';
+          audio.load();
+          this.audioCache.set(url, audio);
+        } catch (e) {}
+      }
     });
   }
 
@@ -63,15 +57,10 @@ class BabySoundEngine {
       const idCap = id.charAt(0).toUpperCase() + id.slice(1);
       const idUpper = id.toUpperCase();
 
-      const candidates = [
-        `/sounds/${id}.mp3`,
-        `/sounds/${idCap}.mp3`,
-        `/sounds/${idUpper}.mp3`,
-        `/songs/${id}.mp3`,
-        `/songs/${idCap}.mp3`,
-        `/songs/${idUpper}.mp3`,
-        item.soundUrl
-      ].filter(Boolean);
+      // soundUrl이 있으면 최우선(1순위)으로 직접 재생하여 불필요한 404 network delay 완전 방지
+      const candidates = item.soundUrl
+        ? [item.soundUrl, `/sounds/${id}.mp3`, `/sounds/${idCap}.mp3`, `/sounds/${idUpper}.mp3`]
+        : [`/sounds/${id}.mp3`, `/sounds/${idCap}.mp3`, `/sounds/${idUpper}.mp3`, `/songs/${id}.mp3`].filter(Boolean);
 
       const tryNext = (index) => {
         if (index >= candidates.length) return;
@@ -429,6 +418,12 @@ export default function App() {
 
   useEffect(() => {
     audioEngine.preloadItemSounds(REAL_ANIMALS);
+    [...REAL_ANIMALS, ...REAL_FRUITS].forEach(item => {
+      if (item.img) {
+        const img = new Image();
+        img.src = item.img;
+      }
+    });
   }, []);
 
   // 동요 탭 변경 시 오디오 정지 및 재생 처리
@@ -489,8 +484,10 @@ export default function App() {
   }, [soundEnabled]);
 
   const openRealDetailModal = (item) => {
-    if (item.soundUrl) audioEngine.playItemSound(item);
     setSelectedRealItem(item);
+    setTimeout(() => {
+      if (item.soundUrl) audioEngine.playItemSound(item);
+    }, 0);
   };
 
   const closeItemModal = () => {
