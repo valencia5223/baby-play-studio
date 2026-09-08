@@ -451,7 +451,51 @@ export default function App() {
 
     if (songAudioRef.current) {
       songAudioRef.current.pause();
-     const closeItemModal = () => {
+    }
+
+    const audio = new Audio(song.url);
+    audio.volume = 0.85;
+    audio.play().then(() => {
+      setIsSongPlaying(true);
+    }).catch(() => {
+      setIsSongPlaying(false);
+    });
+
+    audio.onended = () => {
+      const nextIdx = (idx + 1) % LOCAL_NURSERY_SONGS.length;
+      playSelectedSong(nextIdx);
+    };
+
+    songAudioRef.current = audio;
+  };
+
+  const togglePlaySong = () => {
+    if (isSongPlaying && songAudioRef.current) {
+      songAudioRef.current.pause();
+      setIsSongPlaying(false);
+    } else {
+      playSelectedSong(currentSongIdx);
+    }
+  };
+
+  const handleNextSong = () => {
+    const nextIdx = (currentSongIdx + 1) % LOCAL_NURSERY_SONGS.length;
+    playSelectedSong(nextIdx);
+  };
+
+  const handlePrevSong = () => {
+    const prevIdx = (currentSongIdx - 1 + LOCAL_NURSERY_SONGS.length) % LOCAL_NURSERY_SONGS.length;
+    playSelectedSong(prevIdx);
+  };
+
+  const openRealDetailModal = (item) => {
+    setSelectedRealItem(item);
+    setTimeout(() => {
+      if (item.soundUrl) audioEngine.playItemSound(item);
+    }, 0);
+  };
+
+  const closeItemModal = () => {
     audioEngine.stopAllSounds();
     setSelectedRealItem(null);
   };
