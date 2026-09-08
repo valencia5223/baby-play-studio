@@ -451,56 +451,7 @@ export default function App() {
 
     if (songAudioRef.current) {
       songAudioRef.current.pause();
-    }
-
-    const audio = new Audio(song.url);
-    audio.volume = 0.85;
-    audio.play().then(() => {
-      setIsSongPlaying(true);
-    }).catch(() => {
-      setIsSongPlaying(false);
-    });
-
-    audio.onended = () => {
-      // 자동 연속 재생 (다음곡)
-      const nextIdx = (idx + 1) % LOCAL_NURSERY_SONGS.length;
-      playSelectedSong(nextIdx);
-    };
-
-    songAudioRef.current = audio;
-  };
-
-  const togglePlaySong = () => {
-    if (isSongPlaying && songAudioRef.current) {
-      songAudioRef.current.pause();
-      setIsSongPlaying(false);
-    } else {
-      playSelectedSong(currentSongIdx);
-    }
-  };
-
-  const handleNextSong = () => {
-    const nextIdx = (currentSongIdx + 1) % LOCAL_NURSERY_SONGS.length;
-    playSelectedSong(nextIdx);
-  };
-
-  const handlePrevSong = () => {
-    const prevIdx = (currentSongIdx - 1 + LOCAL_NURSERY_SONGS.length) % LOCAL_NURSERY_SONGS.length;
-    playSelectedSong(prevIdx);
-  };
-
-  useEffect(() => {
-    audioEngine.muted = !soundEnabled;
-  }, [soundEnabled]);
-
-  const openRealDetailModal = (item) => {
-    setSelectedRealItem(item);
-    setTimeout(() => {
-      if (item.soundUrl) audioEngine.playItemSound(item);
-    }, 0);
-  };
-
-  const closeItemModal = () => {
+     const closeItemModal = () => {
     audioEngine.stopAllSounds();
     setSelectedRealItem(null);
   };
@@ -585,23 +536,33 @@ export default function App() {
   return (
     <div style={{
       width: '100vw', minHeight: '100vh',
-      background: 'linear-gradient(135deg, #fff7ed 0%, #fef3c7 40%, #e0f2fe 100%)',
+      background: 'linear-gradient(135deg, #fffbebf8 0%, #fef3c7 40%, #d1fae5 100%)',
       padding: isIpadFrame ? '1.5rem 1rem' : '1rem',
       display: 'flex', flexDirection: 'column', alignItems: 'center', userSelect: 'none'
     }}>
-      {/* 헤더 */}
+      {/* 짱구 스타일 헤더 */}
       <header style={{
         width: '100%', maxWidth: '1366px', background: '#ffffff', borderRadius: '24px',
-        padding: '1rem 1.8rem', boxShadow: '0 10px 25px -5px rgba(251, 146, 60, 0.25)',
-        border: '3.5px solid #fdba74', display: 'flex', alignItems: 'center',
+        padding: '1rem 1.8rem', boxShadow: '0 12px 28px -6px rgba(239, 68, 68, 0.22)',
+        border: '4px solid #ef4444', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', marginBottom: '1rem'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{
-            fontSize: '2.5rem', background: '#ffffff', border: '2.5px solid #fed7aa',
-            padding: '8px 14px', borderRadius: '22px', lineHeight: 1, boxShadow: '0 4px 10px rgba(0,0,0,0.06)'
-          }}>🐼</div>
-          <h1 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#ea580c', margin: 0 }}>유나의 발달 놀이터</h1>
+            background: '#fff1f2', border: '3px solid #f87171',
+            padding: '6px 12px', borderRadius: '22px', display: 'flex', alignItems: 'center', gap: '10px',
+            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
+          }}>
+            <img src="/shinchan_sticker.png" alt="짱구" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#dc2626', margin: 0, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              유나의 짱구 발달 놀이터 🖍️
+            </h1>
+            <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#047857', background: '#d1fae5', padding: '2px 10px', borderRadius: '12px', display: 'inline-block', marginTop: '2px' }}>
+              ✨ 짱구와 함께하는 신나는 놀이 세상!
+            </span>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button onClick={() => setIsIpadFrame(!isIpadFrame)} style={{
@@ -614,9 +575,9 @@ export default function App() {
           </button>
           <button onClick={() => setSoundEnabled(!soundEnabled)} style={{
             display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '16px',
-            border: soundEnabled ? '2.5px solid #16a34a' : '2px solid #cbd5e1',
-            background: soundEnabled ? '#dcfce7' : '#f1f5f9',
-            color: soundEnabled ? '#15803d' : '#64748b', fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer'
+            border: soundEnabled ? '2.5px solid #10b981' : '2px solid #cbd5e1',
+            background: soundEnabled ? '#d1fae5' : '#f1f5f9',
+            color: soundEnabled ? '#047857' : '#64748b', fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer'
           }}>
             {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
             {soundEnabled ? '소리 켜짐 🔊' : '음소거 🔇'}
@@ -628,20 +589,20 @@ export default function App() {
       <main style={{
         width: '100%', maxWidth: isIpadFrame ? '1366px' : '100%',
         minHeight: isIpadFrame ? '880px' : 'auto', background: '#ffffff', borderRadius: '32px',
-        border: isIpadFrame ? '6px solid #fb923c' : '2px solid #e2e8f0',
-        boxShadow: '0 25px 50px -12px rgba(249, 115, 22, 0.25)',
+        border: isIpadFrame ? '6px solid #ef4444' : '2px solid #e2e8f0',
+        boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.25)',
         overflow: 'hidden', display: 'flex', flexDirection: 'column'
       }}>
-        {/* 탭 네비게이션 (4개 핵심 탭) */}
+        {/* 탭 네비게이션 (짱구 테마 컬러) */}
         <nav style={{
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px',
-          padding: '14px', background: '#fff7ed', borderBottom: '3px solid #fed7aa'
+          padding: '14px', background: '#fff1f2', borderBottom: '3.5px solid #fca5a5'
         }}>
           {[
-            { id: 'animal', label: '📸 생생 동물', sub: '울음소리 탐험', color: '#ea580c' },
-            { id: 'fruit', label: '🍎 싱싱 과일', sub: '고화질 실사 관찰', color: '#ef4444' },
-            { id: 'paint', label: '🎨 무지개 물감', sub: '터치 감각 미술', color: '#0284c7' },
-            { id: 'song', label: '🎵 동요 재생', sub: `한국 동요 (${LOCAL_NURSERY_SONGS.length}곡)`, color: '#16a34a' }
+            { id: 'animal', label: '📸 생생 동물', sub: '울음소리 탐험', color: '#ef4444' },
+            { id: 'fruit', label: '🍎 싱싱 과일', sub: '고화질 실사 관찰', color: '#10b981' },
+            { id: 'paint', label: '🎨 무지개 물감', sub: '터치 감각 미술', color: '#3b82f6' },
+            { id: 'song', label: '🎵 동요 재생', sub: `한국 동요 (${LOCAL_NURSERY_SONGS.length}곡)`, color: '#f97316' }
           ].map(tab => {
             const isActive = activeTab === tab.id;
             return (
