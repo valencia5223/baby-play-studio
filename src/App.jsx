@@ -439,51 +439,80 @@ export default function App() {
 
   // 🐻 곰돌이 과일 먹이기 드래그 앤 드롭 상태
   const bearBoxRef = useRef(null);
+  const draggingFoodRef = useRef(null);
   const [draggingFood, setDraggingFood] = useState(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [isOverBear, setIsOverBear] = useState(false);
 
-  const checkPointerOverBear = (x, y) => {
-    if (!bearBoxRef.current) return false;
-    const rect = bearBoxRef.current.getBoundingClientRect();
-    return (
-      x >= rect.left - 20 &&
-      x <= rect.right + 20 &&
-      y >= rect.top - 20 &&
-      y <= rect.bottom + 20
-    );
-  };
-
   const handleStartDragFood = (e, food) => {
+    e.preventDefault();
+    draggingFoodRef.current = food;
     setDraggingFood(food);
     const clientX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
     const clientY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
     setDragPos({ x: clientX, y: clientY });
-    setIsOverBear(checkPointerOverBear(clientX, clientY));
   };
 
-  const handleMoveDragFood = (e) => {
-    if (!draggingFood) return;
-    const clientX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
-    const clientY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
-    setDragPos({ x: clientX, y: clientY });
-    setIsOverBear(checkPointerOverBear(clientX, clientY));
-  };
+  useEffect(() => {
+    if (!isBearModalOpen) return;
 
-  const handleEndDragFood = (e) => {
-    if (!draggingFood) return;
-    const clientX = e.clientX || (e.changedTouches && e.changedTouches[0]?.clientX) || dragPos.x;
-    const clientY = e.clientY || (e.changedTouches && e.changedTouches[0]?.clientY) || dragPos.y;
+    const handleWindowPointerMove = (e) => {
+      if (!draggingFoodRef.current) return;
+      const x = e.clientX;
+      const y = e.clientY;
+      setDragPos({ x, y });
 
-    if (checkPointerOverBear(clientX, clientY)) {
-      handleFeedBear(draggingFood);
-    } else {
-      // 곰돌이 영역 외 클릭의 경우 단일 클릭 시에도 먹일 수 있도록 지원
-      handleFeedBear(draggingFood);
-    }
-    setDraggingFood(null);
-    setIsOverBear(false);
-  };
+      if (bearBoxRef.current) {
+        const rect = bearBoxRef.current.getBoundingClientRect();
+        const isOver = (
+          x >= rect.left - 20 &&
+          x <= rect.right + 20 &&
+          y >= rect.top - 20 &&
+          y <= rect.bottom + 20
+        );
+        setIsOverBear(isOver);
+      }
+    };
+
+    const handleWindowPointerUp = (e) => {
+      if (!draggingFoodRef.current) return;
+      const food = draggingFoodRef.current;
+      const x = e.clientX;
+      const y = e.clientY;
+
+      let isOver = false;
+      if (bearBoxRef.current) {
+        const rect = bearBoxRef.current.getBoundingClientRect();
+        isOver = (
+          x >= rect.left - 20 &&
+          x <= rect.right + 20 &&
+          y >= rect.top - 20 &&
+          y <= rect.bottom + 20
+        );
+      }
+
+      if (isOver) {
+        handleFeedBear(food);
+      } else {
+        // 단일 클릭 시에도 먹여지도록 처리
+        handleFeedBear(food);
+      }
+
+      draggingFoodRef.current = null;
+      setDraggingFood(null);
+      setIsOverBear(false);
+    };
+
+    window.addEventListener('pointermove', handleWindowPointerMove);
+    window.addEventListener('pointerup', handleWindowPointerUp);
+    window.addEventListener('pointercancel', handleWindowPointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handleWindowPointerMove);
+      window.removeEventListener('pointerup', handleWindowPointerUp);
+      window.removeEventListener('pointercancel', handleWindowPointerUp);
+    };
+  }, [isBearModalOpen, wantedFood]);
 
   const [strokes, setStrokes] = useState([]);
   const [brushSize, setBrushSize] = useState('medium');
