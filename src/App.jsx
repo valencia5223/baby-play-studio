@@ -1168,14 +1168,14 @@ export default function App() {
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.4rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem' }}>
                 {REAL_ANIMALS.map(item => (
                   <div key={item.id} onClick={() => openRealDetailModal(item)} style={{
-                    background: '#ffffff', border: `4px solid ${item.color}`, borderRadius: '28px',
-                    overflow: 'hidden', cursor: 'pointer', boxShadow: '0 10px 24px rgba(0,0,0,0.08)',
+                    background: '#ffffff', border: `3.5px solid ${item.color}`, borderRadius: '22px',
+                    overflow: 'hidden', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.07)',
                     transition: 'transform 0.15s ease', display: 'flex', flexDirection: 'column'
                   }}>
-                    <div style={{ width: '100%', height: '210px', overflow: 'hidden', background: '#f8fafc' }}>
+                    <div style={{ width: '100%', height: '155px', overflow: 'hidden', background: '#f8fafc' }}>
                       <img
                         src={item.img}
                         alt={item.name}
@@ -1189,17 +1189,17 @@ export default function App() {
                         }}
                       />
                     </div>
-                    <div style={{ padding: '1.1rem', textAlign: 'center', background: item.bg }}>
-                      <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1e293b', margin: '0 0 6px 0' }}>{item.name}</h3>
+                    <div style={{ padding: '0.75rem 0.5rem', textAlign: 'center', background: item.bg }}>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#1e293b', margin: '0 0 5px 0' }}>{item.name}</h3>
                       {item.soundUrl ? (
                         <span style={{
-                          background: item.color, color: '#ffffff', fontSize: '0.85rem', fontWeight: 900,
-                          padding: '4px 12px', borderRadius: '14px', display: 'inline-block'
+                          background: item.color, color: '#ffffff', fontSize: '0.8rem', fontWeight: 900,
+                          padding: '3px 10px', borderRadius: '12px', display: 'inline-block'
                         }}>🔊 {item.soundText}</span>
                       ) : (
                         <span style={{
-                          background: '#94a3b8', color: '#ffffff', fontSize: '0.85rem', fontWeight: 900,
-                          padding: '4px 12px', borderRadius: '14px', display: 'inline-block'
+                          background: '#94a3b8', color: '#ffffff', fontSize: '0.8rem', fontWeight: 900,
+                          padding: '3px 10px', borderRadius: '12px', display: 'inline-block'
                         }}>🔇 소리 준비 중</span>
                       )}
                     </div>
@@ -1209,7 +1209,7 @@ export default function App() {
             </div>
           )}
 
-          {/* ===== 모듈 2: 🍎 10종 싱싱 과일 관찰 ===== */}
+          {/* ===== 모듈 2: 🍎 18종 싱싱 과일 & 채소 관찰 ===== */}
           {activeTab === 'fruit' && (
             <div>
               <div style={{
@@ -1218,7 +1218,7 @@ export default function App() {
                 border: '2.5px solid #fecdd3', flexWrap: 'wrap', gap: '14px'
               }}>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#9f1239', margin: 0 }}>
-                  🍎 싱싱한 과일 카드를 콕콕 눌러보세요! 커다란 고화질 사진이 보여요!
+                  🍎 싱싱한 과일·채소 카드를 콕콕 눌러보세요! 커다란 고화질 사진이 보여요!
                 </h2>
                 <button onClick={openBearModal} style={{
                   background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#ffffff',
@@ -1230,14 +1230,14 @@ export default function App() {
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.9rem' }}>
                 {REAL_FRUITS.map(item => (
                   <div key={item.id} onClick={() => openRealDetailModal(item)} style={{
-                    background: '#ffffff', border: `4px solid ${item.color}`, borderRadius: '26px',
-                    overflow: 'hidden', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
+                    background: '#ffffff', border: `3.5px solid ${item.color}`, borderRadius: '20px',
+                    overflow: 'hidden', cursor: 'pointer', boxShadow: '0 6px 16px rgba(0,0,0,0.06)',
                     transition: 'transform 0.15s ease', display: 'flex', flexDirection: 'column'
                   }}>
-                    <div style={{ width: '100%', height: '170px', overflow: 'hidden', background: '#f8fafc', padding: item.objectFit === 'contain' ? '10px' : '0' }}>
+                    <div style={{ width: '100%', height: '135px', overflow: 'hidden', background: '#f8fafc', padding: item.objectFit === 'contain' ? '8px' : '0' }}>
                       <img
                         src={item.img}
                         alt={item.name}
@@ -1248,8 +1248,8 @@ export default function App() {
                         }}
                       />
                     </div>
-                    <div style={{ padding: '1rem', textAlign: 'center', background: item.bg }}>
-                      <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1e293b', margin: 0 }}>{item.icon} {item.name}</h3>
+                    <div style={{ padding: '0.65rem 0.4rem', textAlign: 'center', background: item.bg }}>
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1e293b', margin: 0 }}>{item.icon} {item.name}</h3>
                     </div>
                   </div>
                 ))}
