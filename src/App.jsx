@@ -367,14 +367,15 @@ const musicModules = import.meta.glob('/public/music/*.mp3', { query: '?url', ea
 
 const LOCAL_NURSERY_SONGS = Object.keys(musicModules).map((filePath, i) => {
   const fileName = filePath.split('/').pop();
-  const rawTitle = decodeURIComponent(fileName.replace(/\.mp3$/i, '').replace(/^\d+\s*/, ''));
+  const decodedFileName = decodeURIComponent(fileName);
+  const rawTitle = decodedFileName.replace(/\.mp3$/i, '').replace(/^\d+\s*/, '');
   return {
     id: `song_${i}_${fileName}`,
-    fileName: fileName,
+    fileName: decodedFileName,
     title: rawTitle,
     url: `/music/${encodeURIComponent(fileName)}`
   };
-}).sort((a, b) => a.title.localeCompare(b.title, 'ko'));
+}).sort((a, b) => a.fileName.localeCompare(b.fileName, 'ko', { numeric: true }));
 
 const RAINBOW_PAINTS = [
   { name: '빨간색 🔴', color: '#ef4444', freq: 523.25 },
@@ -386,32 +387,28 @@ const RAINBOW_PAINTS = [
   { name: '보라색 🔮', color: '#a855f7', freq: 987.77 }
 ];
 
-// ✏️ 따라쓰기 템플릿 데이터 (SVG path로 점선 글자 가이드)
+// ✏️ 따라쓰기 템플릿 데이터 (숫자 0~9 SVG 가이드)
 const TRACING_TEMPLATES = [
+  { id: 'num0', label: '0', category: '숫자',
+    paths: ['M 50 15 C 25 15 25 35 25 50 C 25 65 25 85 50 85 C 75 85 75 65 75 50 C 75 35 75 15 50 15 Z'], viewBox: '0 0 100 100' },
   { id: 'num1', label: '1', category: '숫자',
-    paths: ['M 50 15 L 50 85'], viewBox: '0 0 100 100' },
+    paths: ['M 38 32 L 52 18 L 52 82 M 34 82 L 70 82'], viewBox: '0 0 100 100' },
   { id: 'num2', label: '2', category: '숫자',
-    paths: ['M 25 30 Q 25 10 50 10 Q 75 10 75 30 Q 75 50 50 55 L 25 85 L 75 85'], viewBox: '0 0 100 100' },
+    paths: ['M 25 32 Q 25 12 50 12 Q 75 12 75 32 Q 75 52 50 58 L 25 85 L 75 85'], viewBox: '0 0 100 100' },
   { id: 'num3', label: '3', category: '숫자',
-    paths: ['M 25 15 L 70 15 L 45 48', 'M 45 48 Q 75 48 75 68 Q 75 90 45 90 Q 25 90 25 78'], viewBox: '0 0 100 100' },
+    paths: ['M 25 15 L 72 15 L 46 46 Q 75 46 75 68 Q 75 90 45 90 Q 25 90 25 78'], viewBox: '0 0 100 100' },
   { id: 'num4', label: '4', category: '숫자',
-    paths: ['M 60 85 L 60 10 L 20 65 L 80 65'], viewBox: '0 0 100 100' },
+    paths: ['M 62 85 L 62 12 L 20 62 L 78 62'], viewBox: '0 0 100 100' },
   { id: 'num5', label: '5', category: '숫자',
-    paths: ['M 70 15 L 30 15 L 25 50 Q 50 38 72 50 Q 82 65 65 82 Q 48 92 25 80'], viewBox: '0 0 100 100' },
-  { id: 'kr_ga', label: 'ㄱ', category: '한글',
-    paths: ['M 20 25 L 80 25 L 80 80'], viewBox: '0 0 100 100' },
-  { id: 'kr_na', label: 'ㄴ', category: '한글',
-    paths: ['M 20 20 L 20 80 L 80 80'], viewBox: '0 0 100 100' },
-  { id: 'kr_da', label: 'ㄷ', category: '한글',
-    paths: ['M 20 20 L 20 80 L 80 80', 'M 20 20 L 80 20'], viewBox: '0 0 100 100' },
-  { id: 'kr_ra', label: 'ㄹ', category: '한글',
-    paths: ['M 20 15 L 80 15 L 80 38 L 20 38 L 20 62 L 80 62 L 80 85'], viewBox: '0 0 100 100' },
-  { id: 'kr_ma', label: 'ㅁ', category: '한글',
-    paths: ['M 20 20 L 20 80 L 80 80 L 80 20 Z'], viewBox: '0 0 100 100' },
-  { id: 'kr_o', label: 'ㅇ', category: '한글',
-    paths: ['M 50 15 Q 85 15 85 50 Q 85 85 50 85 Q 15 85 15 50 Q 15 15 50 15'], viewBox: '0 0 100 100' },
-  { id: 'kr_ee', label: 'ㅣ', category: '한글',
-    paths: ['M 50 10 L 50 90'], viewBox: '0 0 100 100' },
+    paths: ['M 70 15 L 32 15 L 28 48 Q 50 36 72 48 Q 80 64 65 82 Q 48 92 25 80'], viewBox: '0 0 100 100' },
+  { id: 'num6', label: '6', category: '숫자',
+    paths: ['M 66 22 Q 35 15 28 48 Q 24 64 36 82 Q 52 90 68 82 Q 76 68 74 54 Q 70 42 50 42 Q 34 42 28 54'], viewBox: '0 0 100 100' },
+  { id: 'num7', label: '7', category: '숫자',
+    paths: ['M 25 18 L 75 18 L 42 85'], viewBox: '0 0 100 100' },
+  { id: 'num8', label: '8', category: '숫자',
+    paths: ['M 50 50 Q 28 50 28 32 Q 28 15 50 15 Q 72 15 72 32 Q 72 50 50 50 Q 28 50 28 68 Q 28 85 50 85 Q 72 85 72 68 Q 72 50 50 50'], viewBox: '0 0 100 100' },
+  { id: 'num9', label: '9', category: '숫자',
+    paths: ['M 72 48 Q 72 32 62 20 Q 48 12 34 22 Q 24 34 28 48 Q 36 60 52 60 Q 72 60 72 40 Z M 72 48 L 72 68 Q 70 84 48 88'], viewBox: '0 0 100 100' },
 ];
 
 // 🎈 퐁퐁 풍선 데이터
@@ -439,6 +436,54 @@ export default function App() {
   const [bearMood, setBearMood] = useState('hungry');
   const [feedScore, setFeedScore] = useState(0);
   const [isBearModalOpen, setIsBearModalOpen] = useState(false);
+
+  // 🐻 곰돌이 과일 먹이기 드래그 앤 드롭 상태
+  const bearBoxRef = useRef(null);
+  const [draggingFood, setDraggingFood] = useState(null);
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const [isOverBear, setIsOverBear] = useState(false);
+
+  const checkPointerOverBear = (x, y) => {
+    if (!bearBoxRef.current) return false;
+    const rect = bearBoxRef.current.getBoundingClientRect();
+    return (
+      x >= rect.left - 20 &&
+      x <= rect.right + 20 &&
+      y >= rect.top - 20 &&
+      y <= rect.bottom + 20
+    );
+  };
+
+  const handleStartDragFood = (e, food) => {
+    setDraggingFood(food);
+    const clientX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
+    const clientY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
+    setDragPos({ x: clientX, y: clientY });
+    setIsOverBear(checkPointerOverBear(clientX, clientY));
+  };
+
+  const handleMoveDragFood = (e) => {
+    if (!draggingFood) return;
+    const clientX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
+    const clientY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
+    setDragPos({ x: clientX, y: clientY });
+    setIsOverBear(checkPointerOverBear(clientX, clientY));
+  };
+
+  const handleEndDragFood = (e) => {
+    if (!draggingFood) return;
+    const clientX = e.clientX || (e.changedTouches && e.changedTouches[0]?.clientX) || dragPos.x;
+    const clientY = e.clientY || (e.changedTouches && e.changedTouches[0]?.clientY) || dragPos.y;
+
+    if (checkPointerOverBear(clientX, clientY)) {
+      handleFeedBear(draggingFood);
+    } else {
+      // 곰돌이 영역 외 클릭의 경우 단일 클릭 시에도 먹일 수 있도록 지원
+      handleFeedBear(draggingFood);
+    }
+    setDraggingFood(null);
+    setIsOverBear(false);
+  };
 
   const [strokes, setStrokes] = useState([]);
   const [brushSize, setBrushSize] = useState('medium');
@@ -1233,13 +1278,18 @@ export default function App() {
         </div>
       )}
 
-      {/* ===== 🐻 곰돌이 과일 먹이기 놀이 모달 ===== */}
+      {/* ===== 🐻 곰돌이 과일 먹이기 놀이 모달 (드래그 앤 드롭 지원) ===== */}
       {isBearModalOpen && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', zIndex: 1000, padding: '1.5rem'
-        }}>
+        <div
+          onPointerMove={handleMoveDragFood}
+          onPointerUp={handleEndDragFood}
+          onPointerCancel={handleEndDragFood}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', zIndex: 1000, padding: '1.5rem', userSelect: 'none'
+          }}
+        >
           <div style={{
             background: '#fffbeb', borderRadius: '36px', maxWidth: '720px', width: '100%',
             padding: '2rem', border: '6px solid #f59e0b',
@@ -1255,7 +1305,7 @@ export default function App() {
               <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#92400e' }}>⭐ 먹인 과일: {feedScore}개</span>
             </div>
 
-            {/* 곰돌이 캐릭터 & 말풍선 */}
+            {/* 🐻 곰돌이 캐릭터 & 드롭 영역 (bearBoxRef) */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{
                 background: '#ffffff', border: '3.5px solid #fbbf24', borderRadius: '24px',
