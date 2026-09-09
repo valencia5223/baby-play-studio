@@ -154,3 +154,33 @@ button:active {
 .bear-blush-active {
   animation: bear-blush-glow 1s ease-in-out infinite;
 }
+
+/* 거절: 도리도리 고개 젓기 */
+@keyframes bear-reject-shake {
+  0% { transform: translateX(0) rotate(0deg); }
+  12% { transform: translateX(-12px) rotate(-4deg); }
+  25% { transform: translateX(12px) rotate(4deg); }
+  37% { transform: translateX(-10px) rotate(-3deg); }
+  50% { transform: translateX(10px) rotate(3deg); }
+  62% { transform: translateX(-6px) rotate(-2deg); }
+  75% { transform: translateX(6px) rotate(2deg); }
+  87% { transform: translateX(-3px) rotate(-1deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+/* 거절: 과일 튕겨나가는 효과 */
+@keyframes bear-fruit-reject {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  30% { opacity: 1; transform: translate(-50%, -80%) scale(1.2) rotate(-15deg); }
+  60% { opacity: 0.7; transform: translate(80px, -120%) scale(0.8) rotate(25deg); }
+  100% { opacity: 0; transform: translate(120px, 0%) scale(0.3) rotate(60deg); }
+}
+
+.bear-reject {
+  animation: bear-reject-shake 0.6s ease-in-out;
+}
+
+.bear-fruit-reject {
+  animation: bear-fruit-reject 0.65s ease-out forwards;
+  pointer-events: none;
+}

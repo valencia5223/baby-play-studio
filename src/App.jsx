@@ -414,8 +414,9 @@ const TRACING_TEMPLATES = [
 // =============================================================================
 // 🐻 SVG 애니메이션 곰돌이 캐릭터 컴포넌트
 // 상태: hungry(기본) → mouth-open(입벌리기) → eating(우물우물) → happy(만세!)
+//       hungry → reject(도리도리 거절) → hungry
 // =============================================================================
-function AnimatedBear({ mood, isOverBear }) {
+function AnimatedBear({ mood, isOverBear, rejectedFoodIcon }) {
   const [chewOpen, setChewOpen] = React.useState(false);
 
   // eating 상태일 때 입을 빠르게 열었다 닫았다 (우물우물 씹기)
@@ -433,15 +434,20 @@ function AnimatedBear({ mood, isOverBear }) {
   // 몸 전체 애니메이션 클래스
   const bodyClass = dm === 'happy' ? 'bear-bounce'
     : dm === 'eating' ? 'bear-munch'
+    : dm === 'reject' ? 'bear-reject'
     : 'bear-idle';
 
-  // 팔 경로 (happy: 만세 / 기본: 내린 상태)
+  // 팔 경로 (happy: 만세 / reject: 팔짱 X / 기본: 내린 상태)
   const armLeft = dm === 'happy'
     ? 'M 48 160 Q 12 118 22 88'
-    : 'M 48 160 Q 28 175 22 198';
+    : dm === 'reject'
+      ? 'M 48 160 Q 50 140 80 148'
+      : 'M 48 160 Q 28 175 22 198';
   const armRight = dm === 'happy'
     ? 'M 152 160 Q 188 118 178 88'
-    : 'M 152 160 Q 172 175 178 198';
+    : dm === 'reject'
+      ? 'M 152 160 Q 150 140 120 148'
+      : 'M 152 160 Q 172 175 178 198';
 
   // 입 크기 (eating 시 chewOpen 토글)
   const mouthRy = dm === 'mouth-open' ? 16
@@ -461,6 +467,12 @@ function AnimatedBear({ mood, isOverBear }) {
           <>
             <circle cx="22" cy="84" r="10" fill="#C8952E" />
             <circle cx="178" cy="84" r="10" fill="#C8952E" />
+          </>
+        )}
+        {dm === 'reject' && (
+          <>
+            <circle cx="80" cy="144" r="8" fill="#C8952E" />
+            <circle cx="120" cy="144" r="8" fill="#C8952E" />
           </>
         )}
 
@@ -493,6 +505,14 @@ function AnimatedBear({ mood, isOverBear }) {
               <path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z"
                 fill="#ef4444" className="bear-heart-pulse" />
             </g>
+          </>
+        ) : dm === 'reject' ? (
+          /* 실망한 눈 (찡그린 눈썸) */
+          <>
+            <path d="M 73 74 L 89 82" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+            <path d="M 73 82 L 89 74" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+            <path d="M 111 74 L 127 82" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+            <path d="M 111 82 L 127 74" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
           </>
         ) : dm === 'eating' ? (
           /* 감긴 눈 (맛있어~ 행복한 눈) */
@@ -531,6 +551,10 @@ function AnimatedBear({ mood, isOverBear }) {
           <ellipse cx="100" cy="106" rx="11" ry={mouthRy}
             fill="#D32F2F" stroke="#5D4037" strokeWidth="2"
             style={{ transition: 'ry 0.12s ease' }} />
+        ) : dm === 'reject' ? (
+          /* 삐만 입 (씨익~) */
+          <path d="M 86 106 Q 93 98 100 102 Q 107 98 114 106"
+            stroke="#5D4037" strokeWidth="2.5" strokeLinecap="round" fill="none" />
         ) : dm === 'happy' ? (
           <path d="M 80 100 Q 90 120 100 120 Q 110 120 120 100"
             stroke="#5D4037" strokeWidth="3" strokeLinecap="round" fill="none" />
@@ -570,6 +594,14 @@ function AnimatedBear({ mood, isOverBear }) {
           fontSize: '2rem', pointerEvents: 'none'
         }}>🍎</div>
       )}
+
+      {/* reject 상태: 과일이 튜겨나가는 효과 */}
+      {dm === 'reject' && rejectedFoodIcon && (
+        <div className="bear-fruit-reject" style={{
+          position: 'absolute', top: '38%', left: '50%',
+          fontSize: '2.2rem', pointerEvents: 'none'
+        }}>{rejectedFoodIcon}</div>
+      )}
     </div>
   );
 }
@@ -597,6 +629,7 @@ export default function App() {
 
   const [wantedFood, setWantedFood] = useState(FOOD_ITEMS[1]);
   const [bearMood, setBearMood] = useState('hungry');
+  const [rejectedFood, setRejectedFood] = useState(null);
   const [feedScore, setFeedScore] = useState(0);
   const [isBearModalOpen, setIsBearModalOpen] = useState(false);
 
@@ -869,7 +902,27 @@ export default function App() {
         speakBearWish(nextFood);
       }, 3500);
     } else {
-      audioEngine.playFreq(250, 'sawtooth', 0.2);
+      // 거절! 도리도리 + 삐만 표정 + 뒤에~ 사운드
+      setBearMood('reject');
+      setRejectedFood(food);
+      // 삼중 비프음 (낮은 톤 → 높은 톤 → 낮은 톤)
+      audioEngine.playFreq(200, 'sawtooth', 0.15, 0.5);
+      setTimeout(() => audioEngine.playFreq(280, 'sawtooth', 0.12, 0.4), 120);
+      setTimeout(() => audioEngine.playFreq(160, 'sawtooth', 0.2, 0.5), 240);
+      // TTS 거절 음성
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(`이거 말고! ${(wantedFood || FOOD_ITEMS[0])?.name || '다른 과일'} 줘!`);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.2;
+        window.speechSynthesis.speak(utterance);
+      }
+      // 1.3초 후 복귀
+      setTimeout(() => {
+        setBearMood('hungry');
+        setRejectedFood(null);
+      }, 1300);
     }
   };
 
@@ -1540,13 +1593,15 @@ export default function App() {
                 }}
               >
                 <p style={{ fontSize: '1.35rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
-                  {bearMood === 'eating'
-                    ? '😋 "아구아구... 우물우물... 냠냠!"'
-                    : bearMood === 'happy'
-                      ? '💖 "너무 맛있다~! 최고야! 🥰"'
-                      : isOverBear
-                        ? '😮 "아~~ 입 벌리고 있어! 과일을 쏙 넣어줘!"'
-                        : `"${(wantedFood || FOOD_ITEMS[0])?.name || '사과'} 먹고 싶어요! ${(wantedFood || FOOD_ITEMS[0])?.icon || '🍎'}"`}
+                  {bearMood === 'reject'
+                    ? `😤 "이거 말고~!! ${(wantedFood || FOOD_ITEMS[0])?.name || '다른 과일'} 달라고~! 😣"` 
+                    : bearMood === 'eating'
+                      ? '😋 "아구아구... 우물우물... 냠냠!"'
+                      : bearMood === 'happy'
+                        ? '💖 "너무 맛있다~! 최고야! 🥰"'
+                        : isOverBear
+                          ? '😮 "아~~ 입 벌리고 있어! 과일을 쏙 넣어줘!"'
+                          : `"${(wantedFood || FOOD_ITEMS[0])?.name || '사과'} 먹고 싶어요! ${(wantedFood || FOOD_ITEMS[0])?.icon || '🍎'}"`}
                 </p>
                 {/* 말풍선 꼬리 */}
                 <div style={{
@@ -1574,7 +1629,7 @@ export default function App() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}
               >
-                <AnimatedBear mood={bearMood} isOverBear={isOverBear} />
+                <AnimatedBear mood={bearMood} isOverBear={isOverBear} rejectedFoodIcon={rejectedFood?.icon} />
               </div>
             </div>
 
