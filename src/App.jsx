@@ -302,64 +302,64 @@ const REAL_ANIMALS = [
 // =============================================================================
 const REAL_FRUITS = [
   {
-    id: 'apple', name: '아삭아삭 사과', icon: '🍎',
+    id: 'apple', name: '사과', icon: '🍎',
     img: 'https://images.pexels.com/photos/102104/pexels-photo-102104.jpeg?auto=compress&cs=tinysrgb&w=600',
     color: '#ef4444', bg: '#fee2e2', fitPos: 'center 30%'
   },
   {
-    id: 'banana', name: '달콤한 바나나', icon: '🍌',
+    id: 'banana', name: '바나나', icon: '🍌',
     img: 'https://images.pexels.com/photos/2872755/pexels-photo-2872755.jpeg?auto=compress&cs=tinysrgb&w=600',
     color: '#d97706', bg: '#fef3c7', fitPos: 'center 30%'
   },
   {
-    id: 'grape', name: '동글동글 포도', icon: '🍇',
+    id: 'grape', name: '포도', icon: '🍇',
     img: 'https://images.pexels.com/photos/708777/pexels-photo-708777.jpeg?auto=compress&cs=tinysrgb&w=600',
     color: '#7e22ce', bg: '#f3e8ff', fitPos: 'center 20%'
   },
   {
-    id: 'watermelon', name: '시원한 수박', icon: '🍉',
+    id: 'watermelon', name: '수박', icon: '🍉',
     img: 'https://images.pexels.com/photos/1313267/pexels-photo-1313267.jpeg?auto=compress&cs=tinysrgb&w=600',
     color: '#15803d', bg: '#dcfce7', fitPos: 'center 30%'
   },
   {
-    id: 'strawberry', name: '새콤달콤 딸기', icon: '🍓',
+    id: 'strawberry', name: '딸기', icon: '🍓',
     img: strawberryImg,
     color: '#e11d48', bg: '#ffe4e6', fitPos: 'center 20%'
   },
   {
-    id: 'tangerine', name: '새콤 오렌지 귤', icon: '🍊',
+    id: 'tangerine', name: '귤', icon: '🍊',
     img: tangerineImg,
     color: '#ea580c', bg: '#ffedd5', fitPos: 'center 20%'
   },
   {
-    id: 'peach', name: '향긋한 복숭아', icon: '🍑',
+    id: 'peach', name: '복숭아', icon: '🍑',
     img: peachImg,
     color: '#f43f5e', bg: '#ffe4e6', fitPos: 'center center'
   },
   {
-    id: 'pineapple', name: '새콤 파인애플', icon: '🍍',
+    id: 'pineapple', name: '파인애플', icon: '🍍',
     img: pineappleImg,
     color: '#b45309', bg: '#fef3c7', fitPos: 'center center', objectFit: 'contain'
   },
   {
-    id: 'melon', name: '달달한 멜론', icon: '🍈',
+    id: 'melon', name: '멜론', icon: '🍈',
     img: melonImg,
     color: '#16a34a', bg: '#dcfce7', fitPos: 'center center'
   },
   {
-    id: 'cherry', name: '귀여운 체리', icon: '🍒',
+    id: 'cherry', name: '체리', icon: '🍒',
     img: 'https://images.pexels.com/photos/109274/pexels-photo-109274.jpeg?auto=compress&cs=tinysrgb&w=600',
     color: '#be123c', bg: '#ffe4e6', fitPos: 'center 20%'
   }
 ];
 
 const FOOD_ITEMS = [
-  { id: 'apple', name: '빨간 사과', colorName: '빨간색', icon: '🍎', color: '#ef4444', bg: '#fee2e2' },
-  { id: 'banana', name: '노란 바나나', colorName: '노란색', icon: '🍌', color: '#eab308', bg: '#fef9c3' },
-  { id: 'grape', name: '보라 포도', colorName: '보라색', icon: '🍇', color: '#8b5cf6', bg: '#f3e8ff' },
-  { id: 'broccoli', name: '초록 브로콜리', colorName: '초록색', icon: '🥦', color: '#10b981', bg: '#d1fae5' },
-  { id: 'carrot', name: '주황 당근', colorName: '주황색', icon: '🥕', color: '#f97316', bg: '#ffedd5' },
-  { id: 'strawberry', name: '새콤 딸기', colorName: '빨간색', icon: '🍓', color: '#f43f5e', bg: '#ffe4e6' }
+  { id: 'apple', name: '사과', colorName: '빨간색', icon: '🍎', color: '#ef4444', bg: '#fee2e2' },
+  { id: 'banana', name: '바나나', colorName: '노란색', icon: '🍌', color: '#eab308', bg: '#fef9c3' },
+  { id: 'grape', name: '포도', colorName: '보라색', icon: '🍇', color: '#8b5cf6', bg: '#f3e8ff' },
+  { id: 'broccoli', name: '브로콜리', colorName: '초록색', icon: '🥦', color: '#10b981', bg: '#d1fae5' },
+  { id: 'carrot', name: '당근', colorName: '주황색', icon: '🥕', color: '#f97316', bg: '#ffedd5' },
+  { id: 'strawberry', name: '딸기', colorName: '빨간색', icon: '🍓', color: '#f43f5e', bg: '#ffe4e6' }
 ];
 
 // 🎵 Vite 동적 파일 스캐너: public/music/ 폴더 안의 모든 MP3 파일을 자동으로 감지하여 100% 실시간 리스트화!
@@ -663,14 +663,38 @@ export default function App() {
     }
   };
 
+  const speakBearWish = (food) => {
+    const targetFood = food || wantedFood || FOOD_ITEMS[0];
+    if (!targetFood) return;
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const text = `${targetFood.name} 먹고싶어요`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ko-KR';
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const openBearModal = () => {
+    const initialFood = wantedFood || FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)];
+    setWantedFood(initialFood);
+    setIsBearModalOpen(true);
+    speakBearWish(initialFood);
+  };
+
   const handleFeedBear = (food) => {
-    if (food.id === wantedFood.id) {
+    const currentWanted = wantedFood || FOOD_ITEMS[0];
+    if (food.id === currentWanted.id) {
       audioEngine.playYum();
       setBearMood('happy');
       setFeedScore(prev => prev + 1);
       setTimeout(() => {
         setBearMood('hungry');
-        setWantedFood(FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)]);
+        const nextFood = FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)];
+        setWantedFood(nextFood);
+        speakBearWish(nextFood);
       }, 1500);
     } else {
       audioEngine.playFreq(250, 'sawtooth', 0.2);
@@ -898,7 +922,7 @@ export default function App() {
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#9f1239', margin: 0 }}>
                   🍎 싱싱한 과일 카드를 콕콕 눌러보세요! 커다란 고화질 사진이 보여요!
                 </h2>
-                <button onClick={() => setIsBearModalOpen(true)} style={{
+                <button onClick={openBearModal} style={{
                   background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#ffffff',
                   border: 'none', padding: '12px 24px', borderRadius: '18px', fontWeight: 900,
                   fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 6px 18px rgba(245,158,11,0.35)',
@@ -1333,16 +1357,21 @@ export default function App() {
 
             {/* 🐻 곰돌이 캐릭터 & 드롭 영역 (bearBoxRef) */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <div style={{
-                background: '#ffffff', border: '3.5px solid #fbbf24', borderRadius: '24px',
-                padding: '1rem 1.6rem', marginBottom: '1rem', boxShadow: '0 8px 20px rgba(0,0,0,0.06)'
-              }}>
-                <p style={{ fontSize: '1.4rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
+              <div
+                onClick={() => speakBearWish(wantedFood)}
+                title="콕 누르면 곰돌이가 목소리로 다시 말해요!"
+                style={{
+                  background: '#ffffff', border: '3.5px solid #fbbf24', borderRadius: '24px',
+                  padding: '1rem 1.6rem', marginBottom: '1rem', boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
+                  cursor: 'pointer'
+                }}
+              >
+                <p style={{ fontSize: '1.45rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
                   {bearMood === 'happy'
                     ? '💖 🐻 "아구아구 냠냠! 너무 맛있다! 🥰"'
                     : isOverBear
                       ? '😮 🐻 "아~~ 입 벌리고 있어! 과일을 쏙 넣어줘!"'
-                      : `🐻 "나 [${(wantedFood || FOOD_ITEMS[0])?.name || '사과'} ${(wantedFood || FOOD_ITEMS[0])?.icon || '🍎'}] 가 너무 먹고 싶어!"`}
+                      : `🐻 "${(wantedFood || FOOD_ITEMS[0])?.name || '사과'} 먹고 싶어요! ${(wantedFood || FOOD_ITEMS[0])?.icon || '🍎'}"`}
                 </p>
               </div>
 
