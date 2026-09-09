@@ -443,6 +443,10 @@ export default function App() {
   const [brushSize, setBrushSize] = useState('medium');
   const [tracingMode, setTracingMode] = useState(null); // null = 자유그리기, template object = 따라쓰기
 
+  const isDrawingRef = useRef(false);
+  const lastPosRef = useRef(null);
+  const lastSoundTimeRef = useRef(0);
+
   // 동요 MP3 재생 관련 상태 및 Audio Ref
   const [currentSongIdx, setCurrentSongIdx] = useState(0);
   const [isSongPlaying, setIsSongPlaying] = useState(false);
@@ -596,19 +600,63 @@ export default function App() {
     }
   };
 
-  const BRUSH_SIZES = { small: { min: 30, range: 20 }, medium: { min: 60, range: 40 }, large: { min: 100, range: 60 } };
+  const BRUSH_SIZES = { small: { min: 25, range: 15, dist: 12 }, medium: { min: 50, range: 30, dist: 20 }, large: { min: 85, range: 45, dist: 32 } };
 
-  const handleCanvasClick = (e) => {
+  const addSplashAt = (x, y, playSound = true) => {
+    const paint = RAINBOW_PAINTS[Math.floor(Math.random() * RAINBOW_PAINTS.length)];
+    const now = Date.now();
+    if (playSound && now - lastSoundTimeRef.current > 80) {
+      audioEngine.playXylophone(paint.freq);
+      lastSoundTimeRef.current = now;
+    }
+    const bs = BRUSH_SIZES[brushSize];
+    setPaintSplashes(prev => [...prev.slice(-65), {
+      id: now + Math.random(), x, y, color: paint.color, name: paint.name,
+      size: Math.floor(Math.random() * bs.range) + bs.min
+    }]);
+  };
+
+  const handlePointerDown = (e) => {
+    e.preventDefault();
+    isDrawingRef.current = true;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const paint = RAINBOW_PAINTS[Math.floor(Math.random() * RAINBOW_PAINTS.length)];
-    audioEngine.playXylophone(paint.freq);
-    const bs = BRUSH_SIZES[brushSize];
-    setPaintSplashes(prev => [...prev.slice(-30), {
-      id: Date.now() + Math.random(), x, y, color: paint.color, name: paint.name,
-      size: Math.floor(Math.random() * bs.range) + bs.min
-    }]);
+    lastPosRef.current = { x, y };
+    addSplashAt(x, y, true);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDrawingRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    if (lastPosRef.current) {
+      const dx = x - lastPosRef.current.x;
+      const dy = y - lastPosRef.current.y;
+      const dist = Math.hypot(dx, dy);
+      const minDist = BRUSH_SIZES[brushSize].dist;
+
+      if (dist >= minDist) {
+        // 이전 좌표와 현재 좌표 사이 보충 점 추가 (빠른 드래그에도 끊김없이 연필 선 연결)
+        const steps = Math.min(Math.floor(dist / minDist), 4);
+        for (let i = 1; i <= steps; i++) {
+          const stepX = lastPosRef.current.x + (dx * i) / steps;
+          const stepY = lastPosRef.current.y + (dy * i) / steps;
+          addSplashAt(stepX, stepY, i === steps);
+        }
+        lastPosRef.current = { x, y };
+      }
+    } else {
+      lastPosRef.current = { x, y };
+      addSplashAt(x, y, true);
+    }
+  };
+
+  const handlePointerUp = () => {
+    isDrawingRef.current = false;
+    lastPosRef.current = null;
   };
 
   return (
@@ -877,11 +925,19 @@ export default function App() {
                 </div>
               )}
 
-              {/* 캔버스 (flex: 1로 남은 공간 전부 사용) */}
-              <div onClick={handleCanvasClick} style={{
-                width: '100%', flex: 1, minHeight: 0, background: '#ffffff', borderRadius: '24px',
-                border: '4px dashed #38bdf8', position: 'relative', overflow: 'hidden', cursor: 'crosshair'
-              }}>
+              {/* 캔버스 (flex: 1로 남은 공간 전부 사용, 연속 포인터 드로잉 지원) */}
+              <div
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                style={{
+                  width: '100%', flex: 1, minHeight: 0, background: '#ffffff', borderRadius: '24px',
+                  border: '4px dashed #38bdf8', position: 'relative', overflow: 'hidden', cursor: 'crosshair',
+                  touchAction: 'none'
+                }}
+              >
                 {/* 따라쓰기 가이드 점선 (배경) */}
                 {tracingMode && (
                   <svg viewBox={tracingMode.viewBox} style={{
@@ -901,7 +957,7 @@ export default function App() {
                     alignItems: 'center', justifyContent: 'center', color: '#94a3b8', pointerEvents: 'none'
                   }}>
                     <Sparkles size={56} style={{ color: '#38bdf8', marginBottom: '12px' }} />
-                    <p style={{ fontSize: '1.4rem', fontWeight: 900 }}>화면 어디든 자유롭게 눌러보세요!</p>
+                    <p style={{ fontSize: '1.4rem', fontWeight: 900 }}>화면에 연필처럼 쓱쓱 자유롭게 그려보세요!</p>
                   </div>
                 )}
                 {paintSplashes.length === 0 && tracingMode && (
@@ -909,7 +965,7 @@ export default function App() {
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center', color: '#92400e', pointerEvents: 'none'
                   }}>
-                    <p style={{ fontSize: '1.3rem', fontWeight: 900, opacity: 0.5 }}>✏️ 점선을 따라 콕콕 찍어보세요!</p>
+                    <p style={{ fontSize: '1.3rem', fontWeight: 900, opacity: 0.6 }}>✏️ 점선을 따라 연필처럼 쓱쓱 그려보세요!</p>
                   </div>
                 )}
                 {paintSplashes.map(s => (
