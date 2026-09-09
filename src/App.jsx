@@ -39,7 +39,7 @@ class BabySoundEngine {
           audio.preload = 'auto';
           audio.load();
           this.audioCache.set(url, audio);
-        } catch (e) {}
+        } catch (e) { }
       }
     });
   }
@@ -140,7 +140,7 @@ class BabySoundEngine {
       try {
         this.currentAudio.pause();
         this.currentAudio.currentTime = 0;
-      } catch (e) {}
+      } catch (e) { }
       this.currentAudio = null;
     }
   }
@@ -439,26 +439,46 @@ const RAINBOW_PAINTS = [
 
 // ✏️ 따라쓰기 템플릿 데이터 (숫자 0~9 SVG 가이드)
 const TRACING_TEMPLATES = [
-  { id: 'num0', label: '0', category: '숫자',
-    paths: ['M 50 15 C 25 15 25 35 25 50 C 25 65 25 85 50 85 C 75 85 75 65 75 50 C 75 35 75 15 50 15 Z'], viewBox: '0 0 100 100' },
-  { id: 'num1', label: '1', category: '숫자',
-    paths: ['M 38 32 L 52 18 L 52 82 M 34 82 L 70 82'], viewBox: '0 0 100 100' },
-  { id: 'num2', label: '2', category: '숫자',
-    paths: ['M 25 32 Q 25 12 50 12 Q 75 12 75 32 Q 75 52 50 58 L 25 85 L 75 85'], viewBox: '0 0 100 100' },
-  { id: 'num3', label: '3', category: '숫자',
-    paths: ['M 25 15 L 72 15 L 46 46 Q 75 46 75 68 Q 75 90 45 90 Q 25 90 25 78'], viewBox: '0 0 100 100' },
-  { id: 'num4', label: '4', category: '숫자',
-    paths: ['M 62 85 L 62 12 L 20 62 L 78 62'], viewBox: '0 0 100 100' },
-  { id: 'num5', label: '5', category: '숫자',
-    paths: ['M 70 15 L 32 15 L 28 48 Q 50 36 72 48 Q 80 64 65 82 Q 48 92 25 80'], viewBox: '0 0 100 100' },
-  { id: 'num6', label: '6', category: '숫자',
-    paths: ['M 66 22 Q 35 15 28 48 Q 24 64 36 82 Q 52 90 68 82 Q 76 68 74 54 Q 70 42 50 42 Q 34 42 28 54'], viewBox: '0 0 100 100' },
-  { id: 'num7', label: '7', category: '숫자',
-    paths: ['M 25 18 L 75 18 L 42 85'], viewBox: '0 0 100 100' },
-  { id: 'num8', label: '8', category: '숫자',
-    paths: ['M 50 50 Q 28 50 28 32 Q 28 15 50 15 Q 72 15 72 32 Q 72 50 50 50 Q 28 50 28 68 Q 28 85 50 85 Q 72 85 72 68 Q 72 50 50 50'], viewBox: '0 0 100 100' },
-  { id: 'num9', label: '9', category: '숫자',
-    paths: ['M 72 48 Q 72 32 62 20 Q 48 12 34 22 Q 24 34 28 48 Q 36 60 52 60 Q 72 60 72 40 Z M 72 48 L 72 68 Q 70 84 48 88'], viewBox: '0 0 100 100' },
+  {
+    id: 'num0', label: '0', category: '숫자',
+    paths: ['M 50 15 C 25 15 25 35 25 50 C 25 65 25 85 50 85 C 75 85 75 65 75 50 C 75 35 75 15 50 15 Z'], viewBox: '0 0 100 100'
+  },
+  {
+    id: 'num1', label: '1', category: '숫자',
+    paths: ['M 38 32 L 52 18 L 52 82 M 34 82 L 70 82'], viewBox: '0 0 100 100'
+  },
+  {
+    id: 'num2', label: '2', category: '숫자',
+    paths: ['M 25 32 Q 25 12 50 12 Q 75 12 75 32 Q 75 52 50 58 L 25 85 L 75 85'], viewBox: '0 0 100 100'
+  },
+  {
+    id: 'num3', label: '3', category: '숫자',
+    paths: ['M 25 15 L 72 15 L 46 46 Q 75 46 75 68 Q 75 90 45 90 Q 25 90 25 78'], viewBox: '0 0 100 100'
+  },
+  {
+    id: 'num4', label: '4', category: '숫자',
+    paths: ['M 62 85 L 62 12 L 20 62 L 78 62'], viewBox: '0 0 100 100'
+  },
+  {
+    id: 'num5', label: '5', category: '숫자',
+    paths: ['M 70 15 L 32 15 L 28 48 Q 50 36 72 48 Q 80 64 65 82 Q 48 92 25 80'], viewBox: '0 0 100 100'
+  },
+  {
+    id: 'num6', label: '6', category: '숫자',
+    paths: ['M 66 22 Q 35 15 28 48 Q 24 64 36 82 Q 52 90 68 82 Q 76 68 74 54 Q 70 42 50 42 Q 34 42 28 54'], viewBox: '0 0 100 100'
+  },
+  {
+    id: 'num7', label: '7', category: '숫자',
+    paths: ['M 25 18 L 75 18 L 42 85'], viewBox: '0 0 100 100'
+  },
+  {
+    id: 'num8', label: '8', category: '숫자',
+    paths: ['M 50 50 Q 28 50 28 32 Q 28 15 50 15 Q 72 15 72 32 Q 72 50 50 50 Q 28 50 28 68 Q 28 85 50 85 Q 72 85 72 68 Q 72 50 50 50'], viewBox: '0 0 100 100'
+  },
+  {
+    id: 'num9', label: '9', category: '숫자',
+    paths: ['M 72 48 Q 72 32 62 20 Q 48 12 34 22 Q 24 34 28 48 Q 36 60 52 60 Q 72 60 72 40 Z M 72 48 L 72 68 Q 70 84 48 88'], viewBox: '0 0 100 100'
+  },
 ];
 
 // =============================================================================
@@ -484,8 +504,8 @@ function AnimatedBear({ mood, isOverBear, rejectedFoodIcon }) {
   // 몸 전체 애니메이션 클래스
   const bodyClass = dm === 'happy' ? 'bear-bounce'
     : dm === 'eating' ? 'bear-munch'
-    : dm === 'reject' ? 'bear-reject'
-    : 'bear-idle';
+      : dm === 'reject' ? 'bear-reject'
+        : 'bear-idle';
 
   // 팔 경로 (happy: 만세 / reject: 팔짱 X / 기본: 내린 상태)
   const armLeft = dm === 'happy'
@@ -502,7 +522,7 @@ function AnimatedBear({ mood, isOverBear, rejectedFoodIcon }) {
   // 입 크기 (eating 시 chewOpen 토글)
   const mouthRy = dm === 'mouth-open' ? 16
     : dm === 'eating' ? (chewOpen ? 14 : 4)
-    : 0;
+      : 0;
 
   return (
     <div className={bodyClass} style={{ position: 'relative', width: '180px', height: '220px', margin: '0 auto' }}>
@@ -1102,7 +1122,7 @@ export default function App() {
         }}>
           {[
             { id: 'animal', label: '📸 생생 동물', sub: '울음소리 탐험', color: '#ef4444' },
-            { id: 'fruit', label: '🍎 싱싱 과일', sub: '고화질 실사 관찰', color: '#10b981' },
+            { id: 'fruit', label: '🍎 싱싱 과일/채소', sub: '고화질 실사 관찰', color: '#10b981' },
             { id: 'paint', label: '🎨 무지개 물감', sub: '터치 감각 미술', color: '#3b82f6' },
             { id: 'song', label: '🎵 동요 재생', sub: `한국 동요 (${LOCAL_NURSERY_SONGS.length}곡)`, color: '#f97316' }
           ].map(tab => {
@@ -1387,7 +1407,7 @@ export default function App() {
                 fontSize: '1.05rem', fontWeight: 900, color: '#166534', flexWrap: 'wrap', justifyContent: 'center'
               }}>
                 <span>🎵 유나와 함께 들어요! 총 {LOCAL_NURSERY_SONGS.length}곡의 신나는 동요 🎶</span>
-                
+
                 {/* 연속 / 셔플 자동 재생 토글 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button onClick={() => setIsAutoPlayNext(!isAutoPlayNext)} style={{
@@ -1647,7 +1667,7 @@ export default function App() {
               >
                 <p style={{ fontSize: '1.35rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
                   {bearMood === 'reject'
-                    ? `😤 "이거 말고~!! ${(wantedFood || ALL_FOOD_ITEMS[0])?.name || '다른 거'} 달라고~! 😣"` 
+                    ? `😤 "이거 말고~!! ${(wantedFood || ALL_FOOD_ITEMS[0])?.name || '다른 거'} 달라고~! 😣"`
                     : bearMood === 'eating'
                       ? '😋 "아구아구... 우물우물... 냠냠!"'
                       : bearMood === 'happy'
