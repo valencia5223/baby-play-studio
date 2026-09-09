@@ -1339,25 +1339,32 @@ export default function App() {
               }}>
                 <p style={{ fontSize: '1.4rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
                   {bearMood === 'happy'
-                    ? '💖 아구아구 냠냠! 너무 맛있다! 🥰'
+                    ? '💖 🐻 "아구아구 냠냠! 너무 맛있다! 🥰"'
                     : isOverBear
-                      ? '😮 곰돌이가 입을 꿀꺽 벌리고 있어요! 쏙 넣어주세요!'
+                      ? '😮 🐻 "아~~ 입 벌리고 있어! 과일을 쏙 넣어줘!"'
                       : `🐻 "나 [${(wantedFood || FOOD_ITEMS[0])?.name || '사과'} ${(wantedFood || FOOD_ITEMS[0])?.icon || '🍎'}] 가 너무 먹고 싶어!"`}
                 </p>
               </div>
 
-              {/* 곰돌이 드롭 영역 */}
+              {/* 곰돌이 드롭 영역 (표정 이모지 세분화) */}
               <div
                 ref={bearBoxRef}
                 style={{
                   fontSize: '6.5rem', lineHeight: 1, padding: '1rem 2rem', borderRadius: '32px',
                   border: isOverBear ? '4px dashed #f59e0b' : '4px solid transparent',
                   background: isOverBear ? '#fef3c7' : 'transparent',
-                  transform: isOverBear ? 'scale(1.15)' : 'scale(1)',
-                  transition: 'transform 0.2s ease, background 0.2s ease'
+                  transform: isOverBear ? 'scale(1.2)' : bearMood === 'happy' ? 'scale(1.1)' : 'scale(1)',
+                  transition: 'transform 0.2s ease, background 0.2s ease',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
                 }}
               >
-                {bearMood === 'happy' ? '🥳' : isOverBear ? '😮' : '🐻'}
+                {bearMood === 'happy' ? (
+                  <span>🐻🥰</span>
+                ) : isOverBear ? (
+                  <span>🐻😮</span>
+                ) : (
+                  <span>🐻</span>
+                )}
               </div>
             </div>
 
