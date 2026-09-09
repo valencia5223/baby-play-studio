@@ -402,14 +402,17 @@ const REAL_FRUITS = [
   }
 ];
 
+// 배열 무작위 셔플 헬퍼
+const shuffleArray = (arr) => [...arr].sort(() => 0.5 - Math.random());
+
 // 곰돌이 먹이기용: REAL_FRUITS에서 자동 파생 (icon, name, id, color, bg 사용)
 const ALL_FOOD_ITEMS = REAL_FRUITS.map(f => ({ id: f.id, name: f.name, icon: f.icon, color: f.color, bg: f.bg }));
 
 // 정답 포함 5개 랜덤 선택지 생성 헬퍼
 function pickBearChoices(targetFood) {
   const others = ALL_FOOD_ITEMS.filter(f => f.id !== targetFood.id);
-  const shuffled = [...others].sort(() => 0.5 - Math.random()).slice(0, 4);
-  return [targetFood, ...shuffled].sort(() => 0.5 - Math.random());
+  const shuffled = shuffleArray(others).slice(0, 4);
+  return shuffleArray([targetFood, ...shuffled]);
 }
 
 // 🎵 Vite 동적 파일 스캐너: public/music/ 폴더 안의 모든 MP3 파일을 자동으로 감지하여 100% 실시간 리스트화!
@@ -690,6 +693,18 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('animal');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isIpadFrame, setIsIpadFrame] = useState(true);
+
+  // 탭 전환 시마다 동물 및 과일/채소 카드 무작위 셔플
+  const [animalItems, setAnimalItems] = useState(() => shuffleArray(REAL_ANIMALS));
+  const [fruitItems, setFruitItems] = useState(() => shuffleArray(REAL_FRUITS));
+
+  useEffect(() => {
+    if (activeTab === 'animal') {
+      setAnimalItems(shuffleArray(REAL_ANIMALS));
+    } else if (activeTab === 'fruit') {
+      setFruitItems(shuffleArray(REAL_FRUITS));
+    }
+  }, [activeTab]);
 
   const [selectedRealItem, setSelectedRealItem] = useState(null);
 
@@ -1128,7 +1143,12 @@ export default function App() {
           ].map(tab => {
             const isActive = activeTab === tab.id;
             return (
-              <button key={tab.id} onClick={() => { setActiveTab(tab.id); audioEngine.playFreq(520, 'sine', 0.15); }} style={{
+              <button key={tab.id} onClick={() => {
+                if (tab.id === 'animal') setAnimalItems(shuffleArray(REAL_ANIMALS));
+                if (tab.id === 'fruit') setFruitItems(shuffleArray(REAL_FRUITS));
+                setActiveTab(tab.id);
+                audioEngine.playFreq(520, 'sine', 0.15);
+              }} style={{
                 padding: '14px 8px', borderRadius: '22px',
                 border: isActive ? `4px solid ${tab.color}` : '2px solid #fed7aa',
                 background: isActive ? tab.color : '#ffffff',
@@ -1169,7 +1189,7 @@ export default function App() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem' }}>
-                {REAL_ANIMALS.map(item => (
+                {animalItems.map(item => (
                   <div key={item.id} onClick={() => openRealDetailModal(item)} style={{
                     background: '#ffffff', border: `3.5px solid ${item.color}`, borderRadius: '22px',
                     overflow: 'hidden', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.07)',
@@ -1231,7 +1251,7 @@ export default function App() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.9rem' }}>
-                {REAL_FRUITS.map(item => (
+                {fruitItems.map(item => (
                   <div key={item.id} onClick={() => openRealDetailModal(item)} style={{
                     background: '#ffffff', border: `3.5px solid ${item.color}`, borderRadius: '20px',
                     overflow: 'hidden', cursor: 'pointer', boxShadow: '0 6px 16px rgba(0,0,0,0.06)',
