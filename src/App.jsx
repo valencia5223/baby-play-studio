@@ -7,6 +7,8 @@ import tangerineImg from './assets/tangerine.jpg';
 import peachImg from './assets/peach.jpg';
 import melonImg from './assets/melon.jpg';
 import pineappleImg from './assets/pineapple.jpg';
+import broccoliImg from './assets/broccoli.jpg';
+import sweetPotatoImg from './assets/sweet_potato.jpg';
 
 // --- 실제 동물 울음소리 MP3 재생 사운드 엔진 ---
 class BabySoundEngine {
@@ -365,8 +367,8 @@ const REAL_FRUITS = [
   },
   {
     id: 'broccoli', name: '브로콜리', icon: '🥦', category: '채소',
-    img: 'https://images.pexels.com/photos/1459339/pexels-photo-1459339.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#15803d', bg: '#dcfce7', fitPos: 'center 30%'
+    img: broccoliImg,
+    color: '#15803d', bg: '#dcfce7', fitPos: 'center center'
   },
   {
     id: 'corn', name: '옥수수', icon: '🌽', category: '채소',
@@ -375,8 +377,8 @@ const REAL_FRUITS = [
   },
   {
     id: 'sweet_potato', name: '고구마', icon: '🍠', category: '채소',
-    img: 'https://images.pexels.com/photos/2286776/pexels-photo-2286776.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#9333ea', bg: '#f3e8ff', fitPos: 'center 30%'
+    img: sweetPotatoImg,
+    color: '#9333ea', bg: '#f3e8ff', fitPos: 'center center'
   },
   {
     id: 'potato', name: '감자', icon: '🥔', category: '채소',
