@@ -439,12 +439,12 @@ export default function App() {
   const [bearMood, setBearMood] = useState('hungry');
   const [feedScore, setFeedScore] = useState(0);
 
-  const [paintSplashes, setPaintSplashes] = useState([]);
+  const [strokes, setStrokes] = useState([]);
   const [brushSize, setBrushSize] = useState('medium');
   const [tracingMode, setTracingMode] = useState(null); // null = 자유그리기, template object = 따라쓰기
 
   const isDrawingRef = useRef(false);
-  const lastPosRef = useRef(null);
+  const currentStrokeRef = useRef(null);
   const lastSoundTimeRef = useRef(0);
 
   // 동요 MP3 재생 관련 상태 및 Audio Ref
@@ -600,63 +600,59 @@ export default function App() {
     }
   };
 
-  const BRUSH_SIZES = { small: { min: 25, range: 15, dist: 12 }, medium: { min: 50, range: 30, dist: 20 }, large: { min: 85, range: 45, dist: 32 } };
-
-  const addSplashAt = (x, y, playSound = true) => {
-    const paint = RAINBOW_PAINTS[Math.floor(Math.random() * RAINBOW_PAINTS.length)];
-    const now = Date.now();
-    if (playSound && now - lastSoundTimeRef.current > 80) {
-      audioEngine.playXylophone(paint.freq);
-      lastSoundTimeRef.current = now;
-    }
-    const bs = BRUSH_SIZES[brushSize];
-    setPaintSplashes(prev => [...prev.slice(-65), {
-      id: now + Math.random(), x, y, color: paint.color, name: paint.name,
-      size: Math.floor(Math.random() * bs.range) + bs.min
-    }]);
-  };
+  const BRUSH_SIZES = { small: { width: 6, label: '슬림 연필' }, medium: { width: 14, label: '색연필' }, large: { width: 24, label: '굵은 붓' } };
 
   const handlePointerDown = (e) => {
     e.preventDefault();
     isDrawingRef.current = true;
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    lastPosRef.current = { x, y };
-    addSplashAt(x, y, true);
+    const x = Math.round(e.clientX - rect.left);
+    const y = Math.round(e.clientY - rect.top);
+
+    const paint = RAINBOW_PAINTS[Math.floor(Math.random() * RAINBOW_PAINTS.length)];
+    audioEngine.playXylophone(paint.freq);
+    lastSoundTimeRef.current = Date.now();
+
+    const newStroke = {
+      id: Date.now() + Math.random(),
+      color: paint.color,
+      width: BRUSH_SIZES[brushSize].width,
+      points: [{ x, y }]
+    };
+
+    currentStrokeRef.current = newStroke;
+    setStrokes(prev => [...prev.slice(-40), newStroke]);
   };
 
   const handlePointerMove = (e) => {
-    if (!isDrawingRef.current) return;
+    if (!isDrawingRef.current || !currentStrokeRef.current) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    if (lastPosRef.current) {
-      const dx = x - lastPosRef.current.x;
-      const dy = y - lastPosRef.current.y;
-      const dist = Math.hypot(dx, dy);
-      const minDist = BRUSH_SIZES[brushSize].dist;
+    const x = Math.round(e.clientX - rect.left);
+    const y = Math.round(e.clientY - rect.top);
 
-      if (dist >= minDist) {
-        // 이전 좌표와 현재 좌표 사이 보충 점 추가 (빠른 드래그에도 끊김없이 연필 선 연결)
-        const steps = Math.min(Math.floor(dist / minDist), 4);
-        for (let i = 1; i <= steps; i++) {
-          const stepX = lastPosRef.current.x + (dx * i) / steps;
-          const stepY = lastPosRef.current.y + (dy * i) / steps;
-          addSplashAt(stepX, stepY, i === steps);
-        }
-        lastPosRef.current = { x, y };
-      }
-    } else {
-      lastPosRef.current = { x, y };
-      addSplashAt(x, y, true);
+    const stroke = currentStrokeRef.current;
+    const lastPt = stroke.points[stroke.points.length - 1];
+
+    if (lastPt) {
+      const dist = Math.hypot(x - lastPt.x, y - lastPt.y);
+      if (dist < 4) return; // 미세 반응은 묶어서 매끄럽게 처리
     }
+
+    stroke.points.push({ x, y });
+
+    const now = Date.now();
+    if (now - lastSoundTimeRef.current > 120) {
+      const paint = RAINBOW_PAINTS[Math.floor(Math.random() * RAINBOW_PAINTS.length)];
+      audioEngine.playXylophone(paint.freq);
+      lastSoundTimeRef.current = now;
+    }
+
+    setStrokes(prev => prev.map(s => s.id === stroke.id ? { ...stroke, points: [...stroke.points] } : s));
   };
 
   const handlePointerUp = () => {
     isDrawingRef.current = false;
-    lastPosRef.current = null;
+    currentStrokeRef.current = null;
   };
 
   return (
@@ -886,7 +882,7 @@ export default function App() {
                   <span style={{ width: '2px', height: '28px', background: '#bae6fd', borderRadius: '2px' }} />
 
                   {/* 따라쓰기 모드 토글 */}
-                  <button onClick={() => { setTracingMode(tracingMode ? null : TRACING_TEMPLATES[0]); setPaintSplashes([]); }} style={{
+                  <button onClick={() => { setTracingMode(tracingMode ? null : TRACING_TEMPLATES[0]); setStrokes([]); }} style={{
                     background: tracingMode ? '#f59e0b' : '#ffffff',
                     color: tracingMode ? '#ffffff' : '#92400e',
                     border: tracingMode ? '3px solid #d97706' : '2px solid #fcd34d',
@@ -896,7 +892,7 @@ export default function App() {
                     ✏️ {tracingMode ? '자유그리기' : '따라쓰기'}
                   </button>
 
-                  <button onClick={() => setPaintSplashes([])} style={{
+                  <button onClick={() => setStrokes([])} style={{
                     background: '#ef4444', color: '#ffffff', border: 'none', padding: '8px 14px',
                     borderRadius: '14px', fontWeight: 900, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.88rem',
@@ -913,7 +909,7 @@ export default function App() {
                 }}>
                   <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#92400e', marginRight: '4px' }}>글자 선택:</span>
                   {TRACING_TEMPLATES.map(t => (
-                    <button key={t.id} onClick={() => { setTracingMode(t); setPaintSplashes([]); }} style={{
+                    <button key={t.id} onClick={() => { setTracingMode(t); setStrokes([]); }} style={{
                       width: '42px', height: '42px', borderRadius: '12px',
                       background: tracingMode.id === t.id ? '#fbbf24' : '#fffbeb',
                       border: tracingMode.id === t.id ? '3px solid #d97706' : '2px solid #fcd34d',
@@ -925,7 +921,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* 캔버스 (flex: 1로 남은 공간 전부 사용, 연속 포인터 드로잉 지원) */}
+              {/* 캔버스 (flex: 1로 남은 공간 전부 사용, 연필 stroke 드로잉) */}
               <div
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
@@ -951,7 +947,30 @@ export default function App() {
                   </svg>
                 )}
 
-                {paintSplashes.length === 0 && !tracingMode && (
+                {/* 사용자가 그린 연필 브러시 스트로크 선 (SVG Vector Lines) */}
+                <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }}>
+                  {strokes.map(s => {
+                    if (!s.points || s.points.length === 0) return null;
+                    const d = s.points.length === 1
+                      ? `M ${s.points[0].x} ${s.points[0].y} L ${s.points[0].x + 0.1} ${s.points[0].y + 0.1}`
+                      : s.points.reduce((acc, p, idx) => acc + (idx === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`), '');
+
+                    return (
+                      <path
+                        key={s.id}
+                        d={d}
+                        fill="none"
+                        stroke={s.color}
+                        strokeWidth={s.width}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ opacity: 0.9 }}
+                      />
+                    );
+                  })}
+                </svg>
+
+                {strokes.length === 0 && !tracingMode && (
                   <div style={{
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center', color: '#94a3b8', pointerEvents: 'none'
@@ -960,7 +979,7 @@ export default function App() {
                     <p style={{ fontSize: '1.4rem', fontWeight: 900 }}>화면에 연필처럼 쓱쓱 자유롭게 그려보세요!</p>
                   </div>
                 )}
-                {paintSplashes.length === 0 && tracingMode && (
+                {strokes.length === 0 && tracingMode && (
                   <div style={{
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center', color: '#92400e', pointerEvents: 'none'
@@ -968,16 +987,6 @@ export default function App() {
                     <p style={{ fontSize: '1.3rem', fontWeight: 900, opacity: 0.6 }}>✏️ 점선을 따라 연필처럼 쓱쓱 그려보세요!</p>
                   </div>
                 )}
-                {paintSplashes.map(s => (
-                  <div key={s.id} style={{
-                    position: 'absolute', left: s.x - s.size / 2, top: s.y - s.size / 2,
-                    width: s.size, height: s.size, borderRadius: '50%', background: s.color, opacity: 0.85,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#ffffff', fontWeight: 900, fontSize: brushSize === 'small' ? '0.6rem' : '0.9rem',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                    animation: 'popIn 0.3s ease-out'
-                  }}>{brushSize !== 'small' ? s.name : ''}</div>
-                ))}
               </div>
             </div>
           )}
