@@ -1310,9 +1310,6 @@ export default function App() {
       {/* ===== 🐻 곰돌이 과일 먹이기 놀이 모달 (드래그 앤 드롭 지원) ===== */}
       {isBearModalOpen && (
         <div
-          onPointerMove={handleMoveDragFood}
-          onPointerUp={handleEndDragFood}
-          onPointerCancel={handleEndDragFood}
           style={{
             position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)',
             backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center',
@@ -1341,35 +1338,67 @@ export default function App() {
                 padding: '1rem 1.6rem', marginBottom: '1rem', boxShadow: '0 8px 20px rgba(0,0,0,0.06)'
               }}>
                 <p style={{ fontSize: '1.4rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
-                  {bearMood === 'happy' ? '💖 아구아구 냠냠! 너무 맛있다! 🥰' : `🐻 "나 [${wantedFood.name} ${wantedFood.icon}] 가 너무 먹고 싶어!"`}
+                  {bearMood === 'happy'
+                    ? '💖 아구아구 냠냠! 너무 맛있다! 🥰'
+                    : isOverBear
+                      ? '😮 곰돌이가 입을 꿀꺽 벌리고 있어요! 쏙 넣어주세요!'
+                      : `🐻 "나 [${(wantedFood || FOOD_ITEMS[0])?.name || '사과'} ${(wantedFood || FOOD_ITEMS[0])?.icon || '🍎'}] 가 너무 먹고 싶어!"`}
                 </p>
               </div>
 
-              <div style={{ fontSize: '6rem', lineHeight: 1 }}>
-                {bearMood === 'happy' ? '🥳' : '🐻'}
+              {/* 곰돌이 드롭 영역 */}
+              <div
+                ref={bearBoxRef}
+                style={{
+                  fontSize: '6.5rem', lineHeight: 1, padding: '1rem 2rem', borderRadius: '32px',
+                  border: isOverBear ? '4px dashed #f59e0b' : '4px solid transparent',
+                  background: isOverBear ? '#fef3c7' : 'transparent',
+                  transform: isOverBear ? 'scale(1.15)' : 'scale(1)',
+                  transition: 'transform 0.2s ease, background 0.2s ease'
+                }}
+              >
+                {bearMood === 'happy' ? '🥳' : isOverBear ? '😮' : '🐻'}
               </div>
             </div>
 
             <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#92400e', marginBottom: '1rem' }}>
-              👇 곰돌이에게 줄 과일을 콕 눌러주세요!
+              👇 과일을 손가락으로 끌어다(Drag) 곰돌이 입에 쏙 넣어주세요!
             </p>
 
             {/* 과일 선택 카드 목록 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
               {FOOD_ITEMS.map(food => (
-                <button key={food.id} onClick={() => handleFeedBear(food)} style={{
-                  background: wantedFood.id === food.id ? '#fef3c7' : '#ffffff',
-                  border: wantedFood.id === food.id ? '4px solid #f59e0b' : '2px solid #e2e8f0',
-                  borderRadius: '20px', padding: '12px 8px', cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                }}>
+                <button
+                  key={food.id}
+                  onPointerDown={(e) => handleStartDragFood(e, food)}
+                  onClick={() => handleFeedBear(food)}
+                  style={{
+                    background: (wantedFood?.id || FOOD_ITEMS[0].id) === food.id ? '#fef3c7' : '#ffffff',
+                    border: (wantedFood?.id || FOOD_ITEMS[0].id) === food.id ? '4px solid #f59e0b' : '2px solid #e2e8f0',
+                    borderRadius: '20px', padding: '12px 8px', cursor: 'grab',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)', touchAction: 'none',
+                    opacity: draggingFood?.id === food.id ? 0.4 : 1
+                  }}
+                >
                   <span style={{ fontSize: '2.5rem', lineHeight: 1 }}>{food.icon}</span>
                   <span style={{ fontSize: '1rem', fontWeight: 900, color: '#1e293b' }}>{food.name}</span>
                 </button>
               ))}
             </div>
           </div>
+
+          {/* 손가락/마우스를 따라 움직이는 드래그 과일 이펙트 */}
+          {draggingFood && (
+            <div style={{
+              position: 'fixed', left: dragPos.x, top: dragPos.y,
+              transform: 'translate(-50%, -50%) scale(1.3)',
+              zIndex: 2000, pointerEvents: 'none', fontSize: '4.5rem',
+              filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.35))'
+            }}>
+              {draggingFood.icon}
+            </div>
+          )}
         </div>
       )}
     </div>
