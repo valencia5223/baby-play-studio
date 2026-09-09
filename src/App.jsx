@@ -411,6 +411,169 @@ const TRACING_TEMPLATES = [
     paths: ['M 72 48 Q 72 32 62 20 Q 48 12 34 22 Q 24 34 28 48 Q 36 60 52 60 Q 72 60 72 40 Z M 72 48 L 72 68 Q 70 84 48 88'], viewBox: '0 0 100 100' },
 ];
 
+// =============================================================================
+// 🐻 SVG 애니메이션 곰돌이 캐릭터 컴포넌트
+// 상태: hungry(기본) → mouth-open(입벌리기) → eating(우물우물) → happy(만세!)
+// =============================================================================
+function AnimatedBear({ mood, isOverBear }) {
+  const [chewOpen, setChewOpen] = React.useState(false);
+
+  // eating 상태일 때 입을 빠르게 열었다 닫았다 (우물우물 씹기)
+  React.useEffect(() => {
+    if (mood === 'eating') {
+      const interval = setInterval(() => setChewOpen(prev => !prev), 180);
+      return () => clearInterval(interval);
+    }
+    setChewOpen(false);
+  }, [mood]);
+
+  // 실제 화면에 보여줄 상태 결정
+  const dm = isOverBear && mood === 'hungry' ? 'mouth-open' : mood;
+
+  // 몸 전체 애니메이션 클래스
+  const bodyClass = dm === 'happy' ? 'bear-bounce'
+    : dm === 'eating' ? 'bear-munch'
+    : 'bear-idle';
+
+  // 팔 경로 (happy: 만세 / 기본: 내린 상태)
+  const armLeft = dm === 'happy'
+    ? 'M 48 160 Q 12 118 22 88'
+    : 'M 48 160 Q 28 175 22 198';
+  const armRight = dm === 'happy'
+    ? 'M 152 160 Q 188 118 178 88'
+    : 'M 152 160 Q 172 175 178 198';
+
+  // 입 크기 (eating 시 chewOpen 토글)
+  const mouthRy = dm === 'mouth-open' ? 16
+    : dm === 'eating' ? (chewOpen ? 14 : 4)
+    : 0;
+
+  return (
+    <div className={bodyClass} style={{ position: 'relative', width: '180px', height: '220px', margin: '0 auto' }}>
+      <svg viewBox="0 0 200 245" width="180" height="220" style={{ overflow: 'visible' }}>
+        {/* ── 팔 (몸통 뒤) ── */}
+        <path d={armLeft} stroke="#A67B1E" strokeWidth="15" strokeLinecap="round" fill="none"
+          style={{ transition: 'all 0.45s cubic-bezier(0.34,1.56,0.64,1)' }} />
+        <path d={armRight} stroke="#A67B1E" strokeWidth="15" strokeLinecap="round" fill="none"
+          style={{ transition: 'all 0.45s cubic-bezier(0.34,1.56,0.64,1)' }} />
+        {/* 손(발바닥) */}
+        {dm === 'happy' && (
+          <>
+            <circle cx="22" cy="84" r="10" fill="#C8952E" />
+            <circle cx="178" cy="84" r="10" fill="#C8952E" />
+          </>
+        )}
+
+        {/* ── 몸통 ── */}
+        <ellipse cx="100" cy="178" rx="56" ry="50" fill="#C8952E" />
+        {/* 배 */}
+        <ellipse cx="100" cy="182" rx="32" ry="28" fill="#F5DEB3" />
+
+        {/* ── 머리 ── */}
+        <circle cx="100" cy="88" r="54" fill="#C8952E" />
+
+        {/* ── 귀 ── */}
+        <circle cx="56" cy="42" r="21" fill="#A67B1E" />
+        <circle cx="144" cy="42" r="21" fill="#A67B1E" />
+        <circle cx="56" cy="42" r="12" fill="#FFCAD4" />
+        <circle cx="144" cy="42" r="12" fill="#FFCAD4" />
+
+        {/* ── 얼굴 안쪽 (주둥이 영역) ── */}
+        <ellipse cx="100" cy="96" rx="33" ry="27" fill="#E8C87A" />
+
+        {/* ── 눈 ── */}
+        {dm === 'happy' ? (
+          /* 하트 눈 ♥♥ */
+          <>
+            <g transform="translate(72, 70) scale(1)">
+              <path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z"
+                fill="#ef4444" className="bear-heart-pulse" />
+            </g>
+            <g transform="translate(112, 70) scale(1)">
+              <path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z"
+                fill="#ef4444" className="bear-heart-pulse" />
+            </g>
+          </>
+        ) : dm === 'eating' ? (
+          /* 감긴 눈 (맛있어~ 행복한 눈) */
+          <>
+            <path d="M 72 80 Q 80 73 88 80" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+            <path d="M 112 80 Q 120 73 128 80" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+          </>
+        ) : dm === 'mouth-open' ? (
+          /* 동그랗게 커진 눈 (기대감!) */
+          <>
+            <circle cx="82" cy="78" r="7.5" fill="#3E2723" />
+            <circle cx="118" cy="78" r="7.5" fill="#3E2723" />
+            <circle cx="84" cy="75" r="2.8" fill="white" />
+            <circle cx="120" cy="75" r="2.8" fill="white" />
+          </>
+        ) : (
+          /* 기본 눈 */
+          <>
+            <circle cx="82" cy="78" r="5.5" fill="#3E2723" />
+            <circle cx="118" cy="78" r="5.5" fill="#3E2723" />
+            <circle cx="84" cy="76" r="2" fill="white" />
+            <circle cx="120" cy="76" r="2" fill="white" />
+          </>
+        )}
+
+        {/* ── 코 ── */}
+        <ellipse cx="100" cy="92" rx="7" ry="5.5" fill="#5D4037" />
+        <ellipse cx="99" cy="91" rx="2.5" ry="1.5" fill="#8D6E63" opacity="0.5" />
+
+        {/* ── 입 ── */}
+        {dm === 'mouth-open' ? (
+          <ellipse cx="100" cy="108" rx="13" ry="16"
+            fill="#D32F2F" stroke="#5D4037" strokeWidth="2"
+            className="bear-mouth-open-anim" />
+        ) : dm === 'eating' ? (
+          <ellipse cx="100" cy="106" rx="11" ry={mouthRy}
+            fill="#D32F2F" stroke="#5D4037" strokeWidth="2"
+            style={{ transition: 'ry 0.12s ease' }} />
+        ) : dm === 'happy' ? (
+          <path d="M 80 100 Q 90 120 100 120 Q 110 120 120 100"
+            stroke="#5D4037" strokeWidth="3" strokeLinecap="round" fill="none" />
+        ) : (
+          <path d="M 88 102 Q 100 113 112 102"
+            stroke="#5D4037" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        )}
+
+        {/* ── 볼 (홍조) ── */}
+        <circle cx="62" cy="94" r="11"
+          fill="#FF9999"
+          className={dm === 'happy' ? 'bear-blush-active' : ''}
+          opacity={dm === 'happy' ? 0.7 : dm === 'eating' ? 0.5 : 0.25}
+          style={{ transition: 'opacity 0.3s ease' }} />
+        <circle cx="138" cy="94" r="11"
+          fill="#FF9999"
+          className={dm === 'happy' ? 'bear-blush-active' : ''}
+          opacity={dm === 'happy' ? 0.7 : dm === 'eating' ? 0.5 : 0.25}
+          style={{ transition: 'opacity 0.3s ease' }} />
+      </svg>
+
+      {/* 행복할 때 반짝이 ✨ 이펙트 */}
+      {dm === 'happy' && (
+        <>
+          <div className="bear-sparkle" style={{ position: 'absolute', top: '0', left: '8px', fontSize: '1.5rem' }}>✨</div>
+          <div className="bear-sparkle" style={{ position: 'absolute', top: '10px', right: '2px', fontSize: '1.3rem', animationDelay: '0.15s' }}>⭐</div>
+          <div className="bear-sparkle" style={{ position: 'absolute', bottom: '40px', left: '0', fontSize: '1.4rem', animationDelay: '0.35s' }}>💖</div>
+          <div className="bear-sparkle" style={{ position: 'absolute', top: '-5px', right: '28px', fontSize: '1.15rem', animationDelay: '0.5s' }}>🌟</div>
+          <div className="bear-sparkle" style={{ position: 'absolute', bottom: '20px', right: '0', fontSize: '1.2rem', animationDelay: '0.65s' }}>💛</div>
+        </>
+      )}
+
+      {/* eating 상태: 과일 아이콘이 입으로 빨려들어가는 효과 */}
+      {dm === 'eating' && (
+        <div className="bear-fruit-absorb" style={{
+          position: 'absolute', top: '42%', left: '50%',
+          fontSize: '2rem', pointerEvents: 'none'
+        }}>🍎</div>
+      )}
+    </div>
+  );
+}
+
 // 🎈 퐁퐁 풍선 데이터
 const INITIAL_BALLOONS = [
   { id: 1, color: '#ef4444', icon: '🐶', name: '강아지', left: 15, size: 90 },
@@ -687,15 +850,24 @@ export default function App() {
   const handleFeedBear = (food) => {
     const currentWanted = wantedFood || FOOD_ITEMS[0];
     if (food.id === currentWanted.id) {
+      // 1단계: 우물우물 먹는 중 (eating) — 1.2초간 씹기 애니메이션
       audioEngine.playYum();
-      setBearMood('happy');
+      setBearMood('eating');
       setFeedScore(prev => prev + 1);
+
+      // 2단계: 다 먹고 기뻐하기 (happy) — 하트눈 + 만세 + 바운스
+      setTimeout(() => {
+        setBearMood('happy');
+        audioEngine.playFanfare();
+      }, 1200);
+
+      // 3단계: 다시 배고픈 상태로 (hungry) — 다음 과일 요청
       setTimeout(() => {
         setBearMood('hungry');
         const nextFood = FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)];
         setWantedFood(nextFood);
         speakBearWish(nextFood);
-      }, 1500);
+      }, 3500);
     } else {
       audioEngine.playFreq(250, 'sawtooth', 0.2);
     }
@@ -1357,43 +1529,52 @@ export default function App() {
 
             {/* 🐻 곰돌이 캐릭터 & 드롭 영역 (bearBoxRef) */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
+              {/* 말풍선 */}
               <div
                 onClick={() => speakBearWish(wantedFood)}
                 title="콕 누르면 곰돌이가 목소리로 다시 말해요!"
                 style={{
                   background: '#ffffff', border: '3.5px solid #fbbf24', borderRadius: '24px',
-                  padding: '1rem 1.6rem', marginBottom: '1rem', boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
-                  cursor: 'pointer'
+                  padding: '1rem 1.6rem', marginBottom: '0.8rem', boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
+                  cursor: 'pointer', position: 'relative'
                 }}
               >
-                <p style={{ fontSize: '1.45rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
-                  {bearMood === 'happy'
-                    ? '💖 🐻 "아구아구 냠냠! 너무 맛있다! 🥰"'
-                    : isOverBear
-                      ? '😮 🐻 "아~~ 입 벌리고 있어! 과일을 쏙 넣어줘!"'
-                      : `🐻 "${(wantedFood || FOOD_ITEMS[0])?.name || '사과'} 먹고 싶어요! ${(wantedFood || FOOD_ITEMS[0])?.icon || '🍎'}"`}
+                <p style={{ fontSize: '1.35rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
+                  {bearMood === 'eating'
+                    ? '😋 "아구아구... 우물우물... 냠냠!"'
+                    : bearMood === 'happy'
+                      ? '💖 "너무 맛있다~! 최고야! 🥰"'
+                      : isOverBear
+                        ? '😮 "아~~ 입 벌리고 있어! 과일을 쏙 넣어줘!"'
+                        : `"${(wantedFood || FOOD_ITEMS[0])?.name || '사과'} 먹고 싶어요! ${(wantedFood || FOOD_ITEMS[0])?.icon || '🍎'}"`}
                 </p>
+                {/* 말풍선 꼬리 */}
+                <div style={{
+                  position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)',
+                  width: 0, height: 0,
+                  borderLeft: '10px solid transparent', borderRight: '10px solid transparent',
+                  borderTop: '10px solid #fbbf24'
+                }} />
+                <div style={{
+                  position: 'absolute', bottom: '-7px', left: '50%', transform: 'translateX(-50%)',
+                  width: 0, height: 0,
+                  borderLeft: '8px solid transparent', borderRight: '8px solid transparent',
+                  borderTop: '8px solid #ffffff'
+                }} />
               </div>
 
-              {/* 곰돌이 드롭 영역 (표정 이모지 세분화) */}
+              {/* SVG 곰돌이 캐릭터 + 드롭 영역 */}
               <div
                 ref={bearBoxRef}
                 style={{
-                  fontSize: '6.5rem', lineHeight: 1, padding: '1rem 2rem', borderRadius: '32px',
+                  padding: '0.5rem 1.5rem', borderRadius: '32px',
                   border: isOverBear ? '4px dashed #f59e0b' : '4px solid transparent',
                   background: isOverBear ? '#fef3c7' : 'transparent',
-                  transform: isOverBear ? 'scale(1.2)' : bearMood === 'happy' ? 'scale(1.1)' : 'scale(1)',
-                  transition: 'transform 0.2s ease, background 0.2s ease',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                  transition: 'background 0.2s ease, border-color 0.2s ease',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}
               >
-                {bearMood === 'happy' ? (
-                  <span>🐻🥰</span>
-                ) : isOverBear ? (
-                  <span>🐻😮</span>
-                ) : (
-                  <span>🐻</span>
-                )}
+                <AnimatedBear mood={bearMood} isOverBear={isOverBear} />
               </div>
             </div>
 
