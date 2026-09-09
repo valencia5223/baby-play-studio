@@ -438,6 +438,7 @@ export default function App() {
   const [wantedFood, setWantedFood] = useState(FOOD_ITEMS[1]);
   const [bearMood, setBearMood] = useState('hungry');
   const [feedScore, setFeedScore] = useState(0);
+  const [isBearModalOpen, setIsBearModalOpen] = useState(false);
 
   const [strokes, setStrokes] = useState([]);
   const [brushSize, setBrushSize] = useState('medium');
@@ -450,6 +451,8 @@ export default function App() {
   // 동요 MP3 재생 관련 상태 및 Audio Ref
   const [currentSongIdx, setCurrentSongIdx] = useState(0);
   const [isSongPlaying, setIsSongPlaying] = useState(false);
+  const [isAutoPlayNext, setIsAutoPlayNext] = useState(true); // 자동 연속 재생
+  const [isShuffle, setIsShuffle] = useState(false); // 셔플 랜덤 재생
   const songAudioRef = useRef(null);
 
   // 풍선
@@ -566,7 +569,7 @@ export default function App() {
   };
 
   const handleAnswerQuiz = (option) => {
-    if (!quizQuestion) return;
+    if (!quizQuestion || quizFeedback) return;
     if (option.id === quizQuestion.target.id) {
       setQuizFeedback('correct');
       audioEngine.playFanfare();
@@ -821,6 +824,14 @@ export default function App() {
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#9f1239', margin: 0 }}>
                   🍎 싱싱한 과일 카드를 콕콕 눌러보세요! 커다란 고화질 사진이 보여요!
                 </h2>
+                <button onClick={() => setIsBearModalOpen(true)} style={{
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#ffffff',
+                  border: 'none', padding: '12px 24px', borderRadius: '18px', fontWeight: 900,
+                  fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 6px 18px rgba(245,158,11,0.35)',
+                  display: 'flex', alignItems: 'center', gap: '8px'
+                }}>
+                  <Sparkles size={22} /> 🐻 곰돌이 과일 먹이기!
+                </button>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.2rem' }}>
@@ -996,9 +1007,33 @@ export default function App() {
             <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
               <div style={{
                 background: '#dcfce7', border: '2.5px solid #86efac', borderRadius: '20px',
-                padding: '0.6rem 1.4rem', display: 'inline-block', marginBottom: '1rem',
-                fontSize: '1.1rem', fontWeight: 900, color: '#166534'
-              }}>🎵 유나와 함께 들어요! 총 {LOCAL_NURSERY_SONGS.length}곡의 신나는 동요 🎶</div>
+                padding: '0.6rem 1.4rem', display: 'inline-flex', alignItems: 'center', gap: '16px', marginBottom: '1rem',
+                fontSize: '1.05rem', fontWeight: 900, color: '#166534', flexWrap: 'wrap', justifyContent: 'center'
+              }}>
+                <span>🎵 유나와 함께 들어요! 총 {LOCAL_NURSERY_SONGS.length}곡의 신나는 동요 🎶</span>
+                
+                {/* 연속 / 셔플 자동 재생 토글 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button onClick={() => setIsAutoPlayNext(!isAutoPlayNext)} style={{
+                    background: isAutoPlayNext ? '#16a34a' : '#ffffff',
+                    color: isAutoPlayNext ? '#ffffff' : '#475569',
+                    border: isAutoPlayNext ? '2px solid #15803d' : '2px solid #cbd5e1',
+                    borderRadius: '14px', padding: '5px 12px', fontWeight: 900, cursor: 'pointer',
+                    fontSize: '0.85rem'
+                  }}>
+                    🔂 연속 재생 {isAutoPlayNext ? 'ON' : 'OFF'}
+                  </button>
+                  <button onClick={() => setIsShuffle(!isShuffle)} style={{
+                    background: isShuffle ? '#9333ea' : '#ffffff',
+                    color: isShuffle ? '#ffffff' : '#475569',
+                    border: isShuffle ? '2px solid #7e22ce' : '2px solid #cbd5e1',
+                    borderRadius: '14px', padding: '5px 12px', fontWeight: 900, cursor: 'pointer',
+                    fontSize: '0.85rem'
+                  }}>
+                    🔀 셔플 {isShuffle ? 'ON' : 'OFF'}
+                  </button>
+                </div>
+              </div>
 
               {/* 가로 슬림 콤팩트 MP3 플레이어 컨트롤러 */}
               <div style={{
@@ -1016,7 +1051,7 @@ export default function App() {
                       {LOCAL_NURSERY_SONGS[currentSongIdx]?.title || '동요 선택'}
                     </h2>
                     <p style={{ color: '#64748b', fontSize: '0.88rem', fontWeight: 700, margin: '2px 0 0 0' }}>
-                      {currentSongIdx + 1} / {LOCAL_NURSERY_SONGS.length} 곡
+                      {currentSongIdx + 1} / {LOCAL_NURSERY_SONGS.length} 곡 {isShuffle ? '(셔플 모드)' : ''}
                     </p>
                   </div>
                 </div>
@@ -1192,6 +1227,67 @@ export default function App() {
                     {opt.name}
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== 🐻 곰돌이 과일 먹이기 놀이 모달 ===== */}
+      {isBearModalOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000, padding: '1.5rem'
+        }}>
+          <div style={{
+            background: '#fffbeb', borderRadius: '36px', maxWidth: '720px', width: '100%',
+            padding: '2rem', border: '6px solid #f59e0b',
+            boxShadow: '0 25px 50px -12px rgba(245, 158, 11, 0.35)', position: 'relative', textAlign: 'center'
+          }}>
+            <button onClick={() => setIsBearModalOpen(false)} style={{
+              position: 'absolute', top: '18px', right: '18px', background: '#fef3c7', color: '#78350f',
+              border: '2px solid #fde68a', borderRadius: '50%', width: '40px', height: '40px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10
+            }}><X size={24} /></button>
+
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fef3c7', padding: '6px 18px', borderRadius: '20px', marginBottom: '1rem', border: '2px solid #fde68a' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#92400e' }}>⭐ 먹인 과일: {feedScore}개</span>
+            </div>
+
+            {/* 곰돌이 캐릭터 & 말풍선 */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{
+                background: '#ffffff', border: '3.5px solid #fbbf24', borderRadius: '24px',
+                padding: '1rem 1.6rem', marginBottom: '1rem', boxShadow: '0 8px 20px rgba(0,0,0,0.06)'
+              }}>
+                <p style={{ fontSize: '1.4rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
+                  {bearMood === 'happy' ? '💖 아구아구 냠냠! 너무 맛있다! 🥰' : `🐻 "나 [${wantedFood.name} ${wantedFood.icon}] 가 너무 먹고 싶어!"`}
+                </p>
+              </div>
+
+              <div style={{ fontSize: '6rem', lineHeight: 1 }}>
+                {bearMood === 'happy' ? '🥳' : '🐻'}
+              </div>
+            </div>
+
+            <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#92400e', marginBottom: '1rem' }}>
+              👇 곰돌이에게 줄 과일을 콕 눌러주세요!
+            </p>
+
+            {/* 과일 선택 카드 목록 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+              {FOOD_ITEMS.map(food => (
+                <button key={food.id} onClick={() => handleFeedBear(food)} style={{
+                  background: wantedFood.id === food.id ? '#fef3c7' : '#ffffff',
+                  border: wantedFood.id === food.id ? '4px solid #f59e0b' : '2px solid #e2e8f0',
+                  borderRadius: '20px', padding: '12px 8px', cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                }}>
+                  <span style={{ fontSize: '2.5rem', lineHeight: 1 }}>{food.icon}</span>
+                  <span style={{ fontSize: '1rem', fontWeight: 900, color: '#1e293b' }}>{food.name}</span>
+                </button>
               ))}
             </div>
           </div>
