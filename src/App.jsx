@@ -386,6 +386,34 @@ const RAINBOW_PAINTS = [
   { name: '보라색 🔮', color: '#a855f7', freq: 987.77 }
 ];
 
+// ✏️ 따라쓰기 템플릿 데이터 (SVG path로 점선 글자 가이드)
+const TRACING_TEMPLATES = [
+  { id: 'num1', label: '1', category: '숫자',
+    paths: ['M 50 15 L 50 85'], viewBox: '0 0 100 100' },
+  { id: 'num2', label: '2', category: '숫자',
+    paths: ['M 25 30 Q 25 10 50 10 Q 75 10 75 30 Q 75 50 50 55 L 25 85 L 75 85'], viewBox: '0 0 100 100' },
+  { id: 'num3', label: '3', category: '숫자',
+    paths: ['M 25 15 L 70 15 L 45 48', 'M 45 48 Q 75 48 75 68 Q 75 90 45 90 Q 25 90 25 78'], viewBox: '0 0 100 100' },
+  { id: 'num4', label: '4', category: '숫자',
+    paths: ['M 60 85 L 60 10 L 20 65 L 80 65'], viewBox: '0 0 100 100' },
+  { id: 'num5', label: '5', category: '숫자',
+    paths: ['M 70 15 L 30 15 L 25 50 Q 50 38 72 50 Q 82 65 65 82 Q 48 92 25 80'], viewBox: '0 0 100 100' },
+  { id: 'kr_ga', label: 'ㄱ', category: '한글',
+    paths: ['M 20 25 L 80 25 L 80 80'], viewBox: '0 0 100 100' },
+  { id: 'kr_na', label: 'ㄴ', category: '한글',
+    paths: ['M 20 20 L 20 80 L 80 80'], viewBox: '0 0 100 100' },
+  { id: 'kr_da', label: 'ㄷ', category: '한글',
+    paths: ['M 20 20 L 20 80 L 80 80', 'M 20 20 L 80 20'], viewBox: '0 0 100 100' },
+  { id: 'kr_ra', label: 'ㄹ', category: '한글',
+    paths: ['M 20 15 L 80 15 L 80 38 L 20 38 L 20 62 L 80 62 L 80 85'], viewBox: '0 0 100 100' },
+  { id: 'kr_ma', label: 'ㅁ', category: '한글',
+    paths: ['M 20 20 L 20 80 L 80 80 L 80 20 Z'], viewBox: '0 0 100 100' },
+  { id: 'kr_o', label: 'ㅇ', category: '한글',
+    paths: ['M 50 15 Q 85 15 85 50 Q 85 85 50 85 Q 15 85 15 50 Q 15 15 50 15'], viewBox: '0 0 100 100' },
+  { id: 'kr_ee', label: 'ㅣ', category: '한글',
+    paths: ['M 50 10 L 50 90'], viewBox: '0 0 100 100' },
+];
+
 // 🎈 퐁퐁 풍선 데이터
 const INITIAL_BALLOONS = [
   { id: 1, color: '#ef4444', icon: '🐶', name: '강아지', left: 15, size: 90 },
@@ -412,6 +440,8 @@ export default function App() {
   const [feedScore, setFeedScore] = useState(0);
 
   const [paintSplashes, setPaintSplashes] = useState([]);
+  const [brushSize, setBrushSize] = useState('medium');
+  const [tracingMode, setTracingMode] = useState(null); // null = 자유그리기, template object = 따라쓰기
 
   // 동요 MP3 재생 관련 상태 및 Audio Ref
   const [currentSongIdx, setCurrentSongIdx] = useState(0);
@@ -566,23 +596,28 @@ export default function App() {
     }
   };
 
+  const BRUSH_SIZES = { small: { min: 30, range: 20 }, medium: { min: 60, range: 40 }, large: { min: 100, range: 60 } };
+
   const handleCanvasClick = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const paint = RAINBOW_PAINTS[Math.floor(Math.random() * RAINBOW_PAINTS.length)];
     audioEngine.playXylophone(paint.freq);
-    setPaintSplashes(prev => [...prev.slice(-18), {
-      id: Date.now() + Math.random(), x, y, color: paint.color, name: paint.name, size: Math.floor(Math.random() * 60) + 80
+    const bs = BRUSH_SIZES[brushSize];
+    setPaintSplashes(prev => [...prev.slice(-30), {
+      id: Date.now() + Math.random(), x, y, color: paint.color, name: paint.name,
+      size: Math.floor(Math.random() * bs.range) + bs.min
     }]);
   };
 
   return (
     <div style={{
-      width: '100vw', minHeight: '100vh',
+      width: '100vw', height: '100vh',
       background: 'linear-gradient(135deg, #fffbebf8 0%, #fef3c7 40%, #d1fae5 100%)',
       padding: isIpadFrame ? '1.5rem 1rem' : '1rem',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', userSelect: 'none'
+      display: 'flex', flexDirection: 'column', alignItems: 'center', userSelect: 'none',
+      overflow: 'hidden'
     }}>
       {/* 짱구 스타일 헤더 */}
       <header style={{
@@ -632,7 +667,7 @@ export default function App() {
       {/* 메인 */}
       <main style={{
         width: '100%', maxWidth: isIpadFrame ? '1366px' : '100%',
-        minHeight: isIpadFrame ? '880px' : 'auto', background: '#ffffff', borderRadius: '32px',
+        flex: 1, minHeight: 0, background: '#ffffff', borderRadius: '32px',
         border: isIpadFrame ? '6px solid #ef4444' : '2px solid #e2e8f0',
         boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.25)',
         overflow: 'hidden', display: 'flex', flexDirection: 'column'
@@ -667,7 +702,7 @@ export default function App() {
         </nav>
 
         {/* 캔버스 영역 */}
-        <div style={{ flex: 1, padding: '1.8rem', position: 'relative', background: '#fafafa', overflowY: 'auto' }}>
+        <div style={{ flex: 1, padding: activeTab === 'paint' ? '1rem 1.8rem' : '1.8rem', position: 'relative', background: '#fafafa', overflowY: activeTab === 'paint' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
           {/* ===== 모듈 1: 20종 동물 실사 ===== */}
           {activeTab === 'animal' && (
@@ -773,28 +808,94 @@ export default function App() {
 
           {/* ===== 모듈 3: 무지개 물감 ===== */}
           {activeTab === 'paint' && (
-            <div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+              {/* 상단 툴바 */}
               <div style={{
                 background: '#e0f2fe', border: '2.5px solid #bae6fd', borderRadius: '20px',
-                padding: '0.9rem 1.4rem', marginBottom: '1.2rem',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                padding: '0.7rem 1.2rem', marginBottom: '0.8rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px',
+                flexShrink: 0
               }}>
-                <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0369a1' }}>
-                  🎨 캔버스를 콕콕 눌러보세요! 무지개 물감과 실로폰 소리가 터져요!
+                <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0369a1' }}>
+                  {tracingMode ? `✏️ "${tracingMode.label}" 따라쓰기 모드` : '🎨 캔버스를 콕콕 눌러보세요!'}
                 </span>
-                <button onClick={() => setPaintSplashes([])} style={{
-                  background: '#ef4444', color: '#ffffff', border: 'none', padding: '10px 18px',
-                  borderRadius: '16px', fontWeight: 900, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.98rem',
-                  boxShadow: '0 4px 12px rgba(239,68,68,0.25)'
-                }}><Eraser size={20} /> 지우기</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* 브러시 크기 선택 */}
+                  {[{ key: 'small', label: '작게', sz: 16 }, { key: 'medium', label: '보통', sz: 24 }, { key: 'large', label: '크게', sz: 34 }].map(b => (
+                    <button key={b.key} onClick={() => setBrushSize(b.key)} style={{
+                      background: brushSize === b.key ? '#3b82f6' : '#ffffff',
+                      color: brushSize === b.key ? '#ffffff' : '#334155',
+                      border: brushSize === b.key ? '3px solid #1d4ed8' : '2px solid #cbd5e1',
+                      borderRadius: '14px', padding: '6px 12px', fontWeight: 900, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem'
+                    }}>
+                      <span style={{ width: b.sz, height: b.sz, borderRadius: '50%', background: brushSize === b.key ? '#93c5fd' : '#94a3b8', display: 'inline-block', flexShrink: 0 }} />
+                      {b.label}
+                    </button>
+                  ))}
+
+                  {/* 구분선 */}
+                  <span style={{ width: '2px', height: '28px', background: '#bae6fd', borderRadius: '2px' }} />
+
+                  {/* 따라쓰기 모드 토글 */}
+                  <button onClick={() => { setTracingMode(tracingMode ? null : TRACING_TEMPLATES[0]); setPaintSplashes([]); }} style={{
+                    background: tracingMode ? '#f59e0b' : '#ffffff',
+                    color: tracingMode ? '#ffffff' : '#92400e',
+                    border: tracingMode ? '3px solid #d97706' : '2px solid #fcd34d',
+                    borderRadius: '14px', padding: '6px 14px', fontWeight: 900, cursor: 'pointer',
+                    fontSize: '0.88rem'
+                  }}>
+                    ✏️ {tracingMode ? '자유그리기' : '따라쓰기'}
+                  </button>
+
+                  <button onClick={() => setPaintSplashes([])} style={{
+                    background: '#ef4444', color: '#ffffff', border: 'none', padding: '8px 14px',
+                    borderRadius: '14px', fontWeight: 900, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.88rem',
+                    boxShadow: '0 3px 10px rgba(239,68,68,0.25)'
+                  }}><Eraser size={18} /> 지우기</button>
+                </div>
               </div>
 
+              {/* 따라쓰기 글자 선택 (따라쓰기 모드일 때만) */}
+              {tracingMode && (
+                <div style={{
+                  display: 'flex', gap: '6px', marginBottom: '0.6rem', flexWrap: 'wrap',
+                  flexShrink: 0, alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#92400e', marginRight: '4px' }}>글자 선택:</span>
+                  {TRACING_TEMPLATES.map(t => (
+                    <button key={t.id} onClick={() => { setTracingMode(t); setPaintSplashes([]); }} style={{
+                      width: '42px', height: '42px', borderRadius: '12px',
+                      background: tracingMode.id === t.id ? '#fbbf24' : '#fffbeb',
+                      border: tracingMode.id === t.id ? '3px solid #d97706' : '2px solid #fcd34d',
+                      fontSize: '1.2rem', fontWeight: 900,
+                      color: tracingMode.id === t.id ? '#78350f' : '#92400e',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>{t.label}</button>
+                  ))}
+                </div>
+              )}
+
+              {/* 캔버스 (flex: 1로 남은 공간 전부 사용) */}
               <div onClick={handleCanvasClick} style={{
-                width: '100%', height: '560px', background: '#ffffff', borderRadius: '32px',
+                width: '100%', flex: 1, minHeight: 0, background: '#ffffff', borderRadius: '24px',
                 border: '4px dashed #38bdf8', position: 'relative', overflow: 'hidden', cursor: 'crosshair'
               }}>
-                {paintSplashes.length === 0 && (
+                {/* 따라쓰기 가이드 점선 (배경) */}
+                {tracingMode && (
+                  <svg viewBox={tracingMode.viewBox} style={{
+                    position: 'absolute', inset: '8%', width: '84%', height: '84%',
+                    pointerEvents: 'none', opacity: 0.25
+                  }}>
+                    {tracingMode.paths.map((d, i) => (
+                      <path key={i} d={d} fill="none" stroke="#94a3b8" strokeWidth="6"
+                        strokeDasharray="8 6" strokeLinecap="round" strokeLinejoin="round" />
+                    ))}
+                  </svg>
+                )}
+
+                {paintSplashes.length === 0 && !tracingMode && (
                   <div style={{
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center', color: '#94a3b8', pointerEvents: 'none'
@@ -803,13 +904,23 @@ export default function App() {
                     <p style={{ fontSize: '1.4rem', fontWeight: 900 }}>화면 어디든 자유롭게 눌러보세요!</p>
                   </div>
                 )}
+                {paintSplashes.length === 0 && tracingMode && (
+                  <div style={{
+                    position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', color: '#92400e', pointerEvents: 'none'
+                  }}>
+                    <p style={{ fontSize: '1.3rem', fontWeight: 900, opacity: 0.5 }}>✏️ 점선을 따라 콕콕 찍어보세요!</p>
+                  </div>
+                )}
                 {paintSplashes.map(s => (
                   <div key={s.id} style={{
                     position: 'absolute', left: s.x - s.size / 2, top: s.y - s.size / 2,
                     width: s.size, height: s.size, borderRadius: '50%', background: s.color, opacity: 0.85,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#ffffff', fontWeight: 900, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
-                  }}>{s.name}</div>
+                    color: '#ffffff', fontWeight: 900, fontSize: brushSize === 'small' ? '0.6rem' : '0.9rem',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                    animation: 'popIn 0.3s ease-out'
+                  }}>{brushSize !== 'small' ? s.name : ''}</div>
                 ))}
               </div>
             </div>
