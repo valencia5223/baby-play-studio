@@ -934,15 +934,15 @@ export default function App() {
                   touchAction: 'none'
                 }}
               >
-                {/* 따라쓰기 가이드 점선 (배경) */}
+                {/* 따라쓰기 가이드 실선 (배경) */}
                 {tracingMode && (
                   <svg viewBox={tracingMode.viewBox} style={{
                     position: 'absolute', inset: '8%', width: '84%', height: '84%',
-                    pointerEvents: 'none', opacity: 0.25
+                    pointerEvents: 'none', opacity: 0.35
                   }}>
                     {tracingMode.paths.map((d, i) => (
-                      <path key={i} d={d} fill="none" stroke="#94a3b8" strokeWidth="6"
-                        strokeDasharray="8 6" strokeLinecap="round" strokeLinejoin="round" />
+                      <path key={i} d={d} fill="none" stroke="#94a3b8" strokeWidth="12"
+                        strokeLinecap="round" strokeLinejoin="round" />
                     ))}
                   </svg>
                 )}
