@@ -184,3 +184,14 @@ button:active {
   animation: bear-fruit-reject 0.65s ease-out forwards;
   pointer-events: none;
 }
+
+/* 퐁퐁 스탬프 팝인 애니메이션 */
+@keyframes stampPopIn {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  60% { transform: translate(-50%, -50%) scale(1.25); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.stamp-pop {
+  animation: stampPopIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

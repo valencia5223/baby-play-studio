@@ -484,15 +484,50 @@ const TRACING_TEMPLATES = [
   },
 ];
 
+// 🎨 퐁퐁 스탬프 아이템 목록
+const STAMP_ITEMS = [
+  { id: 'paw', icon: '🐾', name: '발자국', freq: 650 },
+  { id: 'star', icon: '⭐', name: '반짝별', freq: 880 },
+  { id: 'heart', icon: '💖', name: '하트', freq: 780 },
+  { id: 'rainbow', icon: '🌈', name: '무지개', freq: 980 },
+  { id: 'flower', icon: '🌸', name: '예쁜꽃', freq: 700 },
+  { id: 'smile', icon: '😊', name: '스마일', freq: 820 },
+  { id: 'duck', icon: '🐥', name: '삐약이', freq: 920 },
+  { id: 'butterfly', icon: '🦋', name: '나비', freq: 850 },
+  { id: 'apple', icon: '🍎', name: '사과', freq: 600 },
+  { id: 'strawberry', icon: '🍓', name: '딸기', freq: 740 }
+];
+
+// 🦁 동물 친구들 과일 먹이기용 10종 동물 데이터
+const FEEDABLE_ANIMALS = [
+  { id: 'bear', name: '곰돌이', icon: '🐻', color: '#b45309', bg: '#fef3c7', baseColor: '#C8952E', darkColor: '#A67B1E', snoutColor: '#E8C87A' },
+  { id: 'rabbit', name: '토끼', icon: '🐰', color: '#ec4899', bg: '#fce7f3', baseColor: '#FFFFFF', darkColor: '#E9D5FF', snoutColor: '#FFE4E6' },
+  { id: 'monkey', name: '원숭이', icon: '🐵', color: '#854d0e', bg: '#fef9c3', baseColor: '#A16207', darkColor: '#78350F', snoutColor: '#FDE68A' },
+  { id: 'dog', name: '강아지', icon: '🐶', color: '#ea580c', bg: '#ffedd5', baseColor: '#FB923C', darkColor: '#C2410C', snoutColor: '#FFEDD5' },
+  { id: 'cat', name: '고양이', icon: '🐱', color: '#0284c7', bg: '#e0f2fe', baseColor: '#FED7AA', darkColor: '#FB923C', snoutColor: '#FFF7ED' },
+  { id: 'panda', name: '판다', icon: '🐼', color: '#334155', bg: '#f1f5f9', baseColor: '#FFFFFF', darkColor: '#1E293B', snoutColor: '#F1F5F9' },
+  { id: 'pig', name: '돼지', icon: '🐷', color: '#f43f5e', bg: '#ffe4e6', baseColor: '#FDA4AF', darkColor: '#F43F5E', snoutColor: '#FFE4E6' },
+  { id: 'frog', name: '개구리', icon: '🐸', color: '#16a34a', bg: '#dcfce7', baseColor: '#4ADE80', darkColor: '#15803D', snoutColor: '#BBF7D0' },
+  { id: 'lion', name: '사자', icon: '🦁', color: '#d97706', bg: '#fef3c7', baseColor: '#FBBF24', darkColor: '#B45309', snoutColor: '#FEF3C7' },
+  { id: 'elephant', name: '코끼리', icon: '🐘', color: '#0891b2', bg: '#cffafe', baseColor: '#93C5FD', darkColor: '#3B82F6', snoutColor: '#DBEAFE' }
+];
+
+// 3마리 랜덤 동물 + 1마리 목표 요청 동물 + 음식 1개 + 선택지 5개 라운드 생성 헬퍼
+function pickFeedRound() {
+  const shuffledAnimals = [...FEEDABLE_ANIMALS].sort(() => 0.5 - Math.random());
+  const threeAnimals = shuffledAnimals.slice(0, 3);
+  const target = threeAnimals[Math.floor(Math.random() * threeAnimals.length)];
+  const food = ALL_FOOD_ITEMS[Math.floor(Math.random() * ALL_FOOD_ITEMS.length)];
+  const choices = pickBearChoices(food);
+  return { threeAnimals, target, food, choices };
+}
+
 // =============================================================================
-// 🐻 SVG 애니메이션 곰돌이 캐릭터 컴포넌트
-// 상태: hungry(기본) → mouth-open(입벌리기) → eating(우물우물) → happy(만세!)
-//       hungry → reject(도리도리 거절) → hungry
+// 🐾 SVG 애니메이션 다채로운 동물 캐릭터 컴포넌트 (곰, 토끼, 원숭이, 강아지, 고양이, 판다 등)
 // =============================================================================
-function AnimatedBear({ mood, isOverBear, rejectedFoodIcon }) {
+function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, rejectedFoodIcon = null, isTarget = false }) {
   const [chewOpen, setChewOpen] = React.useState(false);
 
-  // eating 상태일 때 입을 빠르게 열었다 닫았다 (우물우물 씹기)
   React.useEffect(() => {
     if (mood === 'eating') {
       const interval = setInterval(() => setChewOpen(prev => !prev), 180);
@@ -501,16 +536,17 @@ function AnimatedBear({ mood, isOverBear, rejectedFoodIcon }) {
     setChewOpen(false);
   }, [mood]);
 
-  // 실제 화면에 보여줄 상태 결정
-  const dm = isOverBear && mood === 'hungry' ? 'mouth-open' : mood;
+  const dm = isOver && mood === 'hungry' ? 'mouth-open' : mood;
 
-  // 몸 전체 애니메이션 클래스
   const bodyClass = dm === 'happy' ? 'bear-bounce'
     : dm === 'eating' ? 'bear-munch'
       : dm === 'reject' ? 'bear-reject'
         : 'bear-idle';
 
-  // 팔 경로 (happy: 만세 / reject: 팔짱 X / 기본: 내린 상태)
+  const baseColor = animal?.baseColor || '#C8952E';
+  const darkColor = animal?.darkColor || '#A67B1E';
+  const snoutColor = animal?.snoutColor || '#E8C87A';
+
   const armLeft = dm === 'happy'
     ? 'M 48 160 Q 12 118 22 88'
     : dm === 'reject'
@@ -522,53 +558,117 @@ function AnimatedBear({ mood, isOverBear, rejectedFoodIcon }) {
       ? 'M 152 160 Q 150 140 120 148'
       : 'M 152 160 Q 172 175 178 198';
 
-  // 입 크기 (eating 시 chewOpen 토글)
-  const mouthRy = dm === 'mouth-open' ? 16
+  const mouthRy = dm === 'mouth-open' ? 15
     : dm === 'eating' ? (chewOpen ? 14 : 4)
       : 0;
 
   return (
-    <div className={bodyClass} style={{ position: 'relative', width: '180px', height: '220px', margin: '0 auto' }}>
-      <svg viewBox="0 0 200 245" width="180" height="220" style={{ overflow: 'visible' }}>
+    <div className={bodyClass} style={{ position: 'relative', width: '100%', maxWidth: '170px', height: '200px', margin: '0 auto' }}>
+      <svg viewBox="0 0 200 245" width="100%" height="100%" style={{ overflow: 'visible' }}>
+        {/* 사자 갈기 */}
+        {animal?.id === 'lion' && (
+          <circle cx="100" cy="88" r="68" fill="#B45309" stroke="#92400E" strokeWidth="4" strokeDasharray="14 6" />
+        )}
+
         {/* ── 팔 (몸통 뒤) ── */}
-        <path d={armLeft} stroke="#A67B1E" strokeWidth="15" strokeLinecap="round" fill="none"
+        <path d={armLeft} stroke={darkColor} strokeWidth="15" strokeLinecap="round" fill="none"
           style={{ transition: 'all 0.45s cubic-bezier(0.34,1.56,0.64,1)' }} />
-        <path d={armRight} stroke="#A67B1E" strokeWidth="15" strokeLinecap="round" fill="none"
+        <path d={armRight} stroke={darkColor} strokeWidth="15" strokeLinecap="round" fill="none"
           style={{ transition: 'all 0.45s cubic-bezier(0.34,1.56,0.64,1)' }} />
-        {/* 손(발바닥) */}
-        {dm === 'happy' && (
-          <>
-            <circle cx="22" cy="84" r="10" fill="#C8952E" />
-            <circle cx="178" cy="84" r="10" fill="#C8952E" />
-          </>
-        )}
-        {dm === 'reject' && (
-          <>
-            <circle cx="80" cy="144" r="8" fill="#C8952E" />
-            <circle cx="120" cy="144" r="8" fill="#C8952E" />
-          </>
-        )}
 
         {/* ── 몸통 ── */}
-        <ellipse cx="100" cy="178" rx="56" ry="50" fill="#C8952E" />
-        {/* 배 */}
-        <ellipse cx="100" cy="182" rx="32" ry="28" fill="#F5DEB3" />
+        <ellipse cx="100" cy="178" rx="56" ry="50" fill={baseColor} />
+        <ellipse cx="100" cy="182" rx="32" ry="28" fill={snoutColor} opacity="0.85" />
+
+        {/* ── 귀 (머리 위) ── */}
+        {animal?.id === 'rabbit' ? (
+          <>
+            <ellipse cx="64" cy="22" rx="14" ry="36" fill={baseColor} stroke={darkColor} strokeWidth="2" />
+            <ellipse cx="64" cy="22" rx="7" ry="24" fill="#FDA4AF" />
+            <ellipse cx="136" cy="22" rx="14" ry="36" fill={baseColor} stroke={darkColor} strokeWidth="2" />
+            <ellipse cx="136" cy="22" rx="7" ry="24" fill="#FDA4AF" />
+          </>
+        ) : animal?.id === 'cat' ? (
+          <>
+            <polygon points="40,65 60,20 85,55" fill={baseColor} stroke={darkColor} strokeWidth="2" />
+            <polygon points="48,60 62,30 78,55" fill="#FDA4AF" />
+            <polygon points="160,65 140,20 115,55" fill={baseColor} stroke={darkColor} strokeWidth="2" />
+            <polygon points="152,60 138,30 122,55" fill="#FDA4AF" />
+          </>
+        ) : animal?.id === 'dog' ? (
+          <>
+            <ellipse cx="44" cy="75" rx="16" ry="28" fill={darkColor} transform="rotate(15 44 75)" />
+            <ellipse cx="156" cy="75" rx="16" ry="28" fill={darkColor} transform="rotate(-15 156 75)" />
+          </>
+        ) : animal?.id === 'elephant' ? (
+          <>
+            <ellipse cx="32" cy="85" rx="30" ry="36" fill={darkColor} opacity="0.9" />
+            <ellipse cx="34" cy="85" rx="16" ry="22" fill="#BFDBFE" />
+            <ellipse cx="168" cy="85" rx="30" ry="36" fill={darkColor} opacity="0.9" />
+            <ellipse cx="166" cy="85" rx="16" ry="22" fill="#BFDBFE" />
+          </>
+        ) : animal?.id === 'frog' ? (
+          <>
+            <circle cx="58" cy="46" r="22" fill={baseColor} stroke={darkColor} strokeWidth="2" />
+            <circle cx="142" cy="46" r="22" fill={baseColor} stroke={darkColor} strokeWidth="2" />
+          </>
+        ) : animal?.id === 'monkey' ? (
+          <>
+            <circle cx="40" cy="85" r="20" fill={darkColor} />
+            <circle cx="40" cy="85" r="11" fill="#FDE68A" />
+            <circle cx="160" cy="85" r="20" fill={darkColor} />
+            <circle cx="160" cy="85" r="11" fill="#FDE68A" />
+          </>
+        ) : animal?.id === 'pig' ? (
+          <>
+            <polygon points="45,60 65,30 85,55" fill={darkColor} />
+            <polygon points="155,60 135,30 115,55" fill={darkColor} />
+          </>
+        ) : (
+          <>
+            <circle cx="56" cy="42" r="21" fill={darkColor} />
+            <circle cx="144" cy="42" r="21" fill={darkColor} />
+            <circle cx="56" cy="42" r="11" fill="#FFCAD4" />
+            <circle cx="144" cy="42" r="11" fill="#FFCAD4" />
+          </>
+        )}
 
         {/* ── 머리 ── */}
-        <circle cx="100" cy="88" r="54" fill="#C8952E" />
+        <circle cx="100" cy="88" r="54" fill={baseColor} />
 
-        {/* ── 귀 ── */}
-        <circle cx="56" cy="42" r="21" fill="#A67B1E" />
-        <circle cx="144" cy="42" r="21" fill="#A67B1E" />
-        <circle cx="56" cy="42" r="12" fill="#FFCAD4" />
-        <circle cx="144" cy="42" r="12" fill="#FFCAD4" />
+        {/* 판다 눈 패치 */}
+        {animal?.id === 'panda' && (
+          <>
+            <ellipse cx="78" cy="78" rx="14" ry="11" fill="#1E293B" transform="rotate(-15 78 78)" />
+            <ellipse cx="122" cy="78" rx="14" ry="11" fill="#1E293B" transform="rotate(15 122 78)" />
+          </>
+        )}
 
         {/* ── 얼굴 안쪽 (주둥이 영역) ── */}
-        <ellipse cx="100" cy="96" rx="33" ry="27" fill="#E8C87A" />
+        <ellipse cx="100" cy="96" rx="33" ry="27" fill={snoutColor} />
+
+        {/* 돼지 코 */}
+        {animal?.id === 'pig' && (
+          <ellipse cx="100" cy="92" rx="17" ry="11" fill="#F43F5E" />
+        )}
+
+        {/* 코끼리 코 */}
+        {animal?.id === 'elephant' && (
+          <path d="M 100 88 Q 95 115 108 128 Q 116 135 122 126" stroke={baseColor} strokeWidth="15" strokeLinecap="round" fill="none" />
+        )}
+
+        {/* 고양이 수염 */}
+        {animal?.id === 'cat' && (
+          <>
+            <line x1="45" y1="92" x2="68" y2="95" stroke="#78350F" strokeWidth="2" strokeLinecap="round" />
+            <line x1="45" y1="102" x2="68" y2="99" stroke="#78350F" strokeWidth="2" strokeLinecap="round" />
+            <line x1="155" y1="92" x2="132" y2="95" stroke="#78350F" strokeWidth="2" strokeLinecap="round" />
+            <line x1="155" y1="102" x2="132" y2="99" stroke="#78350F" strokeWidth="2" strokeLinecap="round" />
+          </>
+        )}
 
         {/* ── 눈 ── */}
         {dm === 'happy' ? (
-          /* 하트 눈 ♥♥ */
           <>
             <g transform="translate(72, 70) scale(1)">
               <path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z"
@@ -580,7 +680,6 @@ function AnimatedBear({ mood, isOverBear, rejectedFoodIcon }) {
             </g>
           </>
         ) : dm === 'reject' ? (
-          /* 실망한 눈 (찡그린 눈썸) */
           <>
             <path d="M 73 74 L 89 82" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
             <path d="M 73 82 L 89 74" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
@@ -588,13 +687,11 @@ function AnimatedBear({ mood, isOverBear, rejectedFoodIcon }) {
             <path d="M 111 82 L 127 74" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
           </>
         ) : dm === 'eating' ? (
-          /* 감긴 눈 (맛있어~ 행복한 눈) */
           <>
             <path d="M 72 80 Q 80 73 88 80" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
             <path d="M 112 80 Q 120 73 128 80" stroke="#3E2723" strokeWidth="3.5" strokeLinecap="round" fill="none" />
           </>
         ) : dm === 'mouth-open' ? (
-          /* 동그랗게 커진 눈 (기대감!) */
           <>
             <circle cx="82" cy="78" r="7.5" fill="#3E2723" />
             <circle cx="118" cy="78" r="7.5" fill="#3E2723" />
@@ -602,7 +699,6 @@ function AnimatedBear({ mood, isOverBear, rejectedFoodIcon }) {
             <circle cx="120" cy="75" r="2.8" fill="white" />
           </>
         ) : (
-          /* 기본 눈 */
           <>
             <circle cx="82" cy="78" r="5.5" fill="#3E2723" />
             <circle cx="118" cy="78" r="5.5" fill="#3E2723" />
@@ -612,63 +708,58 @@ function AnimatedBear({ mood, isOverBear, rejectedFoodIcon }) {
         )}
 
         {/* ── 코 ── */}
-        <ellipse cx="100" cy="92" rx="7" ry="5.5" fill="#5D4037" />
-        <ellipse cx="99" cy="91" rx="2.5" ry="1.5" fill="#8D6E63" opacity="0.5" />
+        {animal?.id === 'pig' ? (
+          <>
+            <circle cx="95" cy="92" r="2.8" fill="#881337" />
+            <circle cx="105" cy="92" r="2.8" fill="#881337" />
+          </>
+        ) : (
+          <>
+            <ellipse cx="100" cy="92" rx="7" ry="5.5" fill="#3E2723" />
+            <ellipse cx="99" cy="91" rx="2.5" ry="1.5" fill="#8D6E63" opacity="0.5" />
+          </>
+        )}
 
         {/* ── 입 ── */}
         {dm === 'mouth-open' ? (
-          <ellipse cx="100" cy="108" rx="13" ry="16"
-            fill="#D32F2F" stroke="#5D4037" strokeWidth="2"
+          <ellipse cx="100" cy="108" rx="13" ry="15"
+            fill="#D32F2F" stroke="#3E2723" strokeWidth="2"
             className="bear-mouth-open-anim" />
         ) : dm === 'eating' ? (
           <ellipse cx="100" cy="106" rx="11" ry={mouthRy}
-            fill="#D32F2F" stroke="#5D4037" strokeWidth="2"
+            fill="#D32F2F" stroke="#3E2723" strokeWidth="2"
             style={{ transition: 'ry 0.12s ease' }} />
         ) : dm === 'reject' ? (
-          /* 삐만 입 (씨익~) */
           <path d="M 86 106 Q 93 98 100 102 Q 107 98 114 106"
-            stroke="#5D4037" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            stroke="#3E2723" strokeWidth="2.5" strokeLinecap="round" fill="none" />
         ) : dm === 'happy' ? (
           <path d="M 80 100 Q 90 120 100 120 Q 110 120 120 100"
-            stroke="#5D4037" strokeWidth="3" strokeLinecap="round" fill="none" />
+            stroke="#3E2723" strokeWidth="3" strokeLinecap="round" fill="none" />
         ) : (
           <path d="M 88 102 Q 100 113 112 102"
-            stroke="#5D4037" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            stroke="#3E2723" strokeWidth="2.5" strokeLinecap="round" fill="none" />
         )}
 
         {/* ── 볼 (홍조) ── */}
-        <circle cx="62" cy="94" r="11"
-          fill="#FF9999"
+        <circle cx="62" cy="94" r="11" fill="#FF9999"
           className={dm === 'happy' ? 'bear-blush-active' : ''}
-          opacity={dm === 'happy' ? 0.7 : dm === 'eating' ? 0.5 : 0.25}
-          style={{ transition: 'opacity 0.3s ease' }} />
-        <circle cx="138" cy="94" r="11"
-          fill="#FF9999"
+          opacity={dm === 'happy' ? 0.75 : dm === 'eating' ? 0.55 : 0.3} />
+        <circle cx="138" cy="94" r="11" fill="#FF9999"
           className={dm === 'happy' ? 'bear-blush-active' : ''}
-          opacity={dm === 'happy' ? 0.7 : dm === 'eating' ? 0.5 : 0.25}
-          style={{ transition: 'opacity 0.3s ease' }} />
+          opacity={dm === 'happy' ? 0.75 : dm === 'eating' ? 0.55 : 0.3} />
       </svg>
 
       {/* 행복할 때 반짝이 ✨ 이펙트 */}
       {dm === 'happy' && (
         <>
-          <div className="bear-sparkle" style={{ position: 'absolute', top: '0', left: '8px', fontSize: '1.5rem' }}>✨</div>
-          <div className="bear-sparkle" style={{ position: 'absolute', top: '10px', right: '2px', fontSize: '1.3rem', animationDelay: '0.15s' }}>⭐</div>
-          <div className="bear-sparkle" style={{ position: 'absolute', bottom: '40px', left: '0', fontSize: '1.4rem', animationDelay: '0.35s' }}>💖</div>
-          <div className="bear-sparkle" style={{ position: 'absolute', top: '-5px', right: '28px', fontSize: '1.15rem', animationDelay: '0.5s' }}>🌟</div>
-          <div className="bear-sparkle" style={{ position: 'absolute', bottom: '20px', right: '0', fontSize: '1.2rem', animationDelay: '0.65s' }}>💛</div>
+          <div className="bear-sparkle" style={{ position: 'absolute', top: '0', left: '8px', fontSize: '1.4rem' }}>✨</div>
+          <div className="bear-sparkle" style={{ position: 'absolute', top: '10px', right: '2px', fontSize: '1.2rem', animationDelay: '0.15s' }}>⭐</div>
+          <div className="bear-sparkle" style={{ position: 'absolute', bottom: '40px', left: '0', fontSize: '1.3rem', animationDelay: '0.35s' }}>💖</div>
+          <div className="bear-sparkle" style={{ position: 'absolute', top: '-5px', right: '28px', fontSize: '1.1rem', animationDelay: '0.5s' }}>🌟</div>
         </>
       )}
 
-      {/* eating 상태: 과일 아이콘이 입으로 빨려들어가는 효과 */}
-      {dm === 'eating' && (
-        <div className="bear-fruit-absorb" style={{
-          position: 'absolute', top: '42%', left: '50%',
-          fontSize: '2rem', pointerEvents: 'none'
-        }}>🍎</div>
-      )}
-
-      {/* reject 상태: 과일이 튜겨나가는 효과 */}
+      {/* reject 상태: 거절 아이콘 튀어나감 */}
       {dm === 'reject' && rejectedFoodIcon && (
         <div className="bear-fruit-reject" style={{
           position: 'absolute', top: '38%', left: '50%',
@@ -712,28 +803,24 @@ export default function App() {
   const [quizQuestion, setQuizQuestion] = useState(null);
   const [quizFeedback, setQuizFeedback] = useState(null);
 
-  const [wantedFood, setWantedFood] = useState(ALL_FOOD_ITEMS[0]);
-  const [bearChoices, setBearChoices] = useState(() => pickBearChoices(ALL_FOOD_ITEMS[0]));
-  const [bearMood, setBearMood] = useState('hungry');
-  const [rejectedFood, setRejectedFood] = useState(null);
+  // 🦁 3마리 동물 과일 먹이기 상태
+  const [feedRound, setFeedRound] = useState(() => pickFeedRound());
+  const [animalMoods, setAnimalMoods] = useState({}); // { [animalId]: 'hungry' | 'eating' | 'happy' | 'reject' }
   const [feedScore, setFeedScore] = useState(0);
-  const [isBearModalOpen, setIsBearModalOpen] = useState(false);
+  const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
+  const [hoverAnimalId, setHoverAnimalId] = useState(null);
+  const [rejectedAnimalId, setRejectedAnimalId] = useState(null);
+  const [rejectedFood, setRejectedFood] = useState(null);
 
-  // 🐻 곰돌이 과일 먹이기 드래그 앤 드롭 상태
-  const bearBoxRef = useRef(null);
+  const animalBoxRefs = useRef({});
+  const isFeedBusyRef = useRef(false);
   const draggingFoodRef = useRef(null);
   const [draggingFood, setDraggingFood] = useState(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
-  const [isOverBear, setIsOverBear] = useState(false);
-
-  const bearMoodRef = useRef(bearMood);
-  bearMoodRef.current = bearMood;
-  const wantedFoodRef = useRef(wantedFood);
-  wantedFoodRef.current = wantedFood;
 
   const handleStartDragFood = (e, food) => {
-    // 곰돌이가 먹는 중이거나 거절 중일 때 드래그 완전 차단 (PROTECT)
-    if (bearMoodRef.current !== 'hungry') return;
+    // 먹는 중이거나 피드백 중일 때 드래그 차단 (PROTECT)
+    if (isFeedBusyRef.current) return;
     e.preventDefault();
     draggingFoodRef.current = food;
     setDraggingFood(food);
@@ -743,7 +830,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!isBearModalOpen) return;
+    if (!isFeedModalOpen) return;
 
     const handleWindowPointerMove = (e) => {
       if (!draggingFoodRef.current) return;
@@ -751,17 +838,16 @@ export default function App() {
       const y = e.clientY;
       setDragPos({ x, y });
 
-      if (bearBoxRef.current) {
-        const rect = bearBoxRef.current.getBoundingClientRect();
-        // 정확히 곰돌이 드롭 영역 안에 들어왔는지 검사
-        const isOver = (
-          x >= rect.left &&
-          x <= rect.right &&
-          y >= rect.top &&
-          y <= rect.bottom
-        );
-        setIsOverBear(isOver);
-      }
+      let currentOverId = null;
+      Object.entries(animalBoxRefs.current).forEach(([id, el]) => {
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            currentOverId = id;
+          }
+        }
+      });
+      setHoverAnimalId(currentOverId);
     };
 
     const handleWindowPointerUp = (e) => {
@@ -770,26 +856,23 @@ export default function App() {
       const x = e.clientX;
       const y = e.clientY;
 
-      let isOver = false;
-      if (bearBoxRef.current) {
-        const rect = bearBoxRef.current.getBoundingClientRect();
-        isOver = (
-          x >= rect.left &&
-          x <= rect.right &&
-          y >= rect.top &&
-          y <= rect.bottom
-        );
-      }
+      let currentOverId = null;
+      Object.entries(animalBoxRefs.current).forEach(([id, el]) => {
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            currentOverId = id;
+          }
+        }
+      });
 
-      // 정확히 곰돌이 영역 안에 드롭했고, 곰돌이가 먹을 준비(hungry)가 되어있을 때만 피딩 실행
-      if (isOver && bearMoodRef.current === 'hungry') {
-        handleFeedBear(food);
+      if (currentOverId && !isFeedBusyRef.current) {
+        handleFeedAnimal(currentOverId, food);
       }
-      // 드롭 영역 밖이거나 먹는 중이면 피딩 없이 원위치 복귀
 
       draggingFoodRef.current = null;
       setDraggingFood(null);
-      setIsOverBear(false);
+      setHoverAnimalId(null);
     };
 
     window.addEventListener('pointermove', handleWindowPointerMove);
@@ -801,8 +884,12 @@ export default function App() {
       window.removeEventListener('pointerup', handleWindowPointerUp);
       window.removeEventListener('pointercancel', handleWindowPointerUp);
     };
-  }, [isBearModalOpen]);
+  }, [isFeedModalOpen, feedRound]);
 
+  // 🎨 물감 & 스탬프 & 따라쓰기 모드
+  const [paintMode, setPaintMode] = useState('brush'); // 'brush' | 'stamp' | 'tracing'
+  const [selectedStamp, setSelectedStamp] = useState(STAMP_ITEMS[0]);
+  const [stamps, setStamps] = useState([]);
   const [strokes, setStrokes] = useState([]);
   const [brushSize, setBrushSize] = useState('medium');
   const [tracingMode, setTracingMode] = useState(null); // null = 자유그리기, template object = 따라쓰기
@@ -952,75 +1039,117 @@ export default function App() {
     }
   };
 
-  const speakBearWish = (food) => {
-    const targetFood = food || wantedFood || ALL_FOOD_ITEMS[0];
-    if (!targetFood) return;
+  // 🦁 동물 과일 먹이기 음성 안내
+  const speakFeedWish = (animal, food) => {
+    const targetAnimal = animal || feedRound?.target;
+    const targetFood = food || feedRound?.food;
+    if (!targetAnimal || !targetFood) return;
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const text = `${targetFood.name} 먹고싶어요`;
+      const text = `${targetAnimal.name}가 ${targetFood.name} 먹고 싶어요`;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'ko-KR';
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
+      utterance.rate = 0.92;
+      utterance.pitch = 1.1;
       window.speechSynthesis.speak(utterance);
     }
   };
 
-  const openBearModal = () => {
-    const initialFood = ALL_FOOD_ITEMS[Math.floor(Math.random() * ALL_FOOD_ITEMS.length)];
-    setWantedFood(initialFood);
-    setBearChoices(pickBearChoices(initialFood));
-    setBearMood('hungry');
+  const openFeedModal = () => {
+    const round = pickFeedRound();
+    setFeedRound(round);
+    setAnimalMoods({});
+    setRejectedAnimalId(null);
     setRejectedFood(null);
-    setIsBearModalOpen(true);
-    speakBearWish(initialFood);
+    isFeedBusyRef.current = false;
+    setIsFeedModalOpen(true);
+    speakFeedWish(round.target, round.food);
   };
 
-  const handleFeedBear = (food) => {
-    if (bearMoodRef.current !== 'hungry') return;
-    const currentWanted = wantedFoodRef.current || ALL_FOOD_ITEMS[0];
-    if (food.id === currentWanted.id) {
-      // 1단계: 우물우물 먹는 중 (eating) — 1.2초간 씹기 애니메이션
-      audioEngine.playYum();
-      setBearMood('eating');
-      setFeedScore(prev => prev + 1);
+  const handleFeedAnimal = (droppedAnimalId, food) => {
+    if (isFeedBusyRef.current) return;
+    const targetAnimal = feedRound.target;
+    const wantedFood = feedRound.food;
 
-      // 2단계: 다 먹고 기뻐하기 (happy) — 하트눈 + 만세 + 바운스
-      setTimeout(() => {
-        setBearMood('happy');
-        audioEngine.playFanfare();
-      }, 1200);
+    if (droppedAnimalId === targetAnimal.id) {
+      if (food.id === wantedFood.id) {
+        // 정답! 목표 동물이 원하는 과일을 줌
+        isFeedBusyRef.current = true;
+        audioEngine.playYum();
+        setAnimalMoods({
+          [targetAnimal.id]: 'eating',
+          ...feedRound.threeAnimals.filter(a => a.id !== targetAnimal.id).reduce((acc, a) => ({ ...acc, [a.id]: 'happy' }), {})
+        });
+        setFeedScore(prev => prev + 1);
 
-      // 3단계: 다시 배고픈 상태로 (hungry) — 다음 과일/채소 요청 + 새 랜덤 5개 선택지
-      setTimeout(() => {
-        setBearMood('hungry');
-        const nextFood = ALL_FOOD_ITEMS[Math.floor(Math.random() * ALL_FOOD_ITEMS.length)];
-        setWantedFood(nextFood);
-        setBearChoices(pickBearChoices(nextFood));
-        speakBearWish(nextFood);
-      }, 3500);
+        // 1.2초 후 기뻐하기 (만세 + 하트눈 + 팡파레)
+        setTimeout(() => {
+          setAnimalMoods(prev => ({ ...prev, [targetAnimal.id]: 'happy' }));
+          audioEngine.playFanfare();
+        }, 1200);
+
+        // 3.5초 후 다음 라운드 (새로운 3마리 동물 + 새 목표)
+        setTimeout(() => {
+          const nextRound = pickFeedRound();
+          setFeedRound(nextRound);
+          setAnimalMoods({});
+          isFeedBusyRef.current = false;
+          speakFeedWish(nextRound.target, nextRound.food);
+        }, 3500);
+      } else {
+        // 목표 동물인데 다른 과일을 줌
+        isFeedBusyRef.current = true;
+        setAnimalMoods(prev => ({ ...prev, [targetAnimal.id]: 'reject' }));
+        setRejectedAnimalId(targetAnimal.id);
+        setRejectedFood(food);
+
+        audioEngine.playFreq(200, 'sawtooth', 0.15, 0.5);
+        setTimeout(() => audioEngine.playFreq(280, 'sawtooth', 0.12, 0.4), 120);
+        setTimeout(() => audioEngine.playFreq(160, 'sawtooth', 0.2, 0.5), 240);
+
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(`이거 말고! ${targetAnimal.name}는 ${wantedFood.name} 먹고 싶어!`);
+          utterance.lang = 'ko-KR';
+          utterance.rate = 1.0;
+          utterance.pitch = 1.2;
+          window.speechSynthesis.speak(utterance);
+        }
+
+        setTimeout(() => {
+          setAnimalMoods(prev => ({ ...prev, [targetAnimal.id]: 'hungry' }));
+          setRejectedAnimalId(null);
+          setRejectedFood(null);
+          isFeedBusyRef.current = false;
+        }, 1400);
+      }
     } else {
-      // 거절! 도리도리 + 삐만 표정 + 뒤에~ 사운드
-      setBearMood('reject');
+      // 다른 동물에게 줌 (요청하지 않은 동물)
+      const wrongAnimal = feedRound.threeAnimals.find(a => a.id === droppedAnimalId) || { name: '동물' };
+      isFeedBusyRef.current = true;
+      setAnimalMoods(prev => ({ ...prev, [droppedAnimalId]: 'reject' }));
+      setRejectedAnimalId(droppedAnimalId);
       setRejectedFood(food);
-      // 삼중 비프음 (낮은 톤 → 높은 톤 → 낮은 톤)
+
       audioEngine.playFreq(200, 'sawtooth', 0.15, 0.5);
       setTimeout(() => audioEngine.playFreq(280, 'sawtooth', 0.12, 0.4), 120);
       setTimeout(() => audioEngine.playFreq(160, 'sawtooth', 0.2, 0.5), 240);
-      // TTS 거절 음성
+
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(`이거 말고! ${(wantedFood || ALL_FOOD_ITEMS[0])?.name || '다른 과일'} 줘!`);
+        const utterance = new SpeechSynthesisUtterance(`나는 말고! ${targetAnimal.name}한테 ${wantedFood.name} 줘!`);
         utterance.lang = 'ko-KR';
         utterance.rate = 1.0;
         utterance.pitch = 1.2;
         window.speechSynthesis.speak(utterance);
       }
-      // 1.3초 후 복귀
+
       setTimeout(() => {
-        setBearMood('hungry');
+        setAnimalMoods(prev => ({ ...prev, [droppedAnimalId]: 'hungry' }));
+        setRejectedAnimalId(null);
         setRejectedFood(null);
-      }, 1300);
+        isFeedBusyRef.current = false;
+      }, 1400);
     }
   };
 
@@ -1028,11 +1157,28 @@ export default function App() {
 
   const handlePointerDown = (e) => {
     e.preventDefault();
-    isDrawingRef.current = true;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.round(e.clientX - rect.left);
     const y = Math.round(e.clientY - rect.top);
 
+    if (paintMode === 'stamp') {
+      const stampSizes = { small: 38, medium: 54, large: 74 };
+      const newStamp = {
+        id: Date.now() + Math.random(),
+        x, y,
+        icon: selectedStamp.icon,
+        size: stampSizes[brushSize] || 54,
+        rotation: Math.round((Math.random() - 0.5) * 36)
+      };
+      setStamps(prev => [...prev.slice(-60), newStamp]);
+      audioEngine.playPopSound();
+      if (selectedStamp.freq) {
+        audioEngine.playXylophone(selectedStamp.freq);
+      }
+      return;
+    }
+
+    isDrawingRef.current = true;
     const paint = RAINBOW_PAINTS[Math.floor(Math.random() * RAINBOW_PAINTS.length)];
     audioEngine.playXylophone(paint.freq);
     lastSoundTimeRef.current = Date.now();
@@ -1250,13 +1396,13 @@ export default function App() {
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#9f1239', margin: 0 }}>
                   🍎 싱싱한 과일·채소 카드를 콕콕 눌러보세요! 커다란 고화질 사진이 보여요!
                 </h2>
-                <button onClick={openBearModal} style={{
+                <button onClick={openFeedModal} style={{
                   background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#ffffff',
                   border: 'none', padding: '12px 24px', borderRadius: '18px', fontWeight: 900,
                   fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 6px 18px rgba(245,158,11,0.35)',
                   display: 'flex', alignItems: 'center', gap: '8px'
                 }}>
-                  <Sparkles size={22} /> 🐻 곰돌이 과일 먹이기!
+                  <Sparkles size={22} /> 🦁 동물 친구들 과일 먹이기!
                 </button>
               </div>
 
@@ -1287,7 +1433,7 @@ export default function App() {
             </div>
           )}
 
-          {/* ===== 모듈 3: 무지개 물감 ===== */}
+          {/* ===== 모듈 3: 무지개 물감 & 퐁퐁 스탬프 & 따라쓰기 ===== */}
           {activeTab === 'paint' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               {/* 상단 툴바 */}
@@ -1297,58 +1443,108 @@ export default function App() {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px',
                 flexShrink: 0
               }}>
-                <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0369a1' }}>
-                  {tracingMode ? `✏️ "${tracingMode.label}" 따라쓰기 모드` : '🎨 캔버스를 콕콕 눌러보세요!'}
-                </span>
+                {/* 모드 선택 (물감 / 퐁퐁 스탬프 / 따라쓰기) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  {/* 브러시 크기 선택 */}
-                  {[{ key: 'small', label: '작게', sz: 16 }, { key: 'medium', label: '보통', sz: 24 }, { key: 'large', label: '크게', sz: 34 }].map(b => (
+                  <button onClick={() => { setPaintMode('brush'); setTracingMode(null); }} style={{
+                    background: paintMode === 'brush' ? '#3b82f6' : '#ffffff',
+                    color: paintMode === 'brush' ? '#ffffff' : '#0369a1',
+                    border: paintMode === 'brush' ? '3px solid #1d4ed8' : '2px solid #bae6fd',
+                    borderRadius: '14px', padding: '6px 14px', fontWeight: 900, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem'
+                  }}>
+                    🎨 물감 그리기
+                  </button>
+
+                  <button onClick={() => { setPaintMode('stamp'); setTracingMode(null); }} style={{
+                    background: paintMode === 'stamp' ? '#ec4899' : '#ffffff',
+                    color: paintMode === 'stamp' ? '#ffffff' : '#be185d',
+                    border: paintMode === 'stamp' ? '3px solid #db2777' : '2px solid #fbcfe8',
+                    borderRadius: '14px', padding: '6px 14px', fontWeight: 900, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem'
+                  }}>
+                    🐾 퐁퐁 스탬프
+                  </button>
+
+                  <button onClick={() => {
+                    setPaintMode('tracing');
+                    if (!tracingMode) setTracingMode(TRACING_TEMPLATES[0]);
+                    setStrokes([]);
+                  }} style={{
+                    background: paintMode === 'tracing' ? '#f59e0b' : '#ffffff',
+                    color: paintMode === 'tracing' ? '#ffffff' : '#92400e',
+                    border: paintMode === 'tracing' ? '3px solid #d97706' : '2px solid #fcd34d',
+                    borderRadius: '14px', padding: '6px 14px', fontWeight: 900, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem'
+                  }}>
+                    ✏️ 따라쓰기
+                  </button>
+                </div>
+
+                {/* 우측 조작 (크기 선택 & 지우기) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* 크기 선택 */}
+                  {[{ key: 'small', label: '작게', sz: 14 }, { key: 'medium', label: '보통', sz: 20 }, { key: 'large', label: '크게', sz: 28 }].map(b => (
                     <button key={b.key} onClick={() => setBrushSize(b.key)} style={{
-                      background: brushSize === b.key ? '#3b82f6' : '#ffffff',
+                      background: brushSize === b.key ? '#0284c7' : '#ffffff',
                       color: brushSize === b.key ? '#ffffff' : '#334155',
-                      border: brushSize === b.key ? '3px solid #1d4ed8' : '2px solid #cbd5e1',
-                      borderRadius: '14px', padding: '6px 12px', fontWeight: 900, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem'
+                      border: brushSize === b.key ? '3px solid #0369a1' : '2px solid #cbd5e1',
+                      borderRadius: '14px', padding: '5px 10px', fontWeight: 900, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.84rem'
                     }}>
-                      <span style={{ width: b.sz, height: b.sz, borderRadius: '50%', background: brushSize === b.key ? '#93c5fd' : '#94a3b8', display: 'inline-block', flexShrink: 0 }} />
+                      <span style={{ width: b.sz, height: b.sz, borderRadius: '50%', background: brushSize === b.key ? '#7dd3fc' : '#94a3b8', display: 'inline-block', flexShrink: 0 }} />
                       {b.label}
                     </button>
                   ))}
 
-                  {/* 구분선 */}
-                  <span style={{ width: '2px', height: '28px', background: '#bae6fd', borderRadius: '2px' }} />
+                  <span style={{ width: '2px', height: '26px', background: '#bae6fd', borderRadius: '2px' }} />
 
-                  {/* 따라쓰기 모드 토글 */}
-                  <button onClick={() => { setTracingMode(tracingMode ? null : TRACING_TEMPLATES[0]); setStrokes([]); }} style={{
-                    background: tracingMode ? '#f59e0b' : '#ffffff',
-                    color: tracingMode ? '#ffffff' : '#92400e',
-                    border: tracingMode ? '3px solid #d97706' : '2px solid #fcd34d',
-                    borderRadius: '14px', padding: '6px 14px', fontWeight: 900, cursor: 'pointer',
-                    fontSize: '0.88rem'
-                  }}>
-                    ✏️ {tracingMode ? '자유그리기' : '따라쓰기'}
-                  </button>
-
-                  <button onClick={() => setStrokes([])} style={{
-                    background: '#ef4444', color: '#ffffff', border: 'none', padding: '8px 14px',
+                  <button onClick={() => { setStrokes([]); setStamps([]); }} style={{
+                    background: '#ef4444', color: '#ffffff', border: 'none', padding: '7px 14px',
                     borderRadius: '14px', fontWeight: 900, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.88rem',
+                    display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.86rem',
                     boxShadow: '0 3px 10px rgba(239,68,68,0.25)'
-                  }}><Eraser size={18} /> 지우기</button>
+                  }}><Eraser size={16} /> 싹 지우기</button>
                 </div>
               </div>
 
-              {/* 따라쓰기 글자 선택 (따라쓰기 모드일 때만) */}
-              {tracingMode && (
+              {/* 🐾 스탬프 선택 바 (퐁퐁 스탬프 모드일 때) */}
+              {paintMode === 'stamp' && (
+                <div style={{
+                  display: 'flex', gap: '8px', marginBottom: '0.6rem', flexWrap: 'wrap',
+                  flexShrink: 0, alignItems: 'center', background: '#fdf2f8', padding: '8px 14px',
+                  borderRadius: '16px', border: '2px solid #fbcfe8'
+                }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#be185d', marginRight: '4px' }}>도장 선택:</span>
+                  {STAMP_ITEMS.map(st => (
+                    <button key={st.id} onClick={() => setSelectedStamp(st)} style={{
+                      padding: '5px 12px', borderRadius: '14px',
+                      background: selectedStamp.id === st.id ? '#f472b6' : '#ffffff',
+                      border: selectedStamp.id === st.id ? '3px solid #db2777' : '2px solid #fbcfe8',
+                      fontSize: '1.25rem', fontWeight: 900,
+                      color: selectedStamp.id === st.id ? '#ffffff' : '#9d174d',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                      transform: selectedStamp.id === st.id ? 'scale(1.08)' : 'scale(1)',
+                      transition: 'all 0.15s ease'
+                    }}>
+                      <span>{st.icon}</span>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 900 }}>{st.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* ✏️ 따라쓰기 글자 선택 (따라쓰기 모드일 때) */}
+              {paintMode === 'tracing' && tracingMode && (
                 <div style={{
                   display: 'flex', gap: '6px', marginBottom: '0.6rem', flexWrap: 'wrap',
-                  flexShrink: 0, alignItems: 'center'
+                  flexShrink: 0, alignItems: 'center', background: '#fffbeb', padding: '8px 14px',
+                  borderRadius: '16px', border: '2px solid #fde68a'
                 }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#92400e', marginRight: '4px' }}>글자 선택:</span>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#92400e', marginRight: '4px' }}>숫자 선택:</span>
                   {TRACING_TEMPLATES.map(t => (
                     <button key={t.id} onClick={() => { setTracingMode(t); setStrokes([]); }} style={{
-                      width: '42px', height: '42px', borderRadius: '12px',
-                      background: tracingMode.id === t.id ? '#fbbf24' : '#fffbeb',
+                      width: '40px', height: '40px', borderRadius: '12px',
+                      background: tracingMode.id === t.id ? '#fbbf24' : '#ffffff',
                       border: tracingMode.id === t.id ? '3px solid #d97706' : '2px solid #fcd34d',
                       fontSize: '1.2rem', fontWeight: 900,
                       color: tracingMode.id === t.id ? '#78350f' : '#92400e',
@@ -1358,21 +1554,23 @@ export default function App() {
                 </div>
               )}
 
-              {/* 캔버스 (flex: 1로 남은 공간 전부 사용, 연필 stroke 드로잉) */}
+              {/* 캔버스 (flex: 1로 남은 공간 전부 사용, 연필 stroke & 스탬프 드로잉) */}
               <div
                 onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
+                onPointerMove={paintMode !== 'stamp' ? handlePointerMove : undefined}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
                 onPointerCancel={handlePointerUp}
                 style={{
                   width: '100%', flex: 1, minHeight: 0, background: '#ffffff', borderRadius: '24px',
-                  border: '4px dashed #38bdf8', position: 'relative', overflow: 'hidden', cursor: 'crosshair',
+                  border: paintMode === 'stamp' ? '4px dashed #f472b6' : '4px dashed #38bdf8',
+                  position: 'relative', overflow: 'hidden',
+                  cursor: paintMode === 'stamp' ? 'pointer' : 'crosshair',
                   touchAction: 'none'
                 }}
               >
                 {/* 따라쓰기 가이드 실선 (배경) */}
-                {tracingMode && (
+                {paintMode === 'tracing' && tracingMode && (
                   <svg viewBox={tracingMode.viewBox} style={{
                     position: 'absolute', inset: '8%', width: '84%', height: '84%',
                     pointerEvents: 'none', opacity: 0.35
@@ -1383,6 +1581,27 @@ export default function App() {
                     ))}
                   </svg>
                 )}
+
+                {/* 찍힌 스탬프들 */}
+                {stamps.map(st => (
+                  <div
+                    key={st.id}
+                    className="stamp-pop"
+                    style={{
+                      position: 'absolute',
+                      left: st.x,
+                      top: st.y,
+                      transform: `translate(-50%, -50%) rotate(${st.rotation || 0}deg)`,
+                      fontSize: `${st.size}px`,
+                      lineHeight: 1,
+                      pointerEvents: 'none',
+                      zIndex: 3,
+                      userSelect: 'none'
+                    }}
+                  >
+                    {st.icon}
+                  </div>
+                ))}
 
                 {/* 사용자가 그린 연필 브러시 스트로크 선 (SVG Vector Lines) */}
                 <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }}>
@@ -1407,7 +1626,7 @@ export default function App() {
                   })}
                 </svg>
 
-                {strokes.length === 0 && !tracingMode && (
+                {strokes.length === 0 && stamps.length === 0 && paintMode === 'brush' && (
                   <div style={{
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center', color: '#94a3b8', pointerEvents: 'none'
@@ -1416,7 +1635,16 @@ export default function App() {
                     <p style={{ fontSize: '1.4rem', fontWeight: 900 }}>화면에 연필처럼 쓱쓱 자유롭게 그려보세요!</p>
                   </div>
                 )}
-                {strokes.length === 0 && tracingMode && (
+                {strokes.length === 0 && stamps.length === 0 && paintMode === 'stamp' && (
+                  <div style={{
+                    position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', color: '#f472b6', pointerEvents: 'none'
+                  }}>
+                    <span style={{ fontSize: '3rem', marginBottom: '8px' }}>🐾</span>
+                    <p style={{ fontSize: '1.35rem', fontWeight: 900 }}>화면을 콕콕 터치하여 귀여운 도장을 퐁퐁 찍어보세요!</p>
+                  </div>
+                )}
+                {strokes.length === 0 && paintMode === 'tracing' && tracingMode && (
                   <div style={{
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center', color: '#92400e', pointerEvents: 'none'
@@ -1659,95 +1887,140 @@ export default function App() {
         </div>
       )}
 
-      {/* ===== 🐻 곰돌이 과일 먹이기 놀이 모달 (드래그 앤 드롭 지원) ===== */}
-      {isBearModalOpen && (
+      {/* ===== 🦁 3마리 동물 과일 먹이기 놀이 모달 (드래그 앤 드롭 지원) ===== */}
+      {isFeedModalOpen && feedRound && (
         <div
           style={{
             position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)',
             backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', zIndex: 1000, padding: '1.5rem', userSelect: 'none'
+            justifyContent: 'center', zIndex: 1000, padding: '1rem', userSelect: 'none'
           }}
         >
           <div style={{
-            background: '#fffbeb', borderRadius: '36px', maxWidth: '720px', width: '100%',
-            padding: '2rem', border: '6px solid #f59e0b',
+            background: '#fffbeb', borderRadius: '36px', maxWidth: '860px', width: '100%',
+            padding: '1.8rem 1.6rem', border: '6px solid #f59e0b',
             boxShadow: '0 25px 50px -12px rgba(245, 158, 11, 0.35)', position: 'relative', textAlign: 'center'
           }}>
-            <button onClick={() => setIsBearModalOpen(false)} style={{
+            <button onClick={() => { setIsFeedModalOpen(false); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }} style={{
               position: 'absolute', top: '18px', right: '18px', background: '#fef3c7', color: '#78350f',
               border: '2px solid #fde68a', borderRadius: '50%', width: '40px', height: '40px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10
             }}><X size={24} /></button>
 
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fef3c7', padding: '6px 18px', borderRadius: '20px', marginBottom: '1rem', border: '2px solid #fde68a' }}>
+            {/* 상단 점수 */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fef3c7', padding: '6px 18px', borderRadius: '20px', marginBottom: '0.8rem', border: '2px solid #fde68a' }}>
               <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#92400e' }}>⭐ 먹인 과일: {feedScore}개</span>
             </div>
 
-            {/* 🐻 곰돌이 캐릭터 & 드롭 영역 (bearBoxRef) */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
-              {/* 말풍선 */}
-              <div
-                onClick={() => speakBearWish(wantedFood)}
-                title="콕 누르면 곰돌이가 목소리로 다시 말해요!"
-                style={{
-                  background: '#ffffff', border: '3.5px solid #fbbf24', borderRadius: '24px',
-                  padding: '1rem 1.6rem', marginBottom: '0.8rem', boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
-                  cursor: 'pointer', position: 'relative'
-                }}
-              >
-                <p style={{ fontSize: '1.35rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
-                  {bearMood === 'reject'
-                    ? `😤 "이거 말고~!! ${(wantedFood || ALL_FOOD_ITEMS[0])?.name || '다른 거'} 달라고~! 😣"`
-                    : bearMood === 'eating'
-                      ? '😋 "아구아구... 우물우물... 냠냠!"'
-                      : bearMood === 'happy'
-                        ? '💖 "너무 맛있다~! 최고야! 🥰"'
-                        : isOverBear
-                          ? '😮 "아~~ 입 벌리고 있어! 쏙 넣어줘!"'
-                          : `"${(wantedFood || ALL_FOOD_ITEMS[0])?.name || '사과'} 먹고 싶어요! ${(wantedFood || ALL_FOOD_ITEMS[0])?.icon || '🍎'}"`}
-                </p>
-                {/* 말풍선 꼬리 */}
-                <div style={{
-                  position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)',
-                  width: 0, height: 0,
-                  borderLeft: '10px solid transparent', borderRight: '10px solid transparent',
-                  borderTop: '10px solid #fbbf24'
-                }} />
-                <div style={{
-                  position: 'absolute', bottom: '-7px', left: '50%', transform: 'translateX(-50%)',
-                  width: 0, height: 0,
-                  borderLeft: '8px solid transparent', borderRight: '8px solid transparent',
-                  borderTop: '8px solid #ffffff'
-                }} />
-              </div>
-
-              {/* SVG 곰돌이 캐릭터 + 드롭 영역 */}
-              <div
-                ref={bearBoxRef}
-                style={{
-                  padding: '0.5rem 1.5rem', borderRadius: '32px',
-                  border: isOverBear ? '4px dashed #f59e0b' : '4px solid transparent',
-                  background: isOverBear ? '#fef3c7' : 'transparent',
-                  transition: 'background 0.2s ease, border-color 0.2s ease',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}
-              >
-                <AnimatedBear mood={bearMood} isOverBear={isOverBear} rejectedFoodIcon={rejectedFood?.icon} />
-              </div>
+            {/* 목표 동물 말풍선 */}
+            <div
+              onClick={() => speakFeedWish(feedRound.target, feedRound.food)}
+              title="콕 누르면 동물 친구가 목소리로 다시 말해요!"
+              style={{
+                background: '#ffffff', border: '3.5px solid #fbbf24', borderRadius: '24px',
+                padding: '0.9rem 1.4rem', marginBottom: '1.2rem', boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
+                cursor: 'pointer', position: 'relative', display: 'inline-block', maxWidth: '90%'
+              }}
+            >
+              <p style={{ fontSize: '1.35rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
+                {rejectedAnimalId === feedRound.target.id
+                  ? `😤 "${feedRound.target.name}: 이거 말고~!! ${feedRound.food.name} 달라고~! 😣"`
+                  : rejectedAnimalId
+                    ? `🙅 "${feedRound.threeAnimals.find(a => a.id === rejectedAnimalId)?.name || '나'} 말고! ${feedRound.target.name}한테 ${feedRound.food.name} 줘! 😣"`
+                    : animalMoods[feedRound.target.id] === 'eating'
+                      ? `😋 "${feedRound.target.name}: 아구아구... 우물우물... 냠냠!"`
+                      : animalMoods[feedRound.target.id] === 'happy'
+                        ? `💖 "${feedRound.target.name}: 너무 맛있다~! 최고야! 🥰"`
+                        : hoverAnimalId === feedRound.target.id
+                          ? `😮 "${feedRound.target.name}: 아~~ 입 벌리고 있어! 쏙 넣어줘!"`
+                          : `"${feedRound.target.name}가 ${feedRound.food.name} 먹고 싶어요! ${feedRound.food.icon}"`}
+              </p>
+              {/* 말풍선 꼬리 */}
+              <div style={{
+                position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)',
+                width: 0, height: 0,
+                borderLeft: '10px solid transparent', borderRight: '10px solid transparent',
+                borderTop: '10px solid #fbbf24'
+              }} />
+              <div style={{
+                position: 'absolute', bottom: '-7px', left: '50%', transform: 'translateX(-50%)',
+                width: 0, height: 0,
+                borderLeft: '8px solid transparent', borderRight: '8px solid transparent',
+                borderTop: '8px solid #ffffff'
+              }} />
             </div>
 
-            <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#92400e', marginBottom: '1rem' }}>
-              👇 과일·채소를 손가락으로 끌어다(Drag) 곰돌이 입에 쏙 넣어주세요!
+            {/* 3마리 동물 캐릭터 드롭 영역 목록 */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px',
+              marginBottom: '1rem', alignItems: 'stretch'
+            }}>
+              {feedRound.threeAnimals.map(animal => {
+                const isTarget = animal.id === feedRound.target.id;
+                const isOver = hoverAnimalId === animal.id;
+                const mood = animalMoods[animal.id] || 'hungry';
+
+                return (
+                  <div
+                    key={animal.id}
+                    ref={el => { animalBoxRefs.current[animal.id] = el; }}
+                    onClick={() => {
+                      if (isTarget) speakFeedWish(animal, feedRound.food);
+                    }}
+                    style={{
+                      padding: '10px 8px', borderRadius: '26px',
+                      border: isOver
+                        ? '4px dashed #f59e0b'
+                        : isTarget
+                          ? '3.5px solid #f59e0b'
+                          : '2.5px solid #fed7aa',
+                      background: isOver
+                        ? '#fef3c7'
+                        : isTarget
+                          ? '#ffffff'
+                          : '#fffbf0',
+                      boxShadow: isTarget ? '0 8px 22px rgba(245, 158, 11, 0.15)' : '0 4px 12px rgba(0,0,0,0.04)',
+                      transition: 'all 0.2s ease',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      position: 'relative'
+                    }}
+                  >
+                    {/* 이름 및 목표 라벨 */}
+                    <div style={{ marginBottom: '6px' }}>
+                      <span style={{
+                        background: isTarget ? '#f59e0b' : '#94a3b8',
+                        color: '#ffffff', padding: '4px 12px', borderRadius: '14px',
+                        fontWeight: 900, fontSize: '0.92rem', display: 'inline-flex', alignItems: 'center', gap: '4px'
+                      }}>
+                        {animal.icon} {animal.name} {isTarget ? '🙋 (원해요!)' : ''}
+                      </span>
+                    </div>
+
+                    {/* SVG 애니메이션 캐릭터 */}
+                    <AnimatedAnimalCharacter
+                      animal={animal}
+                      mood={mood}
+                      isOver={isOver}
+                      rejectedFoodIcon={rejectedAnimalId === animal.id ? rejectedFood?.icon : null}
+                      isTarget={isTarget}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            <p style={{ fontSize: '1.05rem', fontWeight: 900, color: '#92400e', marginBottom: '0.8rem' }}>
+              👇 원하는 과일·채소를 손가락으로 끌어다(Drag) <strong>{feedRound.target.name}</strong>에게 쏙 넣어주세요!
             </p>
 
-            {/* 과일/채소 랜덤 5개 선택 카드 (먹는 동안 PROTECT 비활성화, 정답 힌트 제거) */}
+            {/* 과일/채소 랜덤 5개 선택 카드 (먹는 동안 PROTECT 비활성화) */}
             <div style={{
               display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px',
-              opacity: bearMood !== 'hungry' ? 0.45 : 1,
-              pointerEvents: bearMood !== 'hungry' ? 'none' : 'auto',
+              opacity: isFeedBusyRef.current ? 0.45 : 1,
+              pointerEvents: isFeedBusyRef.current ? 'none' : 'auto',
               transition: 'opacity 0.25s ease'
             }}>
-              {bearChoices.map(food => (
+              {feedRound.choices.map(food => (
                 <button
                   key={food.id}
                   onPointerDown={(e) => handleStartDragFood(e, food)}
@@ -1755,7 +2028,7 @@ export default function App() {
                     background: '#ffffff',
                     border: '2.5px solid #fed7aa',
                     borderRadius: '20px', padding: '12px 8px',
-                    cursor: bearMood !== 'hungry' ? 'not-allowed' : 'grab',
+                    cursor: isFeedBusyRef.current ? 'not-allowed' : 'grab',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.05)', touchAction: 'none',
                     opacity: draggingFood?.id === food.id ? 0.25 : 1,
