@@ -141,6 +141,22 @@ class BabySoundEngine {
     this.playFreq(587.33, 'triangle', 0.2, 0.5);
     setTimeout(() => this.playFreq(880, 'triangle', 0.2, 0.5), 120);
   }
+
+  playBubble() {
+    if (this.muted) return;
+    const notes = [440, 587, 880, 1174];
+    notes.forEach((freq, idx) => {
+      setTimeout(() => {
+        this.playFreq(freq + Math.random() * 60, 'sine', 0.08, 0.45);
+      }, idx * 45);
+    });
+  }
+
+  playSnap() {
+    if (this.muted) return;
+    this.playFreq(784, 'triangle', 0.09, 0.65);
+    setTimeout(() => this.playFreq(1046.5, 'sine', 0.12, 0.55), 50);
+  }
 }
 
 const audioEngine = new BabySoundEngine();
@@ -1360,15 +1376,231 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
   );
 }
 
-// 🎈 퐁퐁 풍선 데이터
-const INITIAL_BALLOONS = [
-  { id: 1, color: '#ef4444', icon: '🐶', name: '강아지', left: 15, size: 90 },
-  { id: 2, color: '#3b82f6', icon: '🐱', name: '고양이', left: 35, size: 100 },
-  { id: 3, color: '#10b981', icon: '🦁', name: '사자', left: 55, size: 85 },
-  { id: 4, color: '#f59e0b', icon: '🐮', name: '소', left: 75, size: 110 },
-  { id: 5, color: '#ec4899', icon: '🐰', name: '토끼', left: 25, size: 95 },
-  { id: 6, color: '#8b5cf6', icon: '🐼', name: '판다', left: 65, size: 105 }
+// ═════════════════════════════════════════════════════════════════════════════
+// 🌊 신비한 바다속 탐험 데이터 (8종 바다 생물)
+// ═════════════════════════════════════════════════════════════════════════════
+const OCEAN_CREATURES = [
+  {
+    id: 'fish', name: '물고기', icon: '🐟', title: '니모 열대어',
+    color: '#f97316', bg: '#ffedd5',
+    soundText: '뻐끔뻐끔~ 주황빛 귀여운 아기 물고기!',
+    left: 20, top: 40, size: 100, swimDelay: 0
+  },
+  {
+    id: 'octopus', name: '문어', icon: '🐙', title: '뽀글 문어',
+    color: '#ec4899', bg: '#fce7f3',
+    soundText: '뽀글뽀글~ 다리 여덟 개 말랑말랑 문어!',
+    left: 68, top: 58, size: 110, swimDelay: 1.2
+  },
+  {
+    id: 'crab', name: '게', icon: '🦀', title: '꽃게',
+    color: '#ef4444', bg: '#fee2e2',
+    soundText: '찰칵찰칵~ 옆으로 걷는 집게발 꽃게!',
+    left: 12, top: 82, size: 95, swimDelay: 0.6
+  },
+  {
+    id: 'turtle', name: '거북이', icon: '🐢', title: '바다거북',
+    color: '#10b981', bg: '#d1fae5',
+    soundText: '느릿느릿~ 푸른 바다를 둥실 헤엄치는 거북이!',
+    left: 45, top: 20, size: 115, swimDelay: 2.1
+  },
+  {
+    id: 'whale', name: '고래', icon: '🐳', title: '파랑고래',
+    color: '#0284c7', bg: '#e0f2fe',
+    soundText: '뿌우우~~ 등에서 시원한 물을 뿜는 거대 파랑고래!',
+    left: 78, top: 22, size: 135, swimDelay: 1.8
+  },
+  {
+    id: 'shark', name: '상어', icon: '🦈', title: '아기상어',
+    color: '#3b82f6', bg: '#dbeafe',
+    soundText: '뚜루루뚜루~ 멋진 지느러미 아기상어!',
+    left: 40, top: 62, size: 125, swimDelay: 0.9
+  },
+  {
+    id: 'squid', name: '오징어', icon: '🦑', title: '화살오징어',
+    color: '#f43f5e', bg: '#ffe4e6',
+    soundText: '슝슝~ 바다속을 재빠르게 헤엄치는 오징어!',
+    left: 88, top: 80, size: 95, swimDelay: 1.5
+  },
+  {
+    id: 'seal', name: '물개', icon: '🦭', title: '아기물개',
+    color: '#64748b', bg: '#f1f5f9',
+    soundText: '앙앙~! 짝짜꿍 박수 치는 귀여운 물개!',
+    left: 26, top: 16, size: 105, swimDelay: 2.4
+  }
 ];
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 🧩 4조각 아기 퍼즐 데이터 (8종 퍼즐 테마)
+// ═════════════════════════════════════════════════════════════════════════════
+const BABY_PUZZLES = [
+  { id: 'dog', name: '강아지', icon: '🐶', label: '🐶 강아지 얼굴', color: '#f97316', bg: '#fff7ed', desc: '사랑스러운 멍멍이 강아지' },
+  { id: 'cat', name: '고양이', icon: '🐱', label: '🐱 고양이 얼굴', color: '#ec4899', bg: '#fdf2f8', desc: '초롱초롱 야옹이 고양이' },
+  { id: 'lion', name: '사자', icon: '🦁', label: '🦁 사자 얼굴', color: '#d97706', bg: '#fefce8', desc: '멋진 갈기털 밀림의 왕 사자' },
+  { id: 'rabbit', name: '토끼', icon: '🐰', label: '🐰 토끼 얼굴', color: '#f43f5e', bg: '#fff1f2', desc: '쫑긋한 분홍 귀 깡충 토끼' },
+  { id: 'bear', name: '곰돌이', icon: '🐻', label: '🐻 곰돌이 얼굴', color: '#b45309', bg: '#fef3c7', desc: '포근한 꿀단지 아기 곰돌이' },
+  { id: 'panda', name: '판다', icon: '🐼', label: '🐼 판다 얼굴', color: '#0f172a', bg: '#f8fafc', desc: '귀여운 눈 패치 흑백 판다' },
+  { id: 'frog', name: '개구리', icon: '🐸', label: '🐸 개구리 얼굴', color: '#16a34a', bg: '#f0fdf4', desc: '초롱초롱 왕눈이 개구리' },
+  { id: 'apple', name: '빨간 사과', icon: '🍎', label: '🍎 빨간 사과', color: '#dc2626', bg: '#fee2e2', desc: '새콤달콤 싱싱한 빨간 사과' }
+];
+
+// 🧩 퍼즐 300x300 고화질 벡터 아트워크 렌더러
+function PuzzleArtworkSVG({ id }) {
+  if (id === 'dog') {
+    return (
+      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <circle cx="150" cy="150" r="130" fill="#fed7aa" stroke="#ea580c" strokeWidth="6" />
+        <ellipse cx="60" cy="110" rx="35" ry="70" fill="#c2410c" transform="rotate(-15 60 110)" />
+        <ellipse cx="240" cy="110" rx="35" ry="70" fill="#c2410c" transform="rotate(15 240 110)" />
+        <ellipse cx="110" cy="130" rx="28" ry="32" fill="#ea580c" opacity="0.35" />
+        <circle cx="110" cy="130" r="14" fill="#1e293b" /><circle cx="114" cy="126" r="5" fill="#ffffff" />
+        <circle cx="190" cy="130" r="14" fill="#1e293b" /><circle cx="194" cy="126" r="5" fill="#ffffff" />
+        <ellipse cx="150" cy="175" rx="42" ry="32" fill="#ffedd5" />
+        <ellipse cx="150" cy="165" rx="16" ry="12" fill="#0f172a" />
+        <circle cx="146" cy="163" r="3.5" fill="#ffffff" />
+        <path d="M 132 182 Q 150 196 168 182" stroke="#0f172a" strokeWidth="4.5" strokeLinecap="round" fill="none" />
+        <path d="M 142 188 Q 150 216 158 188 Z" fill="#f43f5e" />
+        <circle cx="95" cy="170" r="16" fill="#fca5a5" opacity="0.7" />
+        <circle cx="205" cy="170" r="16" fill="#fca5a5" opacity="0.7" />
+        <path d="M 90 260 Q 150 280 210 260" stroke="#ef4444" strokeWidth="16" strokeLinecap="round" fill="none" />
+        <circle cx="150" cy="275" r="14" fill="#fbbf24" stroke="#d97706" strokeWidth="3" />
+      </svg>
+    );
+  }
+  if (id === 'cat') {
+    return (
+      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <polygon points="50,110 80,20 130,80" fill="#f472b6" stroke="#db2777" strokeWidth="6" strokeLinejoin="round" />
+        <polygon points="65,95 85,38 120,78" fill="#fbcfe8" />
+        <polygon points="250,110 220,20 170,80" fill="#f472b6" stroke="#db2777" strokeWidth="6" strokeLinejoin="round" />
+        <polygon points="235,95 215,38 180,78" fill="#fbcfe8" />
+        <circle cx="150" cy="160" r="120" fill="#fdf2f8" stroke="#db2777" strokeWidth="6" />
+        <ellipse cx="105" cy="145" rx="18" ry="24" fill="#10b981" /><ellipse cx="105" cy="145" rx="6" ry="20" fill="#064e3b" /><circle cx="110" cy="138" r="4.5" fill="#ffffff" />
+        <ellipse cx="195" cy="145" rx="18" ry="24" fill="#10b981" /><ellipse cx="195" cy="145" rx="6" ry="20" fill="#064e3b" /><circle cx="200" cy="138" r="4.5" fill="#ffffff" />
+        <polygon points="150,185 140,172 160,172" fill="#f43f5e" />
+        <line x1="40" y1="170" x2="95" y2="175" stroke="#db2777" strokeWidth="3.5" strokeLinecap="round" />
+        <line x1="35" y1="190" x2="95" y2="185" stroke="#db2777" strokeWidth="3.5" strokeLinecap="round" />
+        <line x1="260" y1="170" x2="205" y2="175" stroke="#db2777" strokeWidth="3.5" strokeLinecap="round" />
+        <line x1="265" y1="190" x2="205" y2="185" stroke="#db2777" strokeWidth="3.5" strokeLinecap="round" />
+        <path d="M 134 195 Q 142 208 150 196 Q 158 208 166 195" stroke="#831843" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <circle cx="85" cy="180" r="15" fill="#fbcfe8" />
+        <circle cx="215" cy="180" r="15" fill="#fbcfe8" />
+      </svg>
+    );
+  }
+  if (id === 'lion') {
+    return (
+      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <circle cx="150" cy="150" r="135" fill="#d97706" stroke="#b45309" strokeWidth="6" />
+        {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(deg => (
+          <path key={deg} d="M 150 15 L 165 40 L 135 40 Z" fill="#b45309" transform={`rotate(${deg} 150 150)`} />
+        ))}
+        <circle cx="150" cy="150" r="95" fill="#fef08a" stroke="#b45309" strokeWidth="5" />
+        <circle cx="85" cy="80" r="24" fill="#b45309" /><circle cx="85" cy="80" r="12" fill="#fed7aa" />
+        <circle cx="215" cy="80" r="24" fill="#b45309" /><circle cx="215" cy="80" r="12" fill="#fed7aa" />
+        <circle cx="115" cy="135" r="13" fill="#451a03" /><circle cx="118" cy="131" r="4.5" fill="#ffffff" />
+        <circle cx="185" cy="135" r="13" fill="#451a03" /><circle cx="188" cy="131" r="4.5" fill="#ffffff" />
+        <ellipse cx="150" cy="180" rx="38" ry="26" fill="#ffffff" opacity="0.95" />
+        <polygon points="150,175 136,158 164,158" fill="#78350f" />
+        <path d="M 134 185 Q 150 200 166 185" stroke="#78350f" strokeWidth="4" strokeLinecap="round" fill="none" />
+      </svg>
+    );
+  }
+  if (id === 'rabbit') {
+    return (
+      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <ellipse cx="105" cy="70" rx="26" ry="65" fill="#ffffff" stroke="#f43f5e" strokeWidth="5" transform="rotate(-8 105 70)" />
+        <ellipse cx="105" cy="70" rx="14" ry="48" fill="#fda4af" transform="rotate(-8 105 70)" />
+        <ellipse cx="195" cy="70" rx="26" ry="65" fill="#ffffff" stroke="#f43f5e" strokeWidth="5" transform="rotate(8 195 70)" />
+        <ellipse cx="195" cy="70" rx="14" ry="48" fill="#fda4af" transform="rotate(8 195 70)" />
+        <circle cx="150" cy="175" r="105" fill="#ffffff" stroke="#f43f5e" strokeWidth="5" />
+        <circle cx="110" cy="160" r="15" fill="#e11d48" /><circle cx="114" cy="155" r="5" fill="#ffffff" /><circle cx="107" cy="165" r="2.5" fill="#ffffff" />
+        <circle cx="190" cy="160" r="15" fill="#e11d48" /><circle cx="194" cy="155" r="5" fill="#ffffff" /><circle cx="187" cy="165" r="2.5" fill="#ffffff" />
+        <polygon points="150,190 140,178 160,178" fill="#fb7185" />
+        <rect x="141" y="196" width="8" height="12" rx="2" fill="#ffffff" stroke="#e11d48" strokeWidth="1.5" />
+        <rect x="151" y="196" width="8" height="12" rx="2" fill="#ffffff" stroke="#e11d48" strokeWidth="1.5" />
+        <circle cx="85" cy="188" r="18" fill="#fecdd3" />
+        <circle cx="215" cy="188" r="18" fill="#fecdd3" />
+      </svg>
+    );
+  }
+  if (id === 'bear') {
+    return (
+      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <circle cx="75" cy="75" r="36" fill="#854d0e" stroke="#713f12" strokeWidth="5" />
+        <circle cx="75" cy="75" r="18" fill="#fed7aa" />
+        <circle cx="225" cy="75" r="36" fill="#854d0e" stroke="#713f12" strokeWidth="5" />
+        <circle cx="225" cy="75" r="18" fill="#fed7aa" />
+        <circle cx="150" cy="165" r="115" fill="#ca8a04" stroke="#713f12" strokeWidth="5" />
+        <circle cx="112" cy="145" r="13" fill="#3e2723" /><circle cx="115" cy="141" r="4.5" fill="#ffffff" />
+        <circle cx="188" cy="145" r="13" fill="#3e2723" /><circle cx="191" cy="141" r="4.5" fill="#ffffff" />
+        <ellipse cx="150" cy="190" rx="46" ry="34" fill="#fef08a" />
+        <ellipse cx="150" cy="178" rx="16" ry="12" fill="#3e2723" />
+        <path d="M 132 198 Q 150 214 168 198" stroke="#3e2723" strokeWidth="4.5" strokeLinecap="round" fill="none" />
+        <circle cx="85" cy="180" r="16" fill="#fca5a5" opacity="0.6" />
+        <circle cx="215" cy="180" r="16" fill="#fca5a5" opacity="0.6" />
+      </svg>
+    );
+  }
+  if (id === 'panda') {
+    return (
+      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <circle cx="70" cy="70" r="38" fill="#0f172a" />
+        <circle cx="230" cy="70" r="38" fill="#0f172a" />
+        <circle cx="150" cy="165" r="115" fill="#ffffff" stroke="#0f172a" strokeWidth="6" />
+        <ellipse cx="105" cy="145" rx="28" ry="22" fill="#0f172a" transform="rotate(-20 105 145)" />
+        <ellipse cx="195" cy="145" rx="28" ry="22" fill="#0f172a" transform="rotate(20 195 145)" />
+        <circle cx="108" cy="145" r="10" fill="#ffffff" /><circle cx="109" cy="144" r="5" fill="#0f172a" /><circle cx="111" cy="142" r="2.5" fill="#ffffff" />
+        <circle cx="192" cy="145" r="10" fill="#ffffff" /><circle cx="191" cy="144" r="5" fill="#0f172a" /><circle cx="189" cy="142" r="2.5" fill="#ffffff" />
+        <ellipse cx="150" cy="180" rx="14" ry="10" fill="#0f172a" />
+        <path d="M 136 195 Q 150 210 164 195" stroke="#0f172a" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <circle cx="85" cy="185" r="16" fill="#fbcfe8" />
+        <circle cx="215" cy="185" r="16" fill="#fbcfe8" />
+      </svg>
+    );
+  }
+  if (id === 'frog') {
+    return (
+      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <circle cx="90" cy="85" r="45" fill="#22c55e" stroke="#15803d" strokeWidth="5" />
+        <circle cx="210" cy="85" r="45" fill="#22c55e" stroke="#15803d" strokeWidth="5" />
+        <circle cx="90" cy="85" r="26" fill="#ffffff" /><circle cx="93" cy="85" r="14" fill="#0f172a" /><circle cx="98" cy="80" r="5" fill="#ffffff" />
+        <circle cx="210" cy="85" r="26" fill="#ffffff" /><circle cx="207" cy="85" r="14" fill="#0f172a" /><circle cx="212" cy="80" r="5" fill="#ffffff" />
+        <ellipse cx="150" cy="175" rx="125" ry="95" fill="#22c55e" stroke="#15803d" strokeWidth="5" />
+        <ellipse cx="150" cy="195" rx="75" ry="55" fill="#a7f3d0" />
+        <circle cx="140" cy="155" r="4" fill="#15803d" />
+        <circle cx="160" cy="155" r="4" fill="#15803d" />
+        <path d="M 75 175 Q 150 240 225 175" stroke="#065f46" strokeWidth="6" strokeLinecap="round" fill="none" />
+        <circle cx="75" cy="175" r="18" fill="#fca5a5" />
+        <circle cx="225" cy="175" r="18" fill="#fca5a5" />
+      </svg>
+    );
+  }
+  // Default: apple
+  return (
+    <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+      <path d="M 150 75 Q 165 30 175 20" stroke="#78350f" strokeWidth="12" strokeLinecap="round" fill="none" />
+      <path d="M 160 45 Q 210 25 210 65 Q 175 75 160 45 Z" fill="#22c55e" stroke="#15803d" strokeWidth="4" />
+      <path d="M 150 85 C 95 65 35 110 45 185 C 55 255 120 280 150 270 C 180 280 245 255 255 185 C 265 110 205 65 150 85 Z" fill="#ef4444" stroke="#b91c1c" strokeWidth="6" />
+      <path d="M 75 120 Q 95 105 110 120" stroke="#fca5a5" strokeWidth="8" strokeLinecap="round" fill="none" />
+      <circle cx="115" cy="175" r="11" fill="#450a0a" /><circle cx="118" cy="172" r="3.5" fill="#ffffff" />
+      <circle cx="185" cy="175" r="11" fill="#450a0a" /><circle cx="188" cy="172" r="3.5" fill="#ffffff" />
+      <path d="M 135 195 Q 150 210 165 195" stroke="#450a0a" strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      <circle cx="95" cy="195" r="14" fill="#fecdd3" opacity="0.8" />
+      <circle cx="205" cy="195" r="14" fill="#fecdd3" opacity="0.8" />
+    </svg>
+  );
+}
+
+// 4개 슬롯의 viewBox 설정 (0:좌상, 1:우상, 2:좌하, 3:우하)
+const PUZZLE_QUAD_VIEWBOX = [
+  '0 0 150 150',      // Quad 0: Top-Left
+  '150 0 150 150',    // Quad 1: Top-Right
+  '0 150 150 150',    // Quad 2: Bottom-Left
+  '150 150 150 150'   // Quad 3: Bottom-Right
+];
+
+const PUZZLE_QUAD_LABELS = ['1. 왼쪽 위', '2. 오른쪽 위', '3. 왼쪽 아래', '4. 오른쪽 아래'];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('animal');
@@ -1495,9 +1727,167 @@ export default function App() {
   const [isShuffle, setIsShuffle] = useState(false); // 셔플 랜덤 재생
   const songAudioRef = useRef(null);
 
-  // 풍선
-  const [balloons, setBalloons] = useState(INITIAL_BALLOONS);
-  const [popScore, setPopScore] = useState(0);
+  // 🌊 바다속 탐험 상태
+  const [oceanTarget, setOceanTarget] = useState(() => OCEAN_CREATURES[1]); // 기본: 문어
+  const [oceanFound, setOceanFound] = useState(false);
+  const [activeOceanCreatureId, setActiveOceanCreatureId] = useState(null);
+  const [oceanBubbles, setOceanBubbles] = useState([]);
+  const [oceanScore, setOceanScore] = useState(0);
+
+  // 🧩 4조각 아기 퍼즐 상태
+  const [puzzleTheme, setPuzzleTheme] = useState(() => BABY_PUZZLES[0]); // 기본: 강아지
+  const [placedPieces, setPlacedPieces] = useState([false, false, false, false]);
+  const [trayPieces, setTrayPieces] = useState(() => [2, 0, 3, 1]); // 셔플된 조각
+  const [puzzleCompleted, setPuzzleCompleted] = useState(false);
+
+  // 🌊 바다속 음성 미션
+  const speakOceanMission = (creature) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const lastChar = creature.name.charCodeAt(creature.name.length - 1);
+      const hasBatchim = (lastChar - 0xac00) % 28 > 0;
+      const particle = hasBatchim ? '은' : '는';
+      const text = `${creature.name}${particle} 어디 있을까요?`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ko-KR';
+      utterance.rate = 0.95;
+      utterance.pitch = 1.15;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const generateNextOceanMission = () => {
+    const nextList = OCEAN_CREATURES.filter(c => c.id !== oceanTarget.id);
+    const nextTarget = nextList[Math.floor(Math.random() * nextList.length)];
+    setOceanTarget(nextTarget);
+    setOceanFound(false);
+    setActiveOceanCreatureId(null);
+    speakOceanMission(nextTarget);
+  };
+
+  const handleTapOceanCreature = (creature, e) => {
+    // 거품 팝핑 파티클 생성
+    const newBubbles = Array.from({ length: 8 }, (_, i) => ({
+      id: Date.now() + i + Math.random(),
+      x: (e.nativeEvent?.offsetX || 50) + (Math.random() - 0.5) * 50,
+      y: (e.nativeEvent?.offsetY || 50) + (Math.random() - 0.5) * 50,
+      size: 16 + Math.random() * 24
+    }));
+
+    setOceanBubbles(prev => [...prev.slice(-30), ...newBubbles]);
+    setTimeout(() => {
+      setOceanBubbles(prev => prev.filter(b => !newBubbles.includes(b)));
+    }, 1200);
+
+    // 액티브 애니메이션 & 사운드
+    setActiveOceanCreatureId(creature.id);
+    audioEngine.playBubble();
+
+    setTimeout(() => {
+      setActiveOceanCreatureId(null);
+    }, 900);
+
+    // 정답 판정
+    if (creature.id === oceanTarget.id && !oceanFound) {
+      setOceanFound(true);
+      setOceanScore(prev => prev + 1);
+      audioEngine.playFanfare();
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(`찾았다! ${creature.name}를 찾았어요! 참 잘했어요!`);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 0.95;
+        utterance.pitch = 1.2;
+        window.speechSynthesis.speak(utterance);
+      }
+
+      // 2.8초 후 다음 미션으로 자동 전환
+      setTimeout(() => {
+        generateNextOceanMission();
+      }, 2800);
+    } else if (creature.id !== oceanTarget.id) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(`${creature.name}! ${creature.soundText}`);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.1;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  };
+
+  const handleOceanBackgroundClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const newBubbles = Array.from({ length: 6 }, (_, i) => ({
+      id: Date.now() + i + Math.random(),
+      x: x + (Math.random() - 0.5) * 30,
+      y: y + (Math.random() - 0.5) * 30,
+      size: 14 + Math.random() * 20
+    }));
+
+    setOceanBubbles(prev => [...prev.slice(-30), ...newBubbles]);
+    audioEngine.playBubble();
+    setTimeout(() => {
+      setOceanBubbles(prev => prev.filter(b => !newBubbles.includes(b)));
+    }, 1200);
+  };
+
+  // 🧩 퍼즐 조작 핸들러
+  const handleSnapPiece = (quadIdx) => {
+    if (placedPieces[quadIdx]) return;
+    audioEngine.playSnap();
+
+    const updated = [...placedPieces];
+    updated[quadIdx] = true;
+    setPlacedPieces(updated);
+
+    // 4조각 모두 맞췄는지 확인
+    if (updated.every(Boolean)) {
+      setPuzzleCompleted(true);
+      setTimeout(() => {
+        audioEngine.playFanfare();
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(`와! ${puzzleTheme.name} 퍼즐을 완성했어요! 참 잘했어요!`);
+          utterance.lang = 'ko-KR';
+          utterance.rate = 0.95;
+          utterance.pitch = 1.2;
+          window.speechSynthesis.speak(utterance);
+        }
+      }, 300);
+    }
+  };
+
+  const handleResetPuzzle = (theme) => {
+    const t = theme || puzzleTheme;
+    setPlacedPieces([false, false, false, false]);
+    setTrayPieces([0, 1, 2, 3].sort(() => 0.5 - Math.random()));
+    setPuzzleCompleted(false);
+  };
+
+  const handleSelectPuzzleTheme = (theme) => {
+    setPuzzleTheme(theme);
+    handleResetPuzzle(theme);
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(`${theme.name} 퍼즐을 맞춰볼까요?`);
+      utterance.lang = 'ko-KR';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.1;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const handleNextPuzzleTheme = () => {
+    const currentIdx = BABY_PUZZLES.findIndex(p => p.id === puzzleTheme.id);
+    const nextIdx = (currentIdx + 1) % BABY_PUZZLES.length;
+    handleSelectPuzzleTheme(BABY_PUZZLES[nextIdx]);
+  };
 
   useEffect(() => {
     audioEngine.muted = !soundEnabled;
@@ -1876,14 +2266,16 @@ export default function App() {
         boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.25)',
         overflow: 'hidden', display: 'flex', flexDirection: 'column'
       }}>
-        {/* 탭 네비게이션 (짱구 테마 컬러) */}
+        {/* 탭 네비게이션 (6종 테마 컬러) */}
         <nav style={{
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px',
-          padding: '14px', background: '#fff1f2', borderBottom: '3.5px solid #fca5a5'
+          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px',
+          padding: '12px 14px', background: '#fff1f2', borderBottom: '3.5px solid #fca5a5'
         }}>
           {[
             { id: 'animal', label: '📸 생생 동물', sub: '울음소리 탐험', color: '#ef4444' },
             { id: 'fruit', label: '🍎 싱싱 과일/채소', sub: '고화질 실사 관찰', color: '#10b981' },
+            { id: 'ocean', label: '🌊 신비 바다속', sub: '뽀글 생물 탐험', color: '#0284c7' },
+            { id: 'puzzle', label: '🧩 아기 퍼즐', sub: '4조각 맞추기', color: '#8b5cf6' },
             { id: 'paint', label: '🎨 무지개 물감', sub: '터치 감각 미술', color: '#3b82f6' },
             { id: 'song', label: '🎵 동요 재생', sub: `한국 동요 (${LOCAL_NURSERY_SONGS.length}곡)`, color: '#f97316' }
           ].map(tab => {
@@ -1892,10 +2284,21 @@ export default function App() {
               <button key={tab.id} onClick={() => {
                 if (tab.id === 'animal') setAnimalItems(shuffleArray(REAL_ANIMALS));
                 if (tab.id === 'fruit') setFruitItems(shuffleArray(REAL_FRUITS));
+                if (tab.id === 'ocean') speakOceanMission(oceanTarget);
+                if (tab.id === 'puzzle' && !puzzleCompleted) {
+                  if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(`${puzzleTheme.name} 퍼즐을 맞춰볼까요?`);
+                    utterance.lang = 'ko-KR';
+                    utterance.rate = 1.0;
+                    utterance.pitch = 1.1;
+                    window.speechSynthesis.speak(utterance);
+                  }
+                }
                 setActiveTab(tab.id);
                 audioEngine.playFreq(520, 'sine', 0.15);
               }} style={{
-                padding: '14px 8px', borderRadius: '22px',
+                padding: '12px 6px', borderRadius: '20px',
                 border: isActive ? `4px solid ${tab.color}` : '2px solid #fed7aa',
                 background: isActive ? tab.color : '#ffffff',
                 color: isActive ? '#ffffff' : '#475569', fontWeight: 900, cursor: 'pointer',
@@ -1903,8 +2306,8 @@ export default function App() {
                 transform: isActive ? 'scale(1.03)' : 'scale(1)', transition: 'all 0.15s ease',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
               }}>
-                <span style={{ fontSize: '1.25rem', lineHeight: 1.2 }}>{tab.label}</span>
-                <span style={{ fontSize: '0.8rem', opacity: isActive ? 0.95 : 0.7, fontWeight: 800 }}>{tab.sub}</span>
+                <span style={{ fontSize: '1.18rem', lineHeight: 1.2 }}>{tab.label}</span>
+                <span style={{ fontSize: '0.78rem', opacity: isActive ? 0.95 : 0.7, fontWeight: 800, marginTop: '2px' }}>{tab.sub}</span>
               </button>
             );
           })}
@@ -2023,7 +2426,374 @@ export default function App() {
             </div>
           )}
 
-          {/* ===== 모듈 3: 무지개 물감 & 퐁퐁 스탬프 & 따라쓰기 ===== */}
+          {/* ===== 모듈 3: 🌊 신비한 바다속 탐험 (뽀글뽀글 거품 + 움직임 + 소리 + 미션 퀴즈) ===== */}
+          {activeTab === 'ocean' && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+              {/* 상단 미션 안내 바 ("문어는 어디 있을까요?") */}
+              <div style={{
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                borderRadius: '24px', padding: '0.9rem 1.4rem', marginBottom: '0.8rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                border: '3px solid #38bdf8', flexWrap: 'wrap', gap: '10px', flexShrink: 0,
+                boxShadow: '0 8px 24px rgba(2, 132, 199, 0.25)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '2.3rem', lineHeight: 1 }}>{oceanFound ? '🎉' : '🎯'}</span>
+                  <div>
+                    <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {oceanFound ? (
+                        <span style={{ color: '#fef08a' }}>🎉 찾았다! {oceanTarget.name}를 찾았어요! 참 잘했어요! 🌟</span>
+                      ) : (
+                        <span>"{oceanTarget.name}는 어디 있을까요?" {oceanTarget.icon}</span>
+                      )}
+                    </h2>
+                    <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#bae6fd' }}>
+                      {oceanFound ? '잠시 후 다음 바다 친구를 찾으러 가요!' : '바다속 생물을 콕 터치해보세요! 뽀글뽀글 거품과 소리가 나요!'}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    onClick={() => speakOceanMission(oceanTarget)}
+                    style={{
+                      background: '#ffffff', color: '#0369a1', border: 'none',
+                      padding: '9px 16px', borderRadius: '16px', fontWeight: 900,
+                      fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                    }}
+                  >
+                    <Volume2 size={18} /> 🔊 다시 듣기
+                  </button>
+                  <button
+                    onClick={generateNextOceanMission}
+                    style={{
+                      background: '#38bdf8', color: '#082f49', border: 'none',
+                      padding: '9px 16px', borderRadius: '16px', fontWeight: 900,
+                      fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                    }}
+                  >
+                    <RotateCcw size={16} /> 다른 친구 찾기
+                  </button>
+                </div>
+              </div>
+
+              {/* 바다속 인터랙티브 메인 뷰포트 (신비한 심해 그라데이션 + 햇살 + 거품 + 산호초 + 유영 생물들) */}
+              <div
+                onClick={handleOceanBackgroundClick}
+                style={{
+                  flex: 1, minHeight: 0, borderRadius: '28px', position: 'relative',
+                  background: 'linear-gradient(180deg, #38bdf8 0%, #0284c7 35%, #0369a1 70%, #082f49 100%)',
+                  overflow: 'hidden', border: '4px solid #0284c7', boxShadow: 'inset 0 0 50px rgba(0,0,0,0.25)',
+                  cursor: 'pointer'
+                }}
+              >
+                {/* 햇살 일렁임 (Sunrays) */}
+                <div className="sunray" style={{ position: 'absolute', top: 0, left: '15%', width: '90px', height: '100%', background: 'linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 80%)' }} />
+                <div className="sunray" style={{ position: 'absolute', top: 0, left: '48%', width: '120px', height: '100%', background: 'linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 85%)', animationDelay: '2s' }} />
+                <div className="sunray" style={{ position: 'absolute', top: 0, left: '75%', width: '80px', height: '100%', background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 75%)', animationDelay: '1s' }} />
+
+                {/* 배경 은은한 뽀글뽀글 거품들 (Floating ambient bubbles) */}
+                {[...Array(12)].map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      position: 'absolute',
+                      bottom: '-20px',
+                      left: `${(i * 8.5 + 4)}%`,
+                      width: `${12 + (i % 4) * 8}px`,
+                      height: `${12 + (i % 4) * 8}px`,
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.85), rgba(255,255,255,0.2) 60%, rgba(255,255,255,0.6) 100%)',
+                      border: '1px solid rgba(255,255,255,0.7)',
+                      animation: `ambient-bubble-rise ${4 + (i % 5) * 1.5}s infinite ease-in`,
+                      animationDelay: `${i * 0.4}s`,
+                      pointerEvents: 'none'
+                    }}
+                  />
+                ))}
+
+                {/* 바닥 해초 및 산호초 실루엣 (Bottom Seaweed & Corals) */}
+                <svg viewBox="0 0 1000 200" preserveAspectRatio="none" style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '130px', pointerEvents: 'none', zIndex: 1 }}>
+                  {/* 모래 바닥 */}
+                  <path d="M 0 160 Q 250 140 500 165 Q 750 190 1000 155 L 1000 200 L 0 200 Z" fill="#eab308" opacity="0.45" />
+                  <path d="M 0 175 Q 300 160 600 180 Q 850 165 1000 170 L 1000 200 L 0 200 Z" fill="#ca8a04" opacity="0.6" />
+                  {/* 좌측 흔들리는 해초 */}
+                  <g className="seaweed-left">
+                    <path d="M 60 200 Q 40 130 70 80 Q 50 40 65 10 Q 80 45 60 90 Q 85 140 75 200 Z" fill="#10b981" opacity="0.85" />
+                    <path d="M 90 200 Q 120 140 95 90 Q 115 50 105 20 Q 90 55 105 100 Q 80 150 100 200 Z" fill="#059669" opacity="0.9" />
+                  </g>
+                  {/* 중앙 산호초 */}
+                  <path d="M 320 200 C 310 160 290 140 315 120 C 330 110 340 130 350 120 C 365 105 385 130 375 160 C 390 150 405 170 395 200 Z" fill="#f43f5e" opacity="0.8" />
+                  {/* 우측 흔들리는 해초 */}
+                  <g className="seaweed-right">
+                    <path d="M 880 200 Q 860 130 890 80 Q 870 40 885 15 Q 900 50 880 95 Q 905 145 895 200 Z" fill="#10b981" opacity="0.85" />
+                    <path d="M 930 200 Q 960 140 935 90 Q 955 50 945 25 Q 930 60 945 105 Q 920 155 940 200 Z" fill="#059669" opacity="0.9" />
+                  </g>
+                  {/* 귀여운 불가사리 & 조개 */}
+                  <circle cx="210" cy="182" r="14" fill="#fb923c" stroke="#ea580c" strokeWidth="2" />
+                  <circle cx="780" cy="180" r="12" fill="#ec4899" stroke="#db2777" strokeWidth="2" />
+                </svg>
+
+                {/* 8종 바다 생물들 (자유 유영 & 터치 인터랙션) */}
+                {OCEAN_CREATURES.map(creature => {
+                  const isTarget = creature.id === oceanTarget.id;
+                  const isActive = activeOceanCreatureId === creature.id;
+                  const isFoundTarget = oceanFound && isTarget;
+
+                  return (
+                    <div
+                      key={creature.id}
+                      onClick={(e) => { e.stopPropagation(); handleTapOceanCreature(creature, e); }}
+                      className={isActive ? 'ocean-creature-active' : 'ocean-creature-swim'}
+                      style={{
+                        position: 'absolute',
+                        left: `${creature.left}%`,
+                        top: `${creature.top}%`,
+                        transform: 'translate(-50%, -50%)',
+                        animationDelay: `${creature.swimDelay}s`,
+                        cursor: 'pointer',
+                        zIndex: isFoundTarget ? 15 : 5,
+                        userSelect: 'none',
+                        transition: 'filter 0.2s ease'
+                      }}
+                    >
+                      {/* 타겟 힌트 링 (정답 생물 주변 은은한 빛) */}
+                      <div style={{
+                        background: isFoundTarget ? 'radial-gradient(circle, #fef08a, #f59e0b)' : 'rgba(255,255,255,0.92)',
+                        borderRadius: '50%',
+                        padding: '12px 14px',
+                        boxShadow: isFoundTarget
+                          ? '0 0 35px #fde047, 0 8px 24px rgba(0,0,0,0.35)'
+                          : '0 8px 20px rgba(0,0,0,0.18)',
+                        border: isFoundTarget
+                          ? '4px solid #ffffff'
+                          : `3.5px solid ${creature.color}`,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        transform: isFoundTarget ? 'scale(1.25)' : 'scale(1)',
+                        transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                      }}>
+                        <span style={{ fontSize: `${creature.size * 0.45}px`, lineHeight: 1 }}>{creature.icon}</span>
+                        <span style={{
+                          fontSize: '0.85rem', fontWeight: 900, color: creature.color,
+                          background: creature.bg, padding: '2px 8px', borderRadius: '10px',
+                          marginTop: '4px', whiteSpace: 'nowrap'
+                        }}>
+                          {creature.name}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* 터치 시 솟구치는 뽀글뽀글 거품 파티클들 */}
+                {oceanBubbles.map(b => (
+                  <div
+                    key={b.id}
+                    className="bubble-particle"
+                    style={{
+                      position: 'absolute',
+                      left: `${b.x}px`,
+                      top: `${b.y}px`,
+                      width: `${b.size}px`,
+                      height: `${b.size}px`,
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0.4) 60%, rgba(56,189,248,0.7) 100%)',
+                      border: '1.5px solid rgba(255,255,255,0.9)',
+                      boxShadow: '0 0 10px rgba(255,255,255,0.6)',
+                      transform: 'translate(-50%, -50%)',
+                      zIndex: 20
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ===== 모듈 4: 🧩 4조각 아기 퍼즐 맞추기 (2x2 직관적 보드 + 원터치/드래그 안착) ===== */}
+          {activeTab === 'puzzle' && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+              {/* 테마 선택 바 (8종 동물 & 과일 퍼즐) */}
+              <div style={{
+                display: 'flex', gap: '8px', marginBottom: '0.8rem', overflowX: 'auto',
+                padding: '8px 12px', background: '#f5f3ff', borderRadius: '20px',
+                border: '2.5px solid #ddd6fe', flexShrink: 0
+              }}>
+                {BABY_PUZZLES.map(p => {
+                  const isSelected = puzzleTheme.id === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => handleSelectPuzzleTheme(p)}
+                      style={{
+                        padding: '8px 16px', borderRadius: '16px',
+                        border: isSelected ? `3.5px solid ${p.color}` : '2px solid #e2e8f0',
+                        background: isSelected ? p.color : '#ffffff',
+                        color: isSelected ? '#ffffff' : '#475569',
+                        fontWeight: 900, fontSize: '0.98rem', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        boxShadow: isSelected ? '0 6px 16px rgba(0,0,0,0.15)' : 'none',
+                        transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+                        transition: 'all 0.15s ease', whiteSpace: 'nowrap'
+                      }}
+                    >
+                      <span>{p.icon}</span>
+                      <span>{p.name} 퍼즐</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 메인 퍼즐 컨테이너 (좌측 2x2 보드판 + 우측 셔플 조각 트레이) */}
+              <div style={{
+                flex: 1, minHeight: 0, display: 'flex', gap: '24px',
+                alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap',
+                padding: '0.5rem', overflowY: 'auto'
+              }}>
+                {/* 2x2 퍼즐 맞춤 보드판 */}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    background: puzzleCompleted ? '#dcfce7' : '#eff6ff',
+                    border: puzzleCompleted ? '2.5px solid #22c55e' : '2.5px solid #93c5fd',
+                    padding: '6px 16px', borderRadius: '16px', marginBottom: '10px'
+                  }}>
+                    <span style={{ fontSize: '1.05rem', fontWeight: 900, color: puzzleCompleted ? '#15803d' : '#1d4ed8' }}>
+                      {puzzleCompleted ? '🎉 100% 완성!! 참 잘했어요!' : `🧩 맞춰진 조각: ${placedPieces.filter(Boolean).length} / 4개`}
+                    </span>
+                  </div>
+
+                  {/* 2x2 그리드 보드 */}
+                  <div
+                    className={puzzleCompleted ? 'puzzle-completed-board' : ''}
+                    style={{
+                      width: '320px', height: '320px', background: '#ffffff',
+                      borderRadius: '28px', border: puzzleCompleted ? '6px solid #eab308' : '5px dashed #94a3b8',
+                      boxShadow: '0 12px 30px rgba(0,0,0,0.1)', display: 'grid',
+                      gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr',
+                      gap: '4px', padding: '6px', overflow: 'hidden', position: 'relative'
+                    }}
+                  >
+                    {[0, 1, 2, 3].map(quadIdx => {
+                      const isPlaced = placedPieces[quadIdx];
+                      return (
+                        <div
+                          key={quadIdx}
+                          onClick={() => {
+                            if (!isPlaced) handleSnapPiece(quadIdx);
+                          }}
+                          style={{
+                            background: isPlaced ? '#ffffff' : '#f8fafc',
+                            border: isPlaced ? '2px solid #cbd5e1' : '2.5px dashed #cbd5e1',
+                            borderRadius: '16px', overflow: 'hidden', position: 'relative',
+                            cursor: isPlaced ? 'default' : 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}
+                        >
+                          {isPlaced ? (
+                            <div className="puzzle-snapped" style={{ width: '100%', height: '100%' }}>
+                              <svg viewBox={PUZZLE_QUAD_VIEWBOX[quadIdx]} width="100%" height="100%" preserveAspectRatio="none">
+                                <PuzzleArtworkSVG id={puzzleTheme.id} />
+                              </svg>
+                            </div>
+                          ) : (
+                            <div style={{ textAlign: 'center', color: '#94a3b8', padding: '6px' }}>
+                              <span style={{ fontSize: '1.6rem', opacity: 0.35 }}>{puzzleTheme.icon}</span>
+                              <p style={{ fontSize: '0.8rem', fontWeight: 900, margin: '2px 0 0 0', opacity: 0.7 }}>
+                                {PUZZLE_QUAD_LABELS[quadIdx]}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 셔플된 4조각 트레이 & 완성 컨트롤 */}
+                <div style={{
+                  maxWidth: '380px', width: '100%', background: '#ffffff',
+                  borderRadius: '28px', border: '3.5px solid #e2e8f0',
+                  padding: '1.2rem', boxShadow: '0 10px 24px rgba(0,0,0,0.06)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center'
+                }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#1e293b', margin: '0 0 8px 0' }}>
+                    {puzzleCompleted ? '🌟 퍼즐 완성 축하해요!' : '👇 조각을 콕 터치해서 쏙 맞춰보세요!'}
+                  </h3>
+
+                  {/* 4조각 목록 (셔플) */}
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px',
+                    width: '100%', marginBottom: '1rem'
+                  }}>
+                    {trayPieces.map((quadIdx, i) => {
+                      const isPlaced = placedPieces[quadIdx];
+                      return (
+                        <button
+                          key={i}
+                          disabled={isPlaced}
+                          onClick={() => handleSnapPiece(quadIdx)}
+                          style={{
+                            height: '110px', borderRadius: '18px',
+                            border: isPlaced ? '2px solid #e2e8f0' : `3.5px solid ${puzzleTheme.color}`,
+                            background: isPlaced ? '#f1f5f9' : '#ffffff',
+                            opacity: isPlaced ? 0.3 : 1,
+                            cursor: isPlaced ? 'not-allowed' : 'pointer',
+                            overflow: 'hidden', padding: 0, position: 'relative',
+                            boxShadow: isPlaced ? 'none' : '0 6px 16px rgba(0,0,0,0.08)',
+                            transform: isPlaced ? 'scale(0.96)' : 'scale(1)',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <svg viewBox={PUZZLE_QUAD_VIEWBOX[quadIdx]} width="100%" height="100%" preserveAspectRatio="none">
+                            <PuzzleArtworkSVG id={puzzleTheme.id} />
+                          </svg>
+                          <span style={{
+                            position: 'absolute', bottom: '4px', right: '6px',
+                            background: 'rgba(0,0,0,0.6)', color: '#ffffff',
+                            fontSize: '0.72rem', fontWeight: 900, padding: '2px 6px',
+                            borderRadius: '8px'
+                          }}>
+                            조각 {quadIdx + 1}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* 액션 버튼 */}
+                  <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                    <button
+                      onClick={() => handleResetPuzzle(puzzleTheme)}
+                      style={{
+                        flex: 1, padding: '10px', borderRadius: '16px',
+                        background: '#f1f5f9', color: '#475569', border: '2px solid #cbd5e1',
+                        fontWeight: 900, fontSize: '0.92rem', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                      }}
+                    >
+                      <RotateCcw size={16} /> 다시 맞추기
+                    </button>
+                    <button
+                      onClick={handleNextPuzzleTheme}
+                      style={{
+                        flex: 1, padding: '10px', borderRadius: '16px',
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                        color: '#ffffff', border: 'none',
+                        fontWeight: 900, fontSize: '0.92rem', cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                      }}
+                    >
+                      <Sparkles size={16} /> 다음 퍼즐 ➡️
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== 모듈 5: 무지개 물감 & 퐁퐁 스탬프 & 따라쓰기 ===== */}
           {activeTab === 'paint' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               {/* 상단 툴바 */}
