@@ -550,7 +550,7 @@ function pickFeedRound() {
   const threeAnimals = shuffledAnimals.slice(0, 3);
   const target = threeAnimals[Math.floor(Math.random() * threeAnimals.length)];
   const food = ALL_FOOD_ITEMS[Math.floor(Math.random() * ALL_FOOD_ITEMS.length)];
-  const choices = pickBearChoices(food);
+const choices = pickBearChoices(food);
   return { threeAnimals, target, food, choices };
 }
 
@@ -596,7 +596,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
   );
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // 🐰 1. 토끼 (Rabbit) – 머리 위로 솟구치는 거대한 긴 귀 & 흰 앞니 2개 & 솜꼬리
+  // 🐰 1. 토끼 (Rabbit) – 솟구치는 긴 귀, 루비빛 눈망울, 하얀 앞니(뻐드렁니), 솜털 가슴
   // ═════════════════════════════════════════════════════════════════════════════
   if (animal?.id === 'rabbit') {
     const rabWhite = '#FFFFFF';
@@ -608,33 +608,30 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
       <div className={bodyClass} style={{ position: 'relative', width: '100%', maxWidth: '170px', height: '200px', margin: '0 auto' }}>
         <svg viewBox="0 0 200 245" width="100%" height="100%" style={{ overflow: 'visible' }}>
           {/* 복슬복슬 솜꼬리 */}
-          <circle cx="152" cy="190" r="18" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
+          <circle cx="154" cy="190" r="18" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
 
-          {/* 몸통 */}
-          <ellipse cx="100" cy="175" rx="50" ry="46" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
-          <ellipse cx="100" cy="180" rx="30" ry="26" fill="#FFF1F2" />
+          {/* 몸통 (타원 써클 대신 솜털 가슴깃) */}
+          <path d="M 52 145 C 44 175, 48 215, 68 222 C 88 226, 112 226, 132 222 C 152 215, 156 175, 148 145 Z" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
+          {/* 토끼 가슴 털 무늬 */}
+          <path d="M 85 155 Q 100 170 115 155 Q 100 185 85 155 Z" fill="#FFE4E6" />
 
-          {/* 머리 위로 길게 솟은 쫑긋한 토끼 긴 귀 2개 (상단 돌출) */}
+          {/* 🌟 머리 위로 길게 솟은 쫑긋한 토끼 긴 귀 2개 */}
           <g>
-            <path d="M 52 80 C 30 25, 42 -22, 68 -20 C 92 -18, 88 40, 78 80 Z" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
-            <path d="M 58 70 C 42 25, 52 -10, 68 -8 C 84 -8, 80 40, 72 70 Z" fill={rabPink} />
+            <path d="M 50 82 C 28 22, 40 -25, 68 -22 C 92 -20, 88 40, 78 82 Z" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
+            <path d="M 56 72 C 40 22, 50 -12, 68 -10 C 84 -10, 80 40, 72 72 Z" fill={rabPink} />
 
-            <path d="M 148 80 C 170 25, 158 -22, 132 -20 C 108 -18, 112 40, 122 80 Z" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
-            <path d="M 142 70 C 158 25, 148 -10, 132 -8 C 116 -8, 120 40, 128 70 Z" fill={rabPink} />
+            <path d="M 150 82 C 172 22, 160 -25, 132 -22 C 108 -20, 112 40, 122 82 Z" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
+            <path d="M 144 72 C 160 22, 150 -12, 132 -10 C 116 -10, 120 40, 128 72 Z" fill={rabPink} />
           </g>
 
-          {/* 둥근 토끼 머리 */}
-          <circle cx="100" cy="94" r="50" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
+          {/* 토끼 머리 (아래 볼살이 통통한 서양배 형태) */}
+          <path d="M 60 70 C 50 100, 42 128, 70 138 C 88 142, 112 142, 130 138 C 158 128, 150 100, 140 70 C 130 50, 70 50, 60 70 Z" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
 
-          {/* 볼살 패치 */}
-          <ellipse cx="84" cy="108" rx="18" ry="14" fill="#FFF1F2" />
-          <ellipse cx="116" cy="108" rx="18" ry="14" fill="#FFF1F2" />
-
-          {/* 눈 표정 (빨간 똘망똘망 토끼 눈) */}
+          {/* 눈 표정 (루비빛 맑고 큰 토끼 눈망울) */}
           {dm === 'happy' ? (
             <>
-              <g transform="translate(70, 82) scale(1)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EF4444" className="bear-heart-pulse" /></g>
-              <g transform="translate(114, 82) scale(1)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EF4444" className="bear-heart-pulse" /></g>
+              <g transform="translate(68, 80) scale(1.1)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EF4444" className="bear-heart-pulse" /></g>
+              <g transform="translate(116, 80) scale(1.1)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EF4444" className="bear-heart-pulse" /></g>
             </>
           ) : dm === 'reject' ? (
             <>
@@ -642,43 +639,37 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
             </>
           ) : dm === 'eating' ? (
             <>
-              <path d="M 68 90 Q 78 80 88 90 M 112 90 Q 122 80 132 90" stroke="#334155" strokeWidth="4" strokeLinecap="round" fill="none" />
+              <path d="M 66 90 Q 78 80 90 90 M 110 90 Q 122 80 134 90" stroke="#E11D48" strokeWidth="4" strokeLinecap="round" fill="none" />
             </>
           ) : (
             <>
-              <circle cx="80" cy="88" r="8" fill="#E11D48" /><circle cx="77" cy="85" r="3.5" fill="#FFFFFF" /><circle cx="83" cy="91" r="1.5" fill="#FFFFFF" />
-              <circle cx="120" cy="88" r="8" fill="#E11D48" /><circle cx="117" cy="85" r="3.5" fill="#FFFFFF" /><circle cx="123" cy="91" r="1.5" fill="#FFFFFF" />
+              <ellipse cx="78" cy="88" rx="8" ry="9" fill="#E11D48" /><circle cx="75" cy="85" r="3.5" fill="#FFFFFF" /><circle cx="81" cy="91" r="1.5" fill="#FFFFFF" />
+              <ellipse cx="122" cy="88" rx="8" ry="9" fill="#E11D48" /><circle cx="119" cy="85" r="3.5" fill="#FFFFFF" /><circle cx="125" cy="91" r="1.5" fill="#FFFFFF" />
             </>
           )}
 
-          {/* 작은 핑크 역삼각 코 */}
-          <polygon points="94,98 106,98 100,105" fill={rabPink} />
+          {/* 핑크 작은 코 & Y자 인중 */}
+          <polygon points="94,101 106,101 100,107" fill={rabPink} />
+          <path d="M 100 107 L 100 113 M 92 113 Q 100 115 108 113" stroke="#64748B" strokeWidth="2" strokeLinecap="round" fill="none" />
 
-          {/* 🌟 톡 튀어나온 큼직한 토끼 앞니 2개 (누가 봐도 토끼!) */}
+          {/* 🌟 톡 튀어나온 큼직한 토끼 앞니 2개 */}
           <g>
-            <rect x="93" y="106" width="6.5" height="10" rx="2" fill="#FFFFFF" stroke="#64748B" strokeWidth="1.5" />
-            <rect x="100.5" y="106" width="6.5" height="10" rx="2" fill="#FFFFFF" stroke="#64748B" strokeWidth="1.5" />
+            <rect x="92.5" y="113" width="7" height="11" rx="2" fill="#FFFFFF" stroke="#64748B" strokeWidth="1.6" />
+            <rect x="100.5" y="113" width="7" height="11" rx="2" fill="#FFFFFF" stroke="#64748B" strokeWidth="1.6" />
           </g>
 
-          {/* 입 */}
+          {/* 입 (먹을 때 열림) */}
           {dm === 'mouth-open' ? (
-            <ellipse cx="100" cy="120" rx="14" ry="13" fill="#E11D48" stroke="#334155" strokeWidth="2" className="bear-mouth-open-anim" />
+            <ellipse cx="100" cy="128" rx="13" ry="12" fill="#E11D48" stroke="#334155" strokeWidth="2" className="bear-mouth-open-anim" />
           ) : dm === 'eating' ? (
-            <ellipse cx="100" cy="120" rx="11" ry={chewOpen ? 10 : 2} fill="#E11D48" stroke="#334155" strokeWidth="2" style={{ transition: 'ry 0.12s ease' }} />
-          ) : dm === 'reject' ? (
-            <path d="M 88 116 Q 100 110 112 116" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-          ) : (
-            <path d="M 88 108 Q 94 114 100 109 Q 106 114 112 108" stroke="#64748B" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-          )}
+            <ellipse cx="100" cy="128" rx="10" ry={chewOpen ? 9 : 2} fill="#E11D48" stroke="#334155" strokeWidth="2" style={{ transition: 'ry 0.12s ease' }} />
+          ) : null}
 
           {/* 토끼 수염 */}
           <g stroke="#94A3B8" strokeWidth="2" strokeLinecap="round">
-            <line x1="42" y1="104" x2="72" y2="108" /><line x1="42" y1="116" x2="72" y2="115" />
-            <line x1="158" y1="104" x2="128" y2="108" /><line x1="158" y1="116" x2="128" y2="115" />
+            <line x1="38" y1="106" x2="72" y2="110" /><line x1="38" y1="118" x2="72" y2="116" />
+            <line x1="162" y1="106" x2="128" y2="110" /><line x1="162" y1="118" x2="128" y2="116" />
           </g>
-
-          <circle cx="62" cy="106" r="11" fill="#FDA4AF" opacity="0.65" />
-          <circle cx="138" cy="106" r="11" fill="#FDA4AF" opacity="0.65" />
 
           {/* 솜방망이 앞발 */}
           <ellipse cx={pawL.cx} cy={pawL.cy} rx="16" ry="13" fill={rabWhite} stroke="#CBD5E1" strokeWidth="2.5" />
@@ -690,7 +681,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // 🐸 2. 개구리 (Frog) – 돌출된 거대한 왕눈이 돔 & 가로로 찢어진 개구리 입 & 빨판 손
+  // 🐸 2. 개구리 (Frog) – 솟구친 거대한 안구 돔, 넙적한 얼굴, 콧구멍 2개, 가로 찢어진 입
   // ═════════════════════════════════════════════════════════════════════════════
   if (animal?.id === 'frog') {
     const frogBase = '#22C55E';
@@ -703,13 +694,13 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
     return (
       <div className={bodyClass} style={{ position: 'relative', width: '100%', maxWidth: '170px', height: '200px', margin: '0 auto' }}>
         <svg viewBox="0 0 200 245" width="100%" height="100%" style={{ overflow: 'visible' }}>
-          {/* 개구리 뒷다리 (웅크린 자세) */}
-          <ellipse cx="40" cy="195" rx="28" ry="18" fill={frogBase} stroke={frogDark} strokeWidth="2.5" transform="rotate(-20 40 195)" />
-          <ellipse cx="160" cy="195" rx="28" ry="18" fill={frogBase} stroke={frogDark} strokeWidth="2.5" transform="rotate(20 160 195)" />
+          {/* 개구리 뒷다리 */}
+          <ellipse cx="38" cy="195" rx="30" ry="18" fill={frogBase} stroke={frogDark} strokeWidth="2.5" transform="rotate(-20 38 195)" />
+          <ellipse cx="162" cy="195" rx="30" ry="18" fill={frogBase} stroke={frogDark} strokeWidth="2.5" transform="rotate(20 162 195)" />
 
-          {/* 넙적한 몸통 */}
-          <ellipse cx="100" cy="175" rx="56" ry="46" fill={frogBase} stroke={frogDark} strokeWidth="2.5" />
-          <ellipse cx="100" cy="180" rx="38" ry="32" fill={frogBelly} opacity="0.95" />
+          {/* 넙적하고 통통한 청개구리 몸통 & 가로형 연노랑 배 */}
+          <ellipse cx="100" cy="178" rx="58" ry="46" fill={frogBase} stroke={frogDark} strokeWidth="2.5" />
+          <ellipse cx="100" cy="182" rx="42" ry="28" fill={frogBelly} opacity="0.95" />
 
           {/* 빨판 앞발 */}
           <g>
@@ -725,51 +716,51 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
           </g>
 
           {/* 🌟 머리 위로 완벽하게 솟아오른 2개의 대형 왕눈이 돔 */}
-          <circle cx="56" cy="48" r="32" fill={frogBase} stroke={frogDark} strokeWidth="3" />
-          <circle cx="144" cy="48" r="32" fill={frogBase} stroke={frogDark} strokeWidth="3" />
+          <circle cx="54" cy="48" r="32" fill={frogBase} stroke={frogDark} strokeWidth="3" />
+          <circle cx="146" cy="48" r="32" fill={frogBase} stroke={frogDark} strokeWidth="3" />
 
-          {/* 넙적한 머리 본체 */}
-          <ellipse cx="100" cy="100" rx="70" ry="46" fill={frogBase} stroke={frogDark} strokeWidth="3" />
+          {/* 넙적한 머리 본체 (주둥이 써클 전혀 없음!) */}
+          <ellipse cx="100" cy="100" rx="72" ry="46" fill={frogBase} stroke={frogDark} strokeWidth="3" />
 
           {/* 왕눈이 안구 표정 */}
           {dm === 'happy' ? (
             <>
-              <g transform="translate(48, 38) scale(1.2)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EF4444" className="bear-heart-pulse" /></g>
-              <g transform="translate(136, 38) scale(1.2)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EF4444" className="bear-heart-pulse" /></g>
+              <g transform="translate(46, 38) scale(1.2)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EF4444" className="bear-heart-pulse" /></g>
+              <g transform="translate(138, 38) scale(1.2)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EF4444" className="bear-heart-pulse" /></g>
             </>
           ) : dm === 'reject' ? (
             <>
-              <path d="M 44 40 L 68 56 M 44 56 L 68 40 M 132 40 L 156 56 M 132 56 L 156 40" stroke="#064E3B" strokeWidth="4" strokeLinecap="round" />
+              <path d="M 42 40 L 66 56 M 42 56 L 66 40 M 134 40 L 158 56 M 134 56 L 158 40" stroke="#064E3B" strokeWidth="4" strokeLinecap="round" />
             </>
           ) : dm === 'eating' ? (
             <>
-              <path d="M 42 50 Q 56 36 70 50 M 130 50 Q 144 36 158 50" stroke="#064E3B" strokeWidth="4.5" strokeLinecap="round" fill="none" />
+              <path d="M 40 50 Q 54 36 68 50 M 132 50 Q 146 36 160 50" stroke="#064E3B" strokeWidth="4.5" strokeLinecap="round" fill="none" />
             </>
           ) : (
             <>
-              <circle cx="56" cy="48" r="23" fill="#FFFFFF" /><circle cx="58" cy="48" r="13" fill="#0F172A" /><circle cx="54" cy="44" r="5" fill="#FFFFFF" />
-              <circle cx="144" cy="48" r="23" fill="#FFFFFF" /><circle cx="142" cy="48" r="13" fill="#0F172A" /><circle cx="138" cy="44" r="5" fill="#FFFFFF" />
+              <circle cx="54" cy="48" r="23" fill="#FFFFFF" /><circle cx="56" cy="48" r="13" fill="#0F172A" /><circle cx="52" cy="44" r="5" fill="#FFFFFF" />
+              <circle cx="146" cy="48" r="23" fill="#FFFFFF" /><circle cx="144" cy="48" r="13" fill="#0F172A" /><circle cx="140" cy="44" r="5" fill="#FFFFFF" />
             </>
           )}
 
-          {/* 콧구멍 2개 */}
-          <circle cx="94" cy="88" r="2.8" fill={frogMouth} />
-          <circle cx="106" cy="88" r="2.8" fill={frogMouth} />
+          {/* 콧구멍 2개 (돌출 코 없음) */}
+          <circle cx="94" cy="86" r="3" fill={frogMouth} />
+          <circle cx="106" cy="86" r="3" fill={frogMouth} />
 
           {/* 🌟 가로로 얼굴 전체로 쫙 찢어진 시원한 개구리 입 */}
           {dm === 'mouth-open' ? (
-            <ellipse cx="100" cy="112" rx="38" ry="20" fill="#E11D48" stroke={frogDark} strokeWidth="3" className="bear-mouth-open-anim" />
+            <ellipse cx="100" cy="112" rx="40" ry="22" fill="#E11D48" stroke={frogDark} strokeWidth="3" className="bear-mouth-open-anim" />
           ) : dm === 'eating' ? (
-            <ellipse cx="100" cy="112" rx="30" ry={chewOpen ? 16 : 4} fill="#E11D48" stroke={frogDark} strokeWidth="3" style={{ transition: 'ry 0.12s ease' }} />
+            <ellipse cx="100" cy="112" rx="32" ry={chewOpen ? 16 : 4} fill="#E11D48" stroke={frogDark} strokeWidth="3" style={{ transition: 'ry 0.12s ease' }} />
           ) : dm === 'reject' ? (
-            <path d="M 60 116 Q 100 96 140 116" stroke={frogMouth} strokeWidth="4.5" strokeLinecap="round" fill="none" />
+            <path d="M 56 118 Q 100 96 144 118" stroke={frogMouth} strokeWidth="4.5" strokeLinecap="round" fill="none" />
           ) : (
-            <path d="M 54 104 Q 100 128 146 104" stroke={frogMouth} strokeWidth="4" strokeLinecap="round" fill="none" />
+            <path d="M 52 104 Q 100 128 148 104" stroke={frogMouth} strokeWidth="4" strokeLinecap="round" fill="none" />
           )}
 
           {/* 핑크 볼 울음주머니 */}
-          <circle cx="46" cy="112" r="15" fill="#FB7185" opacity={dm === 'happy' ? 0.85 : 0.5} />
-          <circle cx="154" cy="112" r="15" fill="#FB7185" opacity={dm === 'happy' ? 0.85 : 0.5} />
+          <circle cx="44" cy="112" r="15" fill="#FB7185" opacity={dm === 'happy' ? 0.85 : 0.5} />
+          <circle cx="156" cy="112" r="15" fill="#FB7185" opacity={dm === 'happy' ? 0.85 : 0.5} />
         </svg>
         {renderFX()}
       </div>
@@ -777,7 +768,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // 🐱 3. 고양이 (Cat) – 뾰족한 삼각형 귀 & 6줄 긴 수염 & 꼬리 & ω자 입
+  // 🐱 3. 고양이 (Cat) – 뾰족 귀, M자 이마, 아몬드 눈, 역삼각 코, ω자 인중, 6줄 수염
   // ═════════════════════════════════════════════════════════════════════════════
   if (animal?.id === 'cat') {
     const catBase = '#FB923C';
@@ -790,44 +781,40 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
     return (
       <div className={bodyClass} style={{ position: 'relative', width: '100%', maxWidth: '170px', height: '200px', margin: '0 auto' }}>
         <svg viewBox="0 0 200 245" width="100%" height="100%" style={{ overflow: 'visible' }}>
-          {/* 살랑살랑 긴 고양이 꼬리 */}
+          {/* 긴 고양이 꼬리 */}
           <path d={dm === 'happy' ? "M 135 195 C 175 190, 195 145, 185 105 C 182 95, 168 98, 172 110 C 180 138, 162 175, 130 182" : "M 135 195 C 170 195, 188 175, 180 140 C 177 130, 163 133, 167 145 C 172 165, 158 185, 130 185"}
             fill={catBase} stroke={catDark} strokeWidth="3" />
 
-          {/* 몸통 & 흰 가슴털 */}
-          <path d="M 62 145 C 50 170, 52 205, 68 215 C 85 220, 115 220, 132 215 C 148 205, 150 170, 138 145 C 125 130, 75 130, 62 145 Z"
-            fill={catBase} stroke={catDark} strokeWidth="2.5" />
-          <path d="M 82 142 C 75 160, 78 190, 100 202 C 122 190, 125 160, 118 142 C 108 135, 92 135, 82 142 Z" fill={catWhite} />
+          {/* 몸통 & V자 가슴 털깃 */}
+          <path d="M 62 145 C 50 170, 52 205, 68 215 C 85 220, 115 220, 132 215 C 148 205, 150 170, 138 145 C 125 130, 75 130, 62 145 Z" fill={catBase} stroke={catDark} strokeWidth="2.5" />
+          <path d="M 80 145 L 100 190 L 120 145 Z" fill={catWhite} />
 
-          {/* 🌟 뾰족한 고양이 삼각형 귀 2개 (핑크 속귀 + 귓속 털) */}
+          {/* 🌟 뾰족한 고양이 귀 2개 */}
           <g>
-            <path d="M 44 88 L 34 18 C 42 16, 64 34, 78 55 Z" fill={catBase} stroke={catDark} strokeWidth="3" strokeLinejoin="round" />
-            <path d="M 46 80 L 40 28 C 46 27, 62 40, 72 58 Z" fill={catPink} />
-            <path d="M 46 68 L 56 60 M 48 74 L 60 68" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" />
+            <path d="M 44 88 L 34 16 C 42 15, 64 34, 78 55 Z" fill={catBase} stroke={catDark} strokeWidth="3" strokeLinejoin="round" />
+            <path d="M 46 80 L 40 26 C 46 25, 62 40, 72 58 Z" fill={catPink} />
 
-            <path d="M 156 88 L 166 18 C 158 16, 136 34, 122 55 Z" fill={catBase} stroke={catDark} strokeWidth="3" strokeLinejoin="round" />
-            <path d="M 154 80 L 160 28 C 154 27, 138 40, 128 58 Z" fill={catPink} />
-            <path d="M 154 68 L 144 60 M 152 74 L 140 68" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" />
+            <path d="M 156 88 L 166 16 C 158 15, 136 34, 122 55 Z" fill={catBase} stroke={catDark} strokeWidth="3" strokeLinejoin="round" />
+            <path d="M 154 80 L 160 26 C 154 25, 138 40, 128 58 Z" fill={catPink} />
           </g>
 
           {/* 머리 */}
-          <path d="M 48 82 C 38 102, 48 128, 75 134 C 90 137, 110 137, 125 134 C 152 128, 162 102, 152 82 C 142 60, 58 60, 48 82 Z"
-            fill={catBase} stroke={catDark} strokeWidth="2.5" />
+          <path d="M 48 82 C 38 102, 48 128, 75 134 C 90 137, 110 137, 125 134 C 152 128, 162 102, 152 82 C 142 60, 58 60, 48 82 Z" fill={catBase} stroke={catDark} strokeWidth="2.5" />
 
           {/* 이마 M자 태비 마크 */}
           <path d="M 90 54 L 95 68 L 100 56 L 105 68 L 110 54" stroke={catDark} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
 
-          {/* 흰 주둥이 패치 */}
-          <ellipse cx="88" cy="112" rx="16" ry="12" fill={catWhite} />
-          <ellipse cx="112" cy="112" rx="16" ry="12" fill={catWhite} />
+          {/* 🌟 고양이 전용 ω자 입술 패치 2개 (원형 써클 아님!) */}
+          <ellipse cx="91" cy="113" rx="11" ry="9" fill={catWhite} />
+          <ellipse cx="109" cy="113" rx="11" ry="9" fill={catWhite} />
 
-          {/* 🌟 굵고 선명한 양 볼 고양이 수염 6줄 */}
+          {/* 굵은 수염 6줄 */}
           <g stroke="#78350F" strokeWidth="2.8" strokeLinecap="round">
             <line x1="28" y1="104" x2="72" y2="108" /><line x1="26" y1="115" x2="70" y2="114" /><line x1="30" y1="126" x2="72" y2="120" />
             <line x1="172" y1="104" x2="128" y2="108" /><line x1="174" y1="115" x2="130" y2="114" /><line x1="170" y1="126" x2="128" y2="120" />
           </g>
 
-          {/* 눈 표정 (에메랄드 고양이 눈) */}
+          {/* 눈 표정 (아몬드형 에메랄드 캣츠아이) */}
           {dm === 'happy' ? (
             <>
               <g transform="translate(70, 80) scale(1.1)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EC4899" className="bear-heart-pulse" /></g>
@@ -843,8 +830,9 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
             </>
           ) : (
             <>
-              <ellipse cx="78" cy="88" rx="10" ry="11" fill="#059669" /><ellipse cx="78" cy="88" rx="5" ry="10" fill="#064E3B" /><circle cx="75" cy="84" r="3.5" fill="#FFFFFF" />
-              <ellipse cx="122" cy="88" rx="10" ry="11" fill="#059669" /><ellipse cx="122" cy="88" rx="5" ry="10" fill="#064E3B" /><circle cx="119" cy="84" r="3.5" fill="#FFFFFF" />
+              {/* 아몬드 눈 */}
+              <ellipse cx="78" cy="88" rx="10" ry="11" fill="#059669" /><ellipse cx="78" cy="88" rx="4" ry="10" fill="#064E3B" /><circle cx="75" cy="84" r="3.5" fill="#FFFFFF" />
+              <ellipse cx="122" cy="88" rx="10" ry="11" fill="#059669" /><ellipse cx="122" cy="88" rx="4" ry="10" fill="#064E3B" /><circle cx="119" cy="84" r="3.5" fill="#FFFFFF" />
             </>
           )}
 
@@ -860,7 +848,6 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
             <path d="M 88 110 Q 94 116 100 111 Q 106 116 112 110" stroke="#78350F" strokeWidth="2.5" strokeLinecap="round" fill="none" />
           )}
 
-          {/* 양말 발 */}
           <ellipse cx={pawLeft.cx} cy={pawLeft.cy} rx="16" ry="12" fill={catWhite} stroke={catDark} strokeWidth="2" />
           <ellipse cx={pawRight.cx} cy={pawRight.cy} rx="16" ry="12" fill={catWhite} stroke={catDark} strokeWidth="2" />
         </svg>
@@ -870,7 +857,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // 🐵 4. 원숭이 (Monkey) – 머리 옆으로 툭 튀어나온 대형 귀 2개 & 하트 얼굴 & 긴 꼬리
+  // 🐵 4. 원숭이 (Monkey) – 툭 튀어나온 대형 귀 2개, 하트형 살구색 얼굴 마스크
   // ═════════════════════════════════════════════════════════════════════════════
   if (animal?.id === 'monkey') {
     const monkBase = '#854D0E';
@@ -894,21 +881,19 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
           <ellipse cx="100" cy="178" rx="52" ry="46" fill={monkBase} stroke={monkDark} strokeWidth="2.5" />
           <ellipse cx="100" cy="182" rx="30" ry="26" fill={monkFace} />
 
-          {/* 🌟 머리 양옆으로 툭 튀어나온 큼직한 원숭이 귀 2개 (시그니처) */}
+          {/* 🌟 머리 양옆으로 툭 튀어나온 큼직한 원숭이 귀 2개 */}
           <g>
-            <circle cx="34" cy="85" r="26" fill={monkBase} stroke={monkDark} strokeWidth="2.5" />
-            <circle cx="34" cy="85" r="16" fill={monkFace} />
-            <circle cx="166" cy="85" r="26" fill={monkBase} stroke={monkDark} strokeWidth="2.5" />
-            <circle cx="166" cy="85" r="16" fill={monkFace} />
+            <circle cx="32" cy="85" r="28" fill={monkBase} stroke={monkDark} strokeWidth="2.5" />
+            <circle cx="32" cy="85" r="17" fill={monkFace} />
+            <circle cx="168" cy="85" r="28" fill={monkBase} stroke={monkDark} strokeWidth="2.5" />
+            <circle cx="168" cy="85" r="17" fill={monkFace} />
           </g>
 
           {/* 머리 본체 */}
           <circle cx="100" cy="86" r="54" fill={monkBase} stroke={monkDark} strokeWidth="2.5" />
 
-          {/* 🌟 하트 모양 살구색 얼굴 마스크 */}
-          <ellipse cx="82" cy="74" rx="22" ry="24" fill={monkFace} />
-          <ellipse cx="118" cy="74" rx="22" ry="24" fill={monkFace} />
-          <ellipse cx="100" cy="98" rx="40" ry="30" fill={monkFace} />
+          {/* 🌟 하트 모양 살구색 얼굴 마스크 (곰돌이 둥근 써클 완벽 탈피!) */}
+          <path d="M 68 70 C 60 52, 85 48, 100 68 C 115 48, 140 52, 132 70 C 145 92, 136 128, 100 134 C 64 128, 55 92, 68 70 Z" fill={monkFace} stroke={monkDark} strokeWidth="1.5" />
 
           {/* 눈 표정 */}
           {dm === 'happy' ? (
@@ -920,34 +905,27 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
             <>
               <path d="M 70 72 L 88 82 M 70 82 L 88 72 M 112 72 L 130 82 M 112 82 L 130 72" stroke="#451A03" strokeWidth="3.5" strokeLinecap="round" />
             </>
-          ) : dm === 'eating' ? (
-            <>
-              <path d="M 68 78 Q 78 68 88 78 M 112 78 Q 122 68 132 78" stroke="#451A03" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-            </>
           ) : (
             <>
-              <circle cx="78" cy="76" r="6.5" fill="#451A03" /><circle cx="80" cy="74" r="2.5" fill="#FFFFFF" />
-              <circle cx="122" cy="76" r="6.5" fill="#451A03" /><circle cx="124" cy="74" r="2.5" fill="#FFFFFF" />
+              <circle cx="80" cy="76" r="6" fill="#451A03" /><circle cx="82" cy="74" r="2.2" fill="#FFFFFF" />
+              <circle cx="120" cy="76" r="6" fill="#451A03" /><circle cx="122" cy="74" r="2.2" fill="#FFFFFF" />
             </>
           )}
 
-          {/* 원숭이 콧구멍 2개 */}
+          {/* 원숭이 납작 콧구멍 2개 */}
           <circle cx="94" cy="94" r="2.5" fill="#78350F" />
           <circle cx="106" cy="94" r="2.5" fill="#78350F" />
 
           {/* 원숭이 입 */}
           {dm === 'mouth-open' ? (
-            <ellipse cx="100" cy="112" rx="18" ry="15" fill="#DC2626" stroke="#451A03" strokeWidth="2" className="bear-mouth-open-anim" />
+            <ellipse cx="100" cy="114" rx="18" ry="15" fill="#DC2626" stroke="#451A03" strokeWidth="2" className="bear-mouth-open-anim" />
           ) : dm === 'eating' ? (
-            <ellipse cx="100" cy="112" rx="14" ry={chewOpen ? 13 : 3} fill="#DC2626" stroke="#451A03" strokeWidth="2" style={{ transition: 'ry 0.12s ease' }} />
+            <ellipse cx="100" cy="114" rx="14" ry={chewOpen ? 13 : 3} fill="#DC2626" stroke="#451A03" strokeWidth="2" style={{ transition: 'ry 0.12s ease' }} />
           ) : dm === 'reject' ? (
-            <path d="M 86 114 Q 100 104 114 114" stroke="#451A03" strokeWidth="2.8" strokeLinecap="round" fill="none" />
+            <path d="M 86 116 Q 100 106 114 116" stroke="#451A03" strokeWidth="2.8" strokeLinecap="round" fill="none" />
           ) : (
-            <path d="M 82 106 Q 100 120 118 106" stroke="#451A03" strokeWidth="2.8" strokeLinecap="round" fill="none" />
+            <path d="M 80 108 Q 100 122 120 108" stroke="#451A03" strokeWidth="3" strokeLinecap="round" fill="none" />
           )}
-
-          <circle cx="60" cy="96" r="10" fill="#F43F5E" opacity="0.4" />
-          <circle cx="140" cy="96" r="10" fill="#F43F5E" opacity="0.4" />
         </svg>
         {renderFX()}
       </div>
@@ -955,7 +933,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // 🐶 5. 강아지 (Dog) – 축 늘어진 롱 플로피 이어 & 얼룩 눈 & 메롱 혓바닥 & 방울 목걸이
+  // 🐶 5. 강아지 (Dog) – 롱 플로피 이어, 얼룩 패치 눈, 메롱 혓바닥, 방울 목걸이
   // ═════════════════════════════════════════════════════════════════════════════
   if (animal?.id === 'dog') {
     const dogBase = '#F59E0B';
@@ -967,9 +945,8 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
     return (
       <div className={bodyClass} style={{ position: 'relative', width: '100%', maxWidth: '170px', height: '200px', margin: '0 auto' }}>
         <svg viewBox="0 0 200 245" width="100%" height="100%" style={{ overflow: 'visible' }}>
-          {/* 살랑살랑 강아지 꼬리 */}
-          <path d={dm === 'happy' ? "M 135 190 Q 185 180 180 130" : "M 135 190 Q 170 185 165 155"}
-            stroke={dogBase} strokeWidth="12" strokeLinecap="round" fill="none" />
+          {/* 강아지 꼬리 */}
+          <path d={dm === 'happy' ? "M 135 190 Q 185 180 180 130" : "M 135 190 Q 170 185 165 155"} stroke={dogBase} strokeWidth="12" strokeLinecap="round" fill="none" />
 
           {/* 몸통 */}
           <ellipse cx="100" cy="178" rx="54" ry="48" fill={dogBase} stroke={dogDark} strokeWidth="2" />
@@ -979,20 +956,20 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
           <rect x="72" y="142" width="56" height="10" rx="5" fill="#EF4444" />
           <circle cx="100" cy="152" r="7" fill="#FBBF24" stroke="#D97706" strokeWidth="2" />
 
-          {/* 🌟 양옆으로 길게 축 늘어진 플로피 이어 (강아지 대표 귀) */}
-          <ellipse cx="40" cy="74" rx="18" ry="36" fill={dogDark} transform={`rotate(${earRotL} 40 74)`} />
-          <ellipse cx="160" cy="74" rx="18" ry="36" fill={dogDark} transform={`rotate(${earRotR} 160 74)`} />
+          {/* 🌟 롱 플로피 이어 */}
+          <ellipse cx="38" cy="74" rx="18" ry="38" fill={dogDark} transform={`rotate(${earRotL} 38 74)`} />
+          <ellipse cx="162" cy="74" rx="18" ry="38" fill={dogDark} transform={`rotate(${earRotR} 162 74)`} />
 
           {/* 머리 */}
           <circle cx="100" cy="88" r="52" fill={dogBase} stroke={dogDark} strokeWidth="2" />
 
           {/* 🌟 한쪽 눈 큼직한 얼룩 패치 */}
-          <ellipse cx="78" cy="80" rx="20" ry="18" fill={dogDark} opacity="0.4" transform="rotate(-10 78 80)" />
+          <ellipse cx="76" cy="80" rx="20" ry="18" fill={dogDark} opacity="0.45" transform="rotate(-10 76 80)" />
 
-          {/* 흰 주둥이 패치 */}
-          <ellipse cx="100" cy="100" rx="34" ry="25" fill={dogSnout} />
+          {/* 🌟 돌출된 강아지 머즐 패치 */}
+          <ellipse cx="100" cy="102" rx="32" ry="22" fill={dogSnout} />
 
-          {/* 눈 표정 */}
+          {/* 눈 표정 (순한 강아지 눈) */}
           {dm === 'happy' ? (
             <>
               <g transform="translate(70, 75) scale(1)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EF4444" className="bear-heart-pulse" /></g>
@@ -1002,20 +979,16 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
             <>
               <path d="M 68 76 L 86 86 M 68 86 L 86 76 M 114 76 L 132 86 M 114 86 L 132 76" stroke="#451A03" strokeWidth="3.5" strokeLinecap="round" />
             </>
-          ) : dm === 'eating' ? (
-            <>
-              <path d="M 68 82 Q 78 72 88 82 M 112 82 Q 122 72 132 82" stroke="#451A03" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-            </>
           ) : (
             <>
-              <circle cx="80" cy="80" r="7" fill="#1C1917" /><circle cx="77" cy="77" r="3" fill="#FFFFFF" />
-              <circle cx="120" cy="80" r="7" fill="#1C1917" /><circle cx="117" cy="77" r="3" fill="#FFFFFF" />
+              <circle cx="78" cy="80" r="7" fill="#1C1917" /><circle cx="76" cy="77" r="3" fill="#FFFFFF" />
+              <circle cx="122" cy="80" r="7" fill="#1C1917" /><circle cx="120" cy="77" r="3" fill="#FFFFFF" />
             </>
           )}
 
-          {/* 촉촉하고 큰 강아지 코 */}
-          <ellipse cx="100" cy="94" rx="11" ry="8" fill="#1C1917" />
-          <ellipse cx="98" cy="92" rx="3.5" ry="2" fill="#78716C" opacity="0.6" />
+          {/* 촉촉한 큰 까만 코 */}
+          <ellipse cx="100" cy="94" rx="12" ry="8.5" fill="#1C1917" />
+          <ellipse cx="97" cy="92" rx="3.5" ry="2" fill="#78716C" opacity="0.6" />
 
           {/* 🌟 빼꼼 나온 강아지 혓바닥 & 입 */}
           {dm === 'mouth-open' ? (
@@ -1027,8 +1000,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
           ) : (
             <>
               <path d="M 86 104 Q 93 110 100 106 Q 107 110 114 104" stroke="#1C1917" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-              {/* 혓바닥 메롱 */}
-              <path d="M 95 108 C 95 122, 105 122, 105 108 Z" fill="#F43F5E" stroke="#E11D48" strokeWidth="1" />
+              <path d="M 95 107 C 95 124, 105 124, 105 107 Z" fill="#F43F5E" stroke="#E11D48" strokeWidth="1" />
             </>
           )}
 
@@ -1042,7 +1014,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // 🦁 6. 사자 (Lion) – 머리 둘레를 360도 뒤덮는 거대한 황금 갈기털 (Mane)
+  // 🦁 6. 사자 (Lion) – 360도 거대한 불꽃 갈기털, 맹수 코와 턱선
   // ═════════════════════════════════════════════════════════════════════════════
   if (animal?.id === 'lion') {
     const lionBase = '#FBBF24';
@@ -1053,7 +1025,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
     return (
       <div className={bodyClass} style={{ position: 'relative', width: '100%', maxWidth: '170px', height: '200px', margin: '0 auto' }}>
         <svg viewBox="0 0 200 245" width="100%" height="100%" style={{ overflow: 'visible' }}>
-          {/* 붓 모양 꼬리 */}
+          {/* 붓 꼬리 */}
           <path d="M 135 190 Q 185 180 180 140" stroke={lionBase} strokeWidth="11" strokeLinecap="round" fill="none" />
           <ellipse cx="180" cy="135" rx="14" ry="18" fill={lionMane} />
 
@@ -1061,22 +1033,21 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
           <ellipse cx="100" cy="180" rx="55" ry="48" fill={lionBase} stroke={lionManeDark} strokeWidth="2.5" />
           <ellipse cx="100" cy="184" rx="32" ry="26" fill={lionSnout} />
 
-          {/* 🌟 360도 풍성한 사자 갈기털 (누가 봐도 사자!) */}
-          <circle cx="100" cy="88" r="70" fill={lionMane} stroke={lionManeDark} strokeWidth="3.5" />
-          {/* 갈기 톱니 디테일 */}
+          {/* 🌟 360도 거대한 불꽃 모양 사자 갈기털 */}
+          <circle cx="100" cy="88" r="72" fill={lionMane} stroke={lionManeDark} strokeWidth="3.5" />
           {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(deg => (
-            <circle key={deg} cx={100 + 64 * Math.cos(deg * Math.PI / 180)} cy={88 + 64 * Math.sin(deg * Math.PI / 180)} r="14" fill={lionMane} />
+            <circle key={deg} cx={100 + 66 * Math.cos(deg * Math.PI / 180)} cy={88 + 66 * Math.sin(deg * Math.PI / 180)} r="15" fill={lionMane} />
           ))}
 
           {/* 둥근 귀 */}
-          <circle cx="56" cy="46" r="16" fill={lionBase} stroke={lionManeDark} strokeWidth="2.5" />
-          <circle cx="56" cy="46" r="9" fill={lionMane} />
-          <circle cx="144" cy="46" r="16" fill={lionBase} stroke={lionManeDark} strokeWidth="2.5" />
-          <circle cx="144" cy="46" r="9" fill={lionMane} />
+          <circle cx="54" cy="44" r="17" fill={lionBase} stroke={lionManeDark} strokeWidth="2.5" />
+          <circle cx="54" cy="44" r="9" fill={lionMane} />
+          <circle cx="146" cy="44" r="17" fill={lionBase} stroke={lionManeDark} strokeWidth="2.5" />
+          <circle cx="146" cy="44" r="9" fill={lionMane} />
 
-          {/* 얼굴 본체 */}
+          {/* 맹수 얼굴 본체 */}
           <circle cx="100" cy="88" r="48" fill={lionBase} stroke={lionManeDark} strokeWidth="2.5" />
-          <ellipse cx="100" cy="98" rx="28" ry="20" fill={lionSnout} />
+          <ellipse cx="100" cy="100" rx="28" ry="18" fill={lionSnout} />
 
           {/* 눈 표정 */}
           {dm === 'happy' ? (
@@ -1088,36 +1059,31 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
             <>
               <path d="M 70 76 L 88 86 M 70 86 L 88 76 M 112 76 L 130 86 M 112 86 L 130 76" stroke="#451A03" strokeWidth="3.5" strokeLinecap="round" />
             </>
-          ) : dm === 'eating' ? (
-            <>
-              <path d="M 70 80 Q 80 70 90 80 M 110 80 Q 120 70 130 80" stroke="#451A03" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-            </>
           ) : (
             <>
-              <circle cx="82" cy="78" r="6.5" fill="#1C1917" /><circle cx="80" cy="75" r="2.5" fill="#FFFFFF" />
-              <circle cx="118" cy="78" r="6.5" fill="#1C1917" /><circle cx="116" cy="75" r="2.5" fill="#FFFFFF" />
+              <circle cx="82" cy="78" r="7" fill="#1C1917" /><circle cx="80" cy="75" r="2.8" fill="#FFFFFF" />
+              <circle cx="118" cy="78" r="7" fill="#1C1917" /><circle cx="116" cy="75" r="2.8" fill="#FFFFFF" />
             </>
           )}
 
-          {/* 사자 코 & 입 */}
-          <polygon points="92,92 108,92 100,100" fill="#78350F" />
+          {/* 큼직한 각진 맹수 코 & 입 */}
+          <polygon points="90,92 110,92 100,102" fill="#78350F" />
           {dm === 'mouth-open' ? (
-            <ellipse cx="100" cy="110" rx="16" ry="14" fill="#DC2626" stroke="#451A03" strokeWidth="2" className="bear-mouth-open-anim" />
+            <ellipse cx="100" cy="114" rx="16" ry="14" fill="#DC2626" stroke="#451A03" strokeWidth="2" className="bear-mouth-open-anim" />
           ) : dm === 'eating' ? (
-            <ellipse cx="100" cy="110" rx="13" ry={chewOpen ? 12 : 3} fill="#DC2626" stroke="#451A03" strokeWidth="2" style={{ transition: 'ry 0.12s ease' }} />
+            <ellipse cx="100" cy="114" rx="13" ry={chewOpen ? 12 : 3} fill="#DC2626" stroke="#451A03" strokeWidth="2" style={{ transition: 'ry 0.12s ease' }} />
           ) : dm === 'reject' ? (
-            <path d="M 88 110 Q 100 102 112 110" stroke="#451A03" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            <path d="M 88 112 Q 100 104 112 112" stroke="#451A03" strokeWidth="2.5" strokeLinecap="round" fill="none" />
           ) : (
-            <path d="M 86 104 Q 93 110 100 106 Q 107 110 114 104" stroke="#451A03" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            <path d="M 84 106 Q 92 112 100 108 Q 108 112 116 106" stroke="#451A03" strokeWidth="2.8" strokeLinecap="round" fill="none" />
           )}
 
           {/* 사자 수염 */}
-          <g stroke="#78350F" strokeWidth="2" strokeLinecap="round">
-            <line x1="56" y1="98" x2="78" y2="102" /><line x1="56" y1="106" x2="78" y2="106" />
-            <line x1="144" y1="98" x2="122" y2="102" /><line x1="144" y1="106" x2="122" y2="106" />
+          <g stroke="#78350F" strokeWidth="2.2" strokeLinecap="round">
+            <line x1="52" y1="98" x2="78" y2="102" /><line x1="52" y1="108" x2="78" y2="108" />
+            <line x1="148" y1="98" x2="122" y2="102" /><line x1="148" y1="108" x2="122" y2="108" />
           </g>
 
-          {/* 앞발 */}
           <ellipse cx="72" cy="196" rx="18" ry="12" fill={lionBase} stroke={lionManeDark} strokeWidth="2" />
           <ellipse cx="128" cy="196" rx="18" ry="12" fill={lionBase} stroke={lionManeDark} strokeWidth="2" />
         </svg>
@@ -1127,7 +1093,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // 🐘 7. 코끼리 (Elephant) – 거대한 부채꼴 왕귀 & 긴 코(Trunk) & 하얀 상아 2개
+  // 🐘 7. 코끼리 (Elephant) – 거대한 부채꼴 왕귀, S자 긴 코, 하얀 상아 (주둥이 써클 제거)
   // ═════════════════════════════════════════════════════════════════════════════
   if (animal?.id === 'elephant') {
     const eleBase = '#93C5FD';
@@ -1142,22 +1108,22 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
     return (
       <div className={bodyClass} style={{ position: 'relative', width: '100%', maxWidth: '170px', height: '200px', margin: '0 auto' }}>
         <svg viewBox="0 0 200 245" width="100%" height="100%" style={{ overflow: 'visible' }}>
-          {/* 🌟 양옆으로 거대하게 펄럭이는 부채꼴 왕귀 2개 */}
-          <ellipse cx="32" cy="85" rx="36" ry="42" fill={eleBase} stroke={eleDark} strokeWidth="3" />
-          <ellipse cx="34" cy="85" rx="20" ry="26" fill={eleInner} />
-          <ellipse cx="168" cy="85" rx="36" ry="42" fill={eleBase} stroke={eleDark} strokeWidth="3" />
-          <ellipse cx="166" cy="85" rx="20" ry="26" fill={eleInner} />
+          {/* 🌟 양옆으로 거대한 부채꼴 왕귀 2개 */}
+          <ellipse cx="30" cy="85" rx="38" ry="44" fill={eleBase} stroke={eleDark} strokeWidth="3" />
+          <ellipse cx="32" cy="85" rx="22" ry="28" fill={eleInner} />
+          <ellipse cx="170" cy="85" rx="38" ry="44" fill={eleBase} stroke={eleDark} strokeWidth="3" />
+          <ellipse cx="168" cy="85" rx="22" ry="28" fill={eleInner} />
 
-          {/* 듬직한 몸통 */}
+          {/* 몸통 */}
           <ellipse cx="100" cy="180" rx="58" ry="50" fill={eleBase} stroke={eleDark} strokeWidth="3" />
           <ellipse cx="100" cy="185" rx="34" ry="28" fill={eleInner} opacity="0.8" />
 
-          {/* 머리 */}
+          {/* 머리 (주둥이 써클 완전 제거) */}
           <circle cx="100" cy="88" r="50" fill={eleBase} stroke={eleDark} strokeWidth="3" />
 
           {/* 🌟 하얀 앙증맞은 상아 2개 (Tusks) */}
-          <path d="M 84 105 Q 70 122 66 112 Q 76 98 84 105 Z" fill="#FFFFFF" stroke={eleDark} strokeWidth="1.8" />
-          <path d="M 116 105 Q 130 122 134 112 Q 124 98 116 105 Z" fill="#FFFFFF" stroke={eleDark} strokeWidth="1.8" />
+          <path d="M 82 105 Q 68 122 64 112 Q 74 98 82 105 Z" fill="#FFFFFF" stroke={eleDark} strokeWidth="1.8" />
+          <path d="M 118 105 Q 132 122 136 112 Q 126 98 118 105 Z" fill="#FFFFFF" stroke={eleDark} strokeWidth="1.8" />
 
           {/* 눈 표정 */}
           {dm === 'happy' ? (
@@ -1176,13 +1142,10 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
             </>
           )}
 
-          {/* 🌟 길게 뻗은 진짜 코끼리 코 (Trunk) */}
-          <path d={trunkD} stroke={eleBase} strokeWidth="20" strokeLinecap="round" fill="none" />
+          {/* 🌟 길게 뻗은 코끼리 코 (Trunk) */}
+          <path d={trunkD} stroke={eleBase} strokeWidth="22" strokeLinecap="round" fill="none" />
           <path d={trunkD} stroke={eleDark} strokeWidth="3" strokeLinecap="round" fill="none" />
-
-          {/* 코 주름 디테일 */}
-          <path d="M 94 110 Q 100 114 106 110" stroke={eleDark} strokeWidth="2" strokeLinecap="round" fill="none" />
-          <path d="M 96 122 Q 102 126 108 122" stroke={eleDark} strokeWidth="2" strokeLinecap="round" fill="none" />
+          <path d="M 94 112 Q 100 116 106 112" stroke={eleDark} strokeWidth="2" strokeLinecap="round" fill="none" />
 
           {/* 기둥 다리 */}
           <rect x="58" y="185" width="28" height="24" rx="8" fill={eleBase} stroke={eleDark} strokeWidth="2.5" />
@@ -1194,7 +1157,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // 🐼 8. 판다 (Panda) – 흑백 투톤 & 칠흑 같은 검은 콩깍지 눈 패치
+  // 🐼 8. 판다 (Panda) – 흑백 투톤 & 칠흑 같은 콩깍지 눈 패치 (주둥이 써클 제거)
   // ═════════════════════════════════════════════════════════════════════════════
   if (animal?.id === 'panda') {
     const panWhite = '#FFFFFF';
@@ -1220,7 +1183,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
           {/* 하얀 머리 */}
           <circle cx="100" cy="90" r="54" fill={panWhite} stroke="#CBD5E1" strokeWidth="2.5" />
 
-          {/* 🌟 판다의 시그니처: 큼직한 검은 콩깍지 눈 패치 2개 */}
+          {/* 🌟 판다의 상징: 검은색 타원형 콩깍지 눈 패치 2개 */}
           <ellipse cx="74" cy="80" rx="18" ry="14" fill={panBlack} transform="rotate(-15 74 80)" />
           <ellipse cx="126" cy="80" rx="18" ry="14" fill={panBlack} transform="rotate(15 126 80)" />
 
@@ -1262,7 +1225,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // 🐷 9. 돼지 (Pig) – 큼직한 분홍색 타원형 돼지코 & 접힌 세모 귀 & 스프링 꼬리
+  // 🐷 9. 돼지 (Pig) – 거대한 분홍 돼지코(콧구멍 2개), 접힌 핑크 세모 귀 (원형 써클 탈피!)
   // ═════════════════════════════════════════════════════════════════════════════
   if (animal?.id === 'pig') {
     const pigPink = '#FDA4AF';
@@ -1295,7 +1258,7 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
           {/* 머리 */}
           <circle cx="100" cy="88" r="54" fill={pigPink} stroke={pigDark} strokeWidth="3" />
 
-          {/* 눈 표정 */}
+          {/* 눈 표정 (눈웃음치는 돼지 눈) */}
           {dm === 'happy' ? (
             <>
               <g transform="translate(70, 68) scale(1)"><path d="M 0 5 C 0 -1 5 -4.5 8 0.5 C 11 -4.5 16 -1 16 5 C 16 11 8 17 8 17 C 8 17 0 11 0 5 Z" fill="#EF4444" className="bear-heart-pulse" /></g>
