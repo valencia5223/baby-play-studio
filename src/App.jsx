@@ -1444,11 +1444,11 @@ const BABY_PUZZLES = [
   { id: 'apple', name: '빨간 사과', icon: '🍎', label: '🍎 빨간 사과', color: '#dc2626', bg: '#fee2e2', desc: '새콤달콤 싱싱한 빨간 사과' }
 ];
 
-// 🧩 퍼즐 300x300 고화질 벡터 아트워크 렌더러
-function PuzzleArtworkSVG({ id }) {
+// 🧩 퍼즐 300x300 고화질 벡터 아트워크 그룹 (단일 루트 SVG에서 1/4 조각으로 완벽 분할)
+function PuzzleArtworkG({ id }) {
   if (id === 'dog') {
     return (
-      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+      <g>
         <circle cx="150" cy="150" r="130" fill="#fed7aa" stroke="#ea580c" strokeWidth="6" />
         <ellipse cx="60" cy="110" rx="35" ry="70" fill="#c2410c" transform="rotate(-15 60 110)" />
         <ellipse cx="240" cy="110" rx="35" ry="70" fill="#c2410c" transform="rotate(15 240 110)" />
@@ -1464,12 +1464,12 @@ function PuzzleArtworkSVG({ id }) {
         <circle cx="205" cy="170" r="16" fill="#fca5a5" opacity="0.7" />
         <path d="M 90 260 Q 150 280 210 260" stroke="#ef4444" strokeWidth="16" strokeLinecap="round" fill="none" />
         <circle cx="150" cy="275" r="14" fill="#fbbf24" stroke="#d97706" strokeWidth="3" />
-      </svg>
+      </g>
     );
   }
   if (id === 'cat') {
     return (
-      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+      <g>
         <polygon points="50,110 80,20 130,80" fill="#f472b6" stroke="#db2777" strokeWidth="6" strokeLinejoin="round" />
         <polygon points="65,95 85,38 120,78" fill="#fbcfe8" />
         <polygon points="250,110 220,20 170,80" fill="#f472b6" stroke="#db2777" strokeWidth="6" strokeLinejoin="round" />
@@ -1485,12 +1485,12 @@ function PuzzleArtworkSVG({ id }) {
         <path d="M 134 195 Q 142 208 150 196 Q 158 208 166 195" stroke="#831843" strokeWidth="4" strokeLinecap="round" fill="none" />
         <circle cx="85" cy="180" r="15" fill="#fbcfe8" />
         <circle cx="215" cy="180" r="15" fill="#fbcfe8" />
-      </svg>
+      </g>
     );
   }
   if (id === 'lion') {
     return (
-      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+      <g>
         <circle cx="150" cy="150" r="135" fill="#d97706" stroke="#b45309" strokeWidth="6" />
         {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(deg => (
           <path key={deg} d="M 150 15 L 165 40 L 135 40 Z" fill="#b45309" transform={`rotate(${deg} 150 150)`} />
@@ -1503,12 +1503,12 @@ function PuzzleArtworkSVG({ id }) {
         <ellipse cx="150" cy="180" rx="38" ry="26" fill="#ffffff" opacity="0.95" />
         <polygon points="150,175 136,158 164,158" fill="#78350f" />
         <path d="M 134 185 Q 150 200 166 185" stroke="#78350f" strokeWidth="4" strokeLinecap="round" fill="none" />
-      </svg>
+      </g>
     );
   }
   if (id === 'rabbit') {
     return (
-      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+      <g>
         <ellipse cx="105" cy="70" rx="26" ry="65" fill="#ffffff" stroke="#f43f5e" strokeWidth="5" transform="rotate(-8 105 70)" />
         <ellipse cx="105" cy="70" rx="14" ry="48" fill="#fda4af" transform="rotate(-8 105 70)" />
         <ellipse cx="195" cy="70" rx="26" ry="65" fill="#ffffff" stroke="#f43f5e" strokeWidth="5" transform="rotate(8 195 70)" />
@@ -1521,12 +1521,12 @@ function PuzzleArtworkSVG({ id }) {
         <rect x="151" y="196" width="8" height="12" rx="2" fill="#ffffff" stroke="#e11d48" strokeWidth="1.5" />
         <circle cx="85" cy="188" r="18" fill="#fecdd3" />
         <circle cx="215" cy="188" r="18" fill="#fecdd3" />
-      </svg>
+      </g>
     );
   }
   if (id === 'bear') {
     return (
-      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+      <g>
         <circle cx="75" cy="75" r="36" fill="#854d0e" stroke="#713f12" strokeWidth="5" />
         <circle cx="75" cy="75" r="18" fill="#fed7aa" />
         <circle cx="225" cy="75" r="36" fill="#854d0e" stroke="#713f12" strokeWidth="5" />
@@ -1539,12 +1539,12 @@ function PuzzleArtworkSVG({ id }) {
         <path d="M 132 198 Q 150 214 168 198" stroke="#3e2723" strokeWidth="4.5" strokeLinecap="round" fill="none" />
         <circle cx="85" cy="180" r="16" fill="#fca5a5" opacity="0.6" />
         <circle cx="215" cy="180" r="16" fill="#fca5a5" opacity="0.6" />
-      </svg>
+      </g>
     );
   }
   if (id === 'panda') {
     return (
-      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+      <g>
         <circle cx="70" cy="70" r="38" fill="#0f172a" />
         <circle cx="230" cy="70" r="38" fill="#0f172a" />
         <circle cx="150" cy="165" r="115" fill="#ffffff" stroke="#0f172a" strokeWidth="6" />
@@ -1556,12 +1556,12 @@ function PuzzleArtworkSVG({ id }) {
         <path d="M 136 195 Q 150 210 164 195" stroke="#0f172a" strokeWidth="4" strokeLinecap="round" fill="none" />
         <circle cx="85" cy="185" r="16" fill="#fbcfe8" />
         <circle cx="215" cy="185" r="16" fill="#fbcfe8" />
-      </svg>
+      </g>
     );
   }
   if (id === 'frog') {
     return (
-      <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+      <g>
         <circle cx="90" cy="85" r="45" fill="#22c55e" stroke="#15803d" strokeWidth="5" />
         <circle cx="210" cy="85" r="45" fill="#22c55e" stroke="#15803d" strokeWidth="5" />
         <circle cx="90" cy="85" r="26" fill="#ffffff" /><circle cx="93" cy="85" r="14" fill="#0f172a" /><circle cx="98" cy="80" r="5" fill="#ffffff" />
@@ -1573,12 +1573,12 @@ function PuzzleArtworkSVG({ id }) {
         <path d="M 75 175 Q 150 240 225 175" stroke="#065f46" strokeWidth="6" strokeLinecap="round" fill="none" />
         <circle cx="75" cy="175" r="18" fill="#fca5a5" />
         <circle cx="225" cy="175" r="18" fill="#fca5a5" />
-      </svg>
+      </g>
     );
   }
   // Default: apple
   return (
-    <svg viewBox="0 0 300 300" width="100%" height="100%" style={{ overflow: 'visible' }}>
+    <g>
       <path d="M 150 75 Q 165 30 175 20" stroke="#78350f" strokeWidth="12" strokeLinecap="round" fill="none" />
       <path d="M 160 45 Q 210 25 210 65 Q 175 75 160 45 Z" fill="#22c55e" stroke="#15803d" strokeWidth="4" />
       <path d="M 150 85 C 95 65 35 110 45 185 C 55 255 120 280 150 270 C 180 280 245 255 255 185 C 265 110 205 65 150 85 Z" fill="#ef4444" stroke="#b91c1c" strokeWidth="6" />
@@ -1588,7 +1588,7 @@ function PuzzleArtworkSVG({ id }) {
       <path d="M 135 195 Q 150 210 165 195" stroke="#450a0a" strokeWidth="4.5" strokeLinecap="round" fill="none" />
       <circle cx="95" cy="195" r="14" fill="#fecdd3" opacity="0.8" />
       <circle cx="205" cy="195" r="14" fill="#fecdd3" opacity="0.8" />
-    </svg>
+    </g>
   );
 }
 
@@ -1734,11 +1734,97 @@ export default function App() {
   const [oceanBubbles, setOceanBubbles] = useState([]);
   const [oceanScore, setOceanScore] = useState(0);
 
-  // 🧩 4조각 아기 퍼즐 상태
+  // 🧩 4조각 아기 퍼즐 상태 (드래그 앤 드롭 지원)
   const [puzzleTheme, setPuzzleTheme] = useState(() => BABY_PUZZLES[0]); // 기본: 강아지
   const [placedPieces, setPlacedPieces] = useState([false, false, false, false]);
   const [trayPieces, setTrayPieces] = useState(() => [2, 0, 3, 1]); // 셔플된 조각
   const [puzzleCompleted, setPuzzleCompleted] = useState(false);
+
+  const puzzleSlotRefs = useRef({});
+  const draggingPieceRef = useRef(null);
+  const [draggingPieceQuad, setDraggingPieceQuad] = useState(null);
+  const [dragPiecePos, setDragPiecePos] = useState({ x: 0, y: 0 });
+  const [hoverSlotIdx, setHoverSlotIdx] = useState(null);
+
+  const handleStartDragPiece = (e, quadIdx) => {
+    if (placedPieces[quadIdx] || puzzleCompleted) return;
+    e.preventDefault();
+    const clientX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
+    const clientY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
+    draggingPieceRef.current = quadIdx;
+    setDraggingPieceQuad(quadIdx);
+    setDragPiecePos({ x: clientX, y: clientY });
+    audioEngine.playFreq(480, 'sine', 0.1);
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'puzzle') return;
+
+    const handlePointerMove = (e) => {
+      if (draggingPieceRef.current === null) return;
+      const x = e.clientX;
+      const y = e.clientY;
+      setDragPiecePos({ x, y });
+
+      let currentOverSlot = null;
+      Object.entries(puzzleSlotRefs.current).forEach(([idxStr, el]) => {
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            currentOverSlot = parseInt(idxStr, 10);
+          }
+        }
+      });
+      setHoverSlotIdx(currentOverSlot);
+    };
+
+    const handlePointerUp = (e) => {
+      if (draggingPieceRef.current === null) return;
+      const quadIdx = draggingPieceRef.current;
+      const x = e.clientX;
+      const y = e.clientY;
+
+      let currentOverSlot = null;
+      Object.entries(puzzleSlotRefs.current).forEach(([idxStr, el]) => {
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            currentOverSlot = parseInt(idxStr, 10);
+          }
+        }
+      });
+
+      if (currentOverSlot === quadIdx) {
+        // 올바른 사각형 슬롯에 드롭 성공!
+        handleSnapPiece(quadIdx);
+      } else if (currentOverSlot !== null && currentOverSlot !== quadIdx) {
+        // 다른 사각형 슬롯에 잘못 놓음
+        audioEngine.playFreq(220, 'sawtooth', 0.2);
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance('여기가 아니에요~ 제자리에 맞춰보세요!');
+          utterance.lang = 'ko-KR';
+          utterance.rate = 1.0;
+          utterance.pitch = 1.1;
+          window.speechSynthesis.speak(utterance);
+        }
+      }
+
+      draggingPieceRef.current = null;
+      setDraggingPieceQuad(null);
+      setHoverSlotIdx(null);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [activeTab, placedPieces, puzzleTheme, puzzleCompleted]);
 
   // 🌊 바다속 음성 미션
   const speakOceanMission = (creature) => {
@@ -2663,43 +2749,49 @@ export default function App() {
                     </span>
                   </div>
 
-                  {/* 2x2 그리드 보드 */}
+                  {/* 2x2 그리드 보드 (4조각 결합 시 완전체 완성) */}
                   <div
                     className={puzzleCompleted ? 'puzzle-completed-board' : ''}
                     style={{
                       width: '320px', height: '320px', background: '#ffffff',
-                      borderRadius: '28px', border: puzzleCompleted ? '6px solid #eab308' : '5px dashed #94a3b8',
+                      borderRadius: '28px', border: puzzleCompleted ? '6px solid #eab308' : '4px dashed #94a3b8',
                       boxShadow: '0 12px 30px rgba(0,0,0,0.1)', display: 'grid',
                       gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr',
-                      gap: '4px', padding: '6px', overflow: 'hidden', position: 'relative'
+                      gap: puzzleCompleted ? '0px' : '3px', padding: '6px',
+                      overflow: 'hidden', position: 'relative', transition: 'all 0.3s ease'
                     }}
                   >
                     {[0, 1, 2, 3].map(quadIdx => {
                       const isPlaced = placedPieces[quadIdx];
+                      const isHovered = hoverSlotIdx === quadIdx;
+
                       return (
                         <div
                           key={quadIdx}
+                          ref={el => { puzzleSlotRefs.current[quadIdx] = el; }}
                           onClick={() => {
                             if (!isPlaced) handleSnapPiece(quadIdx);
                           }}
                           style={{
-                            background: isPlaced ? '#ffffff' : '#f8fafc',
-                            border: isPlaced ? '2px solid #cbd5e1' : '2.5px dashed #cbd5e1',
-                            borderRadius: '16px', overflow: 'hidden', position: 'relative',
+                            background: isPlaced ? '#ffffff' : isHovered ? '#fef3c7' : '#f8fafc',
+                            border: isPlaced ? '1px solid #cbd5e1' : isHovered ? '3.5px dashed #f59e0b' : '2px dashed #cbd5e1',
+                            borderRadius: puzzleCompleted ? '0px' : '14px',
+                            overflow: 'hidden', position: 'relative',
                             cursor: isPlaced ? 'default' : 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.15s ease'
                           }}
                         >
                           {isPlaced ? (
                             <div className="puzzle-snapped" style={{ width: '100%', height: '100%' }}>
                               <svg viewBox={PUZZLE_QUAD_VIEWBOX[quadIdx]} width="100%" height="100%" preserveAspectRatio="none">
-                                <PuzzleArtworkSVG id={puzzleTheme.id} />
+                                <PuzzleArtworkG id={puzzleTheme.id} />
                               </svg>
                             </div>
                           ) : (
                             <div style={{ textAlign: 'center', color: '#94a3b8', padding: '6px' }}>
-                              <span style={{ fontSize: '1.6rem', opacity: 0.35 }}>{puzzleTheme.icon}</span>
-                              <p style={{ fontSize: '0.8rem', fontWeight: 900, margin: '2px 0 0 0', opacity: 0.7 }}>
+                              <span style={{ fontSize: '1.5rem', opacity: 0.35 }}>{puzzleTheme.icon}</span>
+                              <p style={{ fontSize: '0.78rem', fontWeight: 900, margin: '2px 0 0 0', opacity: 0.7 }}>
                                 {PUZZLE_QUAD_LABELS[quadIdx]}
                               </p>
                             </div>
@@ -2710,7 +2802,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 셔플된 4조각 트레이 & 완성 컨트롤 */}
+                {/* 셔플된 4조각 트레이 & 완성 컨트롤 (드래그 앤 드롭 지원) */}
                 <div style={{
                   maxWidth: '380px', width: '100%', background: '#ffffff',
                   borderRadius: '28px', border: '3.5px solid #e2e8f0',
@@ -2718,43 +2810,49 @@ export default function App() {
                   display: 'flex', flexDirection: 'column', alignItems: 'center'
                 }}>
                   <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#1e293b', margin: '0 0 8px 0' }}>
-                    {puzzleCompleted ? '🌟 퍼즐 완성 축하해요!' : '👇 조각을 콕 터치해서 쏙 맞춰보세요!'}
+                    {puzzleCompleted ? '🌟 퍼즐 완성 축하해요!' : '👇 조각을 손가락으로 끌어다(Drag) 사각형에 쏙 맞춰보세요!'}
                   </h3>
 
-                  {/* 4조각 목록 (셔플) */}
+                  {/* 4조각 목록 (1/4씩 정확히 쪼개진 조각) */}
                   <div style={{
                     display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px',
                     width: '100%', marginBottom: '1rem'
                   }}>
                     {trayPieces.map((quadIdx, i) => {
                       const isPlaced = placedPieces[quadIdx];
+                      const isDragging = draggingPieceQuad === quadIdx;
+
                       return (
                         <button
                           key={i}
                           disabled={isPlaced}
-                          onClick={() => handleSnapPiece(quadIdx)}
+                          onPointerDown={(e) => handleStartDragPiece(e, quadIdx)}
+                          onClick={() => {
+                            if (!isPlaced) handleSnapPiece(quadIdx);
+                          }}
                           style={{
-                            height: '110px', borderRadius: '18px',
+                            height: '115px', borderRadius: '18px',
                             border: isPlaced ? '2px solid #e2e8f0' : `3.5px solid ${puzzleTheme.color}`,
                             background: isPlaced ? '#f1f5f9' : '#ffffff',
-                            opacity: isPlaced ? 0.3 : 1,
-                            cursor: isPlaced ? 'not-allowed' : 'pointer',
+                            opacity: isDragging ? 0.2 : isPlaced ? 0.25 : 1,
+                            cursor: isPlaced ? 'not-allowed' : 'grab',
                             overflow: 'hidden', padding: 0, position: 'relative',
                             boxShadow: isPlaced ? 'none' : '0 6px 16px rgba(0,0,0,0.08)',
                             transform: isPlaced ? 'scale(0.96)' : 'scale(1)',
+                            touchAction: 'none', userSelect: 'none',
                             transition: 'all 0.2s ease'
                           }}
                         >
                           <svg viewBox={PUZZLE_QUAD_VIEWBOX[quadIdx]} width="100%" height="100%" preserveAspectRatio="none">
-                            <PuzzleArtworkSVG id={puzzleTheme.id} />
+                            <PuzzleArtworkG id={puzzleTheme.id} />
                           </svg>
                           <span style={{
                             position: 'absolute', bottom: '4px', right: '6px',
-                            background: 'rgba(0,0,0,0.6)', color: '#ffffff',
+                            background: 'rgba(0,0,0,0.65)', color: '#ffffff',
                             fontSize: '0.72rem', fontWeight: 900, padding: '2px 6px',
                             borderRadius: '8px'
                           }}>
-                            조각 {quadIdx + 1}
+                            {PUZZLE_QUAD_LABELS[quadIdx]}
                           </span>
                         </button>
                       );
@@ -2790,6 +2888,28 @@ export default function App() {
                   </div>
                 </div>
               </div>
+
+              {/* 🧩 드래그 중인 퍼즐 조각 (커서 추적 오버레이) */}
+              {draggingPieceQuad !== null && (
+                <div style={{
+                  position: 'fixed',
+                  left: dragPiecePos.x,
+                  top: dragPiecePos.y,
+                  transform: 'translate(-50%, -50%) scale(1.15)',
+                  width: '130px', height: '130px',
+                  borderRadius: '20px',
+                  border: `4px solid ${puzzleTheme.color}`,
+                  background: '#ffffff',
+                  boxShadow: '0 16px 36px rgba(0,0,0,0.35)',
+                  pointerEvents: 'none',
+                  zIndex: 9999,
+                  overflow: 'hidden'
+                }}>
+                  <svg viewBox={PUZZLE_QUAD_VIEWBOX[draggingPieceQuad]} width="100%" height="100%" preserveAspectRatio="none">
+                    <PuzzleArtworkG id={puzzleTheme.id} />
+                  </svg>
+                </div>
+              )}
             </div>
           )}
 
