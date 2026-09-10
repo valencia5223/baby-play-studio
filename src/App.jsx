@@ -726,7 +726,14 @@ export default function App() {
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [isOverBear, setIsOverBear] = useState(false);
 
+  const bearMoodRef = useRef(bearMood);
+  bearMoodRef.current = bearMood;
+  const wantedFoodRef = useRef(wantedFood);
+  wantedFoodRef.current = wantedFood;
+
   const handleStartDragFood = (e, food) => {
+    // 곰돌이가 먹는 중이거나 거절 중일 때 드래그 완전 차단 (PROTECT)
+    if (bearMoodRef.current !== 'hungry') return;
     e.preventDefault();
     draggingFoodRef.current = food;
     setDraggingFood(food);
@@ -746,11 +753,12 @@ export default function App() {
 
       if (bearBoxRef.current) {
         const rect = bearBoxRef.current.getBoundingClientRect();
+        // 정확히 곰돌이 드롭 영역 안에 들어왔는지 검사
         const isOver = (
-          x >= rect.left - 20 &&
-          x <= rect.right + 20 &&
-          y >= rect.top - 20 &&
-          y <= rect.bottom + 20
+          x >= rect.left &&
+          x <= rect.right &&
+          y >= rect.top &&
+          y <= rect.bottom
         );
         setIsOverBear(isOver);
       }
@@ -766,19 +774,18 @@ export default function App() {
       if (bearBoxRef.current) {
         const rect = bearBoxRef.current.getBoundingClientRect();
         isOver = (
-          x >= rect.left - 20 &&
-          x <= rect.right + 20 &&
-          y >= rect.top - 20 &&
-          y <= rect.bottom + 20
+          x >= rect.left &&
+          x <= rect.right &&
+          y >= rect.top &&
+          y <= rect.bottom
         );
       }
 
-      if (isOver) {
-        handleFeedBear(food);
-      } else {
-        // 단일 클릭 시에도 먹여지도록 처리
+      // 정확히 곰돌이 영역 안에 드롭했고, 곰돌이가 먹을 준비(hungry)가 되어있을 때만 피딩 실행
+      if (isOver && bearMoodRef.current === 'hungry') {
         handleFeedBear(food);
       }
+      // 드롭 영역 밖이거나 먹는 중이면 피딩 없이 원위치 복귀
 
       draggingFoodRef.current = null;
       setDraggingFood(null);
@@ -794,7 +801,7 @@ export default function App() {
       window.removeEventListener('pointerup', handleWindowPointerUp);
       window.removeEventListener('pointercancel', handleWindowPointerUp);
     };
-  }, [isBearModalOpen, wantedFood]);
+  }, [isBearModalOpen]);
 
   const [strokes, setStrokes] = useState([]);
   const [brushSize, setBrushSize] = useState('medium');
@@ -963,12 +970,15 @@ export default function App() {
     const initialFood = ALL_FOOD_ITEMS[Math.floor(Math.random() * ALL_FOOD_ITEMS.length)];
     setWantedFood(initialFood);
     setBearChoices(pickBearChoices(initialFood));
+    setBearMood('hungry');
+    setRejectedFood(null);
     setIsBearModalOpen(true);
     speakBearWish(initialFood);
   };
 
   const handleFeedBear = (food) => {
-    const currentWanted = wantedFood || ALL_FOOD_ITEMS[0];
+    if (bearMoodRef.current !== 'hungry') return;
+    const currentWanted = wantedFoodRef.current || ALL_FOOD_ITEMS[0];
     if (food.id === currentWanted.id) {
       // 1단계: 우물우물 먹는 중 (eating) — 1.2초간 씹기 애니메이션
       audioEngine.playYum();
@@ -1730,20 +1740,26 @@ export default function App() {
               👇 과일·채소를 손가락으로 끌어다(Drag) 곰돌이 입에 쏙 넣어주세요!
             </p>
 
-            {/* 과일/채소 랜덤 5개 선택 카드 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+            {/* 과일/채소 랜덤 5개 선택 카드 (먹는 동안 PROTECT 비활성화, 정답 힌트 제거) */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px',
+              opacity: bearMood !== 'hungry' ? 0.45 : 1,
+              pointerEvents: bearMood !== 'hungry' ? 'none' : 'auto',
+              transition: 'opacity 0.25s ease'
+            }}>
               {bearChoices.map(food => (
                 <button
                   key={food.id}
                   onPointerDown={(e) => handleStartDragFood(e, food)}
-                  onClick={() => handleFeedBear(food)}
                   style={{
-                    background: wantedFood?.id === food.id ? '#fef3c7' : '#ffffff',
-                    border: wantedFood?.id === food.id ? '4px solid #f59e0b' : '2px solid #e2e8f0',
-                    borderRadius: '20px', padding: '12px 8px', cursor: 'grab',
+                    background: '#ffffff',
+                    border: '2.5px solid #fed7aa',
+                    borderRadius: '20px', padding: '12px 8px',
+                    cursor: bearMood !== 'hungry' ? 'not-allowed' : 'grab',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.05)', touchAction: 'none',
-                    opacity: draggingFood?.id === food.id ? 0.4 : 1
+                    opacity: draggingFood?.id === food.id ? 0.25 : 1,
+                    userSelect: 'none'
                   }}
                 >
                   <span style={{ fontSize: '2.5rem', lineHeight: 1 }}>{food.icon}</span>
