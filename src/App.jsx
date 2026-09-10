@@ -3331,31 +3331,27 @@ export default function App() {
                       padding: '12px 10px', borderRadius: '28px',
                       border: isOver
                         ? '4px dashed #f59e0b'
-                        : isTarget
-                          ? `4px solid ${animal.color || '#f59e0b'}`
-                          : `2.5px solid ${animal.color ? `${animal.color}66` : '#cbd5e1'}`,
+                        : '3px solid #e2e8f0',
                       background: isOver
                         ? '#fef3c7'
-                        : isTarget
-                          ? (animal.bg || '#ffffff')
-                          : '#ffffff',
-                      boxShadow: isTarget
-                        ? `0 10px 28px ${animal.color ? `${animal.color}40` : 'rgba(245, 158, 11, 0.3)'}`
+                        : '#ffffff',
+                      boxShadow: isOver
+                        ? '0 10px 26px rgba(245, 158, 11, 0.25)'
                         : '0 4px 14px rgba(0,0,0,0.05)',
-                      transform: isTarget ? 'scale(1.02)' : 'scale(1)',
+                      transform: isOver ? 'scale(1.03)' : 'scale(1)',
                       transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
                       display: 'flex', flexDirection: 'column', alignItems: 'center',
                       position: 'relative'
                     }}
                   >
-                    {/* 상단 뱃지: 실사 사진 + 동물 이름 + 목표 표시 */}
+                    {/* 상단 뱃지: 실사 사진 + 동물 이름 (정답 힌트 블럭 제거) */}
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: '8px',
-                      background: isTarget ? (animal.color || '#f59e0b') : '#f1f5f9',
-                      color: isTarget ? '#ffffff' : '#334155',
+                      background: '#f1f5f9',
+                      color: '#334155',
                       padding: '6px 14px', borderRadius: '20px',
-                      boxShadow: isTarget ? '0 4px 12px rgba(0,0,0,0.18)' : 'none',
-                      marginBottom: '8px', width: '92%', justifyContent: 'center'
+                      marginBottom: '8px', width: '92%', justifyContent: 'center',
+                      border: '1.5px solid #e2e8f0'
                     }}>
                       {/* 실제 동물 실사 사진 미니 뱃지 📸 */}
                       {animal.photo && (
@@ -3364,18 +3360,13 @@ export default function App() {
                           alt={animal.name}
                           style={{
                             width: '28px', height: '28px', borderRadius: '50%',
-                            objectFit: 'cover', border: isTarget ? '2px solid #ffffff' : '1.5px solid #cbd5e1'
+                            objectFit: 'cover', border: '1.5px solid #cbd5e1'
                           }}
                         />
                       )}
                       <span style={{ fontWeight: 900, fontSize: '1.05rem', letterSpacing: '-0.3px' }}>
                         {animal.name}
                       </span>
-                      {isTarget && (
-                        <span style={{ fontSize: '0.78rem', background: '#ffffff', color: animal.color || '#b45309', padding: '2px 7px', borderRadius: '10px', fontWeight: 900 }}>
-                          🎯 저요!
-                        </span>
-                      )}
                     </div>
 
                     {/* SVG 애니메이션 캐릭터 */}
@@ -3384,17 +3375,16 @@ export default function App() {
                       mood={mood}
                       isOver={isOver}
                       rejectedFoodIcon={rejectedAnimalId === animal.id ? rejectedFood?.icon : null}
-                      isTarget={isTarget}
                     />
 
                     {/* 하단 칭호 태그 */}
                     <div style={{ marginTop: '6px' }}>
                       <span style={{
                         fontSize: '0.86rem', fontWeight: 900,
-                        color: isTarget ? (animal.color || '#b45309') : '#64748b',
-                        background: isTarget ? '#ffffff' : '#f8fafc',
+                        color: '#64748b',
+                        background: '#f8fafc',
                         padding: '3px 10px', borderRadius: '12px',
-                        border: isTarget ? `1.5px solid ${animal.color || '#f59e0b'}` : '1px solid #e2e8f0',
+                        border: '1px solid #e2e8f0',
                         display: 'inline-block'
                       }}>
                         {animal.title || `${animal.icon} ${animal.name}`}
