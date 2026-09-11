@@ -2,13 +2,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { Sparkles, Volume2, VolumeX, RotateCcw, Smartphone, X, Play, Pause, SkipForward, SkipBack, Music, Eraser } from 'lucide-react';
 import duckImg from './assets/duck.jpg';
+import appleImg from './assets/apple.jpg';
+import bananaImg from './assets/banana.jpg';
+import grapeImg from './assets/grape.jpg';
+import watermelonImg from './assets/watermelon.jpg';
 import strawberryImg from './assets/strawberry.jpg';
 import tangerineImg from './assets/tangerine.jpg';
 import peachImg from './assets/peach.jpg';
 import melonImg from './assets/melon.jpg';
 import pineappleImg from './assets/pineapple.jpg';
+import cherryImg from './assets/cherry.jpg';
+import blueberryImg from './assets/blueberry.jpg';
+import carrotImg from './assets/carrot.jpg';
 import broccoliImg from './assets/broccoli.jpg';
+import cornImg from './assets/corn.jpg';
 import sweetPotatoImg from './assets/sweet_potato.jpg';
+import potatoImg from './assets/potato.jpg';
+import tomatoImg from './assets/tomato.jpg';
+import cucumberImg from './assets/cucumber.jpg';
+import eggplantImg from './assets/eggplant.jpg';
 
 // --- 실제 동물 울음소리 MP3 재생 사운드 엔진 ---
 class BabySoundEngine {
