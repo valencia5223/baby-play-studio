@@ -308,39 +308,39 @@ const REAL_ANIMALS = [
 ];
 
 // =============================================================================
-// 🍎 싱싱 과일 & 채소 데이터셋 (실사 이미지 관찰 + 곰돌이 먹이기 공통 사용)
+// 🍎 싱싱 과일 & 채소 데이터셋 (고화질 실사 이미지 100% 로컬 연동)
 // =============================================================================
 const REAL_FRUITS = [
   // ── 과일 ──
   {
     id: 'apple', name: '사과', icon: '🍎', category: '과일',
-    img: 'https://images.pexels.com/photos/102104/pexels-photo-102104.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#ef4444', bg: '#fee2e2', fitPos: 'center 30%'
+    img: appleImg,
+    color: '#ef4444', bg: '#fee2e2', fitPos: 'center center'
   },
   {
     id: 'banana', name: '바나나', icon: '🍌', category: '과일',
-    img: 'https://images.pexels.com/photos/2872755/pexels-photo-2872755.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#d97706', bg: '#fef3c7', fitPos: 'center 30%'
+    img: bananaImg,
+    color: '#d97706', bg: '#fef3c7', fitPos: 'center center'
   },
   {
     id: 'grape', name: '포도', icon: '🍇', category: '과일',
-    img: 'https://images.pexels.com/photos/708777/pexels-photo-708777.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#7e22ce', bg: '#f3e8ff', fitPos: 'center 20%'
+    img: grapeImg,
+    color: '#7e22ce', bg: '#f3e8ff', fitPos: 'center center'
   },
   {
     id: 'watermelon', name: '수박', icon: '🍉', category: '과일',
-    img: 'https://images.pexels.com/photos/1313267/pexels-photo-1313267.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#15803d', bg: '#dcfce7', fitPos: 'center 30%'
+    img: watermelonImg,
+    color: '#15803d', bg: '#dcfce7', fitPos: 'center center'
   },
   {
     id: 'strawberry', name: '딸기', icon: '🍓', category: '과일',
     img: strawberryImg,
-    color: '#e11d48', bg: '#ffe4e6', fitPos: 'center 20%'
+    color: '#e11d48', bg: '#ffe4e6', fitPos: 'center center'
   },
   {
     id: 'tangerine', name: '귤', icon: '🍊', category: '과일',
     img: tangerineImg,
-    color: '#ea580c', bg: '#ffedd5', fitPos: 'center 20%'
+    color: '#ea580c', bg: '#ffedd5', fitPos: 'center center'
   },
   {
     id: 'peach', name: '복숭아', icon: '🍑', category: '과일',
@@ -359,19 +359,19 @@ const REAL_FRUITS = [
   },
   {
     id: 'cherry', name: '체리', icon: '🍒', category: '과일',
-    img: 'https://images.pexels.com/photos/109274/pexels-photo-109274.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#be123c', bg: '#ffe4e6', fitPos: 'center 20%'
+    img: cherryImg,
+    color: '#be123c', bg: '#ffe4e6', fitPos: 'center center'
   },
   {
     id: 'blueberry', name: '블루베리', icon: '🫐', category: '과일',
-    img: 'https://images.pexels.com/photos/1395958/pexels-photo-1395958.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#4338ca', bg: '#e0e7ff', fitPos: 'center 30%'
+    img: blueberryImg,
+    color: '#4338ca', bg: '#e0e7ff', fitPos: 'center center'
   },
   // ── 채소 ──
   {
     id: 'carrot', name: '당근', icon: '🥕', category: '채소',
-    img: 'https://images.pexels.com/photos/143133/pexels-photo-143133.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#f97316', bg: '#ffedd5', fitPos: 'center 30%'
+    img: carrotImg,
+    color: '#f97316', bg: '#ffedd5', fitPos: 'center center'
   },
   {
     id: 'broccoli', name: '브로콜리', icon: '🥦', category: '채소',
@@ -380,8 +380,8 @@ const REAL_FRUITS = [
   },
   {
     id: 'corn', name: '옥수수', icon: '🌽', category: '채소',
-    img: 'https://images.pexels.com/photos/547263/pexels-photo-547263.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#ca8a04', bg: '#fef9c3', fitPos: 'center 30%'
+    img: cornImg,
+    color: '#ca8a04', bg: '#fef9c3', fitPos: 'center center'
   },
   {
     id: 'sweet_potato', name: '고구마', icon: '🍠', category: '채소',
@@ -390,31 +390,34 @@ const REAL_FRUITS = [
   },
   {
     id: 'potato', name: '감자', icon: '🥔', category: '채소',
-    img: 'https://images.pexels.com/photos/144248/potatoes-vegetables-erdfrucht-bio-144248.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#a16207', bg: '#fef3c7', fitPos: 'center 30%'
+    img: potatoImg,
+    color: '#a16207', bg: '#fef3c7', fitPos: 'center center'
   },
   {
     id: 'tomato', name: '토마토', icon: '🍅', category: '채소',
-    img: 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#dc2626', bg: '#fee2e2', fitPos: 'center 30%'
+    img: tomatoImg,
+    color: '#dc2626', bg: '#fee2e2', fitPos: 'center center'
   },
   {
     id: 'cucumber', name: '오이', icon: '🥒', category: '채소',
-    img: 'https://images.pexels.com/photos/2329440/pexels-photo-2329440.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#16a34a', bg: '#dcfce7', fitPos: 'center 30%'
+    img: cucumberImg,
+    color: '#16a34a', bg: '#dcfce7', fitPos: 'center center'
   },
   {
     id: 'eggplant', name: '가지', icon: '🍆', category: '채소',
-    img: 'https://images.pexels.com/photos/321551/pexels-photo-321551.jpeg?auto=compress&cs=tinysrgb&w=600',
-    color: '#7e22ce', bg: '#f3e8ff', fitPos: 'center 30%'
+    img: eggplantImg,
+    color: '#7e22ce', bg: '#f3e8ff', fitPos: 'center center'
   }
 ];
 
 // 배열 무작위 셔플 헬퍼
 const shuffleArray = (arr) => [...arr].sort(() => 0.5 - Math.random());
 
-// 곰돌이 먹이기용: REAL_FRUITS에서 자동 파생 (icon, name, id, color, bg 사용)
-const ALL_FOOD_ITEMS = REAL_FRUITS.map(f => ({ id: f.id, name: f.name, icon: f.icon, color: f.color, bg: f.bg }));
+// 곰돌이 먹이기용: REAL_FRUITS에서 자동 파생 (실사 이미지, fitPos, objectFit 포함)
+const ALL_FOOD_ITEMS = REAL_FRUITS.map(f => ({
+  id: f.id, name: f.name, icon: f.icon, color: f.color, bg: f.bg,
+  img: f.img, fitPos: f.fitPos, objectFit: f.objectFit
+}));
 
 // 정답 포함 5개 랜덤 선택지 생성 헬퍼
 function pickBearChoices(targetFood) {
@@ -573,7 +576,7 @@ const choices = pickBearChoices(food);
 // =============================================================================
 // 🐾 SVG 애니메이션 다채로운 동물 캐릭터 컴포넌트 (10종 고유 실루엣 극대화 모델)
 // =============================================================================
-function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, rejectedFoodIcon = null, isTarget = false }) {
+function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, rejectedFoodIcon = null, rejectedFoodImg = null, isTarget = false }) {
   const [chewOpen, setChewOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -602,11 +605,24 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
           <div className="bear-sparkle" style={{ position: 'absolute', top: '-5px', right: '28px', fontSize: '1.1rem', animationDelay: '0.5s' }}>🌟</div>
         </>
       )}
-      {dm === 'reject' && rejectedFoodIcon && (
+      {dm === 'reject' && (rejectedFoodImg || rejectedFoodIcon) && (
         <div className="bear-fruit-reject" style={{
           position: 'absolute', top: '38%', left: '50%',
-          fontSize: '2.2rem', pointerEvents: 'none'
-        }}>{rejectedFoodIcon}</div>
+          transform: 'translate(-50%, -50%)',
+          pointerEvents: 'none', zIndex: 10
+        }}>
+          {rejectedFoodImg ? (
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden',
+              border: '3px solid #ef4444', boxShadow: '0 6px 16px rgba(239,68,68,0.4)',
+              background: '#ffffff'
+            }}>
+              <img src={rejectedFoodImg} alt="거절된 음식을 나타내는 사진" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          ) : (
+            <span style={{ fontSize: '2.2rem' }}>{rejectedFoodIcon}</span>
+          )}
+        </div>
       )}
     </>
   );
@@ -1393,23 +1409,26 @@ function getBestKoreanVoice() {
     const name = voice.name.toLowerCase();
     let score = 0;
 
-    // AI Neural / Online 고품질 구어체 보이스 최우선 가점
+    // 🏆 다정하고 나긋나긋한 남성 목소리 최우선 1순위 (InJoon Natural, 봉진, 국민, Male 등)
+    if (name.includes('injoon') || name.includes('인준')) score += 1000;
+    if (name.includes('bongjin') || name.includes('봉진')) score += 850;
+    if (name.includes('gookmin') || name.includes('국민')) score += 750;
+    if (name.includes('male') || name.includes('남성') || name.includes('남자')) score += 600;
+
     if (name.includes('natural')) score += 100;
     if (name.includes('online')) score += 90;
     if (name.includes('neural')) score += 90;
-    if (name.includes('sunhi')) score += 85;  // MS SunHi Natural (가장 자연스러운 한국어 여성 구어체)
-    if (name.includes('injoon')) score += 80; // MS InJoon Natural (남성 구어체)
-    if (name.includes('yuna')) score += 80;   // Apple Yuna Enhanced
-    if (name.includes('google')) score += 75; // Google Neural 한국어
-    if (name.includes('seoyeon')) score += 60;
-    if (name.includes('gaeun')) score += 60;
-    if (name.includes('multilingual')) score += 50;
 
-    // 기계음/전자음 유발 구형 데스크톱/SAPI5 보이스 차단 및 강한 감점 (Heami 등)
-    if (name.includes('heami')) score -= 100;
-    if (name.includes('desktop')) score -= 80;
-    if (name.includes('sapi5')) score -= 80;
-    if (name.includes('local')) score -= 20;
+    // ❌ 여자 목소리는 확실하게 감점하여 배제 (-800점)
+    if (name.includes('sunhi') || name.includes('선희')) score -= 800;
+    if (name.includes('yuna') || name.includes('유나')) score -= 800;
+    if (name.includes('heami') || name.includes('혜미')) score -= 900;
+    if (name.includes('seoyeon') || name.includes('서연')) score -= 800;
+    if (name.includes('gaeun') || name.includes('가은')) score -= 800;
+    if (name.includes('female') || name.includes('여성') || name.includes('여자')) score -= 800;
+
+    if (name.includes('desktop')) score -= 100;
+    if (name.includes('sapi5')) score -= 100;
 
     return { voice, score };
   });
@@ -1418,29 +1437,32 @@ function getBestKoreanVoice() {
   return scoredVoices[0]?.voice || koreanVoices[0];
 }
 
-// 텍스트를 자연스러운 구어체(다정한 대화체)로 튜닝하고 기호/이모지 쉼표 호흡 정형화
+// 텍스트를 자연스러운 구어체(다정한 대화체)로 튜닝하고 기호/이모지/물결표 제거
 export function formatSpokenKoreanText(text) {
   if (!text) return '';
 
-  // 1. 이모지 및 특수 기호 제거 (TTS 유닛 발음 오류 및 깨짐 완전 방지)
-  let cleanText = text.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
+  // 1. 이모지, 물결표(~), 특수 기호 제거 (TTS 유닛이 "물결표", "물결표 사인" 등 기호를 소리내어 읽는 현상 100% 방지)
+  let cleanText = text
+    .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
+    .replace(/[~～]/g, ' ')
+    .replace(/[*#@^&_+={}\[\]<>"'`]/g, ' ')
+    .replace(/["'""'']/g, '');
 
-  // 2. 문장 끝 다정한 구어체 변환 및 자연스러운 쉼표(숨쉬기) 억양 부여
+  // 2. 문장 끝 다정한 구어체 변환 (물결표 없이 마침표/느낌표/물음표로 자연스러운 숨쉬기 호흡)
   cleanText = cleanText
-    .replace(/어디 있을까요\?/g, '어디에 있을까요~?')
-    .replace(/누구일까요\?/g, '누구일까요~?')
-    .replace(/맞춰볼까요\?/g, '맞춰볼까요~?')
-    .replace(/먹고 싶어요!/g, '먹고 싶대요~!')
-    .replace(/먹고 싶어요~/g, '먹고 싶대요~!')
-    .replace(/참 잘했어요~/g, '참 잘했어요! 대단해요!')
-    .replace(/정말 최고예요~/g, '정말 최고예요!')
+    .replace(/어디 있을까요\?/g, '어디에 있을까요?')
+    .replace(/누구일까요\?/g, '누구일까요?')
+    .replace(/맞춰볼까요\?/g, '맞춰볼까요?')
+    .replace(/먹고 싶어요[!.]?/g, '먹고 싶대요!')
+    .replace(/참 잘했어요[!.]?/g, '참 잘했어요! 대단해요!')
+    .replace(/정말 최고예요[!.]?/g, '정말 최고예요!')
     .replace(/\s+/g, ' ')
     .trim();
 
   return cleanText;
 }
 
-export function speakNaturalKorean(text, { pitch = 1.02, rate = 0.94, priority = true } = {}) {
+export function speakNaturalKorean(text, { pitch = 0.96, rate = 0.92, priority = true } = {}) {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
   try {
@@ -1454,7 +1476,7 @@ export function speakNaturalKorean(text, { pitch = 1.02, rate = 0.94, priority =
     const utterance = new SpeechSynthesisUtterance(spokenText);
     utterance.lang = 'ko-KR';
 
-    // 구어체 자연스러운 톤 Calibration: pitch 1.02, rate 0.94 (전자음 distortion 완전 방지)
+    // 나긋나긋하고 안정적인 남성 톤: pitch 0.96, rate 0.92
     utterance.pitch = pitch;
     utterance.rate = rate;
 
@@ -2531,14 +2553,14 @@ export default function App() {
     }
   };
 
-  // 🦁 동물 과일 먹이기 음성 안내 (다정하고 상냥한 목소리)
+  // 🦁 동물 과일 먹이기 음성 안내 (다정하고 편안한 남성 목소리)
   const speakFeedWish = (animal, food) => {
     const targetAnimal = animal || feedRound?.target;
     const targetFood = food || feedRound?.food;
     if (!targetAnimal || !targetFood) return;
     const subj = attachJosa(targetAnimal.name, '이/가');
     const obj = attachJosa(targetFood.name, '을/를');
-    speakNaturalKorean(`배고파요~ ${subj} 맛있는 ${obj} 먹고 싶어요!`, { pitch: 1.18, rate: 0.93 });
+    speakNaturalKorean(`배고파요. ${subj} 맛있는 ${obj} 먹고 싶대요!`, { pitch: 0.96, rate: 0.92 });
   };
 
   const openFeedModal = () => {
@@ -2568,14 +2590,14 @@ export default function App() {
         });
         setFeedScore(prev => prev + 1);
 
-        // 🗣️ 동물이 직접 "냠냠~ {과일} 맛있어요! 고마워요~" 라고 상냥하게 소감 표현
+        // 🗣️ 동물이 직접 소감 표현 (물결표 없는 깨끗한 다정한 남성톤)
         const praisePhrases = [
-          `냠냠~ ${wantedFood.name} 정말 맛있어요! 고마워요~ 🥰`,
-          `와아! ${wantedFood.name} 최고예요! 냠냠 맛있어요~ 💖`,
-          `냠냠 꿀꺽~ 달콤한 ${wantedFood.name} 맛있어요! 배가 든든해요~ ✨`
+          `냠냠! ${wantedFood.name} 정말 맛있어요! 고마워요!`,
+          `와아! ${wantedFood.name} 최고예요! 냠냠 맛있어요!`,
+          `냠냠 꿀꺽! 달콤한 ${wantedFood.name} 맛있어요! 배가 든든해요!`
         ];
         const randomPraise = praisePhrases[Math.floor(Math.random() * praisePhrases.length)];
-        speakNaturalKorean(randomPraise, { pitch: 1.22, rate: 0.92 });
+        speakNaturalKorean(randomPraise, { pitch: 0.96, rate: 0.92 });
 
         // 1.2초 후 기뻐하기 (만세 + 하트눈 + 팡파레)
         setTimeout(() => {
@@ -2604,7 +2626,7 @@ export default function App() {
 
         const animalSubj = attachJosa(targetAnimal.name, '은/는');
         const foodObj = attachJosa(wantedFood.name, '을/를');
-        speakNaturalKorean(`으응~ 이거 말고! ${animalSubj} ${foodObj} 먹고 싶어요~`, { pitch: 1.16, rate: 0.94 });
+        speakNaturalKorean(`으응, 이거 말고! ${animalSubj} ${foodObj} 먹고 싶대요.`, { pitch: 0.96, rate: 0.92 });
 
         setTimeout(() => {
           setAnimalMoods(prev => ({ ...prev, [targetAnimal.id]: 'hungry' }));
@@ -2625,7 +2647,7 @@ export default function App() {
       setTimeout(() => audioEngine.playFreq(160, 'sawtooth', 0.2, 0.5), 240);
 
       const foodObj = attachJosa(wantedFood.name, '을/를');
-      speakNaturalKorean(`나는 아니에요~ ${targetAnimal.name}에게 ${foodObj} 주세요!`, { pitch: 1.16, rate: 0.94 });
+      speakNaturalKorean(`나는 아니에요. ${targetAnimal.name}에게 ${foodObj} 주세요!`, { pitch: 0.96, rate: 0.92 });
 
       setTimeout(() => {
         setAnimalMoods(prev => ({ ...prev, [droppedAnimalId]: 'hungry' }));
@@ -3843,16 +3865,30 @@ export default function App() {
               <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#92400e' }}>⭐ 먹인 과일: {feedScore}개</span>
             </div>
 
-            {/* 목표 동물 말풍선 */}
+            {/* 목표 동물 말풍선 (고화질 실사 과일 요구사항 뱃지 탑재) */}
             <div
               onClick={() => speakFeedWish(feedRound.target, feedRound.food)}
               title="콕 누르면 동물 친구가 목소리로 다시 말해요!"
               style={{
                 background: '#ffffff', border: '3.5px solid #fbbf24', borderRadius: '24px',
-                padding: '0.9rem 1.4rem', marginBottom: '1.2rem', boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
-                cursor: 'pointer', position: 'relative', display: 'inline-block', maxWidth: '90%'
+                padding: '0.8rem 1.4rem', marginBottom: '1.2rem', boxShadow: '0 8px 24px rgba(245, 158, 11, 0.18)',
+                cursor: 'pointer', position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '12px', maxWidth: '90%'
               }}
             >
+              {/* 실사 과일 요구사항 미니 뱃지 📸 */}
+              {feedRound.food?.img && (
+                <div style={{
+                  width: '44px', height: '44px', borderRadius: '50%', overflow: 'hidden',
+                  border: `3px solid ${feedRound.food.color || '#fbbf24'}`,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)', flexShrink: 0, background: '#ffffff'
+                }}>
+                  <img
+                    src={feedRound.food.img}
+                    alt={feedRound.food.name}
+                    style={{ width: '100%', height: '100%', objectFit: feedRound.food.objectFit || 'cover' }}
+                  />
+                </div>
+              )}
               <p style={{ fontSize: '1.35rem', fontWeight: 900, color: '#78350f', margin: 0 }}>
                 {rejectedAnimalId === feedRound.target.id
                   ? `😤 "${feedRound.target.name}: 이거 말고~!! ${feedRound.food.name} 달라고~! 😣"`
@@ -3864,7 +3900,7 @@ export default function App() {
                         ? `💖 "${feedRound.target.name}: 너무 맛있다~! 최고야! 🥰"`
                         : hoverAnimalId === feedRound.target.id
                           ? `😮 "${feedRound.target.name}: 아~~ 입 벌리고 있어! 쏙 넣어줘!"`
-                          : `"${feedRound.target.name}가 ${feedRound.food.name} 먹고 싶어요! ${feedRound.food.icon}"`}
+                          : `"${feedRound.target.name}가 ${feedRound.food.name} 먹고 싶어요!"`}
               </p>
               {/* 말풍선 꼬리 */}
               <div style={{
@@ -3915,7 +3951,7 @@ export default function App() {
                       position: 'relative'
                     }}
                   >
-                    {/* 상단 뱃지: 실사 사진 + 동물 이름 (정답 힌트 블럭 제거) */}
+                    {/* 상단 뱃지: 실사 사진 + 동물 이름 */}
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: '8px',
                       background: '#f1f5f9',
@@ -3940,12 +3976,13 @@ export default function App() {
                       </span>
                     </div>
 
-                    {/* SVG 애니메이션 캐릭터 */}
+                    {/* SVG 애니메이션 캐릭터 (실사 과일 거절 지원) */}
                     <AnimatedAnimalCharacter
                       animal={animal}
                       mood={mood}
                       isOver={isOver}
                       rejectedFoodIcon={rejectedAnimalId === animal.id ? rejectedFood?.icon : null}
+                      rejectedFoodImg={rejectedAnimalId === animal.id ? rejectedFood?.img : null}
                     />
 
                     {/* 하단 칭호 태그 */}
@@ -3970,7 +4007,7 @@ export default function App() {
               👇 원하는 과일·채소를 손가락으로 끌어다(Drag) <strong>{feedRound.target.name}</strong>에게 쏙 넣어주세요!
             </p>
 
-            {/* 과일/채소 랜덤 5개 선택 카드 (먹는 동안 PROTECT 비활성화) */}
+            {/* 과일/채소 랜덤 5개 고화질 실사 선택 카드 (먹는 동안 PROTECT 비활성화) */}
             <div style={{
               display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px',
               opacity: isFeedBusyRef.current ? 0.45 : 1,
@@ -3983,31 +4020,65 @@ export default function App() {
                   onPointerDown={(e) => handleStartDragFood(e, food)}
                   style={{
                     background: '#ffffff',
-                    border: '2.5px solid #fed7aa',
-                    borderRadius: '20px', padding: '12px 8px',
+                    border: `3.5px solid ${food.color || '#fed7aa'}`,
+                    borderRadius: '24px', padding: '10px 6px',
                     cursor: isFeedBusyRef.current ? 'not-allowed' : 'grab',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)', touchAction: 'none',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+                    boxShadow: '0 8px 18px rgba(0,0,0,0.12)', touchAction: 'none',
                     opacity: draggingFood?.id === food.id ? 0.25 : 1,
-                    userSelect: 'none'
+                    userSelect: 'none', overflow: 'hidden'
                   }}
                 >
-                  <span style={{ fontSize: '2.5rem', lineHeight: 1 }}>{food.icon}</span>
-                  <span style={{ fontSize: '1rem', fontWeight: 900, color: '#1e293b' }}>{food.name}</span>
+                  <div style={{
+                    width: '72px', height: '72px', borderRadius: '20px', overflow: 'hidden',
+                    background: food.bg || '#f8fafc', border: '2px solid rgba(0,0,0,0.06)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.05)'
+                  }}>
+                    {food.img ? (
+                      <img
+                        src={food.img}
+                        alt={food.name}
+                        style={{
+                          width: '100%', height: '100%',
+                          objectFit: food.objectFit || 'cover',
+                          objectPosition: food.fitPos || 'center center'
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '2.4rem' }}>{food.icon}</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '1.08rem', fontWeight: 900, color: '#1e293b' }}>{food.name}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* 손가락/마우스를 따라 움직이는 드래그 과일 이펙트 */}
+          {/* 손가락/마우스를 따라 움직이는 드래그 과일 이펙트 (고화질 실사 뱃지 📸) */}
           {draggingFood && (
             <div style={{
               position: 'fixed', left: dragPos.x, top: dragPos.y,
-              transform: 'translate(-50%, -50%) scale(1.3)',
-              zIndex: 2000, pointerEvents: 'none', fontSize: '4.5rem',
-              filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.35))'
+              transform: 'translate(-50%, -50%) scale(1.15)',
+              zIndex: 2000, pointerEvents: 'none',
+              width: '84px', height: '84px', borderRadius: '50%',
+              overflow: 'hidden', border: `4px solid ${draggingFood.color || '#ffffff'}`,
+              boxShadow: '0 14px 32px rgba(0,0,0,0.42)', background: '#ffffff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              {draggingFood.icon}
+              {draggingFood.img ? (
+                <img
+                  src={draggingFood.img}
+                  alt={draggingFood.name}
+                  style={{
+                    width: '100%', height: '100%',
+                    objectFit: draggingFood.objectFit || 'cover',
+                    objectPosition: draggingFood.fitPos || 'center center'
+                  }}
+                />
+              ) : (
+                <span style={{ fontSize: '3.2rem' }}>{draggingFood.icon}</span>
+              )}
             </div>
           )}
         </div>
