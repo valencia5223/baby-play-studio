@@ -1499,6 +1499,7 @@ export function formatSpokenKoreanText(text) {
 
   // 2. 문장 끝 다정한 구어체 변환 (물결표 없이 마침표/느낌표/물음표로 자연스러운 숨쉬기 호흡)
   cleanText = cleanText
+    .replace(/배고파요[.·…]+(?=\s*)/g, '배고파요!')
     .replace(/어디 있을까요\?/g, '어디에 있을까요?')
     .replace(/누구일까요\?/g, '누구일까요?')
     .replace(/맞춰볼까요\?/g, '맞춰볼까요?')
@@ -2621,7 +2622,8 @@ export default function App() {
     if (!targetAnimal || !targetFood) return;
     const subj = attachJosa(targetAnimal.name, '이/가');
     const obj = attachJosa(targetFood.name, '을/를');
-    speakNaturalKorean(`배고파요. ${subj} 맛있는 ${obj} 먹고 싶대요!`, { pitch: 1.16, rate: 0.92 });
+    // 🦁 '배고파요!'로 연결하여 문장 종결 하향 억양(낮은 톤) 및 긴 정적(텀) 제거, 신비 바다속과 동일하게 경쾌한 톤(1.18, 0.93)으로 즉시 연결
+    speakNaturalKorean(`배고파요! ${subj} 맛있는 ${obj} 먹고 싶대요!`, { pitch: 1.18, rate: 0.93 });
   };
 
   const openFeedModal = () => {
