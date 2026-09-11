@@ -107,6 +107,16 @@ class BabySoundEngine {
       } catch (e) { }
       this.currentAudio = null;
     }
+    if (currentVoiceAudio) {
+      try {
+        currentVoiceAudio.pause();
+        currentVoiceAudio.currentTime = 0;
+      } catch (e) { }
+      currentVoiceAudio = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
   }
 
   playFreq(freq, type = 'sine', duration = 0.25, gainVal = 0.4) {
@@ -1553,6 +1563,38 @@ export function speakNaturalKorean(text, { pitch = 1.16, rate = 0.92, priority =
   }
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// 🎙️ PC Edge 인준(InJoon) 고음질 MP3 플레이어 (아이패드/모바일 100% 동일 남성 음성 재생)
+// ═════════════════════════════════════════════════════════════════════════════
+let currentVoiceAudio = null;
+
+export function playVoiceAudio(audioSrc, fallbackFn = null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (currentVoiceAudio) {
+      currentVoiceAudio.pause();
+      currentVoiceAudio.currentTime = 0;
+      currentVoiceAudio = null;
+    }
+
+    const audio = new Audio(audioSrc);
+    currentVoiceAudio = audio;
+
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn('Voice MP3 playback fallback to TTS:', err);
+        if (fallbackFn) fallbackFn();
+      });
+    }
+  } catch (err) {
+    if (fallbackFn) fallbackFn();
+  }
+}
+
 // 한글 조사 자동 연결 헬퍼 (은/는, 이/가, 을/를, 과/와)
 export function attachJosa(word, josaType) {
   if (!word) return '';
@@ -2358,7 +2400,9 @@ export default function App() {
         handleSnapPiece(quadIdx);
         // 다른 사각형 슬롯에 잘못 놓음
         audioEngine.playFreq(220, 'sawtooth', 0.2);
-        speakNaturalKorean('여기가 아니에요~ 제자리에 쏙 맞춰보세요!', { pitch: 1.15, rate: 0.93 });
+        playVoiceAudio('/sounds/voice/puzzle_wrong.mp3', () => {
+          speakNaturalKorean('여기가 아니에요~ 제자리에 쏙 맞춰보세요!', { pitch: 1.15, rate: 0.93 });
+        });
       }
 
       draggingPieceRef.current = null;
@@ -2377,10 +2421,12 @@ export default function App() {
     };
   }, [activeTab, placedPieces, puzzleTheme, puzzleCompleted]);
 
-  // 🌊 바다속 음성 미션 (다정하고 상냥한 안내)
+  // 🌊 바다속 음성 미션 (다정하고 상냥한 인준 MP3 보이스 우선 재생)
   const speakOceanMission = (creature) => {
     const subj = attachJosa(creature.name, '은/는');
-    speakNaturalKorean(`신비한 바다속에서 ${subj} 어디 있을까요?`, { pitch: 1.16, rate: 0.92 });
+    playVoiceAudio(`/sounds/voice/ocean_mission_${creature.id}.mp3`, () => {
+      speakNaturalKorean(`신비한 바다속에서 ${subj} 어디 있을까요?`, { pitch: 1.16, rate: 0.92 });
+    });
   };
 
   const generateNextOceanMission = () => {
@@ -2421,7 +2467,9 @@ export default function App() {
       audioEngine.playFanfare();
 
       const obj = attachJosa(creature.name, '을/를');
-      speakNaturalKorean(`찾았다! ${obj} 찾았어요! 정말 최고예요~ 🎉`, { pitch: 1.2, rate: 0.94 });
+      playVoiceAudio(`/sounds/voice/ocean_found_${creature.id}.mp3`, () => {
+        speakNaturalKorean(`찾았다! ${obj} 찾았어요! 정말 최고예요~ 🎉`, { pitch: 1.2, rate: 0.94 });
+      });
 
       // 2.8초 후 다음 미션으로 자동 전환
       setTimeout(() => {
@@ -2466,7 +2514,9 @@ export default function App() {
       setTimeout(() => {
         audioEngine.playFanfare();
         const obj = attachJosa(puzzleTheme.name, '을/를');
-        speakNaturalKorean(`와아! 멋진 ${obj} 퍼즐을 완성했어요! 참 잘했어요~ 🌟`, { pitch: 1.2, rate: 0.94 });
+        playVoiceAudio(`/sounds/voice/puzzle_done_${puzzleTheme.id}.mp3`, () => {
+          speakNaturalKorean(`와아! 멋진 ${obj} 퍼즐을 완성했어요! 참 잘했어요~ 🌟`, { pitch: 1.2, rate: 0.94 });
+        });
       }, 300);
     }
   };
@@ -2482,7 +2532,9 @@ export default function App() {
     setPuzzleTheme(theme);
     handleResetPuzzle(theme);
     const obj = attachJosa(theme.name, '을/를');
-    speakNaturalKorean(`우리 ${obj} 퍼즐을 맞춰볼까요?`, { pitch: 1.16, rate: 0.93 });
+    playVoiceAudio(`/sounds/voice/puzzle_start_${theme.id}.mp3`, () => {
+      speakNaturalKorean(`우리 ${obj} 퍼즐을 맞춰볼까요?`, { pitch: 1.16, rate: 0.93 });
+    });
   };
 
   const handleNextPuzzleTheme = () => {
@@ -2573,9 +2625,17 @@ export default function App() {
     setSelectedRealItem(null);
   };
 
-  const speakQuizQuestion = (name) => {
+  const speakQuizQuestion = (animal) => {
+    const target = typeof animal === 'string' ? REAL_ANIMALS.find(a => a.name === animal) : animal;
+    const name = target?.name || animal;
     const subj = attachJosa(name, '은/는');
-    speakNaturalKorean(`${subj} 누구일까요?`, { pitch: 1.16, rate: 0.92 });
+    if (target?.id) {
+      playVoiceAudio(`/sounds/voice/quiz_${target.id}.mp3`, () => {
+        speakNaturalKorean(`${subj} 누구일까요?`, { pitch: 1.16, rate: 0.92 });
+      });
+    } else {
+      speakNaturalKorean(`${subj} 누구일까요?`, { pitch: 1.16, rate: 0.92 });
+    }
   };
 
   const generateQuizQuestion = () => {
@@ -2586,7 +2646,7 @@ export default function App() {
     const options = [target, ...shuffledOthers].sort(() => 0.5 - Math.random());
     setQuizQuestion({ target, options });
     setQuizFeedback(null);
-    speakQuizQuestion(target.name);
+    speakQuizQuestion(target);
   };
 
   const startQuizModal = () => {
@@ -2615,15 +2675,17 @@ export default function App() {
     }
   };
 
-  // 🦁 동물 과일 먹이기 음성 안내 (신비 바다속 음성과 동일한 다정하고 맑은 톤으로 전면 통일)
+  // 🦁 동물 과일 먹이기 음성 안내 (인준 고음질 MP3 우선 재생 - 아이패드 100% 동일 남성 목소리)
   const speakFeedWish = (animal, food) => {
     const targetAnimal = animal || feedRound?.target;
     const targetFood = food || feedRound?.food;
     if (!targetAnimal || !targetFood) return;
     const subj = attachJosa(targetAnimal.name, '이/가');
     const obj = attachJosa(targetFood.name, '을/를');
-    // 🦁 '배고파요, ' 쉼표로 적절한 호흡 텀(약 0.2초)을 주어 띄어쓰기 뭉침을 해소하고 자연스러운 다정한 구어체로 연결
-    speakNaturalKorean(`배고파요, ${subj} 맛있는 ${obj} 먹고 싶대요!`, { pitch: 1.18, rate: 0.93 });
+    const audioUrl = `/sounds/voice/feed_${targetAnimal.id}_${targetFood.id}.mp3`;
+    playVoiceAudio(audioUrl, () => {
+      speakNaturalKorean(`배고파요, ${subj} 맛있는 ${obj} 먹고 싶대요!`, { pitch: 1.18, rate: 0.93 });
+    });
   };
 
   const openFeedModal = () => {
@@ -2653,14 +2715,17 @@ export default function App() {
         });
         setFeedScore(prev => prev + 1);
 
-        // 🗣️ 동물이 직접 소감 표현 (신비 바다속 톤: pitch 1.16, rate 0.92 통일)
+        // 🗣️ 동물이 직접 소감 표현 (인준 고음질 MP3 우선 재생)
         const praisePhrases = [
           `냠냠! ${wantedFood.name} 정말 맛있어요! 고마워요!`,
           `와아! ${wantedFood.name} 최고예요! 냠냠 맛있어요!`,
           `냠냠 꿀꺽! 달콤한 ${wantedFood.name} 맛있어요! 배가 든든해요!`
         ];
-        const randomPraise = praisePhrases[Math.floor(Math.random() * praisePhrases.length)];
-        speakNaturalKorean(randomPraise, { pitch: 1.16, rate: 0.92 });
+        const randomIdx = Math.floor(Math.random() * praisePhrases.length);
+        const randomPraise = praisePhrases[randomIdx];
+        playVoiceAudio(`/sounds/voice/feed_praise_${randomIdx}.mp3`, () => {
+          speakNaturalKorean(randomPraise, { pitch: 1.16, rate: 0.92 });
+        });
 
         // 1.2초 후 기뻐하기 (만세 + 하트눈 + 팡파레)
         setTimeout(() => {
@@ -2689,7 +2754,9 @@ export default function App() {
 
         const animalSubj = attachJosa(targetAnimal.name, '은/는');
         const foodObj = attachJosa(wantedFood.name, '을/를');
-        speakNaturalKorean(`으응, 이거 말고! ${animalSubj} ${foodObj} 먹고 싶대요.`, { pitch: 1.16, rate: 0.92 });
+        playVoiceAudio('/sounds/voice/feed_reject_wrong_food.mp3', () => {
+          speakNaturalKorean(`으응, 이거 말고! ${animalSubj} ${foodObj} 먹고 싶대요.`, { pitch: 1.16, rate: 0.92 });
+        });
 
         setTimeout(() => {
           setAnimalMoods(prev => ({ ...prev, [targetAnimal.id]: 'hungry' }));
@@ -2710,7 +2777,9 @@ export default function App() {
       setTimeout(() => audioEngine.playFreq(160, 'sawtooth', 0.2, 0.5), 240);
 
       const foodObj = attachJosa(wantedFood.name, '을/를');
-      speakNaturalKorean(`나는 아니에요. ${targetAnimal.name}에게 ${foodObj} 주세요!`, { pitch: 1.16, rate: 0.92 });
+      playVoiceAudio('/sounds/voice/feed_reject_wrong_animal.mp3', () => {
+        speakNaturalKorean(`나는 아니에요. ${targetAnimal.name}에게 ${foodObj} 주세요!`, { pitch: 1.16, rate: 0.92 });
+      });
 
       setTimeout(() => {
         setAnimalMoods(prev => ({ ...prev, [droppedAnimalId]: 'hungry' }));
@@ -2875,7 +2944,9 @@ export default function App() {
                 if (tab.id === 'ocean') speakOceanMission(oceanTarget);
                 if (tab.id === 'puzzle' && !puzzleCompleted) {
                   const obj = attachJosa(puzzleTheme.name, '을/를');
-                  speakNaturalKorean(`우리 ${obj} 퍼즐을 맞춰볼까요?`, { pitch: 1.16, rate: 0.93 });
+                  playVoiceAudio(`/sounds/voice/puzzle_start_${puzzleTheme.id}.mp3`, () => {
+                    speakNaturalKorean(`우리 ${obj} 퍼즐을 맞춰볼까요?`, { pitch: 1.16, rate: 0.93 });
+                  });
                 }
                 setActiveTab(tab.id);
                 audioEngine.playFreq(520, 'sine', 0.15);
