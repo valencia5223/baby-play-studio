@@ -1377,6 +1377,423 @@ function AnimatedAnimalCharacter({ animal, mood = 'hungry', isOver = false, reje
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// 🔊 고품질 자연어 한국어 음성 (TTS) 엔진 (상냥하고 다정한 유아 친화 톤)
+// ═════════════════════════════════════════════════════════════════════════════
+export function speakNaturalKorean(text, { pitch = 1.18, rate = 0.93, priority = true } = {}) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  try {
+    if (priority) {
+      window.speechSynthesis.cancel();
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ko-KR';
+    utterance.pitch = pitch;
+    utterance.rate = rate;
+
+    const voices = window.speechSynthesis.getVoices();
+    const koreanVoices = voices.filter(v => v.lang === 'ko-KR' || v.lang.startsWith('ko') || v.lang.includes('ko'));
+
+    // MS Natural / Google Neural / Apple Yuna / Windows SunHi / Heami 등 고음질 자연어 보이스 우선 선택
+    const bestVoice = koreanVoices.find(v => {
+      const n = v.name.toLowerCase();
+      return n.includes('natural') || n.includes('online') || n.includes('neural') ||
+             n.includes('google') || n.includes('yuna') || n.includes('sunhi') ||
+             n.includes('heami') || n.includes('gaeun') || n.includes('seoyeon');
+    }) || koreanVoices[0];
+
+    if (bestVoice) {
+      utterance.voice = bestVoice;
+    }
+
+    window.speechSynthesis.speak(utterance);
+  } catch (err) {
+    console.warn('TTS playback error:', err);
+  }
+}
+
+// 한글 조사 자동 연결 헬퍼 (은/는, 이/가, 을/를, 과/와)
+export function attachJosa(word, josaType) {
+  if (!word) return '';
+  const lastChar = word.charCodeAt(word.length - 1);
+  const hasBatchim = (lastChar - 0xac00) % 28 > 0;
+  if (josaType === '은/는') return word + (hasBatchim ? '은' : '는');
+  if (josaType === '이/가') return word + (hasBatchim ? '이' : '가');
+  if (josaType === '을/를') return word + (hasBatchim ? '을' : '를');
+  if (josaType === '과/와') return word + (hasBatchim ? '과' : '와');
+  return word;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 🌊 신비 바다 생물 실제 형태 SVG 벡터 아트워크 (8종 실체 디자인)
+// ═════════════════════════════════════════════════════════════════════════════
+function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
+  // 1. 🐟 니모 열대어
+  if (id === 'fish') {
+    return (
+      <svg viewBox="0 0 130 95" width="100%" height="100%" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.35))', overflow: 'visible' }}>
+        {/* 등지느러미 */}
+        <path d="M 45 26 Q 65 8 90 28 Q 70 20 45 26 Z" fill="#fb923c" stroke="#ea580c" strokeWidth="2.5" />
+        {/* 배지느러미 */}
+        <path d="M 50 68 Q 68 86 85 70 Q 70 74 50 68 Z" fill="#fb923c" stroke="#ea580c" strokeWidth="2.5" />
+        {/* 꼬리지느러미 */}
+        <path d="M 28 48 L 4 22 Q 18 48 4 74 Z" fill="#f97316" stroke="#ea580c" strokeWidth="3" />
+        <path d="M 22 48 L 8 30 Q 18 48 8 66 Z" fill="#fb923c" opacity="0.8" />
+        
+        {/* 몸통 (주황색 유선형) */}
+        <ellipse cx="68" cy="48" rx="42" ry="26" fill="#f97316" stroke="#ea580c" strokeWidth="3.5" />
+        <ellipse cx="68" cy="44" rx="38" ry="20" fill="url(#fishGrad)" opacity="0.4" />
+        
+        {/* 흰색/검은 줄무늬 1 */}
+        <path d="M 52 23 Q 46 48 52 73" stroke="#1e293b" strokeWidth="9" strokeLinecap="round" fill="none" />
+        <path d="M 52 23 Q 46 48 52 73" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" fill="none" />
+        
+        {/* 흰색/검은 줄무늬 2 */}
+        <path d="M 78 24 Q 72 48 78 72" stroke="#1e293b" strokeWidth="8" strokeLinecap="round" fill="none" />
+        <path d="M 78 24 Q 72 48 78 72" stroke="#ffffff" strokeWidth="5.5" strokeLinecap="round" fill="none" />
+        
+        {/* 가슴지느러미 */}
+        <ellipse cx="62" cy="54" rx="12" ry="8" fill="#fbbf24" stroke="#d97706" strokeWidth="2" transform="rotate(-15 62 54)" />
+        
+        {/* 초롱초롱 눈 */}
+        <circle cx="94" cy="42" r="8.5" fill="#ffffff" stroke="#ea580c" strokeWidth="2" />
+        <circle cx="96" cy="42" r="5" fill="#0f172a" />
+        <circle cx="98" cy="40" r="2" fill="#ffffff" />
+        <circle cx="94" cy="44" r="1" fill="#ffffff" />
+        
+        {/* 볼터치 & 입술 */}
+        <circle cx="88" cy="54" r="5" fill="#f43f5e" opacity="0.75" />
+        <path d="M 106 48 Q 112 50 106 54" stroke="#ea580c" strokeWidth="3" strokeLinecap="round" fill="none" />
+        
+        <defs>
+          <linearGradient id="fishGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#ffedd5" />
+            <stop offset="100%" stopColor="#f97316" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  // 2. 🐙 말랑 뽀글 문어
+  if (id === 'octopus') {
+    return (
+      <svg viewBox="0 0 130 120" width="100%" height="100%" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.35))', overflow: 'visible' }}>
+        {/* 8개의 물결치는 문어 다리 */}
+        <g stroke="#db2777" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <path d="M 28 80 Q 14 96 16 112" />
+          <path d="M 40 86 Q 30 106 38 116" />
+          <path d="M 52 88 Q 50 110 58 118" />
+          <path d="M 65 88 Q 65 110 65 118" />
+          <path d="M 78 88 Q 80 110 72 118" />
+          <path d="M 90 86 Q 100 106 92 116" />
+          <path d="M 102 80 Q 116 96 114 112" />
+        </g>
+        <g stroke="#f472b6" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <path d="M 28 80 Q 14 96 16 112" />
+          <path d="M 40 86 Q 30 106 38 116" />
+          <path d="M 52 88 Q 50 110 58 118" />
+          <path d="M 65 88 Q 65 110 65 118" />
+          <path d="M 78 88 Q 80 110 72 118" />
+          <path d="M 90 86 Q 100 106 92 116" />
+          <path d="M 102 80 Q 116 96 114 112" />
+        </g>
+        {/* 동글동글 빨판 */}
+        <circle cx="16" cy="108" r="3" fill="#fef08a" />
+        <circle cx="36" cy="112" r="3" fill="#fef08a" />
+        <circle cx="56" cy="114" r="3" fill="#fef08a" />
+        <circle cx="74" cy="114" r="3" fill="#fef08a" />
+        <circle cx="94" cy="112" r="3" fill="#fef08a" />
+        <circle cx="114" cy="108" r="3" fill="#fef08a" />
+
+        {/* 돔형 문어 머리 */}
+        <ellipse cx="65" cy="50" rx="42" ry="38" fill="#ec4899" stroke="#db2777" strokeWidth="4" />
+        <ellipse cx="65" cy="44" rx="36" ry="30" fill="url(#octoGrad)" opacity="0.5" />
+        
+        {/* 머리 위 물방울 리본/하이라이트 */}
+        <ellipse cx="50" cy="24" rx="8" ry="4" fill="#ffffff" opacity="0.6" transform="rotate(-20 50 24)" />
+
+        {/* 초롱초롱 눈망울 */}
+        <circle cx="48" cy="50" r="8" fill="#ffffff" />
+        <circle cx="50" cy="50" r="5" fill="#1e1b4b" />
+        <circle cx="52" cy="48" r="2" fill="#ffffff" />
+        <circle cx="48" cy="52" r="1" fill="#ffffff" />
+
+        <circle cx="82" cy="50" r="8" fill="#ffffff" />
+        <circle cx="80" cy="50" r="5" fill="#1e1b4b" />
+        <circle cx="82" cy="48" r="2" fill="#ffffff" />
+        <circle cx="78" cy="52" r="1" fill="#ffffff" />
+
+        {/* 볼터치 & 입 */}
+        <circle cx="38" cy="60" r="6" fill="#f43f5e" opacity="0.8" />
+        <circle cx="92" cy="60" r="6" fill="#f43f5e" opacity="0.8" />
+        <ellipse cx="65" cy="64" rx="7" ry="5" fill="#831843" />
+        <ellipse cx="65" cy="62" rx="4" ry="2" fill="#fda4af" />
+
+        <defs>
+          <linearGradient id="octoGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#fdf2f8" />
+            <stop offset="100%" stopColor="#ec4899" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  // 3. 🦀 꽃게
+  if (id === 'crab') {
+    return (
+      <svg viewBox="0 0 135 105" width="100%" height="100%" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.35))', overflow: 'visible' }}>
+        {/* 6개 걷는다리 */}
+        <g stroke="#b91c1c" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <path d="M 38 65 Q 18 70 12 88" />
+          <path d="M 42 74 Q 24 85 20 100" />
+          <path d="M 48 82 Q 34 96 32 106" />
+          
+          <path d="M 97 65 Q 117 70 123 88" />
+          <path d="M 93 74 Q 111 85 115 100" />
+          <path d="M 87 82 Q 101 96 103 106" />
+        </g>
+        <g stroke="#ef4444" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <path d="M 38 65 Q 18 70 12 88" />
+          <path d="M 42 74 Q 24 85 20 100" />
+          <path d="M 48 82 Q 34 96 32 106" />
+          
+          <path d="M 97 65 Q 117 70 123 88" />
+          <path d="M 93 74 Q 111 85 115 100" />
+          <path d="M 87 82 Q 101 96 103 106" />
+        </g>
+
+        {/* 좌우 커다란 집게발 */}
+        {/* 왼쪽 집게 */}
+        <path d="M 35 55 Q 18 36 24 20" stroke="#b91c1c" strokeWidth="7" strokeLinecap="round" fill="none" />
+        <ellipse cx="22" cy="18" rx="14" ry="11" fill="#ef4444" stroke="#b91c1c" strokeWidth="3" transform="rotate(-30 22 18)" />
+        <path d="M 12 12 Q 22 2 30 14" stroke="#b91c1c" strokeWidth="4" fill="none" strokeLinecap="round" />
+
+        {/* 오른쪽 집게 */}
+        <path d="M 100 55 Q 117 36 111 20" stroke="#b91c1c" strokeWidth="7" strokeLinecap="round" fill="none" />
+        <ellipse cx="113" cy="18" rx="14" ry="11" fill="#ef4444" stroke="#b91c1c" strokeWidth="3" transform="rotate(30 113 18)" />
+        <path d="M 123 12 Q 113 2 105 14" stroke="#b91c1c" strokeWidth="4" fill="none" strokeLinecap="round" />
+
+        {/* 꽃게 둥근 등껍질 */}
+        <ellipse cx="67" cy="68" rx="38" ry="26" fill="#ef4444" stroke="#b91c1c" strokeWidth="4" />
+        <ellipse cx="67" cy="62" rx="32" ry="18" fill="url(#crabGrad)" opacity="0.4" />
+
+        {/* 위로 솟은 두 눈자루 */}
+        <line x1="52" y1="50" x2="48" y2="34" stroke="#b91c1c" strokeWidth="5" strokeLinecap="round" />
+        <line x1="82" y1="50" x2="86" y2="34" stroke="#b91c1c" strokeWidth="5" strokeLinecap="round" />
+        <circle cx="48" cy="32" r="9" fill="#ffffff" stroke="#b91c1c" strokeWidth="2.5" />
+        <circle cx="50" cy="32" r="5" fill="#0f172a" /><circle cx="52" cy="30" r="2" fill="#ffffff" />
+        <circle cx="86" cy="32" r="9" fill="#ffffff" stroke="#b91c1c" strokeWidth="2.5" />
+        <circle cx="84" cy="32" r="5" fill="#0f172a" /><circle cx="86" cy="30" r="2" fill="#ffffff" />
+
+        {/* 볼터치 & 방긋 입 */}
+        <circle cx="46" cy="72" r="5.5" fill="#fb7185" opacity="0.8" />
+        <circle cx="88" cy="72" r="5.5" fill="#fb7185" opacity="0.8" />
+        <path d="M 58 72 Q 67 82 76 72" stroke="#7f1d1d" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+
+        <defs>
+          <linearGradient id="crabGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#fef2f2" />
+            <stop offset="100%" stopColor="#ef4444" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  // 4. 🐢 바다거북
+  if (id === 'turtle') {
+    return (
+      <svg viewBox="0 0 135 105" width="100%" height="100%" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.35))', overflow: 'visible' }}>
+        {/* 뒷지느러미 2개 & 꼬리 */}
+        <ellipse cx="32" cy="74" rx="14" ry="7" fill="#10b981" stroke="#047857" strokeWidth="2.5" transform="rotate(-35 32 74)" />
+        <ellipse cx="32" cy="36" rx="14" ry="7" fill="#10b981" stroke="#047857" strokeWidth="2.5" transform="rotate(35 32 36)" />
+        <path d="M 22 55 L 8 55" stroke="#047857" strokeWidth="4" strokeLinecap="round" />
+
+        {/* 앞쪽 커다란 노 젓는 지느러미 2개 */}
+        <path d="M 70 38 Q 95 12 118 16 Q 100 38 76 44 Z" fill="#10b981" stroke="#047857" strokeWidth="3" />
+        <path d="M 70 72 Q 95 98 118 94 Q 100 72 76 66 Z" fill="#10b981" stroke="#047857" strokeWidth="3" />
+
+        {/* 둥근 거북이 머리 */}
+        <ellipse cx="108" cy="55" rx="16" ry="13" fill="#10b981" stroke="#047857" strokeWidth="3" />
+        <circle cx="114" cy="50" r="4.5" fill="#ffffff" />
+        <circle cx="115" cy="50" r="2.8" fill="#0f172a" /><circle cx="116" cy="49" r="1.2" fill="#ffffff" />
+        <circle cx="110" cy="58" r="3.5" fill="#f43f5e" opacity="0.65" />
+        <path d="M 118 56 Q 123 58 119 61" stroke="#047857" strokeWidth="2" strokeLinecap="round" fill="none" />
+
+        {/* 에메랄드 육각 등껍질 */}
+        <ellipse cx="58" cy="55" rx="38" ry="28" fill="#059669" stroke="#047857" strokeWidth="4" />
+        <ellipse cx="58" cy="52" rx="32" ry="22" fill="#10b981" />
+        
+        {/* 등껍질 육각형 패턴 디테일 */}
+        <polygon points="58,40 68,46 68,58 58,64 48,58 48,46" fill="#047857" opacity="0.75" />
+        <line x1="58" y1="40" x2="58" y2="28" stroke="#047857" strokeWidth="2.5" />
+        <line x1="68" y1="46" x2="82" y2="38" stroke="#047857" strokeWidth="2.5" />
+        <line x1="68" y1="58" x2="82" y2="68" stroke="#047857" strokeWidth="2.5" />
+        <line x1="58" y1="64" x2="58" y2="78" stroke="#047857" strokeWidth="2.5" />
+        <line x1="48" y1="58" x2="34" y2="68" stroke="#047857" strokeWidth="2.5" />
+        <line x1="48" y1="46" x2="34" y2="38" stroke="#047857" strokeWidth="2.5" />
+      </svg>
+    );
+  }
+
+  // 5. 🐳 파랑고래
+  if (id === 'whale') {
+    return (
+      <svg viewBox="0 0 150 110" width="100%" height="100%" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.35))', overflow: 'visible' }}>
+        {/* 등 위 뿜어내는 시원한 3단 물줄기 분수 */}
+        <g stroke="#38bdf8" strokeWidth="4" strokeLinecap="round" fill="none">
+          <path d="M 65 30 Q 60 10 45 6" />
+          <path d="M 67 28 Q 67 4 67 2" />
+          <path d="M 70 30 Q 75 10 90 6" />
+        </g>
+        <circle cx="43" cy="6" r="3.5" fill="#bae6fd" />
+        <circle cx="67" cy="2" r="4" fill="#bae6fd" />
+        <circle cx="92" cy="6" r="3.5" fill="#bae6fd" />
+
+        {/* 고래 꼬리지느러미 */}
+        <path d="M 28 62 L 4 42 Q 18 62 4 82 Z" fill="#0284c7" stroke="#0369a1" strokeWidth="3" />
+
+        {/* 둥글고 푸근한 고래 몸통 */}
+        <path d="M 24 62 Q 24 32 75 32 Q 128 32 135 62 Q 135 88 80 88 Q 38 88 24 62 Z" fill="#0284c7" stroke="#0369a1" strokeWidth="4" />
+        
+        {/* 고래 하얀 배 & 복부 스트라이프 */}
+        <path d="M 45 74 Q 80 92 125 72 Q 120 86 80 86 Q 52 86 45 74 Z" fill="#e0f2fe" />
+        <path d="M 60 76 Q 80 84 100 80" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" fill="none" />
+        <path d="M 68 80 Q 82 86 94 84" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" fill="none" />
+
+        {/* 가슴지느러미 */}
+        <ellipse cx="78" cy="70" rx="16" ry="9" fill="#0369a1" stroke="#0284c7" strokeWidth="2" transform="rotate(20 78 70)" />
+
+        {/* 크고 귀여운 눈 & 볼터치 */}
+        <circle cx="110" cy="54" r="8" fill="#ffffff" />
+        <circle cx="112" cy="54" r="5" fill="#0f172a" /><circle cx="114" cy="52" r="2" fill="#ffffff" />
+        <circle cx="102" cy="64" r="6" fill="#f43f5e" opacity="0.75" />
+        
+        {/* 미소 */}
+        <path d="M 118 62 Q 128 68 132 60" stroke="#082f49" strokeWidth="3" strokeLinecap="round" fill="none" />
+      </svg>
+    );
+  }
+
+  // 6. 🦈 아기상어
+  if (id === 'shark') {
+    return (
+      <svg viewBox="0 0 145 100" width="100%" height="100%" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.35))', overflow: 'visible' }}>
+        {/* 상어 등지느러미 */}
+        <path d="M 60 38 L 74 10 Q 78 30 92 36 Z" fill="#2563eb" stroke="#1d4ed8" strokeWidth="3" />
+        
+        {/* 상어 꼬리지느러미 */}
+        <path d="M 28 52 L 4 24 Q 20 52 4 80 Z" fill="#2563eb" stroke="#1d4ed8" strokeWidth="3.5" />
+
+        {/* 상어 몸체 (유선형 날렵함) */}
+        <path d="M 24 52 Q 35 32 80 32 Q 130 32 140 52 Q 125 78 75 76 Q 38 76 24 52 Z" fill="#3b82f6" stroke="#1d4ed8" strokeWidth="3.5" />
+        
+        {/* 하얀 배 */}
+        <path d="M 38 60 Q 75 80 128 60 Q 115 74 75 74 Q 48 74 38 60 Z" fill="#eff6ff" />
+
+        {/* 가슴지느러미 */}
+        <path d="M 72 58 L 60 84 Q 78 78 86 64 Z" fill="#1d4ed8" stroke="#1e40af" strokeWidth="2" />
+
+        {/* 아가미 3줄 */}
+        <g stroke="#1e40af" strokeWidth="2.5" strokeLinecap="round">
+          <line x1="84" y1="46" x2="82" y2="56" />
+          <line x1="89" y1="46" x2="87" y2="56" />
+          <line x1="94" y1="46" x2="92" y2="56" />
+        </g>
+
+        {/* 눈망울 */}
+        <circle cx="116" cy="46" r="7.5" fill="#ffffff" stroke="#1d4ed8" strokeWidth="2" />
+        <circle cx="118" cy="46" r="4.5" fill="#0f172a" /><circle cx="120" cy="44" r="1.8" fill="#ffffff" />
+        <circle cx="108" cy="56" r="5" fill="#f43f5e" opacity="0.75" />
+
+        {/* 귀여운 상어 이빨 미소 */}
+        <path d="M 120 56 Q 132 64 135 54" stroke="#1e3a8a" strokeWidth="2.5" fill="#ffffff" strokeLinecap="round" />
+        <polygon points="124,57 127,61 130,57" fill="#ffffff" stroke="#1e3a8a" strokeWidth="1" />
+      </svg>
+    );
+  }
+
+  // 7. 🦑 화살오징어
+  if (id === 'squid') {
+    return (
+      <svg viewBox="0 0 115 125" width="100%" height="100%" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.35))', overflow: 'visible' }}>
+        {/* 삼각 귀 (지느러미) */}
+        <polygon points="57,6 20,42 94,42" fill="#e11d48" stroke="#be123c" strokeWidth="3" />
+        <polygon points="57,12 30,40 84,40" fill="#fb7185" />
+
+        {/* 오징어 매끄러운 외투막 몸통 */}
+        <ellipse cx="57" cy="56" rx="28" ry="32" fill="#fb7185" stroke="#be123c" strokeWidth="3.5" />
+        
+        {/* 10개 촉수 다리 (가운데 긴 사냥 촉수 2개) */}
+        <g stroke="#be123c" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <path d="M 38 84 Q 28 102 32 116" />
+          <path d="M 46 86 Q 42 106 44 122" />
+          <path d="M 54 88 Q 50 112 52 124" />
+          <path d="M 60 88 Q 64 112 62 124" />
+          <path d="M 68 86 Q 72 106 70 122" />
+          <path d="M 76 84 Q 86 102 82 116" />
+        </g>
+        <g stroke="#fda4af" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <path d="M 38 84 Q 28 102 32 116" />
+          <path d="M 46 86 Q 42 106 44 122" />
+          <path d="M 54 88 Q 50 112 52 124" />
+          <path d="M 60 88 Q 64 112 62 124" />
+          <path d="M 68 86 Q 72 106 70 122" />
+          <path d="M 76 84 Q 86 102 82 116" />
+        </g>
+
+        {/* 눈망울 */}
+        <circle cx="44" cy="68" r="8" fill="#ffffff" />
+        <circle cx="46" cy="68" r="4.8" fill="#0f172a" /><circle cx="48" cy="66" r="2" fill="#ffffff" />
+        <circle cx="70" cy="68" r="8" fill="#ffffff" />
+        <circle cx="68" cy="68" r="4.8" fill="#0f172a" /><circle cx="70" cy="66" r="2" fill="#ffffff" />
+
+        {/* 볼터치 & 입 */}
+        <circle cx="36" cy="74" r="5" fill="#f43f5e" opacity="0.8" />
+        <circle cx="78" cy="74" r="5" fill="#f43f5e" opacity="0.8" />
+        <ellipse cx="57" cy="76" rx="4" ry="3" fill="#881337" />
+      </svg>
+    );
+  }
+
+  // 8. 🦭 아기물개
+  return (
+    <svg viewBox="0 0 135 105" width="100%" height="100%" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.35))', overflow: 'visible' }}>
+      {/* 꼬리 지느러미 */}
+      <ellipse cx="18" cy="62" rx="14" ry="7" fill="#64748b" stroke="#475569" strokeWidth="2.5" transform="rotate(-25 18 62)" />
+      <ellipse cx="18" cy="74" rx="14" ry="7" fill="#64748b" stroke="#475569" strokeWidth="2.5" transform="rotate(25 18 74)" />
+
+      {/* 통통하고 매끄러운 몸체 */}
+      <path d="M 22 68 Q 30 40 70 38 Q 110 38 120 58 Q 118 84 75 84 Q 35 84 22 68 Z" fill="#94a3b8" stroke="#475569" strokeWidth="3.5" />
+      <ellipse cx="80" cy="62" rx="30" ry="18" fill="#cbd5e1" opacity="0.5" />
+
+      {/* 손뼉 치는 앞지느러미 */}
+      <ellipse cx="76" cy="76" rx="14" ry="8" fill="#64748b" stroke="#475569" strokeWidth="2" transform="rotate(15 76 76)" />
+
+      {/* 머리 & 얼굴 */}
+      <circle cx="106" cy="52" r="18" fill="#94a3b8" stroke="#475569" strokeWidth="3.5" />
+      <circle cx="108" cy="48" r="5" fill="#ffffff" />
+      <circle cx="109" cy="48" r="3.2" fill="#0f172a" /><circle cx="110" cy="47" r="1.2" fill="#ffffff" />
+      
+      {/* 앙증맞은 주둥이와 코 */}
+      <ellipse cx="116" cy="56" rx="7" ry="5" fill="#e2e8f0" stroke="#475569" strokeWidth="1.5" />
+      <ellipse cx="117" cy="54" rx="3" ry="2" fill="#0f172a" />
+      
+      {/* 수염 3쌍 */}
+      <g stroke="#334155" strokeWidth="1.5" strokeLinecap="round">
+        <line x1="118" y1="54" x2="128" y2="50" />
+        <line x1="119" y1="56" x2="129" y2="57" />
+        <line x1="118" y1="58" x2="127" y2="64" />
+      </g>
+      
+      {/* 핑크 볼터치 */}
+      <circle cx="104" cy="58" r="4.5" fill="#f43f5e" opacity="0.75" />
+    </svg>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // 🌊 신비한 바다속 탐험 데이터 (8종 바다 생물)
 // ═════════════════════════════════════════════════════════════════════════════
 const OCEAN_CREATURES = [
@@ -1797,17 +2214,9 @@ export default function App() {
       if (currentOverSlot === quadIdx) {
         // 올바른 사각형 슬롯에 드롭 성공!
         handleSnapPiece(quadIdx);
-      } else if (currentOverSlot !== null && currentOverSlot !== quadIdx) {
         // 다른 사각형 슬롯에 잘못 놓음
         audioEngine.playFreq(220, 'sawtooth', 0.2);
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance('여기가 아니에요~ 제자리에 맞춰보세요!');
-          utterance.lang = 'ko-KR';
-          utterance.rate = 1.0;
-          utterance.pitch = 1.1;
-          window.speechSynthesis.speak(utterance);
-        }
+        speakNaturalKorean('여기가 아니에요~ 제자리에 쏙 맞춰보세요!', { pitch: 1.15, rate: 0.93 });
       }
 
       draggingPieceRef.current = null;
@@ -1826,20 +2235,10 @@ export default function App() {
     };
   }, [activeTab, placedPieces, puzzleTheme, puzzleCompleted]);
 
-  // 🌊 바다속 음성 미션
+  // 🌊 바다속 음성 미션 (다정하고 상냥한 안내)
   const speakOceanMission = (creature) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const lastChar = creature.name.charCodeAt(creature.name.length - 1);
-      const hasBatchim = (lastChar - 0xac00) % 28 > 0;
-      const particle = hasBatchim ? '은' : '는';
-      const text = `${creature.name}${particle} 어디 있을까요?`;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ko-KR';
-      utterance.rate = 0.95;
-      utterance.pitch = 1.15;
-      window.speechSynthesis.speak(utterance);
-    }
+    const subj = attachJosa(creature.name, '은/는');
+    speakNaturalKorean(`신비한 바다속에서 ${subj} 어디 있을까요?`, { pitch: 1.16, rate: 0.92 });
   };
 
   const generateNextOceanMission = () => {
@@ -1879,28 +2278,15 @@ export default function App() {
       setOceanScore(prev => prev + 1);
       audioEngine.playFanfare();
 
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(`찾았다! ${creature.name}를 찾았어요! 참 잘했어요!`);
-        utterance.lang = 'ko-KR';
-        utterance.rate = 0.95;
-        utterance.pitch = 1.2;
-        window.speechSynthesis.speak(utterance);
-      }
+      const obj = attachJosa(creature.name, '을/를');
+      speakNaturalKorean(`찾았다! ${obj} 찾았어요! 정말 최고예요~ 🎉`, { pitch: 1.2, rate: 0.94 });
 
       // 2.8초 후 다음 미션으로 자동 전환
       setTimeout(() => {
         generateNextOceanMission();
       }, 2800);
     } else if (creature.id !== oceanTarget.id) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(`${creature.name}! ${creature.soundText}`);
-        utterance.lang = 'ko-KR';
-        utterance.rate = 1.0;
-        utterance.pitch = 1.1;
-        window.speechSynthesis.speak(utterance);
-      }
+      speakNaturalKorean(`${creature.name}! ${creature.soundText}`, { pitch: 1.15, rate: 0.95 });
     }
   };
 
@@ -1937,14 +2323,8 @@ export default function App() {
       setPuzzleCompleted(true);
       setTimeout(() => {
         audioEngine.playFanfare();
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(`와! ${puzzleTheme.name} 퍼즐을 완성했어요! 참 잘했어요!`);
-          utterance.lang = 'ko-KR';
-          utterance.rate = 0.95;
-          utterance.pitch = 1.2;
-          window.speechSynthesis.speak(utterance);
-        }
+        const obj = attachJosa(puzzleTheme.name, '을/를');
+        speakNaturalKorean(`와아! 멋진 ${obj} 퍼즐을 완성했어요! 참 잘했어요~ 🌟`, { pitch: 1.2, rate: 0.94 });
       }, 300);
     }
   };
@@ -1959,14 +2339,8 @@ export default function App() {
   const handleSelectPuzzleTheme = (theme) => {
     setPuzzleTheme(theme);
     handleResetPuzzle(theme);
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(`${theme.name} 퍼즐을 맞춰볼까요?`);
-      utterance.lang = 'ko-KR';
-      utterance.rate = 1.0;
-      utterance.pitch = 1.1;
-      window.speechSynthesis.speak(utterance);
-    }
+    const obj = attachJosa(theme.name, '을/를');
+    speakNaturalKorean(`우리 ${obj} 퍼즐을 맞춰볼까요?`, { pitch: 1.16, rate: 0.93 });
   };
 
   const handleNextPuzzleTheme = () => {
@@ -2054,18 +2428,8 @@ export default function App() {
   };
 
   const speakQuizQuestion = (name) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const lastChar = name.charCodeAt(name.length - 1);
-      const hasBatchim = (lastChar - 0xac00) % 28 > 0;
-      const particle = hasBatchim ? '은' : '는';
-      const text = `${name}${particle} 누구일까요?`;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ko-KR';
-      utterance.rate = 0.95;
-      utterance.pitch = 1.1;
-      window.speechSynthesis.speak(utterance);
-    }
+    const subj = attachJosa(name, '은/는');
+    speakNaturalKorean(`${subj} 누구일까요?`, { pitch: 1.16, rate: 0.92 });
   };
 
   const generateQuizQuestion = () => {
@@ -2105,20 +2469,14 @@ export default function App() {
     }
   };
 
-  // 🦁 동물 과일 먹이기 음성 안내
+  // 🦁 동물 과일 먹이기 음성 안내 (다정하고 상냥한 목소리)
   const speakFeedWish = (animal, food) => {
     const targetAnimal = animal || feedRound?.target;
     const targetFood = food || feedRound?.food;
     if (!targetAnimal || !targetFood) return;
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const text = `${targetAnimal.name}가 ${targetFood.name} 먹고 싶어요`;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ko-KR';
-      utterance.rate = 0.92;
-      utterance.pitch = 1.1;
-      window.speechSynthesis.speak(utterance);
-    }
+    const subj = attachJosa(targetAnimal.name, '이/가');
+    const obj = attachJosa(targetFood.name, '을/를');
+    speakNaturalKorean(`배고파요~ ${subj} 맛있는 ${obj} 먹고 싶어요!`, { pitch: 1.18, rate: 0.93 });
   };
 
   const openFeedModal = () => {
@@ -2139,7 +2497,7 @@ export default function App() {
 
     if (droppedAnimalId === targetAnimal.id) {
       if (food.id === wantedFood.id) {
-        // 정답! 목표 동물이 원하는 과일을 줌
+        // 🎉 정답! 목표 동물이 원하는 과일을 줌
         isFeedBusyRef.current = true;
         audioEngine.playYum();
         setAnimalMoods({
@@ -2147,6 +2505,15 @@ export default function App() {
           ...feedRound.threeAnimals.filter(a => a.id !== targetAnimal.id).reduce((acc, a) => ({ ...acc, [a.id]: 'happy' }), {})
         });
         setFeedScore(prev => prev + 1);
+
+        // 🗣️ 동물이 직접 "냠냠~ {과일} 맛있어요! 고마워요~" 라고 상냥하게 소감 표현
+        const praisePhrases = [
+          `냠냠~ ${wantedFood.name} 정말 맛있어요! 고마워요~ 🥰`,
+          `와아! ${wantedFood.name} 최고예요! 냠냠 맛있어요~ 💖`,
+          `냠냠 꿀꺽~ 달콤한 ${wantedFood.name} 맛있어요! 배가 든든해요~ ✨`
+        ];
+        const randomPraise = praisePhrases[Math.floor(Math.random() * praisePhrases.length)];
+        speakNaturalKorean(randomPraise, { pitch: 1.22, rate: 0.92 });
 
         // 1.2초 후 기뻐하기 (만세 + 하트눈 + 팡파레)
         setTimeout(() => {
@@ -2161,7 +2528,7 @@ export default function App() {
           setAnimalMoods({});
           isFeedBusyRef.current = false;
           speakFeedWish(nextRound.target, nextRound.food);
-        }, 3500);
+        }, 3600);
       } else {
         // 목표 동물인데 다른 과일을 줌
         isFeedBusyRef.current = true;
@@ -2173,25 +2540,19 @@ export default function App() {
         setTimeout(() => audioEngine.playFreq(280, 'sawtooth', 0.12, 0.4), 120);
         setTimeout(() => audioEngine.playFreq(160, 'sawtooth', 0.2, 0.5), 240);
 
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(`이거 말고! ${targetAnimal.name}는 ${wantedFood.name} 먹고 싶어!`);
-          utterance.lang = 'ko-KR';
-          utterance.rate = 1.0;
-          utterance.pitch = 1.2;
-          window.speechSynthesis.speak(utterance);
-        }
+        const animalSubj = attachJosa(targetAnimal.name, '은/는');
+        const foodObj = attachJosa(wantedFood.name, '을/를');
+        speakNaturalKorean(`으응~ 이거 말고! ${animalSubj} ${foodObj} 먹고 싶어요~`, { pitch: 1.16, rate: 0.94 });
 
         setTimeout(() => {
           setAnimalMoods(prev => ({ ...prev, [targetAnimal.id]: 'hungry' }));
           setRejectedAnimalId(null);
           setRejectedFood(null);
           isFeedBusyRef.current = false;
-        }, 1400);
+        }, 1500);
       }
     } else {
       // 다른 동물에게 줌 (요청하지 않은 동물)
-      const wrongAnimal = feedRound.threeAnimals.find(a => a.id === droppedAnimalId) || { name: '동물' };
       isFeedBusyRef.current = true;
       setAnimalMoods(prev => ({ ...prev, [droppedAnimalId]: 'reject' }));
       setRejectedAnimalId(droppedAnimalId);
@@ -2201,21 +2562,15 @@ export default function App() {
       setTimeout(() => audioEngine.playFreq(280, 'sawtooth', 0.12, 0.4), 120);
       setTimeout(() => audioEngine.playFreq(160, 'sawtooth', 0.2, 0.5), 240);
 
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(`나는 말고! ${targetAnimal.name}한테 ${wantedFood.name} 줘!`);
-        utterance.lang = 'ko-KR';
-        utterance.rate = 1.0;
-        utterance.pitch = 1.2;
-        window.speechSynthesis.speak(utterance);
-      }
+      const foodObj = attachJosa(wantedFood.name, '을/를');
+      speakNaturalKorean(`나는 아니에요~ ${targetAnimal.name}에게 ${foodObj} 주세요!`, { pitch: 1.16, rate: 0.94 });
 
       setTimeout(() => {
         setAnimalMoods(prev => ({ ...prev, [droppedAnimalId]: 'hungry' }));
         setRejectedAnimalId(null);
         setRejectedFood(null);
         isFeedBusyRef.current = false;
-      }, 1400);
+      }, 1500);
     }
   };
 
@@ -2372,14 +2727,8 @@ export default function App() {
                 if (tab.id === 'fruit') setFruitItems(shuffleArray(REAL_FRUITS));
                 if (tab.id === 'ocean') speakOceanMission(oceanTarget);
                 if (tab.id === 'puzzle' && !puzzleCompleted) {
-                  if ('speechSynthesis' in window) {
-                    window.speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(`${puzzleTheme.name} 퍼즐을 맞춰볼까요?`);
-                    utterance.lang = 'ko-KR';
-                    utterance.rate = 1.0;
-                    utterance.pitch = 1.1;
-                    window.speechSynthesis.speak(utterance);
-                  }
+                  const obj = attachJosa(puzzleTheme.name, '을/를');
+                  speakNaturalKorean(`우리 ${obj} 퍼즐을 맞춰볼까요?`, { pitch: 1.16, rate: 0.93 });
                 }
                 setActiveTab(tab.id);
                 audioEngine.playFreq(520, 'sine', 0.15);
@@ -2641,32 +2990,62 @@ export default function App() {
                         cursor: 'pointer',
                         zIndex: isFoundTarget ? 15 : 5,
                         userSelect: 'none',
-                        transition: 'filter 0.2s ease'
+                        transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        width: `${creature.size * 1.15}px`,
+                        height: `${creature.size * 1.05}px`
                       }}
                     >
-                      {/* 타겟 힌트 링 (정답 생물 주변 은은한 빛) */}
+                      {/* 타겟 발견 시 화려한 골드 후광 이펙트 */}
+                      {isFoundTarget && (
+                        <div style={{
+                          position: 'absolute',
+                          inset: '-12px',
+                          borderRadius: '50%',
+                          background: 'radial-gradient(circle, rgba(253, 224, 71, 0.75), rgba(245, 158, 11, 0.2) 70%, transparent 100%)',
+                          animation: 'pulse 1.2s infinite alternate',
+                          pointerEvents: 'none',
+                          zIndex: -1
+                        }} />
+                      )}
+
+                      {/* 🌊 실제 생물 형태 SVG 벡터 아트 (배지 없이 바다를 유영) */}
                       <div style={{
-                        background: isFoundTarget ? 'radial-gradient(circle, #fef08a, #f59e0b)' : 'rgba(255,255,255,0.92)',
-                        borderRadius: '50%',
-                        padding: '12px 14px',
-                        boxShadow: isFoundTarget
-                          ? '0 0 35px #fde047, 0 8px 24px rgba(0,0,0,0.35)'
-                          : '0 8px 20px rgba(0,0,0,0.18)',
-                        border: isFoundTarget
-                          ? '4px solid #ffffff'
-                          : `3.5px solid ${creature.color}`,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        transform: isFoundTarget ? 'scale(1.25)' : 'scale(1)',
-                        transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                        width: '100%',
+                        height: '75%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transform: isFoundTarget ? 'scale(1.22)' : isActive ? 'scale(1.15)' : 'scale(1)',
+                        transition: 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
                       }}>
-                        <span style={{ fontSize: `${creature.size * 0.45}px`, lineHeight: 1 }}>{creature.icon}</span>
-                        <span style={{
-                          fontSize: '0.85rem', fontWeight: 900, color: creature.color,
-                          background: creature.bg, padding: '2px 8px', borderRadius: '10px',
-                          marginTop: '4px', whiteSpace: 'nowrap'
-                        }}>
-                          {creature.name}
-                        </span>
+                        <OceanCreatureSVG id={creature.id} isTarget={isTarget} isFound={isFoundTarget} isActive={isActive} />
+                      </div>
+
+                      {/* 🏷️ 하단 반투명 네임 캡슐 */}
+                      <div style={{
+                        marginTop: '2px',
+                        fontSize: '0.85rem',
+                        fontWeight: 900,
+                        color: isFoundTarget ? '#92400e' : '#0f172a',
+                        background: isFoundTarget
+                          ? 'linear-gradient(135deg, #fef08a, #fde047)'
+                          : 'rgba(255, 255, 255, 0.85)',
+                        backdropFilter: 'blur(4px)',
+                        padding: '3px 10px',
+                        borderRadius: '16px',
+                        boxShadow: isFoundTarget
+                          ? '0 0 16px rgba(250, 204, 21, 0.9), 0 3px 8px rgba(0,0,0,0.2)'
+                          : '0 3px 8px rgba(0,0,0,0.18)',
+                        border: isFoundTarget ? '2px solid #ffffff' : `2px solid ${creature.color}`,
+                        whiteSpace: 'nowrap',
+                        letterSpacing: '0.02em',
+                        transform: isFoundTarget ? 'scale(1.1)' : 'scale(1)',
+                        transition: 'all 0.25s ease'
+                      }}>
+                        {creature.name}
                       </div>
                     </div>
                   );
