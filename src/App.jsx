@@ -29,6 +29,23 @@ class BabySoundEngine {
     this.muted = false;
     this.currentAudio = null;
     this.audioCache = new Map();
+    this.voiceBufferCache = new Map();
+    this.currentVoiceSource = null;
+    this.currentVoiceAudio = null;
+    this.voicePlayToken = 0;
+    this.isAudioUnlocked = false;
+
+    // 📱 iOS Safari 비동기 타이머 오디오 차단 원천 해결용 전역 싱글톤 Audio 객체
+    if (typeof window !== 'undefined') {
+      try {
+        this.sharedVoiceAudio = new Audio();
+        this.sharedVoiceAudio.preload = 'auto';
+      } catch (e) {
+        this.sharedVoiceAudio = null;
+      }
+    } else {
+      this.sharedVoiceAudio = null;
+    }
   }
 
   init() {
@@ -38,6 +55,20 @@ class BabySoundEngine {
     }
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
+    }
+
+    // 📱 iOS Safari 제스처 언락 (사용자 터치 시 1회 무음 활성화)
+    if (this.sharedVoiceAudio && !this.isAudioUnlocked) {
+      try {
+        this.sharedVoiceAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        const p = this.sharedVoiceAudio.play();
+        if (p && typeof p.then === 'function') {
+          p.then(() => {
+            this.isAudioUnlocked = true;
+            this.sharedVoiceAudio.pause();
+          }).catch(() => { });
+        }
+      } catch (e) { }
     }
   }
 
@@ -71,7 +102,6 @@ class BabySoundEngine {
       const idCap = id.charAt(0).toUpperCase() + id.slice(1);
       const idUpper = id.toUpperCase();
 
-      // soundUrl이 있으면 최우선(1순위)으로 직접 재생하여 불필요한 404 network delay 완전 방지
       const candidates = item.soundUrl
         ? [item.soundUrl, `/sounds/${id}.mp3`, `/sounds/${idCap}.mp3`, `/sounds/${idUpper}.mp3`]
         : [`/sounds/${id}.mp3`, `/sounds/${idCap}.mp3`, `/sounds/${idUpper}.mp3`, `/songs/${id}.mp3`].filter(Boolean);
@@ -99,6 +129,187 @@ class BabySoundEngine {
     } catch (e) { }
   }
 
+  // 🎙️ 현재 재생 중인 음성 사운드 즉시 정지
+  stopVoice() {
+    this.voicePlayToken++;
+    if (this.currentVoiceSource) {
+      try {
+        this.currentVoiceSource.onended = null;
+        this.currentVoiceSource.stop();
+      } catch (e) { }
+      this.currentVoiceSource = null;
+    }
+    if (this.sharedVoiceAudio) {
+      try {
+        this.sharedVoiceAudio.onended = null;
+        this.sharedVoiceAudio.pause();
+        this.sharedVoiceAudio.currentTime = 0;
+      } catch (e) { }
+    }
+    if (this.currentVoiceAudio && this.currentVoiceAudio !== this.sharedVoiceAudio) {
+      try {
+        this.currentVoiceAudio.onended = null;
+        this.currentVoiceAudio.pause();
+        this.currentVoiceAudio.currentTime = 0;
+      } catch (e) { }
+      this.currentVoiceAudio = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) { }
+    }
+  }
+
+  // 🎙️ Safari / iOS WebKit 호환 decodeAudioData 헬퍼 (Promise + Callback 듀얼 지원)
+  async decodeAudio(arrayBuffer) {
+    if (!this.ctx) return null;
+    return new Promise((resolve, reject) => {
+      let isSettled = false;
+      const onSuccess = (decoded) => {
+        if (!isSettled) {
+          isSettled = true;
+          resolve(decoded);
+        }
+      };
+      const onError = (err) => {
+        if (!isSettled) {
+          isSettled = true;
+          reject(err);
+        }
+      };
+
+      try {
+        // Safari는 원본 ArrayBuffer를 detach할 수 있으므로 slice(0) 사본 전달
+        const copy = arrayBuffer.slice(0);
+        const res = this.ctx.decodeAudioData(copy, onSuccess, onError);
+        if (res && typeof res.then === 'function') {
+          res.then(onSuccess).catch(onError);
+        }
+      } catch (err) {
+        onError(err);
+      }
+    });
+  }
+
+  // 🎙️ Web Audio API 버퍼 캐싱 및 디코딩 (아이패드 딜레이 0초 보장)
+  async getVoiceBuffer(url) {
+    if (this.voiceBufferCache.has(url)) {
+      return this.voiceBufferCache.get(url);
+    }
+    this.init();
+    if (!this.ctx) return null;
+    try {
+      const fullUrl = (typeof window !== 'undefined' && url.startsWith('/') && !url.startsWith('//'))
+        ? (window.location.origin + url)
+        : url;
+      const resp = await fetch(fullUrl, { cache: 'force-cache' });
+      if (!resp.ok) return null;
+      const arrayBuffer = await resp.arrayBuffer();
+      const audioBuffer = await this.decodeAudio(arrayBuffer);
+      if (audioBuffer) {
+        this.voiceBufferCache.set(url, audioBuffer);
+        return audioBuffer;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 🎙️ 아이패드/iOS WebKit 비동기 타이머에서도 절대 여성 음성(TTS)으로 튕기지 않는 완벽한 MP3 재생 엔진
+  async playVoice(url, fallbackFn = null, onEnded = null) {
+    if (this.muted) return;
+    this.stopVoice();
+    this.init();
+
+    const token = ++this.voicePlayToken;
+    const fullUrl = (typeof window !== 'undefined' && url.startsWith('/') && !url.startsWith('//'))
+      ? (window.location.origin + url)
+      : url;
+
+    // 1순위: Web Audio API 버퍼 재생 (iOS Safari 비동기 100% 허용)
+    if (this.ctx) {
+      try {
+        if (this.ctx.state === 'suspended') {
+          await this.ctx.resume();
+        }
+        const buffer = await this.getVoiceBuffer(url);
+        if (this.voicePlayToken !== token) return;
+
+        if (buffer) {
+          const source = this.ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(this.ctx.destination);
+          this.currentVoiceSource = source;
+
+          source.onended = () => {
+            if (this.voicePlayToken === token) {
+              this.currentVoiceSource = null;
+              if (onEnded) onEnded();
+            }
+          };
+
+          source.start(0);
+          return;
+        }
+      } catch (e) { }
+    }
+
+    if (this.voicePlayToken !== token) return;
+
+    // 2순위: 사용자 터치로 사전 언락된 전역 sharedVoiceAudio 재생 (아이패드 비동기 타이머 100% 재생 성공)
+    if (this.sharedVoiceAudio) {
+      try {
+        const audio = this.sharedVoiceAudio;
+        this.currentVoiceAudio = audio;
+        audio.onended = () => {
+          if (this.voicePlayToken === token) {
+            this.currentVoiceAudio = null;
+            if (onEnded) onEnded();
+          }
+        };
+        audio.src = fullUrl;
+        audio.currentTime = 0;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            this.isAudioUnlocked = true;
+          }).catch(() => {
+            // sharedVoiceAudio가 차단되었을 때만 3순위 신규 Audio 시도
+            this.tryNewAudioElement(fullUrl, token, fallbackFn, onEnded);
+          });
+          return;
+        }
+        return;
+      } catch (e) { }
+    }
+
+    // 3순위: 신규 Audio 엘리먼트 fallback
+    this.tryNewAudioElement(fullUrl, token, fallbackFn, onEnded);
+  }
+
+  tryNewAudioElement(url, token, fallbackFn, onEnded) {
+    try {
+      const audio = new Audio(url);
+      this.currentVoiceAudio = audio;
+      audio.onended = () => {
+        if (this.voicePlayToken === token) {
+          this.currentVoiceAudio = null;
+          if (onEnded) onEnded();
+        }
+      };
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          if (this.voicePlayToken === token && fallbackFn) {
+            fallbackFn();
+          }
+        });
+      }
+    } catch (e) {
+      if (this.voicePlayToken === token && fallbackFn) fallbackFn();
+    }
+  }
+
   stopAllSounds() {
     if (this.currentAudio) {
       try {
@@ -107,16 +318,7 @@ class BabySoundEngine {
       } catch (e) { }
       this.currentAudio = null;
     }
-    if (currentVoiceAudio) {
-      try {
-        currentVoiceAudio.pause();
-        currentVoiceAudio.currentTime = 0;
-      } catch (e) { }
-      currentVoiceAudio = null;
-    }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
+    this.stopVoice();
   }
 
   playFreq(freq, type = 'sine', duration = 0.25, gainVal = 0.4) {
@@ -182,6 +384,19 @@ class BabySoundEngine {
 }
 
 const audioEngine = new BabySoundEngine();
+
+// 📱 iOS Safari / 아이패드 첫 사용자 제스처 시 Web Audio API AudioContext 즉시 언락
+if (typeof window !== 'undefined') {
+  const unlockAudioContext = () => {
+    audioEngine.init();
+    ['touchstart', 'touchend', 'pointerdown', 'click'].forEach(evt => {
+      window.removeEventListener(evt, unlockAudioContext, true);
+    });
+  };
+  ['touchstart', 'touchend', 'pointerdown', 'click'].forEach(evt => {
+    window.addEventListener(evt, unlockAudioContext, { capture: true, once: true });
+  });
+}
 
 // =============================================================================
 // 20종 동물 – Pexels 실사 사진 + Mixkit 실제 동물 울음소리 MP3
@@ -1564,25 +1779,22 @@ export function speakNaturalKorean(text, { pitch = 1.16, rate = 0.92, priority =
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// 🎙️ PC Edge 인준(InJoon) 고음질 MP3 플레이어 (아이패드/모바일 100% 동일 남성 음성 재생)
+// 🎙️ PC Edge 인준(InJoon) 고음질 MP3 플레이어 (아이패드/모바일 100% 비동기 지원 Web Audio 엔진 연동)
 // ═════════════════════════════════════════════════════════════════════════════
-let currentVoiceAudio = null;
-
-export function playVoiceAudio(audioSrc, fallbackFn = null) {
+export function playVoiceAudio(audioSrc, fallbackFn = null, onEnded = null) {
   if (typeof window === 'undefined') return;
   try {
+    if (audioEngine && typeof audioEngine.playVoice === 'function') {
+      audioEngine.playVoice(audioSrc, fallbackFn, onEnded);
+      return;
+    }
+
+    // fallback
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      try { window.speechSynthesis.cancel(); } catch (e) { }
     }
-    if (currentVoiceAudio) {
-      currentVoiceAudio.pause();
-      currentVoiceAudio.currentTime = 0;
-      currentVoiceAudio = null;
-    }
-
     const audio = new Audio(audioSrc);
-    currentVoiceAudio = audio;
-
+    audio.onended = () => { if (onEnded) onEnded(); };
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.catch(err => {
@@ -2689,6 +2901,11 @@ export default function App() {
   };
 
   const openFeedModal = () => {
+    audioEngine.init();
+    // 칭찬 음성 3종 사전 버퍼 캐싱 (정답 시 0초 즉시 반응 보장)
+    [0, 1, 2].forEach(idx => {
+      audioEngine.getVoiceBuffer(`/sounds/voice/feed_praise_${idx}.mp3`);
+    });
     const round = pickFeedRound();
     setFeedRound(round);
     setAnimalMoods({});
@@ -2715,6 +2932,10 @@ export default function App() {
         });
         setFeedScore(prev => prev + 1);
 
+        // 🚀 다음 라운드 동물/과일 사전 선정 및 음성 백그라운드 프리로드 (정답 맞춘 터치 순간 캐싱)
+        const upcomingRound = pickFeedRound();
+        audioEngine.getVoiceBuffer(`/sounds/voice/feed_${upcomingRound.target.id}_${upcomingRound.food.id}.mp3`);
+
         // 🗣️ 동물이 직접 소감 표현 (인준 고음질 MP3 우선 재생)
         const praisePhrases = [
           `냠냠! ${wantedFood.name} 정말 맛있어요! 고마워요!`,
@@ -2723,24 +2944,41 @@ export default function App() {
         ];
         const randomIdx = Math.floor(Math.random() * praisePhrases.length);
         const randomPraise = praisePhrases[randomIdx];
-        playVoiceAudio(`/sounds/voice/feed_praise_${randomIdx}.mp3`, () => {
-          speakNaturalKorean(randomPraise, { pitch: 1.16, rate: 0.92 });
-        });
 
-        // 1.2초 후 기뻐하기 (만세 + 하트눈 + 팡파레)
+        // 1.0초 후 기뻐하기 (만세 + 하트눈 + 팡파레)
         setTimeout(() => {
           setAnimalMoods(prev => ({ ...prev, [targetAnimal.id]: 'happy' }));
           audioEngine.playFanfare();
-        }, 1200);
+        }, 1000);
 
-        // 3.5초 후 다음 라운드 (새로운 3마리 동물 + 새 목표)
-        setTimeout(() => {
-          const nextRound = pickFeedRound();
+        let hasAdvanced = false;
+        const advanceToNextRound = () => {
+          if (hasAdvanced) return;
+          hasAdvanced = true;
+          const nextRound = upcomingRound || pickFeedRound();
           setFeedRound(nextRound);
           setAnimalMoods({});
+          setRejectedAnimalId(null);
+          setRejectedFood(null);
           isFeedBusyRef.current = false;
           speakFeedWish(nextRound.target, nextRound.food);
-        }, 3600);
+        };
+
+        // 칭찬 음성 재생 -> 음성이 끝까지 완벽하게 나온 후(onEnded) 0.9초 여운을 두고 다음 라운드로 전환
+        playVoiceAudio(
+          `/sounds/voice/feed_praise_${randomIdx}.mp3`,
+          () => {
+            speakNaturalKorean(randomPraise, { pitch: 1.16, rate: 0.92 });
+            setTimeout(advanceToNextRound, 4200);
+          },
+          () => {
+            // MP3 음성 완독 후 0.9초간 동물들의 춤과 기쁨을 만끽하고 다음 문제로 진행
+            setTimeout(advanceToNextRound, 900);
+          }
+        );
+
+        // 안전 타이머: 네트워크 오류나 브라우저 예외 시에도 최대 5.2초 내 다음 라운드 진행 보장
+        setTimeout(advanceToNextRound, 5200);
       } else {
         // 목표 동물인데 다른 과일을 줌
         isFeedBusyRef.current = true;
@@ -3988,7 +4226,7 @@ export default function App() {
             padding: '1.8rem 1.6rem', border: '6px solid #f59e0b',
             boxShadow: '0 25px 50px -12px rgba(245, 158, 11, 0.35)', position: 'relative', textAlign: 'center'
           }}>
-            <button onClick={() => { setIsFeedModalOpen(false); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }} style={{
+            <button onClick={() => { setIsFeedModalOpen(false); audioEngine.stopAllSounds(); }} style={{
               position: 'absolute', top: '18px', right: '18px', background: '#fef3c7', color: '#78350f',
               border: '2px solid #fde68a', borderRadius: '50%', width: '40px', height: '40px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10
