@@ -53,17 +53,9 @@ export function voiceKey(text) {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
-const sleepBase = (animal) => (animal ? animal.name.replace('아기 ', '') : '동물');
-
 export const FEED_PRAISE_COUNT = 3;
 
 export const VOICE = {
-  // 🌙 코 잘 시간
-  sleepAsleep: (animal) => `${sleepBase(animal)}가 이불을 꼭 덮고 쿨쿨 잘 자고 있어요.`,
-  sleepYawn: (animal) => `${sleepBase(animal)}가 하품을 해요. 포근한 이불을 덮어주세요~`,
-  sleepBlanket: (animal, blanket) => `${sleepBase(animal)}에게 ${attachJosa(blanket.blanketName, '을/를')} 덮어줬어요.`,
-  sleepWake: (animal) => `${sleepBase(animal)}가 이불이 걷히자 잠에서 깨어났어요!`,
-
   // 🧩 퍼즐
   puzzleWrong: () => '여기가 아니에요~ 제자리에 쏙 맞춰보세요!',
   puzzleStart: (theme) => `우리 ${attachJosa(theme.name, '을/를')} 퍼즐을 맞춰볼까요?`,
@@ -92,12 +84,8 @@ export const VOICE = {
 };
 
 // 앱에서 나올 수 있는 모든 문장 목록 (MP3 생성 스크립트용)
-export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, foods, oceanCreatures, puzzles, sleepAnimals }) {
+export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, foods, oceanCreatures, puzzles }) {
   const lines = [VOICE.puzzleWrong()];
-  sleepAnimals.forEach(a => {
-    lines.push(VOICE.sleepAsleep(a), VOICE.sleepYawn(a), VOICE.sleepWake(a));
-    sleepAnimals.forEach(b => lines.push(VOICE.sleepBlanket(a, b)));
-  });
   puzzles.forEach(t => lines.push(VOICE.puzzleStart(t), VOICE.puzzleDone(t)));
   oceanCreatures.forEach(c => lines.push(VOICE.oceanMission(c), VOICE.oceanFound(c), VOICE.itemSound(c)));
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
