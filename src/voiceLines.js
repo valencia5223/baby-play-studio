@@ -80,6 +80,8 @@ export const VOICE = {
   aquaNewFriend: (creature) => `바다 친구 ${attachJosa(creature.name, '이/가')} 어항에 왔어요!`,
   aquaFishInfo: (species, stage) => `${attachJosa(species.name, '이에요/예요')} 지금은 ${attachJosa(STAGE_NAMES[stage], '이에요/예요')}`,
   aquaShiny: (thing) => `와아! 반짝반짝 특별한 색깔의 ${attachJosa(thing.name, '이/가')} 왔어요!`,
+  // 직접 지은 이름은 미리 만든 음성이 없어 기기 음성(TTS)으로 읽는다
+  aquaHello: (species, name) => `안녕! 나는 ${species.name} ${attachJosa(name, '이에요/예요')}`,
   aquaRelease: (species) => `안녕, ${attachJosa(species.name, '아/야')}! 넓은 자연에서 행복하게 지내!`,
   aquaSadFish: (species) => `${attachJosa(species.name, '이/가')} 슬퍼요. 밥을 주고 물을 깨끗하게 해 주세요!`,
 

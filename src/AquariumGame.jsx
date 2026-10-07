@@ -93,6 +93,9 @@ export function lookOf(sp, f) {
 function bodyProfile(shape, s) {
   if (shape === 'disc') return Math.sqrt(Math.max(0, 1 - Math.pow(2 * s - 1.04, 2)));
   if (shape === 'angel') return s < 0.42 ? Math.pow(s / 0.42, 0.65) : Math.pow(Math.max(0, (1 - s) / 0.58), 0.85);
+  if (shape === 'ribbon') return Math.pow(Math.sin(Math.PI * Math.min(1, 0.04 + s * 0.96)), 0.25) * (1 - s * 0.88);
+  if (shape === 'puffer') return Math.pow(Math.max(0, 1 - Math.pow((2 * s) / 0.92 - 1, 2)), 0.5);
+  if (shape === 'flat') return Math.pow(Math.max(0, 1 - Math.pow((2 * s) / 0.94 - 1, 2)), 0.6);
   if (shape === 'pleco') return Math.pow(Math.sin(Math.PI * Math.min(1, 0.2 + s * 0.8)), 0.45) * (1 - s * 0.5);
   if (shape === 'cory') return Math.pow(Math.sin(Math.PI * Math.min(1, 0.14 + s * 0.86)), 0.55) * (s < 0.35 ? 1 : 1 - (s - 0.35) * 0.45);
   return Math.pow(Math.sin(Math.PI * (0.07 + s * 0.89)), 0.75);
@@ -115,10 +118,13 @@ export function drawFish(ctx, sp, L, o = {}) {
   const glowOnly = !!o.glowOnly;
   const growth = o.growth ?? 1;
   const fry = 1 - Math.min(1, growth / 0.6);           // 1 이면 갓 태어난 치어
-  const H = L * sp.hRatio * (1 + fry * 0.12);
-  const amp = L * (sp.shape === 'disc' || sp.shape === 'angel' ? 0.03 : sp.shape === 'betta' ? 0.09 : 0.07);
+  const puff = o.puff || 0;                            // 복어가 부풀어 오른 정도 0~1
+  const H = L * sp.hRatio * (1 + fry * 0.12) * (1 + puff * 0.6);
+  const ribbon = sp.shape === 'ribbon';
+  const amp = L * (sp.shape === 'disc' || sp.shape === 'angel' || sp.shape === 'flat' ? 0.03 : sp.shape === 'betta' ? 0.09 : ribbon ? 0.05 : 0.07);
   const ph = o.phase || 0;
-  const wave = (s) => Math.sin(ph - s * 3.2) * amp * s * s;
+  // 갈치는 몸 전체가 뱀장어처럼 여러 번 굽이친다
+  const wave = (s) => Math.sin(ph - s * (ribbon ? 7 : 3.2)) * amp * (ribbon ? s : s * s);
   const half = (s) => H * 0.5 * Math.max(0.07, bodyProfile(sp.shape, s));
   const xs = (s) => L * (0.5 - s);
   const finK = 0.4 + 0.6 * (1 - fry);
@@ -160,6 +166,18 @@ export function drawFish(ctx, sp, L, o = {}) {
     ctx.quadraticCurveTo(xs(0.6), wave(0.6) + H * 1.5 * finK + swing * 0.5, xs(1.05), wave(1) + H * 0.5 + swing);
     ctx.lineTo(xs(0.9), wave(0.9));
     ctx.closePath(); ctx.fill();
+  } else if (sp.shape === 'flat') {
+    // 광어: 몸 둘레를 따라 이어진 지느러미 테두리
+    const rim = [];
+    for (let i = 1; i <= 10; i++) { const q = 0.06 + i * 0.088; rim.push([xs(q), wave(q) - half(q) * 1.3 - H * 0.04]); }
+    for (let i = 10; i >= 1; i--) { const q = 0.06 + i * 0.088; rim.push([xs(q), wave(q) + half(q) * 1.3 + H * 0.04]); }
+    smoothClosed(ctx, rim); ctx.fill();
+  } else if (ribbon) {
+    // 갈치: 등을 따라 길게 이어진 투명한 지느러미
+    ctx.beginPath();
+    for (let i = 0; i <= 14; i++) { const q = 0.08 + i * 0.062; const y = wave(q) - half(q) - H * 0.9 * (1 - q * 0.6); if (i === 0) ctx.moveTo(xs(q), y); else ctx.lineTo(xs(q), y); }
+    for (let i = 14; i >= 0; i--) { const q = 0.08 + i * 0.062; ctx.lineTo(xs(q), wave(q) - half(q) * 0.8); }
+    ctx.closePath(); ctx.fill();
   } else if (sp.shape === 'pleco') {
     // 커다란 돛 모양 등지느러미 (점무늬)
     ctx.beginPath();
@@ -177,10 +195,18 @@ export function drawFish(ctx, sp, L, o = {}) {
     // 배 아래로 넓게 펼친 배지느러미
     ctx.beginPath(); ctx.ellipse(xs(0.32), wave(0.32) + half(0.32) * 0.8, L * 0.12 * finK, H * 0.22 * finK, -0.4, 0, Math.PI * 2); ctx.fill();
   } else {
-    // 등지느러미
+    // 등지느러미 (우럭·참돔은 뾰족한 가시)
     ctx.beginPath();
     ctx.moveTo(xs(0.32), wave(0.32) - half(0.32) * 0.92);
-    ctx.quadraticCurveTo(xs(0.45), wave(0.45) - half(0.45) - H * 0.42 * finK, xs(0.66), wave(0.66) - half(0.66) * 0.9);
+    if (sp.spiny) {
+      for (let i = 0; i <= 8; i++) {
+        const q = 0.24 + i * 0.05, up = i % 2 === 0 ? 0.5 : 0.28;
+        ctx.lineTo(xs(q), wave(q) - half(q) - H * up * finK);
+      }
+      ctx.lineTo(xs(0.68), wave(0.68) - half(0.68) * 0.9);
+    } else {
+      ctx.quadraticCurveTo(xs(0.45), wave(0.45) - half(0.45) - H * 0.42 * finK, xs(0.66), wave(0.66) - half(0.66) * 0.9);
+    }
     ctx.closePath(); ctx.fill();
     // 뒷지느러미
     ctx.beginPath();
@@ -201,7 +227,7 @@ export function drawFish(ctx, sp, L, o = {}) {
     ctx.beginPath();
     ctx.moveTo(tailX + L * 0.05, tailY - H * 0.13 * k + yOff);
     ctx.quadraticCurveTo(tailX - tl * 0.45, tailY + swing * 0.5 - tsp * 0.62 * k + yOff, tailX - tl, tailY + swing - tsp * 0.5 * k + yOff);
-    ctx.quadraticCurveTo(tailX - tl * (t.solid ? 0.72 : sp.shape === 'betta' ? 1.08 : 0.84), tailY + swing + yOff, tailX - tl, tailY + swing + tsp * 0.5 * k + yOff);
+    ctx.quadraticCurveTo(tailX - tl * (t.fork ? 0.42 : t.solid ? 0.72 : sp.shape === 'betta' ? 1.08 : 0.84), tailY + swing + yOff, tailX - tl, tailY + swing + tsp * 0.5 * k + yOff);
     ctx.quadraticCurveTo(tailX - tl * 0.45, tailY + swing * 0.5 + tsp * 0.62 * k + yOff, tailX + L * 0.05, tailY + H * 0.13 * k + yOff);
     ctx.closePath();
     ctx.fill();
@@ -256,6 +282,15 @@ export function drawFish(ctx, sp, L, o = {}) {
   bg.addColorStop(1, sp.belly);
   ctx.fillStyle = bg;
   if (!glowOnly) ctx.fill();
+  if (!glowOnly && puff > 0.05) {
+    ctx.strokeStyle = sp.top; ctx.lineWidth = Math.max(0.8, L * 0.02); ctx.lineCap = 'round';
+    pts.forEach(([px, py], i) => {
+      if (i === 0 || i % 2) return;
+      const cx0 = xs(0.45), dx = px - cx0, dy = py, d = Math.hypot(dx, dy) || 1;
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + dx / d * L * 0.09 * puff, py + dy / d * L * 0.09 * puff); ctx.stroke();
+    });
+    smoothClosed(ctx, pts);
+  }
 
   // ── 무늬 (몸 모양으로 잘라 그리기) ──
   ctx.save();
@@ -292,6 +327,26 @@ export function drawFish(ctx, sp, L, o = {}) {
       ctx.beginPath(); ctx.ellipse(xs(q), wave(q) + yy * H, L * rr * 0.32, H * rr, 0.3, 0, Math.PI * 2); ctx.fill();
     });
   }
+  if (sp.mottle) {
+    // 우럭·광어의 얼룩무늬
+    ctx.save(); ctx.globalAlpha *= 0.45; ctx.fillStyle = sp.mottle;
+    for (let i = 0; i < 10; i++) {
+      const q = 0.1 + ((i * 0.618) % 1) * 0.82, yy = (((i * 0.43) % 1) - 0.5) * H * 0.75;
+      ctx.beginPath(); ctx.ellipse(xs(q), wave(q) + yy, L * 0.07, H * 0.13, i, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  if (sp.backStripes) {
+    // 고등어 등의 물결 줄무늬
+    ctx.strokeStyle = sp.backStripes; ctx.lineWidth = Math.max(0.7, L * 0.016);
+    for (let i = 0; i < 10; i++) {
+      const q = 0.14 + i * 0.075;
+      ctx.beginPath();
+      ctx.moveTo(xs(q), wave(q) - H * 0.55);
+      ctx.quadraticCurveTo(xs(q) + L * 0.03, wave(q) - H * 0.3, xs(q) - L * 0.005, wave(q) - H * 0.05);
+      ctx.stroke();
+    }
+  }
   if (sp.bars) {
     ctx.fillStyle = sp.bars;
     [0.18, 0.46, 0.74].forEach((s, i) => {
@@ -303,7 +358,8 @@ export function drawFish(ctx, sp, L, o = {}) {
   if (sp.spots) {
     ctx.fillStyle = sp.spots;
     for (let i = 0; i < 14; i++) {
-      const s = 0.15 + (i * 0.618 % 1) * 0.75, yy = ((i * 0.37) % 1 - 0.5) * H * 0.7;
+      // 2차원으로 고르게 흩어지는 점 배치 (일렬로 늘어서지 않게)
+      const s = 0.15 + ((i * 0.5698403) % 1) * 0.75, yy = (((i * 0.7548777) % 1) - 0.5) * H * 0.75;
       ctx.beginPath(); ctx.arc(xs(s), wave(s) + yy, Math.max(0.8, L * 0.022), 0, Math.PI * 2); ctx.fill();
     }
   }
@@ -364,6 +420,17 @@ export function drawFish(ctx, sp, L, o = {}) {
     ctx.beginPath(); ctx.moveTo(xs(0.02), wave(0) + H * 0.12); ctx.lineTo(xs(-0.05), wave(0) + H * 0.32); ctx.stroke();
   }
 
+  if (sp.bigMouth) {
+    ctx.strokeStyle = 'rgba(12,10,9,0.55)'; ctx.lineWidth = Math.max(0.8, L * 0.016);
+    ctx.beginPath(); ctx.moveTo(xs(0.0), wave(0) + H * 0.04); ctx.lineTo(xs(0.1), wave(0.1) + H * 0.12); ctx.stroke();
+  }
+  if (sp.shape === 'flat') {
+    // 광어는 두 눈이 한쪽에 몰려 있다
+    const e2x = xs(0.24), e2y = wave(0.24) - H * 0.22, e2r = Math.max(1.3, L * 0.045);
+    ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(e2x, e2y, e2r * 1.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(e2x + e2r * 0.15, e2y, e2r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(e2x + e2r * 0.45, e2y - e2r * 0.4, e2r * 0.36, 0, Math.PI * 2); ctx.fill();
+  }
   // ── 눈 ──
   const ex = xs(0.15), ey = wave(0.15) - H * (sp.shape === 'disc' || sp.shape === 'angel' ? 0.12 : 0.07);
   const er = Math.max(1.3, L * 0.052 * (1 + fry * 0.75));
@@ -693,6 +760,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
   const [shopTab, setShopTab] = useState('fish');
   const [info, setInfo] = useState(null);          // 터치한 물고기 uid
   const [confirmRelease, setConfirmRelease] = useState(false);
+  const [naming, setNaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
   const [infoTick, setInfoTick] = useState(0);
   const [friends, setFriends] = useState([]);      // 화면에 그릴 바다 친구 목록
   const [placed, setPlaced] = useState({ decor: [], friends: [] });
@@ -1001,7 +1070,10 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         audio.playBubble();
         setInfo(f.uid);
         const sp = FISH_BY_ID[f.sp];
+        if (f.sp === 'puffer') { r.puffT = 2.5; audio.playFreq(260, 'sine', 0.25, 0.4); setTimeout(() => audio.playFreq(520, 'sine', 0.2, 0.35), 120); }
+        if (f.name) s.pops.push({ x: r.x, y: r.y - fishLen(f) * 0.6 - 10, text: `${sp.name} ${f.name}`, life: 1.6, vy: -22, color: '#fef08a' });
         if (isSad(f, game.dirt)) say('info', VOICE.aquaSadFish(sp), 1.5);
+        else if (f.name) say('info', VOICE.aquaHello(sp, f.name), 1.5);   // 종류 + 이름 (직접 지은 이름은 기기 음성으로 읽음)
         else say('info', VOICE.aquaFishInfo(sp, stageOf(f.growth)), 1.5);
         return;
       }
@@ -1019,7 +1091,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       game.fish.forEach(fi => {
         const r = s.rt[fi.uid]; if (!r) return;
         const dx = r.x - x, dy = r.y - y, d = Math.hypot(dx, dy) || 1;
-        if (d < 200) { const kk = 380 * (1 - d / 200); r.vx += dx / d * kk; r.vy += dy / d * kk; r.panic = 1; }
+        if (d < 200) { const kk = 380 * (1 - d / 200); r.vx += dx / d * kk; r.vy += dy / d * kk; r.panic = 1; if (fi.sp === 'puffer') r.puffT = 2; }
       });
       Object.values(s.fr).forEach(q => { if (Math.hypot(q.x - x, q.y - y) < 160) q.startle = 1; });
     };
@@ -1143,7 +1215,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         fx += Math.cos(r.wander) * 40; fy += Math.sin(r.wander) * 18;
         // 머무는 높이
         const span = bottom - top;
-        const pref = sad ? bottom - span * 0.15 : sp.zone === 'bottom' ? bottom - 12 : sp.zone === 'top' ? top + span * 0.18 : null;
+        const pref = sad ? bottom - span * 0.15 : sp.zone === 'bottom' ? bottom - (sp.lieDown ? 2 : 12) : sp.zone === 'top' ? top + span * 0.18 : null;
         if (pref != null) fy += (pref - r.y) * 0.9;
         // 벽
         const m = 40;
@@ -1211,11 +1283,17 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           if (d < 460) { const pull = d > 45 ? 380 : -140; fx += dx / d * pull - dy / d * 60; fy += dy / d * pull + dx / d * 60; }
         }
         fx += s.tilt.x * 140; fy += s.tilt.y * 80;
+        // 광어는 먹이가 없으면 바닥에 납작 엎드려 거의 움직이지 않는다
+        const resting = sp.lieDown && !target && !following;
+        if (resting) { fx *= 0.2; fy = fy * 0.2 + (bottom - 2 - r.y) * 3; }   // 바닥으로는 확실히 내려앉게
 
         r.vx += fx * dt; r.vy += fy * dt;
-        const spd = Math.hypot(r.vx, r.vy) || 1, minSp = 14 * s.k;
+        if (resting) { r.vx *= 1 - Math.min(1, dt * 1.2); r.vy *= 1 - Math.min(1, dt * 1.2); }
+        const spd = Math.hypot(r.vx, r.vy) || 1, minSp = resting ? 0 : 14 * s.k;
         if (spd > maxSp) { r.vx *= maxSp / spd; r.vy *= maxSp / spd; } else if (spd < minSp) { r.vx *= minSp / spd; r.vy *= minSp / spd; }
         r.panic = Math.max(0, r.panic - dt);
+        r.puffT = Math.max(0, (r.puffT || 0) - dt);
+        r.puffNow = (r.puffNow || 0) + ((r.puffT > 0 ? 1 : 0) - (r.puffNow || 0)) * Math.min(1, dt * 5);
         r.boing = Math.max(0, r.boing - dt * 1.8);
         r.happyT = Math.max(0, r.happyT - dt);
         r.x = clamp(r.x + r.vx * dt, 6, s.W - 6); r.y = clamp(r.y + r.vy * dt, top, bottom);
@@ -1465,12 +1543,12 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         const L = fishLen(f) * (0.82 + r.z * 0.18) * (1 + Math.sin(r.boing * Math.PI) * 0.25);
         ctx.save();
         ctx.translate(r.x, r.y);
-        const ang = clamp(Math.atan2(r.vy, Math.abs(r.vx) + 8) * 0.6, -0.6, 0.6);
+        const ang = sp.lieDown ? 0 : clamp(Math.atan2(r.vy, Math.abs(r.vx) + 8) * 0.6, -0.6, 0.6);
         r.drawL = L; r.drawAng = ang;
         ctx.scale(r.dir, 1);
         ctx.rotate(ang * 1);
         ctx.globalAlpha = (0.72 + r.z * 0.28) * (r.leaving != null ? clamp(1 - r.leaving / 2.6, 0, 1) : 1);
-        drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26 });
+        drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0 });
         ctx.restore();
         if (info === f.uid) {
           ctx.strokeStyle = 'rgba(254,240,138,0.9)'; ctx.lineWidth = 2.5;
@@ -1724,12 +1802,13 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
 
   // 선택한 물고기 표시 링
   useEffect(() => { if (simRef.current) simRef.current.setInfoUid(info); }, [info]);
+  useEffect(() => { setConfirmRelease(false); setNaming(false); }, [info]);
   useEffect(() => {
-    setConfirmRelease(false);
-    if (!info) return undefined;
+    // 이름을 짓는 동안은 카드가 저절로 닫히지 않게
+    if (!info || naming) return undefined;
     const tm = setTimeout(() => setInfo(null), 9000);
     return () => clearTimeout(tm);
-  }, [info]);
+  }, [info, naming]);
 
   // ── 상점 ──
   const buy = (kind, id) => {
@@ -1934,7 +2013,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ fontWeight: 900, fontSize: '1.15rem', color: '#0f172a' }}>
-                  {sad ? '😢' : '😊'} {sp.name}
+                  {sad ? '😢' : '😊'} {infoFish.name ? <>{infoFish.name} <span style={{ fontSize: '0.8rem', color: '#475569' }}>({sp.name})</span></> : sp.name}
                   {infoFish.variant && <span style={{ fontSize: '0.8rem', color: '#be185d' }}> ({GUPPY_BY_ID[infoFish.variant]?.name})</span>}
                   {' '}<span style={{ fontSize: '0.85rem', color: '#0369a1' }}>· {STAGE_NAMES[stage]}</span>
                   {infoFish.shiny && <span style={{ marginLeft: '6px', fontSize: '0.78rem', background: 'linear-gradient(135deg, #fde047, #f59e0b)', color: '#713f12', padding: '2px 8px', borderRadius: '10px' }}>✨ 이로치</span>}
@@ -1964,6 +2043,33 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                 }}
                 style={{ marginTop: '10px', width: '100%', border: 'none', borderRadius: '16px', padding: '10px', fontWeight: 900, fontSize: '1rem', background: '#f472b6', color: '#ffffff', cursor: 'pointer' }}
               >💗 쓰다듬기</button>
+              {/* 이름 짓기: 지은 이름은 물고기를 누르면 불러 준다 */}
+              {!naming ? (
+                <button
+                  onClick={() => { setNameDraft(infoFish.name || ''); setNaming(true); }}
+                  style={{ marginTop: '6px', width: '100%', border: '2px solid #fde68a', borderRadius: '14px', padding: '7px', fontWeight: 900, fontSize: '0.88rem', background: '#fefce8', color: '#854d0e', cursor: 'pointer' }}
+                >✏️ {infoFish.name ? '이름 바꾸기' : '이름 짓기'}</button>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const nm = nameDraft.trim().slice(0, 10);
+                    infoFish.name = nm || undefined;
+                    saveGame(sim.game);
+                    setNaming(false);
+                    if (nm) speak(VOICE.aquaHello(sp, nm));
+                  }}
+                  style={{ marginTop: '6px', display: 'flex', gap: '6px' }}
+                >
+                  <input
+                    autoFocus value={nameDraft} maxLength={10} placeholder="예: 뽀뽀"
+                    onChange={(e) => setNameDraft(e.target.value)}
+                    style={{ flex: 1, minWidth: 0, border: '2px solid #fde68a', borderRadius: '12px', padding: '7px 10px', fontWeight: 800, fontSize: '1rem' }}
+                  />
+                  <button type="submit" style={{ border: 'none', borderRadius: '12px', padding: '7px 12px', fontWeight: 900, background: '#facc15', color: '#713f12', cursor: 'pointer' }}>저장</button>
+                  <button type="button" onClick={() => setNaming(false)} style={{ border: 'none', borderRadius: '12px', padding: '7px 10px', fontWeight: 900, background: '#e2e8f0', color: '#334155', cursor: 'pointer' }}>취소</button>
+                </form>
+              )}
               {/* 자연으로 보내기 (아기가 실수로 누르지 않게 한 번 더 확인) */}
               {!confirmRelease ? (
                 <button
@@ -2040,7 +2146,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                     <div key={sp.id} style={{ border: '2px solid #e2e8f0', borderRadius: '18px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f0f9ff' }}>
                       <FishPreview species={sp} />
                       <div style={{ fontWeight: 900, color: '#0f172a' }}>{sp.name}</div>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>{sp.id === 'guppy' ? '🎲 디자인은 랜덤!' : '아기 치어로 와요'}</div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>{sp.desc || '아기 치어로 와요'}</div>
                       <button onClick={() => buy('fish', sp.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= price ? '#8b5cf6' : '#cbd5e1', color: '#ffffff' }}>🐚 {price}</button>
                     </div>
                   );

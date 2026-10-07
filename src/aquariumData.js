@@ -17,7 +17,7 @@ export const FISH_SPECIES = [
     tail: { color: 'rgba(226,232,240,0.55)', len: 0.3, spread: 0.3 }, fin: 'rgba(226,232,240,0.45)'
   },
   {
-    id: 'guppy', name: '구피', price: 0, starter: true, len: 34, hRatio: 0.3, shape: 'normal',
+    id: 'guppy', name: '구피', price: 0, starter: true, desc: '🎲 디자인은 랜덤!', len: 34, hRatio: 0.3, shape: 'normal',
     speed: 0.95, growMul: 1.25, school: false, zone: 'top',
     top: '#a8a29e', belly: '#fef3c7',
     tail: { grad: ['#f97316', '#ec4899', '#3b82f6'], len: 0.8, spread: 0.6 }, fin: 'rgba(236,72,153,0.6)'
@@ -49,7 +49,7 @@ export const FISH_SPECIES = [
   },
   {
     // 비파(플레코): 바닥과 유리에 붙어 다니며 유리 이끼를 먹어 치운다
-    id: 'pleco', name: '비파', price: 500, len: 58, hRatio: 0.3, shape: 'pleco',
+    id: 'pleco', name: '비파', price: 500, desc: '유리 이끼를 먹어요', len: 58, hRatio: 0.3, shape: 'pleco',
     speed: 0.45, growMul: 0.9, school: false, zone: 'bottom', algaeEater: true,
     top: '#44403c', belly: '#78716c', spots: '#e7e5e4',
     tail: { color: 'rgba(68,64,60,0.85)', len: 0.3, spread: 0.36, solid: true }, fin: 'rgba(87,83,78,0.85)'
@@ -77,6 +77,42 @@ export const FISH_SPECIES = [
     speed: 0.45, growMul: 0.8, school: false, zone: 'mid',
     top: '#ea580c', belly: '#f59e0b', waves: '#38bdf8',
     tail: { color: 'rgba(234,88,12,0.6)', len: 0.25, spread: 0.3 }, fin: 'rgba(234,88,12,0.55)'
+  },
+  {
+    id: 'mackerel', name: '고등어', price: 250, len: 64, hRatio: 0.24, shape: 'normal', desc: '떼 지어 쌩쌩!',
+    speed: 1.3, growMul: 1, school: true, zone: 'mid',
+    top: '#0f766e', belly: '#e2e8f0', backStripes: '#0f172a',
+    tail: { color: 'rgba(15,118,110,0.85)', len: 0.34, spread: 0.52, fork: true }, fin: 'rgba(148,163,184,0.6)'
+  },
+  {
+    id: 'rockfish', name: '우럭', price: 300, len: 62, hRatio: 0.36, shape: 'normal', desc: '가시 지느러미 바닥 대장',
+    speed: 0.55, growMul: 0.9, school: false, zone: 'bottom',
+    top: '#292524', belly: '#78716c', mottle: '#0c0a09', spiny: true, bigMouth: true,
+    tail: { color: 'rgba(41,37,36,0.85)', len: 0.3, spread: 0.36, solid: true }, fin: 'rgba(68,64,60,0.85)'
+  },
+  {
+    id: 'seabream', name: '참돔', price: 400, len: 64, hRatio: 0.46, shape: 'normal', desc: '빨간 바다의 왕',
+    speed: 0.75, growMul: 0.85, school: false, zone: 'mid',
+    top: '#e11d48', belly: '#fecdd3', spots: '#7dd3fc', spiny: true,
+    tail: { color: 'rgba(225,29,72,0.8)', len: 0.36, spread: 0.54, fork: true }, fin: 'rgba(251,113,133,0.7)'
+  },
+  {
+    id: 'hairtail', name: '갈치', price: 450, len: 112, hRatio: 0.09, shape: 'ribbon', desc: '은빛 리본처럼 길쭉',
+    speed: 0.6, growMul: 0.85, school: false, zone: 'mid',
+    top: '#94a3b8', belly: '#f8fafc',
+    tail: { color: 'rgba(203,213,225,0)', len: 0.01, spread: 0.01 }, fin: 'rgba(226,232,240,0.55)'
+  },
+  {
+    id: 'puffer', name: '복어', price: 500, len: 48, hRatio: 0.7, shape: 'puffer', desc: '톡 치면 빵빵!',
+    speed: 0.5, growMul: 0.9, school: false, zone: 'mid',
+    top: '#a16207', belly: '#fefce8', spots: '#422006',
+    tail: { color: 'rgba(161,98,7,0.7)', len: 0.25, spread: 0.32 }, fin: 'rgba(250,204,21,0.5)'
+  },
+  {
+    id: 'flounder', name: '광어', price: 600, len: 66, hRatio: 0.55, shape: 'flat', desc: '바닥에 납작 엎드려요', lieDown: true,
+    speed: 0.4, growMul: 0.85, school: false, zone: 'bottom',
+    top: '#78716c', belly: '#a8a29e', mottle: '#292524',
+    tail: { color: 'rgba(120,113,108,0.85)', len: 0.18, spread: 0.3, solid: true }, fin: 'rgba(120,113,108,0.8)'
   }
 ];
 export const FISH_BY_ID = Object.fromEntries(FISH_SPECIES.map(f => [f.id, f]));
@@ -101,21 +137,21 @@ export const rollShiny = () => Math.random() < SHINY_RATE;
 
 // 장식 (모래 위에 놓는다) – 그림은 AquariumGame.jsx 의 drawDecor 가 그린다
 export const DECOR_ITEMS = [
-  { id: 'grass', name: '수초 덤불', price: 400, icon: '🌿' },
-  { id: 'rock', name: '둥근 바위', price: 300, icon: '🪨' },
-  { id: 'sword', name: '넓은잎 수초', price: 700, icon: '🍃' },
-  { id: 'coral', name: '분홍 산호', price: 900, icon: '🪸' },
-  { id: 'airstone', name: '뽀글 기포돌', price: 1000, icon: '🫧' },
-  { id: 'chest', name: '보물상자', price: 1500, icon: '💰' },
-  { id: 'castle', name: '모래성', price: 2000, icon: '🏰' },
-  { id: 'diver', name: '잠수부 아저씨', price: 2500, icon: '🤿' }
+  { id: 'grass', name: '수초 덤불', price: 70, icon: '🌿' },
+  { id: 'rock', name: '둥근 바위', price: 50, icon: '🪨' },
+  { id: 'sword', name: '넓은잎 수초', price: 120, icon: '🍃' },
+  { id: 'coral', name: '분홍 산호', price: 150, icon: '🪸' },
+  { id: 'airstone', name: '뽀글 기포돌', price: 170, icon: '🫧' },
+  { id: 'chest', name: '보물상자', price: 250, icon: '💰' },
+  { id: 'castle', name: '모래성', price: 330, icon: '🏰' },
+  { id: 'diver', name: '잠수부 아저씨', price: 420, icon: '🤿' }
 ];
 export const DECOR_BY_ID = Object.fromEntries(DECOR_ITEMS.map(d => [d.id, d]));
 
 // 바다 친구(기존 바다 생물 SVG) 가격
 export const FRIEND_PRICES = {
-  fish: 1500, crab: 1500, starfish: 1500, shrimp: 1500, seahorse: 2000, jellyfish: 2000,
-  octopus: 3000, squid: 3000, turtle: 3500, penguin: 3500, seal: 4000, shark: 5500, whale: 6000
+  fish: 250, crab: 250, starfish: 250, shrimp: 250, seahorse: 330, jellyfish: 330,
+  octopus: 500, squid: 500, turtle: 580, penguin: 580, seal: 670, shark: 920, whale: 1000
 };
 
 // 기본 물고기(처음 받는 치어 종류)를 상점에서 더 살 때 가격
@@ -131,8 +167,8 @@ export const sizeScale = (growth) => 0.55 + 0.45 * (1 - Math.pow(1 - Math.min(1,
 // ── 컨디션 & 성장 규칙 ──
 // 배부름(full)·기분(happy)은 물고기마다, 물 더러움(dirt)은 어항 전체 값이다 (모두 0~100)
 export const RATES = {
-  growPerSec: 1 / 7200,     // 컨디션 최고일 때 치어 → 다 큰 물고기 약 2시간 (종류별 growMul 곱)
-  offlineGrowMul: 0.1,      // 앱을 꺼둔 동안은 10% 속도로 자란다 (배고파지면 그마저 멈춤 → 며칠에 걸쳐 자람)
+  growPerSec: 1 / 10800,    // 컨디션 최고일 때 치어 → 다 큰 물고기 약 3시간 (종류별 growMul 곱)
+  offlineGrowMul: 0.08,     // 앱을 꺼둔 동안은 8% 속도로 자란다 (배고파지면 그마저 멈춤 → 며칠에 걸쳐 자람)
   fullDropPerSec: 100 / 420, // 놀 때 배부름 100 → 0 약 7분
   offlineFullDropPerSec: 100 / (8 * 3600),
   dirtPerSec: 100 / 1500,   // 놀 때 물 더러움 0 → 100 약 25분
