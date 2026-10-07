@@ -1012,7 +1012,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     };
     // 밥 한 번 = 한 그릇: 물고기 수에 맞춘 양을 한꺼번에 떨어뜨린다. 남아 있으면 더 주지 않는다.
     s.feed = () => {
-      if (s.food.length || s.shaker) { showToast('🍚 아직 밥이 남아 있어요!'); return; }
+      // 물에 떠 있거나 가라앉는 중인 밥이 있으면 더 못 준다 (바닥에 다 떨어지면 다시 줄 수 있음)
+      if (s.food.some(fd => fd.state !== 'ground') || s.shaker) { showToast('🍚 아직 밥이 남아 있어요!'); return; }
       const x = s.W * (0.25 + Math.random() * 0.5);
       s.shaker = { x, t: 0, dur: 0.6, dropped: false };
       audio.playYum();
@@ -1317,19 +1318,22 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         const reach = 220 + hunger * 1000;
         let target = null, td = reach * reach;
         s.food.forEach(fd => {
-          if (fd.state === 'float' && fd.t > 0.6 && hunger < 0.45) return;
+          if (fd.state === 'float' && hunger < 0.12) return;   // 배고픈 물고기는 수면 밥도 찾아간다
           const dx = fd.x - r.x, dy = fd.y - r.y, d2 = dx * dx + dy * dy;
           if (d2 < td) { td = d2; target = fd; }
         });
         // 배고프면 슬퍼도 밥 앞에서는 힘을 낸다
         let maxSp = 70 * sp.speed * (1 + r.panic * 1.6) * (sad && !(target && hunger > 0.5) ? 0.5 : 1) * (0.7 + 0.3 * sizeScale(f.growth)) * s.k;
-        if (target && f.full < 98 && (hunger > 0.12 || td < 110 * 110)) {
+        const chasing = !!target && f.full < 98 && (hunger > 0.12 || td < 110 * 110);
+        if (chasing) {
           const dx = target.x - r.x, dy = target.y - r.y, d = Math.sqrt(td) || 1;
           const pull = 360 + hunger * 1100;
           fx += dx / d * pull; fy += dy / d * pull;
           maxSp *= 1.3 + hunger * 1.9;
           r.eager = hunger;
-          if (d < Math.max(8, L * 0.45)) {
+          if (pref != null) fy -= (pref - r.y) * 0.9;   // 밥을 쫓을 때는 머무는 높이(바닥·슬픔)에 끌려가지 않게
+          if (target.y < top + 20) fy -= (top + 20 - Math.max(r.y, top)) * 7;   // 수면 밥: 위쪽 벽 힘 상쇄
+          if (d < Math.max(14 * s.k, L * 0.6)) {
             target.eaten = true;
             const wasHungry = f.full < 70;
             f.full = Math.min(100, f.full + 9); f.happy = Math.min(100, f.happy + 2);
@@ -1381,7 +1385,9 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         r.puffNow = (r.puffNow || 0) + ((r.puffT > 0 ? 1 : 0) - (r.puffNow || 0)) * Math.min(1, dt * 5);
         r.boing = Math.max(0, r.boing - dt * 1.8);
         r.happyT = Math.max(0, r.happyT - dt);
-        r.x = clamp(r.x + r.vx * dt, 6, s.W - 6); r.y = clamp(r.y + r.vy * dt, top, bottom);
+        // 밥을 쫓을 때는 수면·바닥 가까이까지 갈 수 있다
+        const yLo = chasing ? Math.min(top, target.y + 2) : top, yHi = chasing ? Math.max(bottom, target.y - 3) : bottom;
+        r.x = clamp(r.x + r.vx * dt, 6, s.W - 6); r.y = clamp(r.y + r.vy * dt, yLo, yHi);
         r.phase += dt * (5 + spd * 0.12 / s.k) * (sad ? 0.6 : 1) * (1 + (r.eager || 0) * 0.8);
         r.eager = Math.max(0, (r.eager || 0) - dt);
         // 진행 방향 (좌우가 자주 바뀌지 않게)
