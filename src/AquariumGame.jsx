@@ -937,7 +937,18 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       const g = bx.createLinearGradient(0, s.surfaceBase, 0, s.H);
       g.addColorStop(0, '#67d4f5'); g.addColorStop(0.28, '#16a3c9'); g.addColorStop(0.68, '#0e6f8f'); g.addColorStop(1, '#0c4a63');
       bx.fillStyle = g; bx.fillRect(0, 0, s.W, s.H);
-      // 멀리 보이는 수초 실루엣 (위로 갈수록 물빛에 녹아든다)
+      const drawRidge = (cx) => {
+        cx.fillStyle = 'rgba(14,90,100,0.4)';
+        cx.beginPath(); cx.moveTo(0, s.floor);
+        for (let x = 0; x <= s.W; x += 40) cx.lineTo(x, s.floor - 26 - Math.sin(x * 0.013) * 16 - Math.sin(x * 0.041) * 6);
+        cx.lineTo(s.W, s.floor); cx.closePath(); cx.fill();
+      };
+      // 수초가 없을 때의 배경 (수초 실루엣 없음)
+      const [pc, px0] = makeLayer(s.W, s.H);
+      px0.drawImage(bc, 0, 0, s.W, s.H);
+      drawRidge(px0);
+      s.backdropPlain = pc;
+      // 멀리 보이는 수초 실루엣 (수초를 놓았을 때만, 위로 갈수록 물빛에 녹아든다)
       const far = bx.createLinearGradient(0, s.floor - s.H * 0.6, 0, s.floor);
       far.addColorStop(0, 'rgba(20,110,100,0)'); far.addColorStop(1, 'rgba(20,110,100,0.32)');
       bx.fillStyle = far;
@@ -947,10 +958,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         bx.quadraticCurveTo(px - 30 + (i % 3) * 18, s.floor - ph * 0.6, px + (i % 2 ? 12 : -10), s.floor - ph);
         bx.quadraticCurveTo(px + 26, s.floor - ph * 0.5, px + 22, s.floor); bx.fill();
       }
-      bx.fillStyle = 'rgba(14,90,100,0.4)';
-      bx.beginPath(); bx.moveTo(0, s.floor);
-      for (let x = 0; x <= s.W; x += 40) bx.lineTo(x, s.floor - 26 - Math.sin(x * 0.013) * 16 - Math.sin(x * 0.041) * 6);
-      bx.lineTo(s.W, s.floor); bx.closePath(); bx.fill();
+      drawRidge(bx);
       s.backdrop = bc;
 
       // 자갈 바닥
@@ -1690,7 +1698,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     const draw = () => {
       const { W, H, t, k } = s;
       ctx.setTransform(s.dpr, 0, 0, s.dpr, 0, 0);
-      ctx.drawImage(s.backdrop, 0, 0, W, H);
+      ctx.drawImage(game.decor.some(d => d.id === 'grass' || d.id === 'sword') ? s.backdrop : s.backdropPlain, 0, 0, W, H);
 
       // 수면 위 공기 (물갈이 중엔 내려간다)
       const ag = ctx.createLinearGradient(0, 0, 0, s.surface);
