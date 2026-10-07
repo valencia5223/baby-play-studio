@@ -20,7 +20,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = path.join(root, 'public', 'voice');
 const indexFile = path.join(root, 'src', 'voiceIndex.json');
 
-const DATA_NAMES = ['REAL_ANIMALS', 'REAL_FRUITS', 'REAL_VEHICLES', 'FEEDABLE_ANIMALS', 'ALL_FOOD_ITEMS', 'OCEAN_CREATURES', 'BABY_PUZZLES', 'SLEEP_ANIMAL_DATA'];
+const DATA_NAMES = ['REAL_ANIMALS', 'REAL_FRUITS', 'REAL_VEHICLES', 'FEEDABLE_ANIMALS', 'ALL_FOOD_ITEMS', 'OCEAN_CREATURES', 'BABY_PUZZLES'];
 
 async function loadLines() {
   const server = await createServer({
@@ -47,7 +47,7 @@ async function loadLines() {
     const lines = collectVoiceLines({
       animals: d.REAL_ANIMALS, fruits: d.REAL_FRUITS, vehicles: d.REAL_VEHICLES,
       feedAnimals: d.FEEDABLE_ANIMALS, foods: d.ALL_FOOD_ITEMS, oceanCreatures: d.OCEAN_CREATURES,
-      puzzles: d.BABY_PUZZLES, sleepAnimals: d.SLEEP_ANIMAL_DATA
+      puzzles: d.BABY_PUZZLES
     });
     const byKey = new Map();
     lines.forEach(l => byKey.set(voiceKey(l), formatSpokenKoreanText(l)));
