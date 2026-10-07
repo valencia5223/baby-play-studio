@@ -729,6 +729,22 @@ function IconButton({ icon, label, color, active, onClick }) {
   );
 }
 
+// 밥 버튼 그림: 공기에 수북이 담은 고봉밥
+function RiceBowlIcon() {
+  const grains = [[14, 15, -20], [20, 11, 10], [26, 13, -35], [17, 20, 30], [24, 18, -5], [30, 19, 25], [11, 21, -40], [21, 25, 15], [28, 24, -25], [34, 23, 40]];
+  return (
+    <svg width="40" height="36" viewBox="0 0 44 40" aria-hidden="true">
+      <path d="M15 6 q-2 -3 0 -5 M22 5 q-2 -3 0 -5 M29 6 q-2 -3 0 -5" stroke="rgba(255,255,255,0.85)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      <path d="M5 25 C5 9 13 7 22 7 C31 7 39 9 39 25 Z" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
+      <ellipse cx="16" cy="13" rx="5" ry="3" fill="#f8fafc" opacity="0.9" />
+      {grains.map(([x, y, a], i) => <ellipse key={i} cx={x} cy={y} rx="2" ry="1.1" transform={`rotate(${a} ${x} ${y})`} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="0.5" />)}
+      <path d="M2 24 H42 C41 33 34 38 22 38 C10 38 3 33 2 24 Z" fill="#38bdf8" stroke="#0369a1" strokeWidth="1.4" />
+      <path d="M8 29 H36" stroke="#e0f2fe" strokeWidth="1.6" strokeDasharray="3 2.5" />
+      <rect x="15" y="36.5" width="14" height="3" rx="1.2" fill="#0369a1" />
+    </svg>
+  );
+}
+
 // 어항 물 상태: 깨끗하면 웃는 얼굴, 더러우면 찡그린 얼굴
 function WaterMeter({ value }) {
   const face = value >= 60 ? '😊' : value >= 30 ? '😐' : '😣';
@@ -975,7 +991,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     };
     // 밥 한 번 = 한 그릇: 물고기 수에 맞춘 양을 한꺼번에 떨어뜨린다. 남아 있으면 더 주지 않는다.
     s.feed = () => {
-      if (s.food.length || s.shaker) { showToast('🍤 아직 밥이 남아 있어요!'); return; }
+      if (s.food.length || s.shaker) { showToast('🍚 아직 밥이 남아 있어요!'); return; }
       const x = s.W * (0.25 + Math.random() * 0.5);
       s.shaker = { x, t: 0, dur: 0.6, dropped: false };
       audio.playYum();
@@ -1919,7 +1935,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         </div>
         <WaterMeter value={hud.clean} />
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>
-          <IconButton icon="🍤" label="밥" color="#f97316" onClick={() => { setMode('play'); if (simRef.current) simRef.current.feed(); }} />
+          <IconButton icon={<RiceBowlIcon />} label="밥" color="#f97316" onClick={() => { setMode('play'); if (simRef.current) simRef.current.feed(); }} />
           <IconButton icon="🧽" label="청소" color="#10b981" active={mode === 'clean'} onClick={() => setMode(mode === 'clean' ? 'play' : 'clean')} />
           <IconButton icon="🚿" label="물갈이" color="#0ea5e9" onClick={() => { if (simRef.current) simRef.current.startWaterChange(); }} />
           <IconButton icon="🛒" label="상점" color="#8b5cf6" onClick={() => setShopOpen(true)} />
@@ -2041,7 +2057,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                 <button onClick={() => setInfo(null)} style={{ border: 'none', background: '#e2e8f0', borderRadius: '12px', padding: '4px 10px', fontWeight: 900, cursor: 'pointer' }}>✕</button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', marginTop: '8px', fontSize: '0.8rem', fontWeight: 800, color: '#334155' }}>
-                {[['🍤 배부름', infoFish.full, '#facc15'], ['💗 기분', infoFish.happy, '#f472b6'], ['💪 컨디션', cond, '#22c55e'], ['🌱 성장', infoFish.growth * 100, '#0ea5e9']].map(([label, v, col]) => (
+                {[['🍚 배부름', infoFish.full, '#facc15'], ['💗 기분', infoFish.happy, '#f472b6'], ['💪 컨디션', cond, '#22c55e'], ['🌱 성장', infoFish.growth * 100, '#0ea5e9']].map(([label, v, col]) => (
                   <div key={label}>
                     {label} {Math.round(v)}%
                     <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '6px', overflow: 'hidden', marginTop: '2px' }}>
