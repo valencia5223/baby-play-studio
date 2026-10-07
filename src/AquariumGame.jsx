@@ -2,25 +2,19 @@
 // 🐠 내 어항 키우기 (다마고치형 어항 RPG)
 //  - 치어로 시작해 밥 주기·청소·물갈이로 돌보면, 물고기마다 컨디션에 따라 자란다
 //  - 돌봐서 모은 조개(포인트)로 상점에서 물고기(치어)·장식·바다 친구를 사서 꾸민다
-//  - 그래픽: 캔버스(물고기·수초·장식·모래·거품) + WebGL 빛 레이어(물결 빛무늬·햇살)
-//    + SVG 바다 친구 + 유리 이끼/탁한 물 레이어
+//  - 그래픽: 캔버스(물고기·바다 친구·수초·장식·모래·거품) + WebGL 빛 레이어(물결 빛무늬·햇살)
+//    + 유리 이끼/탁한 물 레이어
 //  - 진행 상황은 이 기기의 localStorage 에 저장된다 (aquariumData.js)
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
 import { VOICE, attachJosa } from './voiceLines.js';
 import {
-  FISH_SPECIES, FISH_BY_ID, GUPPY_BY_ID, rollShiny, DECOR_ITEMS, DECOR_BY_ID, FRIEND_PRICES, FRIEND_DESC, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
-  stageOf, sizeScale, RATES, newFriend, friendGrowFactor, breedOf, mateStatus, SEX_NAMES, isNightTime, isSad, conditionOf, growFactor, REWARDS,
+  FISH_SPECIES, FISH_BY_ID, GUPPY_BY_ID, DECOR_ITEMS, DECOR_BY_ID, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
+  stageOf, sizeScale, RATES, breedOf, mateStatus, SEX_NAMES, isNightTime, isSad, conditionOf, growFactor, REWARDS,
   loadGame, saveGame, catchUpOffline, newFish, newUid, todayKey
 } from './aquariumData.js';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-
-// 바다 친구 움직임: swim(헤엄) / crawl(모래 위) / pulse(해파리처럼 둥실)
-const FRIEND_MOTION = { crab: 'crawl', starfish: 'crawl', jellyfish: 'pulse' };
-// 그림이 오른쪽을 보고 있어 진행 방향에 따라 좌우를 뒤집는 친구
-const FRIEND_FLIP = new Set(['fish', 'turtle', 'whale', 'shark', 'seal', 'shrimp', 'seahorse']);
-const FRIEND_SPEED = { seahorse: 0.45, octopus: 0.6, turtle: 0.7, whale: 0.65, starfish: 0.35, crab: 1 };
 
 // 장식 크기(터치·끌기 판정용, 화면 배율 k 를 곱한다)
 const DECOR_BOX = {
@@ -29,11 +23,24 @@ const DECOR_BOX = {
 };
 const FOOD_COLORS = ['#f97316', '#dc2626', '#84cc16', '#facc15', '#a16207'];
 
-// 불 밝기 단계: 0 꺼짐 · 1 · 2 · 3 최대 (어둠 농도 / WebGL 빛 세기)
-const LIGHT_DARK = [0.8, 0.58, 0.3, 0];
-const LIGHT_GL = [0.08, 0.4, 0.75, 1];
-// 밤에는 조명을 켜도 이 정도까지만 밝다 (달빛 어항)
-const NIGHT_DARK = 0.62, NIGHT_GL = 0.25;
+// ── 밝기 ── 조명을 끈 상태의 밝기는 실제 시계를 따른다:
+// 낮(아침 8시 ~ 오후 5시)에는 햇빛으로 꺼도 환하고, 저녁부터 점점 어두워져 밤(저녁 7시 반 ~ 아침 6시)엔 깜깜하다.
+// 조명은 그 어둠을 단계만큼 걷어낸다 → 저녁·밤에는 불을 켜야 환하다.
+const MAX_DARK = 0.8;
+const DAYLIGHT_KEYS = [[0, 1], [6, 1], [8, 0], [17, 0], [19.5, 1], [24, 1]];   // [시각, 어둠 비율 0~1]
+function ambientDark(d = new Date()) {
+  const h = d.getHours() + d.getMinutes() / 60;
+  for (let i = 1; i < DAYLIGHT_KEYS.length; i++) {
+    const [h0, v0] = DAYLIGHT_KEYS[i - 1], [h1, v1] = DAYLIGHT_KEYS[i];
+    if (h <= h1) return MAX_DARK * (v0 + (v1 - v0) * (h - h0) / (h1 - h0));
+  }
+  return MAX_DARK;
+}
+// 조명 단계(0 꺼짐 · 1 · 2 · 3 최대)별로 어둠을 걷어내는 정도
+const LAMP = [0, 0.45, 0.75, 1];
+const darkFor = (ambient, light) => ambient * (1 - LAMP[light]);
+// WebGL 빛무늬·햇살 세기: 낮엔 햇빛만으로 충분하고, 어두울 때는 조명이 빛을 채운다
+const glFor = (ambient, light) => { const sun = 0.08 + 0.92 * (1 - ambient / MAX_DARK); return sun + (1 - sun) * LAMP[light]; };
 
 // ═══════════════════════════════ 이로치 색 · 구피 디자인 ═══════════════════════════════
 function rgbToHsl(r, g, b) {
@@ -82,7 +89,7 @@ export function lookOf(sp, f) {
       ...look, shiny: true,
       top: shinyColor(look.top), belly: shinyColor(look.belly), fin: shinyColor(look.fin),
       bars: shinyColor(look.bars), spots: shinyColor(look.spots), waves: shinyColor(look.waves), mark: shinyColor(look.mark),
-      tuxedo: shinyColor(look.tuxedo), patches: shinyColor(look.patches),
+      tuxedo: shinyColor(look.tuxedo), patches: shinyColor(look.patches), accent: shinyColor(look.accent),
       bands: look.bands && look.bands.map(b => ({ ...b, color: shinyColor(b.color) })),
       tail: { ...t, color: shinyColor(t.color), grad: t.grad && t.grad.map(shinyColor), spots: shinyColor(t.spots) }
     };
@@ -117,6 +124,7 @@ function smoothClosed(ctx, pts) {
 // 원점(몸 가운데)에서 +x 방향을 보는 물고기를 그린다. L: 현재 몸 길이(px)
 // o.glowOnly: 어두울 때 빛나는 부분(야광 줄무늬·형광 꼬리)만 덧그린다 (o.glowK: 빛 세기 0~1)
 export function drawFish(ctx, sp, L, o = {}) {
+  if (CREATURE_SHAPES.has(sp.shape)) { drawCreature(ctx, sp, L, o); return; }
   const glowOnly = !!o.glowOnly;
   const growth = o.growth ?? 1;
   const fry = 1 - Math.min(1, growth / 0.6);           // 1 이면 갓 태어난 치어
@@ -471,6 +479,525 @@ export function drawFish(ctx, sp, L, o = {}) {
   ctx.restore();
 }
 
+// ═══════════════════════════════ 바다 친구 그리기 ═══════════════════════════════
+// 물고기와 같은 규칙으로 그린다: 원점이 몸 가운데, +x 방향을 본다. L: 현재 몸 길이(px)
+// 자면 눈을 감고, 슬프면 색이 바래고 눈물, 기쁘면 볼이 발그레, 아기일 때는 눈이 크고 조금 투명하다.
+const CREATURE_SHAPES = new Set(['crab', 'starfish', 'shrimp', 'seahorse', 'jellyfish', 'octopus', 'squid', 'turtle', 'penguin', 'seal', 'shark', 'whale']);
+const TAU = Math.PI * 2;
+
+// 슬플 때 색을 회색 쪽으로 바랜다
+function dullColor(c) {
+  if (typeof c !== 'string') return c;
+  let r, g, b, a = null;
+  if (c[0] === '#') { r = parseInt(c.slice(1, 3), 16); g = parseInt(c.slice(3, 5), 16); b = parseInt(c.slice(5, 7), 16); }
+  else {
+    const m = c.match(/rgba?\(([^)]+)\)/); if (!m) return c;
+    [r, g, b, a] = m[1].split(',').map(Number);
+  }
+  const mix = (v, to) => Math.round(v + (to - v) * 0.45);
+  const [nr, ng, nb] = [mix(r, 100), mix(g, 116), mix(b, 139)];
+  return a == null || Number.isNaN(a) ? `rgb(${nr},${ng},${nb})` : `rgba(${nr},${ng},${nb},${a})`;
+}
+
+// 끝으로 갈수록 가늘어지는 선 (다리·촉수·꼬리)
+function taperStroke(ctx, pts, w0, w1, color) {
+  ctx.strokeStyle = color; ctx.lineCap = 'round';
+  for (let i = 1; i < pts.length; i++) {
+    ctx.lineWidth = Math.max(0.6, w0 + (w1 - w0) * (i / (pts.length - 1)));
+    ctx.beginPath(); ctx.moveTo(pts[i - 1][0], pts[i - 1][1]); ctx.lineTo(pts[i][0], pts[i][1]); ctx.stroke();
+  }
+}
+
+function creatureEye(ctx, x, y, r, o) {
+  if (o.sleep) {
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = Math.max(0.8, r * 0.45); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(x, y - r * 0.35, r * 1.05, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    return;
+  }
+  ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(x, y, r * 1.3, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(x + r * 0.15, y, r, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x + r * 0.45, y - r * 0.4, r * 0.36, 0, TAU); ctx.fill();
+  if (o.sad) {
+    ctx.fillStyle = 'rgba(125,211,252,0.9)';
+    ctx.beginPath(); ctx.ellipse(x - r * 0.2, y + r * 2.2, r * 0.45, r * 0.7, 0, 0, TAU); ctx.fill();
+  } else if (o.happy) {
+    ctx.fillStyle = 'rgba(244,63,94,0.45)';
+    ctx.beginPath(); ctx.arc(x - r * 1.2, y + r * 1.8, r * 0.8, 0, TAU); ctx.fill();
+  }
+}
+
+function smile(ctx, x, y, r, color = 'rgba(15,23,42,0.6)') {
+  ctx.strokeStyle = color; ctx.lineWidth = Math.max(0.8, r * 0.35); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(x, y - r * 0.6, r, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+}
+
+function drawCreature(ctx, sp, L, o = {}) {
+  const growth = o.growth ?? 1;
+  const fry = 1 - Math.min(1, growth / 0.6);
+  const ph = o.phase || 0;
+  const H = L * sp.hRatio;
+  const col = (c) => (o.sad ? dullColor(c) : c);
+  const top = col(sp.top), belly = col(sp.belly), fin = col(sp.fin || sp.top), spots = col(sp.spots), accent = col(sp.accent || sp.belly);
+  const er = Math.max(1.4, L * 0.045 * (1 + fry * 0.6));
+  const grad = (y0, y1, stop = 0.62) => {
+    const g = ctx.createLinearGradient(0, y0, 0, y1);
+    g.addColorStop(0, top); g.addColorStop(stop, belly); g.addColorStop(1, belly);
+    return g;
+  };
+  // 지금 경로를 칠하고, 그 안에 무늬(inner) + 위쪽 반사광·아래쪽 그늘을 덧그린다
+  const finish = (inner) => {
+    ctx.fill();
+    ctx.save(); ctx.clip();
+    if (inner) inner();
+    const sh = ctx.createLinearGradient(0, -H * 0.55, 0, H * 0.55);
+    sh.addColorStop(0, 'rgba(255,255,255,0.3)'); sh.addColorStop(0.35, 'rgba(255,255,255,0)');
+    sh.addColorStop(0.8, 'rgba(15,23,42,0)'); sh.addColorStop(1, 'rgba(15,23,42,0.25)');
+    ctx.fillStyle = sh; ctx.fillRect(-L, -H * 1.2, L * 2, H * 2.4);
+    ctx.restore();
+  };
+  const dots = (pts, r) => { ctx.fillStyle = spots; pts.forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, Math.max(0.7, r), 0, TAU); ctx.fill(); }); };
+
+  // 해파리 갓 (야광에서도 같은 모양)
+  const pulse = Math.sin(ph * 0.5);
+  const bw = L * 0.46 * (1 + pulse * 0.08), bh = H * 0.3 * (1 - pulse * 0.08), by = -H * 0.12;
+  const bellPath = () => {
+    ctx.beginPath();
+    ctx.moveTo(-bw, by);
+    ctx.bezierCurveTo(-bw, by - bh * 1.6, bw, by - bh * 1.6, bw, by);
+    for (let i = 0; i < 6; i++) {
+      const x1 = bw - (i + 0.5) * 2 * bw / 6, x2 = bw - (i + 1) * 2 * bw / 6;
+      ctx.quadraticCurveTo(x1, by + bh * 0.28, x2, by);
+    }
+    ctx.closePath();
+  };
+
+  if (o.glowOnly) {
+    if (sp.glow) {
+      ctx.save();
+      ctx.globalAlpha *= (o.glowK ?? 1) * 0.8;
+      ctx.shadowColor = fin; ctx.shadowBlur = L * 0.5;
+      ctx.fillStyle = fin; bellPath(); ctx.fill();
+      ctx.restore();
+    }
+    return;
+  }
+
+  ctx.save();
+  ctx.globalAlpha *= 1 - fry * 0.25;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  switch (sp.shape) {
+    case 'shark': {
+      const w = Math.sin(ph) * H * 0.18;
+      ctx.fillStyle = fin;
+      // 초승달 꼬리
+      ctx.beginPath();
+      ctx.moveTo(-L * 0.36, -H * 0.1 + w * 0.5);
+      ctx.quadraticCurveTo(-L * 0.46, -H * 0.4 + w, -L * 0.58, -H * 0.85 + w * 1.4);
+      ctx.quadraticCurveTo(-L * 0.5, -H * 0.1 + w, -L * 0.47, w);
+      ctx.quadraticCurveTo(-L * 0.5, H * 0.15 + w, -L * 0.55, H * 0.6 + w * 1.4);
+      ctx.quadraticCurveTo(-L * 0.44, H * 0.3 + w, -L * 0.36, H * 0.1 + w * 0.5);
+      ctx.closePath(); ctx.fill();
+      // 세모 등지느러미
+      ctx.beginPath();
+      ctx.moveTo(L * 0.06, -H * 0.44);
+      ctx.quadraticCurveTo(-L * 0.02, -H * 0.8, -L * 0.1, -H * 1.08);
+      ctx.quadraticCurveTo(-L * 0.12, -H * 0.6, -L * 0.2, -H * 0.38);
+      ctx.closePath(); ctx.fill();
+      // 몸
+      ctx.beginPath();
+      ctx.moveTo(L * 0.5, H * 0.04);
+      ctx.quadraticCurveTo(L * 0.44, -H * 0.5, L * 0.08, -H * 0.5);
+      ctx.quadraticCurveTo(-L * 0.22, -H * 0.46, -L * 0.38, -H * 0.1 + w * 0.5);
+      ctx.lineTo(-L * 0.38, H * 0.1 + w * 0.5);
+      ctx.quadraticCurveTo(-L * 0.2, H * 0.44, L * 0.1, H * 0.46);
+      ctx.quadraticCurveTo(L * 0.44, H * 0.44, L * 0.5, H * 0.04);
+      ctx.closePath();
+      ctx.fillStyle = grad(-H * 0.5, H * 0.5, 0.56); finish();
+      // 가슴지느러미
+      ctx.fillStyle = fin;
+      ctx.save(); ctx.translate(L * 0.12, H * 0.3); ctx.rotate(Math.sin(ph * 1.2) * 0.15);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-L * 0.06, H * 0.5, -L * 0.16, H * 0.62); ctx.quadraticCurveTo(-L * 0.1, H * 0.2, -L * 0.1, 0); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      // 아가미 세 줄
+      ctx.strokeStyle = 'rgba(15,23,42,0.3)'; ctx.lineWidth = Math.max(0.7, L * 0.012);
+      for (let i = 0; i < 3; i++) {
+        const gx = L * (0.24 - i * 0.04);
+        ctx.beginPath(); ctx.moveTo(gx, -H * 0.18); ctx.quadraticCurveTo(gx - L * 0.02, 0, gx, H * 0.18); ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(15,23,42,0.55)'; ctx.lineWidth = Math.max(0.8, L * 0.014);
+      ctx.beginPath(); ctx.moveTo(L * 0.44, H * 0.2); ctx.quadraticCurveTo(L * 0.38, H * 0.3, L * 0.31, H * 0.22); ctx.stroke();
+      creatureEye(ctx, L * 0.33, -H * 0.12, er * 0.9, o);
+      break;
+    }
+    case 'whale': {
+      const w = Math.sin(ph) * H * 0.12;
+      // 꼬리지느러미
+      ctx.fillStyle = fin;
+      ctx.save(); ctx.translate(-L * 0.43, w); ctx.rotate(Math.sin(ph) * 0.25);
+      ctx.beginPath();
+      ctx.moveTo(L * 0.04, 0);
+      ctx.quadraticCurveTo(-L * 0.04, -H * 0.1, -L * 0.12, -H * 0.42);
+      ctx.quadraticCurveTo(-L * 0.06, -H * 0.08, -L * 0.03, 0);
+      ctx.quadraticCurveTo(-L * 0.06, H * 0.08, -L * 0.12, H * 0.42);
+      ctx.quadraticCurveTo(-L * 0.04, H * 0.1, L * 0.04, 0);
+      ctx.fill();
+      ctx.restore();
+      // 몸
+      ctx.beginPath();
+      ctx.moveTo(L * 0.5, H * 0.05);
+      ctx.bezierCurveTo(L * 0.5, -H * 0.62, L * 0.0, -H * 0.6, -L * 0.26, -H * 0.22);
+      ctx.quadraticCurveTo(-L * 0.38, -H * 0.06 + w * 0.6, -L * 0.45, w);
+      ctx.quadraticCurveTo(-L * 0.38, H * 0.12 + w * 0.6, -L * 0.2, H * 0.32);
+      ctx.bezierCurveTo(L * 0.05, H * 0.56, L * 0.5, H * 0.55, L * 0.5, H * 0.05);
+      ctx.closePath();
+      ctx.fillStyle = top;
+      finish(() => {
+        // 밝은 배와 주름
+        ctx.fillStyle = belly;
+        ctx.beginPath(); ctx.ellipse(L * 0.15, H * 0.44, L * 0.38, H * 0.24, 0, 0, TAU); ctx.fill();
+        ctx.strokeStyle = 'rgba(30,64,175,0.22)'; ctx.lineWidth = Math.max(0.7, L * 0.01);
+        for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(L * 0.42, H * (0.28 + i * 0.06)); ctx.lineTo(-L * 0.08, H * (0.3 + i * 0.06)); ctx.stroke(); }
+      });
+      // 가슴지느러미
+      ctx.fillStyle = fin;
+      ctx.save(); ctx.translate(L * 0.1, H * 0.28); ctx.rotate(0.6 + Math.sin(ph * 1.1) * 0.3);
+      ctx.beginPath(); ctx.ellipse(-L * 0.06, 0, L * 0.11, H * 0.09, 0, 0, TAU); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(15,23,42,0.45)'; ctx.lineWidth = Math.max(0.8, L * 0.012);
+      ctx.beginPath(); ctx.moveTo(L * 0.49, H * 0.14); ctx.quadraticCurveTo(L * 0.34, H * 0.26, L * 0.2, H * 0.16); ctx.stroke();
+      creatureEye(ctx, L * 0.27, H * 0.02, er * 0.85, o);
+      // 기분 좋으면 머리 위로 물을 뿜는다
+      if (o.happy) {
+        ctx.fillStyle = 'rgba(186,230,253,0.85)';
+        [[0.16, -0.75, 0.04], [0.11, -0.95, 0.03], [0.21, -0.95, 0.03], [0.16, -1.1, 0.025]].forEach(([x, y, r]) => {
+          ctx.beginPath(); ctx.arc(L * x, H * y, L * r, 0, TAU); ctx.fill();
+        });
+      }
+      break;
+    }
+    case 'turtle': {
+      const fl = Math.sin(ph * 0.8);
+      const flipper = (x, y, rot, rx, ry) => {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+        ctx.beginPath(); ctx.ellipse(rx * 0.7, 0, rx, ry, 0, 0, TAU); ctx.fill();
+        ctx.restore();
+      };
+      // 먼 쪽 지느러미 (어둡게)
+      ctx.fillStyle = fin;
+      flipper(L * 0.14, -H * 0.12, -0.9 + fl * 0.4, L * 0.18, H * 0.12);
+      flipper(-L * 0.26, -H * 0.05, -2.5 - fl * 0.3, L * 0.09, H * 0.08);
+      // 머리
+      ctx.fillStyle = accent;
+      ctx.beginPath(); ctx.ellipse(L * 0.37, -H * 0.02, L * 0.13, H * 0.2, 0, 0, TAU); ctx.fill();
+      // 등껍질
+      ctx.beginPath();
+      ctx.moveTo(-L * 0.37, H * 0.14);
+      ctx.bezierCurveTo(-L * 0.36, -H * 0.62, L * 0.3, -H * 0.62, L * 0.3, H * 0.12);
+      ctx.quadraticCurveTo(-L * 0.04, H * 0.32, -L * 0.37, H * 0.14);
+      ctx.closePath();
+      ctx.fillStyle = grad(-H * 0.5, H * 0.3, 0.95);
+      finish(() => {
+        // 육각형 무늬
+        ctx.strokeStyle = 'rgba(217,249,157,0.55)'; ctx.lineWidth = Math.max(0.8, L * 0.014);
+        ctx.beginPath(); ctx.ellipse(-L * 0.03, -H * 0.12, L * 0.14, H * 0.16, 0, 0, TAU); ctx.stroke();
+        [[-0.17, -0.18, -0.3, 0.02], [0.11, -0.18, 0.22, 0.02], [-0.03, -0.28, -0.03, -0.42], [-0.15, -0.05, -0.27, -0.28], [0.09, -0.05, 0.2, -0.28]].forEach(([x1, y1, x2, y2]) => {
+          ctx.beginPath(); ctx.moveTo(L * x1, H * y1); ctx.lineTo(L * x2, H * y2); ctx.stroke();
+        });
+      });
+      // 배딱지 테두리
+      ctx.strokeStyle = belly; ctx.lineWidth = Math.max(1, H * 0.08);
+      ctx.beginPath(); ctx.moveTo(-L * 0.36, H * 0.14); ctx.quadraticCurveTo(-L * 0.04, H * 0.32, L * 0.3, H * 0.12); ctx.stroke();
+      // 가까운 쪽 지느러미
+      ctx.fillStyle = accent;
+      flipper(L * 0.12, H * 0.2, 0.9 - fl * 0.45, L * 0.2, H * 0.14);
+      flipper(-L * 0.27, H * 0.18, 2.4 + fl * 0.3, L * 0.1, H * 0.09);
+      creatureEye(ctx, L * 0.41, -H * 0.08, er * 0.85, o);
+      smile(ctx, L * 0.44, H * 0.08, er * 0.7);
+      break;
+    }
+    case 'seal': {
+      const w = Math.sin(ph) * H * 0.15;
+      // 뒷지느러미
+      ctx.fillStyle = fin;
+      ctx.save(); ctx.translate(-L * 0.4, w * 0.6); ctx.rotate(Math.sin(ph) * 0.3);
+      ctx.beginPath(); ctx.ellipse(-L * 0.07, -H * 0.13, L * 0.1, H * 0.12, -0.5, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-L * 0.07, H * 0.13, L * 0.1, H * 0.12, 0.5, 0, TAU); ctx.fill();
+      ctx.restore();
+      // 몸
+      ctx.beginPath();
+      ctx.moveTo(L * 0.36, -H * 0.46);
+      ctx.bezierCurveTo(L * 0.1, -H * 0.56, -L * 0.25, -H * 0.4, -L * 0.42, w * 0.6);
+      ctx.bezierCurveTo(-L * 0.25, H * 0.45, L * 0.1, H * 0.56, L * 0.36, H * 0.44);
+      ctx.closePath();
+      ctx.fillStyle = grad(-H * 0.5, H * 0.5, 0.7);
+      finish(() => dots([[-0.1, -0.2], [0.05, -0.28], [-0.22, -0.05], [0.12, -0.1], [-0.02, 0.0]].map(([x, y]) => [L * x, H * y]), L * 0.012));
+      // 머리
+      ctx.beginPath(); ctx.ellipse(L * 0.34, -H * 0.04, L * 0.17, H * 0.47, 0, 0, TAU);
+      ctx.fillStyle = grad(-H * 0.5, H * 0.45, 0.72); finish();
+      // 주둥이 · 코 · 수염
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.ellipse(L * 0.46, H * 0.1, L * 0.065, H * 0.17, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#1c1917';
+      ctx.beginPath(); ctx.ellipse(L * 0.51, H * 0.0, L * 0.024, H * 0.07, 0, 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(28,25,23,0.55)'; ctx.lineWidth = Math.max(0.6, L * 0.007);
+      [[0.04], [0.14], [0.22]].forEach(([yy]) => { ctx.beginPath(); ctx.moveTo(L * 0.48, H * 0.12); ctx.lineTo(L * 0.6, H * yy); ctx.stroke(); });
+      // 앞지느러미
+      ctx.fillStyle = fin;
+      ctx.save(); ctx.translate(L * 0.14, H * 0.3); ctx.rotate(0.6 + Math.sin(ph * 1.3) * 0.35);
+      ctx.beginPath(); ctx.ellipse(-L * 0.05, H * 0.1, L * 0.1, H * 0.15, 0.3, 0, TAU); ctx.fill();
+      ctx.restore();
+      creatureEye(ctx, L * 0.39, -H * 0.16, er * 1.05, o);
+      break;
+    }
+    case 'penguin': {
+      const fl = Math.sin(ph * 1.5);
+      // 발
+      ctx.fillStyle = accent;
+      ctx.beginPath(); ctx.moveTo(-L * 0.38, H * 0.12); ctx.lineTo(-L * 0.55, H * 0.04 + fl * H * 0.06); ctx.lineTo(-L * 0.52, H * 0.26); ctx.closePath(); ctx.fill();
+      // 몸 (등은 까맣고 배는 하얗다)
+      ctx.beginPath(); ctx.ellipse(0, 0, L * 0.44, H * 0.5, 0, 0, TAU);
+      ctx.fillStyle = top;
+      finish(() => {
+        ctx.fillStyle = belly;
+        ctx.beginPath(); ctx.ellipse(L * 0.04, H * 0.3, L * 0.4, H * 0.36, 0, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(L * 0.3, -H * 0.08, L * 0.09, H * 0.17, 0, 0, TAU); ctx.fill();
+      });
+      // 부리
+      ctx.fillStyle = accent;
+      ctx.beginPath(); ctx.moveTo(L * 0.4, -H * 0.14); ctx.lineTo(L * 0.58, -H * 0.03); ctx.lineTo(L * 0.41, H * 0.06); ctx.closePath(); ctx.fill();
+      // 날개 (파닥파닥)
+      ctx.fillStyle = fin;
+      ctx.save(); ctx.translate(L * 0.05, -H * 0.02); ctx.rotate(0.3 + fl * 0.5);
+      ctx.beginPath(); ctx.ellipse(-L * 0.14, 0, L * 0.18, H * 0.12, 0, 0, TAU); ctx.fill();
+      ctx.restore();
+      creatureEye(ctx, L * 0.31, -H * 0.12, er * 0.9, o);
+      break;
+    }
+    case 'octopus': {
+      // 다리 여덟 개: 머리 아래에서 뒤로 흐느적
+      for (let i = 0; i < 8; i++) {
+        const bx = L * (0.24 - i * 0.055), byy = H * 0.12;
+        const pts = [];
+        for (let j = 0; j <= 9; j++) {
+          const q = j / 9;
+          pts.push([bx - q * L * (0.44 - i * 0.02), byy + q * H * (0.22 + (i % 4) * 0.08) + Math.sin(ph * 1.2 - q * 4 - i) * H * 0.12 * q]);
+        }
+        taperStroke(ctx, pts, L * 0.085, L * 0.02, i % 2 ? top : col('#be123c'));
+        if (i % 2) dots(pts.slice(2, 8).filter((_, j) => j % 2 === 0).map(([x, y]) => [x, y + L * 0.02]), L * 0.012);
+      }
+      // 둥근 머리
+      ctx.beginPath(); ctx.ellipse(L * 0.1, -H * 0.12, L * 0.3, H * 0.42, -0.25, 0, TAU);
+      ctx.fillStyle = grad(-H * 0.55, H * 0.3, 0.9);
+      finish(() => dots([[0.02, -0.38], [0.16, -0.32], [-0.08, -0.18], [0.08, -0.12]].map(([x, y]) => [L * x, H * y]), L * 0.03));
+      creatureEye(ctx, L * 0.2, -H * 0.02, er * 0.85, o);
+      creatureEye(ctx, L * 0.33, -H * 0.06, er * 0.85, o);
+      smile(ctx, L * 0.32, H * 0.14, er * 0.6);
+      break;
+    }
+    case 'squid': {
+      // 다리 (뒤로 흐느적, 긴 다리 두 개)
+      for (let i = 0; i < 8; i++) {
+        const long = i === 2 || i === 5, len = L * (long ? 0.5 : 0.3);
+        const pts = [];
+        for (let j = 0; j <= 8; j++) {
+          const q = j / 8;
+          pts.push([-L * 0.12 - q * len, (i - 3.5) * H * 0.08 * (1 + q * 0.6) + Math.sin(ph * 1.5 - q * 5 + i) * H * 0.12 * q]);
+        }
+        taperStroke(ctx, pts, H * 0.16, H * 0.04, top);
+      }
+      // 끝쪽 세모 지느러미
+      const flap = Math.sin(ph * 1.5) * 0.15;
+      ctx.fillStyle = fin;
+      ctx.beginPath(); ctx.moveTo(L * 0.52, 0); ctx.lineTo(L * 0.3, -H * (0.85 + flap)); ctx.lineTo(L * 0.2, 0); ctx.lineTo(L * 0.3, H * (0.85 + flap)); ctx.closePath(); ctx.fill();
+      // 머리
+      ctx.fillStyle = top;
+      ctx.beginPath(); ctx.ellipse(-L * 0.08, 0, L * 0.1, H * 0.4, 0, 0, TAU); ctx.fill();
+      // 몸통
+      ctx.beginPath();
+      ctx.moveTo(L * 0.52, 0);
+      ctx.quadraticCurveTo(L * 0.3, -H * 0.52, 0, -H * 0.44);
+      ctx.lineTo(0, H * 0.44);
+      ctx.quadraticCurveTo(L * 0.3, H * 0.52, L * 0.52, 0);
+      ctx.closePath();
+      ctx.fillStyle = grad(-H * 0.5, H * 0.5, 0.65);
+      finish(() => dots([[0.08, -0.22], [0.2, -0.12], [0.32, -0.08], [0.14, 0.02], [0.26, 0.1], [0.06, 0.2]].map(([x, y]) => [L * x, H * y]), L * 0.014));
+      creatureEye(ctx, -L * 0.07, -H * 0.06, er * 1.1, o);
+      break;
+    }
+    case 'crab': {
+      // 다리 세 쌍 (걸을 때 번갈아 들썩)
+      ctx.strokeStyle = fin; ctx.lineWidth = Math.max(1.2, L * 0.045);
+      [-1, 1].forEach(side => {
+        for (let i = 0; i < 3; i++) {
+          const bx = side * L * (0.16 + i * 0.07), byy = H * 0.12;
+          const lift = Math.sin(ph * 1.2 + i * 2 + (side > 0 ? 0 : 1.5)) * H * 0.06;
+          ctx.beginPath(); ctx.moveTo(bx * 0.8, byy); ctx.lineTo(bx + side * L * 0.12, byy + H * 0.04 - lift); ctx.lineTo(bx + side * L * 0.18, byy + H * 0.36 - lift * 0.5); ctx.stroke();
+        }
+      });
+      // 집게발
+      const open = 0.2 + Math.max(0, Math.sin(ph * 0.7)) * 0.35;
+      [-1, 1].forEach(side => {
+        ctx.strokeStyle = fin; ctx.lineWidth = Math.max(1.4, L * 0.06);
+        ctx.beginPath(); ctx.moveTo(side * L * 0.24, -H * 0.05); ctx.lineTo(side * L * 0.38, -H * 0.32); ctx.stroke();
+        ctx.save(); ctx.translate(side * L * 0.42, -H * 0.44);
+        ctx.fillStyle = top;
+        ctx.beginPath(); ctx.ellipse(side * L * 0.03, -H * 0.13, L * 0.045, H * 0.14, side * (0.3 + open), 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(side * L * 0.07, -H * 0.03, L * 0.035, H * 0.1, side * (0.9 + open), 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(0, H * 0.04, L * 0.08, H * 0.12, 0, 0, TAU); ctx.fill();
+        ctx.restore();
+      });
+      // 눈자루
+      ctx.strokeStyle = fin; ctx.lineWidth = Math.max(1, L * 0.03);
+      [-1, 1].forEach(side => { ctx.beginPath(); ctx.moveTo(side * L * 0.08, -H * 0.26); ctx.lineTo(side * L * 0.1, -H * 0.5); ctx.stroke(); });
+      // 몸통
+      ctx.beginPath(); ctx.ellipse(0, 0, L * 0.34, H * 0.34, 0, 0, TAU);
+      ctx.fillStyle = grad(-H * 0.34, H * 0.34, 0.75);
+      finish(() => {
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        [[-0.18, -0.14], [0, -0.2], [0.18, -0.14]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(L * x, H * y, L * 0.03, 0, TAU); ctx.fill(); });
+      });
+      creatureEye(ctx, -L * 0.1, -H * 0.55, er * 0.9, o);
+      creatureEye(ctx, L * 0.1, -H * 0.55, er * 0.9, o);
+      smile(ctx, 0, H * 0.1, er * 0.8);
+      break;
+    }
+    case 'starfish': {
+      const rot = Math.sin(ph * 0.15) * 0.15;
+      const pts = [];
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + i * Math.PI / 5 + rot;
+        const rr = i % 2 ? L * 0.22 : L * 0.6 * (1 + Math.sin(ph * 0.5 + i) * 0.04);
+        pts.push([Math.cos(a) * rr, Math.sin(a) * rr]);
+      }
+      smoothClosed(ctx, pts);
+      const g = ctx.createRadialGradient(0, -L * 0.05, L * 0.04, 0, 0, L * 0.5);
+      g.addColorStop(0, belly); g.addColorStop(1, top);
+      ctx.fillStyle = g;
+      finish(() => {
+        const arms = [];
+        for (let i = 0; i < 5; i++) {
+          const a = -Math.PI / 2 + i * TAU / 5 + rot;
+          [0.17, 0.27, 0.36].forEach(rr => arms.push([Math.cos(a) * L * rr, Math.sin(a) * L * rr]));
+        }
+        dots(arms, L * 0.022);
+      });
+      creatureEye(ctx, -L * 0.07, -L * 0.03, er * 0.85, o);
+      creatureEye(ctx, L * 0.07, -L * 0.03, er * 0.85, o);
+      smile(ctx, 0, L * 0.09, er * 0.7);
+      break;
+    }
+    case 'shrimp': {
+      const seg = [];
+      for (let i = 0; i < 6; i++) {
+        const q = i / 5;
+        seg.push({ x: L * (0.12 - q * 0.42), y: -H * 0.05 + H * 0.45 * q * q + Math.sin(ph - q * 2) * H * 0.04 * q, r: H * (0.3 - q * 0.14) });
+      }
+      const last = seg[5];
+      // 꼬리 부채
+      ctx.fillStyle = fin;
+      ctx.save(); ctx.translate(last.x - L * 0.04, last.y + H * 0.06); ctx.rotate(0.9 + Math.sin(ph) * 0.15);
+      [-0.5, 0, 0.5].forEach(a => { ctx.beginPath(); ctx.ellipse(Math.sin(a) * L * 0.05, L * 0.07, L * 0.04, L * 0.09, a, 0, TAU); ctx.fill(); });
+      ctx.restore();
+      // 다리
+      ctx.strokeStyle = fin; ctx.lineWidth = Math.max(0.7, L * 0.02);
+      for (let i = 0; i < 5; i++) {
+        const s0 = seg[Math.min(4, i)];
+        ctx.beginPath(); ctx.moveTo(s0.x + L * 0.04, s0.y + s0.r * 0.7); ctx.lineTo(s0.x + L * 0.04 + Math.sin(ph * 2 + i) * L * 0.03, s0.y + s0.r * 0.7 + H * 0.25); ctx.stroke();
+      }
+      // 마디 (꼬리 쪽부터)
+      for (let i = 5; i >= 1; i--) {
+        const s0 = seg[i];
+        ctx.beginPath(); ctx.ellipse(s0.x, s0.y, s0.r * 1.15, s0.r, 0.5 * i / 5, 0, TAU);
+        ctx.fillStyle = grad(s0.y - s0.r, s0.y + s0.r, 0.7); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = Math.max(0.6, L * 0.012); ctx.stroke();
+      }
+      // 머리 껍질 · 뿔
+      ctx.beginPath(); ctx.ellipse(L * 0.24, -H * 0.1, L * 0.19, H * 0.3, -0.15, 0, TAU);
+      ctx.fillStyle = grad(-H * 0.4, H * 0.2, 0.75); finish();
+      ctx.fillStyle = top;
+      ctx.beginPath(); ctx.moveTo(L * 0.38, -H * 0.24); ctx.lineTo(L * 0.56, -H * 0.34); ctx.lineTo(L * 0.4, -H * 0.12); ctx.closePath(); ctx.fill();
+      // 더듬이
+      ctx.strokeStyle = top; ctx.lineWidth = Math.max(0.6, L * 0.012);
+      [0, 1].forEach(j => {
+        ctx.beginPath(); ctx.moveTo(L * 0.36, -H * 0.2);
+        ctx.quadraticCurveTo(L * 0.55, -H * (0.7 + j * 0.2), L * (0.7 - j * 0.08), -H * (0.5 + j * 0.4) + Math.sin(ph * 1.3 + j) * H * 0.1);
+        ctx.stroke();
+      });
+      creatureEye(ctx, L * 0.3, -H * 0.24, er * 0.9, o);
+      break;
+    }
+    case 'seahorse': {
+      // 돌돌 말린 꼬리
+      const tail = [[-L * 0.06, H * 0.08], [-L * 0.08, H * 0.2], [-L * 0.05, H * 0.31]];
+      const cx = L * 0.08, cy = H * 0.36;
+      for (let j = 0; j <= 10; j++) {
+        const a = Math.PI - j * 0.5, rr = L * 0.13 * (1 - j / 14);
+        tail.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr + Math.sin(ph * 0.4) * L * 0.01]);
+      }
+      taperStroke(ctx, tail, L * 0.16, L * 0.04, top);
+      // 등지느러미 (빠르게 파닥)
+      ctx.fillStyle = fin;
+      ctx.beginPath(); ctx.ellipse(-L * 0.26, -H * 0.02, L * (0.07 + Math.sin(ph * 3) * 0.02), H * 0.08, 0, 0, TAU); ctx.fill();
+      // 몸 (배가 앞으로 볼록)
+      ctx.beginPath();
+      ctx.moveTo(L * 0.02, -H * 0.24);
+      ctx.bezierCurveTo(L * 0.32, -H * 0.15, L * 0.28, H * 0.1, -L * 0.03, H * 0.14);
+      ctx.bezierCurveTo(-L * 0.3, H * 0.05, -L * 0.28, -H * 0.18, -L * 0.08, -H * 0.26);
+      ctx.closePath();
+      ctx.fillStyle = grad(-H * 0.26, H * 0.14, 0.4);
+      finish(() => {
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = Math.max(0.7, L * 0.014);
+        for (let i = 0; i < 6; i++) { const yy = -H * 0.17 + i * H * 0.05; ctx.beginPath(); ctx.moveTo(L * 0.04, yy); ctx.lineTo(L * 0.3, yy + H * 0.01); ctx.stroke(); }
+      });
+      // 머리 · 주둥이 · 볏
+      ctx.fillStyle = top;
+      ctx.beginPath(); ctx.ellipse(L * 0.0, -H * 0.3, L * 0.17, H * 0.1, 0.3, 0, TAU); ctx.fill();
+      ctx.strokeStyle = top; ctx.lineWidth = Math.max(1.2, L * 0.1);
+      ctx.beginPath(); ctx.moveTo(L * 0.1, -H * 0.3); ctx.lineTo(L * 0.4, -H * 0.26); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-L * 0.12, -H * 0.35); ctx.lineTo(-L * 0.08, -H * 0.43); ctx.lineTo(-L * 0.02, -H * 0.37); ctx.lineTo(L * 0.02, -H * 0.45); ctx.lineTo(L * 0.06, -H * 0.36);
+      ctx.closePath(); ctx.fill();
+      creatureEye(ctx, L * 0.04, -H * 0.31, er * 0.9, o);
+      break;
+    }
+    case 'jellyfish': {
+      // 촉수
+      for (let i = 0; i < 6; i++) {
+        const x0 = (i - 2.5) / 2.5 * bw * 0.8;
+        const pts = [];
+        for (let j = 0; j <= 8; j++) { const q = j / 8; pts.push([x0 + Math.sin(ph * 0.8 - q * 5 + i) * L * 0.06 * q, by + q * H * 0.6]); }
+        taperStroke(ctx, pts, L * 0.035, L * 0.01, fin);
+      }
+      // 프릴 입팔
+      [-1, 1].forEach(side => {
+        const pts = [];
+        for (let j = 0; j <= 8; j++) { const q = j / 8; pts.push([side * L * 0.08 + Math.sin(ph * 0.9 - q * 6 + side) * L * 0.05 * q, by + q * H * 0.45]); }
+        taperStroke(ctx, pts, L * 0.08, L * 0.03, belly);
+      });
+      // 갓
+      bellPath();
+      const g = ctx.createRadialGradient(0, by - bh * 0.7, L * 0.04, 0, by - bh * 0.3, bw);
+      g.addColorStop(0, belly); g.addColorStop(1, top);
+      ctx.fillStyle = g;
+      finish();
+      creatureEye(ctx, -L * 0.11, by - bh * 0.5, er * 0.85, o);
+      creatureEye(ctx, L * 0.11, by - bh * 0.5, er * 0.85, o);
+      smile(ctx, 0, by - bh * 0.18, er * 0.6);
+      break;
+    }
+    default: break;
+  }
+
+  // 아기(알)를 가진 배는 밝고 볼록하게
+  const bellyK = o.belly || 0;
+  if (bellyK > 0.05) {
+    ctx.fillStyle = `rgba(255,255,255,${0.3 * bellyK})`;
+    ctx.beginPath(); ctx.ellipse(0, H * 0.22, L * 0.16 * (1 + bellyK * 0.4), H * 0.14 * (1 + bellyK * 0.6), 0, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
 // ═══════════════════════════════ 장식 그리기 ═══════════════════════════════
 // x: 가운데, y: 모래 위 바닥선, k: 화면 배율, t: 시간(초), rt: 상자 열림 등 상태
 export function drawDecor(ctx, id, x, y, k, t, rt = {}, flow = 0) {
@@ -708,7 +1235,7 @@ function FishPreview({ species }) {
     ctx.scale(d, d);
     ctx.translate(58, 37);
     // 작은 물고기도 잘 보이게 크게 (몸이 높은 종류는 칸에 맞게 조금 작게)
-    const L = species.hRatio > 0.8 ? 58 : clamp(species.len * 1.5, 56, 74);
+    const L = species.hRatio > 1.1 ? 66 / species.hRatio : species.hRatio > 0.8 ? 58 : clamp(species.len * 1.5, 56, 74);
     drawFish(ctx, lookOf(species, { variant: species.id === 'guppy' ? 'rainbow' : undefined }), L, { phase: 0.6, growth: 1, detail: true });
   }, [species]);
   return <canvas ref={ref} style={{ width: 110, height: 74 }} />;
@@ -824,12 +1351,11 @@ function WaterMeter({ value }) {
 }
 
 // ═══════════════════════════════ 본체 ═══════════════════════════════
-export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
+export default function AquariumGame({ audio, speak }) {
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
   const lightRef = useRef(null);
   const overlayRef = useRef(null);
-  const friendEls = useRef({});
   const simRef = useRef(null);
   const modeRef = useRef('play');
 
@@ -843,13 +1369,11 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
   const [naming, setNaming] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
   const [infoTick, setInfoTick] = useState(0);
-  const [friends, setFriends] = useState([]);      // 화면에 그릴 바다 친구 목록
-  const [placed, setPlaced] = useState({ decor: [], friends: [] });
+  const [placed, setPlaced] = useState({ decor: [] });
   const [toast, setToast] = useState(null);
   const [tiltState, setTiltState] = useState('none');
   const [light, setLight] = useState(3);            // 조명 단계 (처음엔 가장 밝게 켜짐)
 
-  const creatureById = (id) => creatures.find(c => c.id === id);
   const setMode = (m) => { modeRef.current = m; setModeState(m); };
 
   const showToast = (text) => {
@@ -873,12 +1397,12 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     const s = {
       game, W: 0, H: 0, dpr: 1, t: 0, k: 1, quality: 1, slow: 0,
       surface: 0, surfaceBase: 0, floor: 0, gravelH: 60,
-      rt: {}, fr: {}, decorRt: {},
+      rt: {}, decorRt: {},
       food: [], bubbles: [], ripples: [], pops: [], pearls: [], drops: [], algae: [],
       pointer: { down: false, x: 0, y: 0, downAt: 0, drag: null },
       tilt: { x: 0, y: 0 }, tiltRaw: { x: 0, y: 0 }, tiltBase: null,
       shaker: null, waterChange: null, overlayKey: '', algaeLayer: null,
-      light: 3, darkNow: LIGHT_DARK[3], glNow: LIGHT_GL[3], night: isNightTime(),
+      light: 3, ambient: ambientDark(), darkNow: 0, glNow: 1, night: isNightTime(),
       lastSave: 0, lastHud: 0, lastVoice: {}, lastYum: 0, bubbleT: 0, backdrop: null, gravel: null
     };
     simRef.current = s;
@@ -898,8 +1422,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     if (s.night) welcomeLines.unshift(VOICE.aquaNight());   // 밤에는 잘 자는 물고기 안내가 먼저
     if (welcomeLines.length) setTimeout(() => speak(welcomeLines[0]), 500);
 
-    setFriends(game.friends.slice());
-    setPlaced({ decor: game.decor.slice(), friends: game.friends.slice() });
+    setPlaced({ decor: game.decor.slice() });
 
     const addPoints = (n, x, y) => {
       game.points += n;
@@ -1025,29 +1548,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     };
     s.ensureFishRt = ensureFishRt;
 
-    const ensureFriendRt = (fr, entering) => {
-      if (s.fr[fr.uid]) return s.fr[fr.uid];
-      const c = creatureById(fr.id);
-      const base = c ? c.size * 0.9 * s.k : 90;
-      const size = base * sizeScale(fr.growth ?? 1);
-      const motion = FRIEND_MOTION[fr.id] || 'swim';
-      const fromLeft = Math.random() < 0.5;
-      const r = size * 0.5;
-      const q = {
-        id: fr.id, base, size, motion,
-        x: entering ? (fromLeft ? r : s.W - r) : r + Math.random() * Math.max(1, s.W - 2 * r),
-        y: motion === 'crawl' ? s.floor - r * 0.4 : s.surface + r + Math.random() * Math.max(1, s.floor - s.surface - 2 * r - 20),
-        vx: fromLeft ? 30 : -30, vy: 0, heading: FRIEND_FLIP.has(fr.id) && !fromLeft ? -1 : 1, wander: fromLeft ? 0 : Math.PI,
-        pulseT: Math.random() * 2, squash: 0, boing: 0, startle: 0, alpha: 0, phase: Math.random() * 6
-      };
-      s.fr[fr.uid] = q;
-      return q;
-    };
-    s.ensureFriendRt = ensureFriendRt;
-
     resize();
     game.fish.forEach(f => ensureFishRt(f, false));
-    game.friends.forEach(fr => ensureFriendRt(fr, false));
     const ro = new ResizeObserver(resize);
     ro.observe(wrap);
 
@@ -1084,15 +1586,6 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         const r = s.rt[f.uid]; if (!r || r.leaving != null) return;
         const d = Math.hypot(r.x - x, r.y - y), rad = Math.max(26, fishLen(f) * 0.75);
         if (d < rad && d < bd) { best = f; bd = d; }
-      });
-      return best;
-    };
-    const hitFriend = (x, y) => {
-      let best = null, bd = Infinity;
-      game.friends.forEach(fr => {
-        const q = s.fr[fr.uid]; if (!q) return;
-        const d = Math.hypot(q.x - x, q.y - y);
-        if (d < q.size * 0.6 + 14 && d < bd) { best = fr; bd = d; }
       });
       return best;
     };
@@ -1154,8 +1647,6 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         return;
       }
       if (m === 'decorate') {
-        const fr = hitFriend(x, y);
-        if (fr) { s.pointer.drag = { kind: 'friend', uid: fr.uid }; return; }
         const d = hitDecor(x, y);
         if (d) { s.pointer.drag = { kind: 'decor', uid: d.uid, dx: d.x * s.W - x }; audio.playSnap(); }
         return;
@@ -1193,19 +1684,6 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         else say('info', VOICE.aquaFishInfo(sp, stageOf(f.growth)), 1.5);
         return;
       }
-      const fr = hitFriend(x, y);
-      if (fr) {
-        const q = s.fr[fr.uid];
-        q.boing = 1;
-        audio.playBubble();
-        const c = creatureById(fr.id);
-        const stage = stageOf(fr.growth ?? 1);
-        if (c && stage !== 'adult') {
-          s.pops.push({ x: q.x, y: q.y - q.size * 0.6 - 10, text: `${stage === 'fry' ? '아기' : '어린'} ${c.name}`, life: 1.6, vy: -22, color: '#bae6fd' });
-          say('friend', VOICE.aquaBabyFriend(c, stage), 1);
-        } else if (c) say('friend', VOICE.itemSound(c), 1);
-        return;
-      }
       for (let i = 0; i < 6; i++) s.bubbles.push({ x: x + (Math.random() - 0.5) * 30, y, r: 2 + Math.random() * 6, wob: Math.random() * 6, vy: 60 + Math.random() * 50 });
       audio.playBubble();
       game.fish.forEach(fi => {
@@ -1214,7 +1692,6 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         // 자는 물고기는 깨우지 않는다
         if (d < 200 && !r.asleep) { const kk = 380 * (1 - d / 200); r.vx += dx / d * kk; r.vy += dy / d * kk; r.panic = 1; if (fi.sp === 'puffer') r.puffT = 2; }
       });
-      Object.values(s.fr).forEach(q => { if (Math.hypot(q.x - x, q.y - y) < 160) q.startle = 1; });
     };
     const onMove = (e) => {
       if (!s.pointer.down) return;
@@ -1224,17 +1701,12 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       if (m === 'clean') cleanAt(x, y);
       else if (m === 'decorate' && s.pointer.drag) {
         const dr = s.pointer.drag;
-        if (dr.kind === 'decor') {
-          const d = game.decor.find(it => it.uid === dr.uid);
-          if (d) d.x = clamp((x + dr.dx) / s.W, 0.04, 0.96);
-        } else {
-          const q = s.fr[dr.uid];
-          if (q) { q.x = clamp(x, q.size / 2, s.W - q.size / 2); q.y = q.motion === 'crawl' ? q.y : clamp(y, s.surface + q.size / 2, s.floor - q.size * 0.3); q.vx = 0; q.vy = 0; }
-        }
+        const d = game.decor.find(it => it.uid === dr.uid);
+        if (d) d.x = clamp((x + dr.dx) / s.W, 0.04, 0.96);
       }
     };
     const onUp = () => {
-      if (s.pointer.drag) { saveGame(game); setPlaced({ decor: game.decor.slice(), friends: game.friends.slice() }); }
+      if (s.pointer.drag) { saveGame(game); setPlaced({ decor: game.decor.slice() }); }
       s.pointer.down = false; s.pointer.drag = null;
     };
     wrap.addEventListener('pointerdown', onDown);
@@ -1365,21 +1837,6 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           saveGame(game);
         }
       }
-      // 바다 친구 성장: 물이 깨끗할수록 빨리 자란다
-      game.friends.forEach(fr => {
-        const before = stageOf(fr.growth);
-        fr.growth = Math.min(1, fr.growth + RATES.growPerSec * friendGrowFactor(game.dirt) * dt);
-        const after = stageOf(fr.growth);
-        const q = s.fr[fr.uid];
-        if (q) q.size = q.base * sizeScale(fr.growth);
-        if (after !== before) {
-          addPoints(after === 'adult' ? REWARDS.adult : REWARDS.juvenile, q ? q.x : s.W / 2, q ? q.y - 30 : s.H / 2);
-          audio.playFanfare();
-          const c = creatureById(fr.id);
-          if (c) say('grow', VOICE.aquaFriendGrow(c, after));
-          if (q) for (let i = 0; i < 16; i++) s.pops.push({ x: q.x + (Math.random() - 0.5) * 60, y: q.y + (Math.random() - 0.5) * 40, text: i % 2 ? '✨' : '⭐', life: 1.2, vy: -40 });
-        }
-      });
       // 돌봄 알림 음성 (너무 자주 말하지 않게)
       const avgFull = game.fish.length ? game.fish.reduce((a, f) => a + f.full, 0) / game.fish.length : 100;
       if (avgFull < 30) say('hungry', VOICE.aquaHungry(), 90);
@@ -1392,7 +1849,6 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       const p = s.pointer;
       const following = modeRef.current === 'play' && p.down && !p.drag && s.t - p.downAt > 0.3;
       const top = s.surface + 14, bottom = s.floor - 8;
-      const friendsRt = Object.values(s.fr);
       list.forEach(f => {
         const r = s.rt[f.uid]; const sp = FISH_BY_ID[f.sp];
         if (!r || !sp) return;
@@ -1429,26 +1885,23 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         const m = 40;
         if (r.x < m) fx += (m - r.x) * 6; if (r.x > s.W - m) fx -= (r.x - (s.W - m)) * 6;
         if (r.y < top + 20) fy += (top + 20 - r.y) * 7; if (r.y > bottom - 10) fy -= (r.y - (bottom - 10)) * 7;
-        // 바다 친구 피하기
-        friendsRt.forEach(q => {
-          const dx = r.x - q.x, dy = r.y - q.y, d = Math.hypot(dx, dy) || 1, rr = q.size * 0.55;
-          if (d < rr) { fx += dx / d * (rr - d) * 6; fy += dy / d * (rr - d) * 6; }
-        });
         // 먹이 쫓기: 배고플수록(hunger 0~1) 멀리서 알아채고, 더 세게·더 빨리 달려든다.
         // 많이 배고픈 물고기는 수면에 떠 있는 먹이도 바로 낚아챈다.
+        // 바닥을 기는 친구(게·불가사리)는 바닥에 내려온 밥만 먹는다 (좌우 거리만 본다)
         const hunger = clamp((100 - f.full) / 100, 0, 1);
         const reach = 220 + hunger * 1000;
         let target = null, td = reach * reach;
         s.food.forEach(fd => {
           if (fd.state === 'float' && hunger < 0.12) return;   // 배고픈 물고기는 수면 밥도 찾아간다
-          const dx = fd.x - r.x, dy = fd.y - r.y, d2 = dx * dx + dy * dy;
+          if (sp.crawl && !(fd.state === 'ground' || fd.y > bottom - 50)) return;
+          const dx = fd.x - r.x, dy = sp.crawl ? 0 : fd.y - r.y, d2 = dx * dx + dy * dy;
           if (d2 < td) { td = d2; target = fd; }
         });
         // 배고프면 슬퍼도 밥 앞에서는 힘을 낸다
         let maxSp = 70 * sp.speed * (1 + r.panic * 1.6) * (sad && !(target && hunger > 0.5) ? 0.5 : 1) * (0.7 + 0.3 * sizeScale(f.growth)) * s.k;
         const chasing = !!target && f.full < 98 && (hunger > 0.12 || td < 110 * 110);
         if (chasing) {
-          const dx = target.x - r.x, dy = target.y - r.y, d = Math.sqrt(td) || 1;
+          const dx = target.x - r.x, dy = sp.crawl ? 0 : target.y - r.y, d = Math.sqrt(td) || 1;
           const pull = 360 + hunger * 1100;
           fx += dx / d * pull; fy += dy / d * pull;
           maxSp *= 1.3 + hunger * 1.9;
@@ -1502,10 +1955,13 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           maxSp *= 0.25;
         } else r.sleepY = null;
         fx += s.tilt.x * 140; fy += s.tilt.y * 80;
+        // 해파리는 갓을 오므릴 때 뿅 떠올랐다가 천천히 가라앉는다 (그림의 오므림과 박자를 맞춤)
+        if (sp.shape === 'jellyfish' && !asleep) fy += Math.sin(r.phase * 0.5) < -0.6 ? -160 : 30;
         // 광어는 먹이가 없으면 바닥에 납작 엎드려 거의 움직이지 않는다
         const resting = sp.lieDown && !target && !following;
         if (resting) { fx *= 0.2; fy = fy * 0.2 + (bottom - 2 - r.y) * 3; }   // 바닥으로는 확실히 내려앉게
 
+        if (sp.crawl) { fy = 0; r.vy = 0; }   // 기는 친구는 좌우로만 움직인다
         r.vx += fx * dt; r.vy += fy * dt;
         if (resting || asleep) { r.vx *= 1 - Math.min(1, dt * 1.2); r.vy *= 1 - Math.min(1, dt * 1.2); }
         const spd = Math.hypot(r.vx, r.vy) || 1, minSp = resting || asleep ? 0 : 14 * s.k;
@@ -1518,6 +1974,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         // 밥을 쫓을 때는 수면·바닥 가까이까지 갈 수 있다
         const yLo = chasing ? Math.min(top, target.y + 2) : top, yHi = chasing ? Math.max(bottom, target.y - 3) : bottom;
         r.x = clamp(r.x + r.vx * dt, 6, s.W - 6); r.y = clamp(r.y + r.vy * dt, yLo, yHi);
+        if (sp.crawl) r.y = groundY(r.x) - L * sp.hRatio * 0.42;   // 모래 위에 발을 딛고
         r.phase += dt * (5 + spd * 0.12 / s.k) * (sad ? 0.6 : 1) * (asleep ? 0.3 : 1) * (1 + (r.eager || 0) * 0.8);
         r.eager = Math.max(0, (r.eager || 0) - dt);
         // 진행 방향 (좌우가 자주 바뀌지 않게)
@@ -1530,59 +1987,6 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         game.fish = game.fish.filter(f => !goneUids.includes(f.uid));
         goneUids.forEach(uid => { delete s.rt[uid]; });
         saveGame(game);
-      }
-    };
-
-    // ── 바다 친구 움직임 ──
-    const updateFriends = (dt) => {
-      const list = Object.entries(s.fr);
-      list.forEach(([uid, c]) => {
-        const r = c.size * 0.5;
-        c.alpha = Math.min(1, c.alpha + dt * 1.5);
-        c.boing = Math.max(0, c.boing - dt * 1.6);
-        c.startle = Math.max(0, c.startle - dt * 0.9);
-        if (s.pointer.drag && s.pointer.drag.uid === uid) return;
-        const spMul = FRIEND_SPEED[c.id] || 1;
-        if (c.motion === 'crawl') {
-          c.wander += (Math.random() - 0.5) * dt * 1.6;
-          const sp = 22 * spMul * (1 + c.startle * 2);
-          c.vx += (Math.cos(c.wander) * sp - c.vx) * Math.min(1, dt * 1.5);
-          c.vy = (groundY(c.x) - r * 0.45 - c.y) * 4;
-        } else if (c.motion === 'pulse') {
-          c.pulseT -= dt;
-          if (c.pulseT <= 0) { c.pulseT = 2 + Math.random() * 1.6; c.vy = -55; c.vx += (Math.random() - 0.5) * 36; c.squash = 1; }
-          c.vy = Math.min(14, c.vy + 26 * dt); c.vx *= 1 - dt * 0.6;
-          c.squash = Math.max(0, c.squash - dt * 2.5);
-        } else {
-          c.wander += (Math.random() - 0.5) * dt * 1.8;
-          const sp = 32 * spMul * (1 + c.startle * 2.2);
-          c.vx += (Math.cos(c.wander) * sp - c.vx) * Math.min(1, dt * 1.2);
-          c.vy += (Math.sin(c.wander) * sp * 0.45 - c.vy) * Math.min(1, dt * 1.2);
-        }
-        if (c.motion !== 'crawl') { c.vx += s.tilt.x * 45 * dt; c.vy += s.tilt.y * 30 * dt; }
-        c.x += c.vx * dt; c.y += c.vy * dt;
-        const top = s.surface + r * 0.8 + 4, bottom = s.floor - r * 0.4;
-        if (c.x < r) { c.x = r; c.vx = Math.abs(c.vx); if (Math.cos(c.wander) < 0) c.wander = Math.PI - c.wander; }
-        if (c.x > s.W - r) { c.x = s.W - r; c.vx = -Math.abs(c.vx); if (Math.cos(c.wander) > 0) c.wander = Math.PI - c.wander; }
-        if (c.motion !== 'crawl') {
-          if (c.y < top) { c.y = top; c.vy = Math.abs(c.vy) * 0.5; if (Math.sin(c.wander) < 0) c.wander = -c.wander; }
-          if (c.y > bottom) { c.y = bottom; c.vy = -Math.abs(c.vy) * 0.5; if (Math.sin(c.wander) > 0) c.wander = -c.wander; }
-        }
-        if (FRIEND_FLIP.has(c.id)) { if (c.vx > 6) c.heading = 1; else if (c.vx < -6) c.heading = -1; }
-        // 바닥 친구는 떨어진 먹이를 주워 먹는다
-        if (c.motion === 'crawl') {
-          s.food.forEach(fd => { if (fd.state === 'ground' && Math.abs(fd.x - c.x) < r * 0.8) fd.eaten = true; });
-        }
-      });
-      const arr = list.map(e => e[1]);
-      for (let i = 0; i < arr.length; i++) for (let j = i + 1; j < arr.length; j++) {
-        const a = arr[i], b = arr[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.01, min = (a.size + b.size) * 0.55;
-        if (d < min) {
-          const kk = (min - d) / d * Math.min(1, dt * 3) * 0.5;
-          a.x -= dx * kk; b.x += dx * kk;
-          if (a.motion !== 'crawl') a.y -= dy * kk;
-          if (b.motion !== 'crawl') b.y += dy * kk;
-        }
       }
     };
 
@@ -1791,7 +2195,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         const L = fishLen(f) * (0.82 + r.z * 0.18) * (1 + Math.sin(r.boing * Math.PI) * 0.25);
         ctx.save();
         ctx.translate(r.x, r.y);
-        const ang = sp.lieDown ? 0 : clamp(Math.atan2(r.vy, Math.abs(r.vx) + 8) * 0.6, -0.6, 0.6);
+        const ang = sp.lieDown || sp.crawl || sp.upright ? 0 : clamp(Math.atan2(r.vy, Math.abs(r.vx) + 8) * 0.6, -0.6, 0.6);
         r.drawL = L; r.drawAng = ang;
         ctx.scale(r.dir, 1);
         ctx.rotate(ang * 1);
@@ -1937,7 +2341,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       });
       octx.globalAlpha = 1;
       // 야광: 어두울수록 더 밝게 빛난다
-      const gk = clamp(dark / LIGHT_DARK[0], 0, 1);
+      const gk = clamp(dark / MAX_DARK, 0, 1);
       octx.globalCompositeOperation = 'lighter';
       game.fish.forEach(f => {
         const r = s.rt[f.uid], sp = FISH_BY_ID[f.sp];
@@ -1950,7 +2354,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           octx.fillStyle = aura;
           octx.fillRect(r.x - r.drawL, r.y - r.drawL, r.drawL * 2, r.drawL * 2);
         }
-        const glows = (look.bands && look.bands.some(b => b.glow)) || look.tail.glow;
+        const glows = (look.bands && look.bands.some(b => b.glow)) || look.tail.glow || look.glow;
         if (!glows) return;
         octx.save();
         octx.translate(r.x, r.y);
@@ -1960,17 +2364,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         drawFish(octx, look, r.drawL, { phase: r.phase, growth: f.growth, glowOnly: true, glowK: 0.55 + gk * 0.45 });
         octx.restore();
       });
-      // 해파리 친구·이로치 친구·반짝 조개도 은은하게 빛난다
-      game.friends.forEach(fr => {
-        const q = s.fr[fr.uid];
-        if (!q || (fr.id !== 'jellyfish' && !fr.shiny)) return;
-        const col = fr.shiny ? '253,224,71' : '192,132,252';
-        const rad = q.size * 0.75;
-        const aura = octx.createRadialGradient(q.x, q.y, 4, q.x, q.y, rad);
-        aura.addColorStop(0, `rgba(${col},${0.45 * gk})`); aura.addColorStop(1, `rgba(${col},0)`);
-        octx.fillStyle = aura;
-        octx.fillRect(q.x - rad, q.y - rad, rad * 2, rad * 2);
-      });
+      // 반짝 조개도 은은하게 빛난다
       s.pearls.forEach(p => {
         const aura = octx.createRadialGradient(p.x, p.y, 1, p.x, p.y, 30 * s.k);
         aura.addColorStop(0, `rgba(255,255,255,${0.6 * gk})`); aura.addColorStop(1, 'rgba(255,255,255,0)');
@@ -1978,22 +2372,6 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         octx.fillRect(p.x - 30 * s.k, p.y - 30 * s.k, 60 * s.k, 60 * s.k);
       });
       octx.globalCompositeOperation = 'source-over';
-    };
-
-    // 바다 친구 SVG 위치 갱신
-    const placeFriends = () => {
-      Object.entries(s.fr).forEach(([uid, c]) => {
-        const els = friendEls.current[uid];
-        if (!els || !els.outer || !els.inner) return;
-        const w = c.base * 1.1, h = c.base, gs = c.size / c.base;
-        els.outer.style.transform = `translate3d(${(c.x - w / 2).toFixed(1)}px, ${(c.y - h / 2).toFixed(1)}px, 0)`;
-        els.outer.style.opacity = c.alpha.toFixed(2);
-        const bob = c.motion === 'crawl' ? 0 : Math.sin(s.t * 2 + c.phase) * 3;
-        const grow = (1 + Math.sin(c.boing * Math.PI) * 0.22) * gs;
-        const sq = 1 - (c.squash || 0) * 0.14;
-        const ang = FRIEND_FLIP.has(c.id) ? clamp(Math.atan2(c.vy, Math.abs(c.vx) + 20) * 0.5, -0.35, 0.35) * 57.3 : Math.sin(s.t * 1.5 + c.phase) * 4;
-        els.inner.style.transform = `translateY(${bob.toFixed(1)}px) scale(${(c.heading * grow / sq).toFixed(3)}, ${(grow * sq).toFixed(3)}) rotate(${ang.toFixed(1)}deg)`;
-      });
     };
 
     const drawLight = () => {
@@ -2024,19 +2402,15 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       }
       s.tilt.x += (s.tiltRaw.x - s.tilt.x) * Math.min(1, dt * 4);
       s.tilt.y += (s.tiltRaw.y - s.tilt.y) * Math.min(1, dt * 4);
-      const darkT = s.night ? Math.max(LIGHT_DARK[s.light], NIGHT_DARK) : LIGHT_DARK[s.light];
-      const glT = s.night ? Math.min(LIGHT_GL[s.light], NIGHT_GL) : LIGHT_GL[s.light];
-      s.darkNow += (darkT - s.darkNow) * Math.min(1, dt * (s.night ? 1.5 : 5));
-      s.glNow += (glT - s.glNow) * Math.min(1, dt * (s.night ? 1.5 : 5));
+      s.darkNow += (darkFor(s.ambient, s.light) - s.darkNow) * Math.min(1, dt * 5);
+      s.glNow += (glFor(s.ambient, s.light) - s.glNow) * Math.min(1, dt * 5);
 
       tickCare(dt);
       updateFish(dt);
-      updateFriends(dt);
       updateParticles(dt);
       draw();
       drawOverlay();
       drawLight();
-      placeFriends();
 
       if (s.t - s.lastHud > 0.4) {
         s.lastHud = s.t;
@@ -2044,6 +2418,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         const next = { points: game.points, clean: Math.round(100 - game.dirt), sad: fish.filter(f => isSad(f, game.dirt)).length, sick: fish.filter(f => f.sick).length };
         setHud(prev => (prev.points === next.points && prev.clean === next.clean && prev.sad === next.sad && prev.sick === next.sick ? prev : next));
         setInfoTick(v => (v + 1) % 1000);
+        s.ambient = ambientDark();
         const nightNow = isNightTime();
         if (nightNow !== s.night) { s.night = nightNow; if (nightNow) say('night', VOICE.aquaNight(), 60); }
         setNight(nightNow);
@@ -2092,8 +2467,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
   const buy = (kind, id) => {
     const s = simRef.current; if (!s) return;
     const game = s.game;
-    const price = kind === 'fish' ? FISH_BY_ID[id].price || STARTER_FISH_PRICE : kind === 'decor' ? DECOR_BY_ID[id].price : FRIEND_PRICES[id];
-    const full = kind === 'fish' ? game.fish.length >= LIMITS.fish : kind === 'decor' ? game.decor.length >= LIMITS.decor : game.friends.length >= LIMITS.friends;
+    const price = kind === 'fish' ? FISH_BY_ID[id].price || STARTER_FISH_PRICE : DECOR_BY_ID[id].price;
+    const full = kind === 'fish' ? game.fish.length >= LIMITS.fish : game.decor.length >= LIMITS.decor;
     if (full) { showToast('🙅 어항이 꽉 찼어요!'); return; }
     if (game.points < price) { showToast(`🐚 조개가 ${price - game.points}개 더 필요해요`); s.say('need', VOICE.aquaNeedMore(), 3); return; }
     game.points -= price;
@@ -2111,43 +2486,26 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         s.say('buy', VOICE.aquaNewFish(FISH_BY_ID[id]));
         if (v) showToast(`🎲 ${v.name} 구피가 왔어요!`);
       }
-    } else if (kind === 'decor') {
-      game.decor.push({ uid: newUid(), id, x: 0.1 + Math.random() * 0.8 });
     } else {
-      const fr = newFriend(id);
-      game.friends.push(fr);
-      s.ensureFriendRt(fr, true);
-      setFriends(game.friends.slice());
-      const c = creatureById(id);
-      if (c && fr.shiny) { s.say('buy', VOICE.aquaShiny(c)); showToast(`✨ 이로치 ${c.name} 등장! ✨`); }
-      else if (c) s.say('buy', VOICE.aquaNewFriend(c));
+      game.decor.push({ uid: newUid(), id, x: 0.1 + Math.random() * 0.8 });
     }
     audio.playFanfare();
     saveGame(game);
-    setPlaced({ decor: game.decor.slice(), friends: game.friends.slice() });
+    setPlaced({ decor: game.decor.slice() });
     setHud(h => ({ ...h, points: game.points }));
     setShopOpen(false);
   };
 
-  const sellPlaced = (kind, uid) => {
+  const sellDecor = (uid) => {
     const s = simRef.current; if (!s) return;
     const game = s.game;
-    if (kind === 'decor') {
-      const d = game.decor.find(it => it.uid === uid);
-      if (!d) return;
-      game.decor = game.decor.filter(it => it.uid !== uid);
-      game.points += Math.floor(DECOR_BY_ID[d.id].price / 2);
-    } else {
-      const fr = game.friends.find(it => it.uid === uid);
-      if (!fr) return;
-      game.friends = game.friends.filter(it => it.uid !== uid);
-      delete s.fr[uid];
-      game.points += Math.floor(FRIEND_PRICES[fr.id] / 2);
-      setFriends(game.friends.slice());
-    }
+    const d = game.decor.find(it => it.uid === uid);
+    if (!d) return;
+    game.decor = game.decor.filter(it => it.uid !== uid);
+    game.points += Math.floor(DECOR_BY_ID[d.id].price / 2);
     audio.playPopSound();
     saveGame(game);
-    setPlaced({ decor: game.decor.slice(), friends: game.friends.slice() });
+    setPlaced({ decor: game.decor.slice() });
     setHud(h => ({ ...h, points: game.points }));
   };
 
@@ -2224,23 +2582,6 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         <canvas ref={canvasRef} style={{ position: 'absolute', left: 0, top: 0, display: 'block', zIndex: 0 }} />
         <canvas ref={lightRef} style={{ position: 'absolute', left: 0, top: 0, display: 'block', zIndex: 1, mixBlendMode: 'screen', pointerEvents: 'none' }} />
 
-        {friends.map(fr => {
-          const c = creatureById(fr.id);
-          if (!c) return null;
-          const size = c.size * 0.9 * (sim ? sim.k : 1);
-          return (
-            <div
-              key={fr.uid}
-              ref={el => { const m = friendEls.current[fr.uid] || (friendEls.current[fr.uid] = {}); m.outer = el; }}
-              style={{ position: 'absolute', left: 0, top: 0, width: `${size * 1.1}px`, height: `${size}px`, opacity: 0, pointerEvents: 'none', zIndex: 2, willChange: 'transform' }}
-            >
-              <div ref={el => { const m = friendEls.current[fr.uid] || (friendEls.current[fr.uid] = {}); m.inner = el; }} style={{ width: '100%', height: '100%', filter: fr.shiny ? 'hue-rotate(150deg) saturate(1.5) drop-shadow(0 0 6px #fde047)' : 'none' }}>
-                <CreatureSVG id={fr.id} />
-              </div>
-            </div>
-          );
-        })}
-
         <canvas ref={overlayRef} style={{ position: 'absolute', left: 0, top: 0, display: 'block', zIndex: 3, pointerEvents: 'none' }} />
         {/* 유리 반사 */}
         <div style={{
@@ -2255,7 +2596,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
             position: 'absolute', left: '50%', top: '12px', transform: 'translateX(-50%)', zIndex: 6, pointerEvents: 'none',
             background: 'rgba(15,23,42,0.75)', color: '#ffffff', fontWeight: 900, padding: '8px 16px', borderRadius: '16px', fontSize: '0.95rem', whiteSpace: 'nowrap'
           }}>
-            {mode === 'clean' ? '🧽 유리 이끼와 바닥 똥을 문질러 치워요' : mode === 'heal' ? (hud.sick ? '🩹 밴드 그림이 떠 있는 물고기를 눌러 줘요' : '🩹 지금은 아픈 물고기가 없어요') : '🎨 장식과 바다 친구를 끌어서 옮겨요'}
+            {mode === 'clean' ? '🧽 유리 이끼와 바닥 똥을 문질러 치워요' : mode === 'heal' ? (hud.sick ? '🩹 밴드 그림이 떠 있는 물고기를 눌러 줘요' : '🩹 지금은 아픈 물고기가 없어요') : '🎨 장식을 끌어서 옮겨요'}
           </div>
         )}
 
@@ -2383,19 +2724,10 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
             {placed.decor.map(d => (
               <div key={d.uid} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', borderRadius: '12px', padding: '4px 8px', whiteSpace: 'nowrap', fontWeight: 900 }}>
                 {DECOR_BY_ID[d.id].icon} {DECOR_BY_ID[d.id].name}
-                <button onClick={() => sellPlaced('decor', d.uid)} style={{ border: 'none', background: '#fecaca', borderRadius: '8px', fontWeight: 900, cursor: 'pointer' }}>✕ +{Math.floor(DECOR_BY_ID[d.id].price / 2)}🐚</button>
+                <button onClick={() => sellDecor(d.uid)} style={{ border: 'none', background: '#fecaca', borderRadius: '8px', fontWeight: 900, cursor: 'pointer' }}>✕ +{Math.floor(DECOR_BY_ID[d.id].price / 2)}🐚</button>
               </div>
             ))}
-            {placed.friends.map(fr => {
-              const c = creatureById(fr.id);
-              return (
-                <div key={fr.uid} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#e0f2fe', borderRadius: '12px', padding: '4px 8px', whiteSpace: 'nowrap', fontWeight: 900 }}>
-                  {c ? `${c.icon} ${c.name}` : fr.id}
-                  <button onClick={() => sellPlaced('friend', fr.uid)} style={{ border: 'none', background: '#fecaca', borderRadius: '8px', fontWeight: 900, cursor: 'pointer' }}>✕ +{Math.floor(FRIEND_PRICES[fr.id] / 2)}🐚</button>
-                </div>
-              );
-            })}
-            {!placed.decor.length && !placed.friends.length && <span style={{ fontWeight: 800, color: '#64748b' }}>상점에서 장식이나 바다 친구를 사 보세요!</span>}
+            {!placed.decor.length && <span style={{ fontWeight: 800, color: '#64748b' }}>상점에서 장식을 사 보세요!</span>}
           </div>
         )}
 
@@ -2422,11 +2754,11 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                 {shopTab === 'fish' && FISH_SPECIES.map(sp => {
                   const price = sp.price || STARTER_FISH_PRICE;
                   return (
-                    <div key={sp.id} style={{ border: '2px solid #e2e8f0', borderRadius: '18px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f0f9ff' }}>
+                    <div key={sp.id} style={{ border: '2px solid #e2e8f0', borderRadius: '18px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: sp.sea ? '#eff6ff' : '#f0f9ff' }}>
                       <FishPreview species={sp} />
                       <div style={{ fontWeight: 900, color: '#0f172a' }}>{sp.name}</div>
                       <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>{sp.desc}</div>
-                      <button onClick={() => buy('fish', sp.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= price ? '#8b5cf6' : '#cbd5e1', color: '#ffffff' }}>🐚 {price}</button>
+                      <button onClick={() => buy('fish', sp.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= price ? (sp.sea ? '#0ea5e9' : '#8b5cf6') : '#cbd5e1', color: '#ffffff' }}>🐚 {price}</button>
                     </div>
                   );
                 })}
@@ -2437,17 +2769,9 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                     <button onClick={() => buy('decor', d.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= d.price ? '#10b981' : '#cbd5e1', color: '#ffffff' }}>🐚 {d.price}</button>
                   </div>
                 ))}
-                {shopTab === 'fish' && creatures.map(c => (
-                  <div key={c.id} style={{ border: '2px solid #e2e8f0', borderRadius: '18px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#eff6ff' }}>
-                    <div style={{ width: 96, height: 80 }}><CreatureSVG id={c.id} /></div>
-                    <div style={{ fontWeight: 900, color: '#0f172a' }}>{c.name}</div>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>{FRIEND_DESC[c.id] || '바다 친구'}</div>
-                    <button onClick={() => buy('friend', c.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= FRIEND_PRICES[c.id] ? '#0ea5e9' : '#cbd5e1', color: '#ffffff' }}>🐚 {FRIEND_PRICES[c.id]}</button>
-                  </div>
-                ))}
               </div>
               <div style={{ padding: '0 16px 14px', fontSize: '0.8rem', fontWeight: 800, color: '#64748b' }}>
-                ✨ 아주 가끔 특별한 색깔의 이로치가 나와요 · 물고기 {sim ? sim.game.fish.length : 0}/{LIMITS.fish} · 장식 {placed.decor.length}/{LIMITS.decor} · 바다 친구 {placed.friends.length}/{LIMITS.friends}
+                ✨ 아주 가끔 특별한 색깔의 이로치가 나와요 · 물고기·바다 친구 {sim ? sim.game.fish.length : 0}/{LIMITS.fish} · 장식 {placed.decor.length}/{LIMITS.decor}
               </div>
             </div>
           </div>

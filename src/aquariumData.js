@@ -113,6 +113,75 @@ export const FISH_SPECIES = [
     speed: 0.4, growMul: 0.85, school: false, zone: 'bottom',
     top: '#78716c', belly: '#a8a29e', mottle: '#292524',
     tail: { color: 'rgba(120,113,108,0.85)', len: 0.18, spread: 0.3, solid: true }, fin: 'rgba(120,113,108,0.8)'
+  },
+  // ── 바다 친구 ── 물고기와 똑같이 밥 먹고·아프고·이름 짓고·자란다 (sea: 상점에서 바다 친구로 묶어 보여줌)
+  //  shape 가 바다 친구 이름이면 drawFish 가 drawCreature 로 따로 그린다
+  //  crawl: 바닥을 기어 다님(가라앉은 밥만 먹음) / upright: 몸을 기울이지 않음
+  {
+    id: 'clownfish', name: '흰동가리', price: 125, len: 44, hRatio: 0.48, shape: 'normal', desc: '주황 줄무늬 니모', sea: true,
+    speed: 0.85, growMul: 1, school: false, zone: 'mid',
+    top: '#ea580c', belly: '#fb923c', bars: '#ffffff',
+    tail: { color: 'rgba(234,88,12,0.85)', len: 0.3, spread: 0.4 }, fin: 'rgba(249,115,22,0.8)'
+  },
+  {
+    id: 'crab', name: '게', price: 125, len: 50, hRatio: 0.62, shape: 'crab', desc: '옆으로 엉금엉금', sea: true, crawl: true,
+    speed: 0.45, growMul: 1, school: false, zone: 'bottom',
+    top: '#dc2626', belly: '#f87171', fin: '#b91c1c', tail: {}
+  },
+  {
+    id: 'starfish', name: '불가사리', price: 125, len: 46, hRatio: 1, shape: 'starfish', desc: '바닥을 느릿느릿', sea: true, crawl: true, upright: true,
+    speed: 0.2, growMul: 1, school: false, zone: 'bottom',
+    top: '#f59e0b', belly: '#fcd34d', spots: '#fef3c7', tail: {}
+  },
+  {
+    id: 'shrimp', name: '새우', price: 125, len: 44, hRatio: 0.5, shape: 'shrimp', desc: '톡톡 튀는 새우', sea: true,
+    speed: 0.7, growMul: 1.1, school: false, zone: 'bottom',
+    top: '#f97316', belly: '#fdba74', fin: 'rgba(251,146,60,0.75)', tail: {}
+  },
+  {
+    id: 'seahorse', name: '해마', price: 165, len: 46, hRatio: 1.5, shape: 'seahorse', desc: '꼬리를 말고 둥실둥실', sea: true, upright: true,
+    speed: 0.3, growMul: 0.95, school: false, zone: 'mid',
+    top: '#eab308', belly: '#fde047', fin: 'rgba(253,224,71,0.7)', tail: {}
+  },
+  {
+    id: 'jellyfish', name: '해파리', price: 165, len: 52, hRatio: 1.3, shape: 'jellyfish', desc: '뿅뿅 떠오르고 빛나요', sea: true, upright: true, glow: true,
+    speed: 0.3, growMul: 1, school: false, zone: 'top',
+    top: 'rgba(192,132,252,0.75)', belly: 'rgba(244,114,182,0.6)', fin: 'rgba(216,180,254,0.75)', tail: {}
+  },
+  {
+    id: 'octopus', name: '문어', price: 250, len: 64, hRatio: 0.9, shape: 'octopus', desc: '다리가 여덟 개', sea: true,
+    speed: 0.5, growMul: 0.9, school: false, zone: 'bottom',
+    top: '#e11d48', belly: '#fb7185', spots: '#fecdd3', tail: {}
+  },
+  {
+    id: 'squid', name: '오징어', price: 250, len: 70, hRatio: 0.32, shape: 'squid', desc: '쓩 하고 헤엄쳐요', sea: true,
+    speed: 0.9, growMul: 0.9, school: false, zone: 'mid',
+    top: '#f9a8d4', belly: '#fdf2f8', spots: '#be185d', fin: 'rgba(249,168,212,0.85)', tail: {}
+  },
+  {
+    id: 'turtle', name: '거북이', price: 290, len: 74, hRatio: 0.55, shape: 'turtle', desc: '느긋하게 헤엄쳐요', sea: true,
+    speed: 0.5, growMul: 0.8, school: false, zone: 'mid',
+    top: '#15803d', belly: '#86efac', fin: '#65a30d', accent: '#a3e635', tail: {}
+  },
+  {
+    id: 'penguin', name: '펭귄', price: 290, len: 62, hRatio: 0.45, shape: 'penguin', desc: '물속을 쌩쌩', sea: true,
+    speed: 1.2, growMul: 0.85, school: false, zone: 'top',
+    top: '#1e293b', belly: '#f8fafc', fin: '#0f172a', accent: '#f59e0b', tail: {}
+  },
+  {
+    id: 'seal', name: '물개', price: 335, len: 86, hRatio: 0.36, shape: 'seal', desc: '장난꾸러기 물개', sea: true,
+    speed: 1, growMul: 0.8, school: false, zone: 'mid',
+    top: '#78716c', belly: '#d6d3d1', fin: '#57534e', spots: '#57534e', tail: {}
+  },
+  {
+    id: 'shark', name: '상어', price: 460, len: 104, hRatio: 0.28, shape: 'shark', desc: '씩씩한 바다 대장', sea: true,
+    speed: 0.9, growMul: 0.75, school: false, zone: 'mid',
+    top: '#64748b', belly: '#f1f5f9', fin: '#475569', tail: {}
+  },
+  {
+    id: 'whale', name: '고래', price: 500, len: 136, hRatio: 0.42, shape: 'whale', desc: '바다에서 제일 커요', sea: true,
+    speed: 0.5, growMul: 0.7, school: false, zone: 'mid',
+    top: '#1d4ed8', belly: '#bfdbfe', fin: '#1e40af', tail: {}
   }
 ];
 export const FISH_BY_ID = Object.fromEntries(FISH_SPECIES.map(f => [f.id, f]));
@@ -148,31 +217,23 @@ export const DECOR_ITEMS = [
 ];
 export const DECOR_BY_ID = Object.fromEntries(DECOR_ITEMS.map(d => [d.id, d]));
 
-// 바다 친구(기존 바다 생물 SVG) 가격
-export const FRIEND_PRICES = {
-  fish: 125, crab: 125, starfish: 125, shrimp: 125, seahorse: 165, jellyfish: 165,
-  octopus: 250, squid: 250, turtle: 290, penguin: 290, seal: 335, shark: 460, whale: 500
-};
-
-// 상점에 보이는 바다 친구 한 줄 설명
-export const FRIEND_DESC = {
-  fish: '주황 지느러미 친구', crab: '옆으로 엉금엉금', starfish: '바닥을 느릿느릿', shrimp: '톡톡 튀는 새우',
-  seahorse: '꼬리를 말고 둥실둥실', jellyfish: '뿅뿅 떠오르고 빛나요', octopus: '다리가 여덟 개',
-  squid: '쓩 하고 헤엄쳐요', turtle: '느긋하게 헤엄쳐요', penguin: '물속을 쌩쌩',
-  seal: '장난꾸러기 물개', shark: '씩씩한 바다 대장', whale: '바다에서 제일 커요'
-};
-
 // 기본 물고기(처음 받는 치어 종류)를 상점에서 더 살 때 가격
 export const STARTER_FISH_PRICE = 50;
 
-export const LIMITS = { fish: 20, friends: 4, decor: 10 };
+export const LIMITS = { fish: 20, decor: 10 };
 
 // ── 번식 ──
 // 구피·플래티는 새끼를 낳는 난태생, 나머지는 알을 낳는다.
 // 난태생 암컷은 정자를 몸에 저장해 두어서, 한 번 짝짓기한 뒤에는 수컷이 없어도 가끔 다시 아기를 가진다.
 const BREED = {
   guppy: { type: 'live', storesSperm: true, brood: [3, 5] },
-  platy: { type: 'live', storesSperm: true, brood: [3, 5] }
+  platy: { type: 'live', storesSperm: true, brood: [3, 5] },
+  // 바다 친구: 고래·물개·상어는 새끼를 적게 낳고, 펭귄·거북이는 알을 조금 낳는다
+  whale: { type: 'live', storesSperm: false, brood: [1, 1] },
+  seal: { type: 'live', storesSperm: false, brood: [1, 1] },
+  shark: { type: 'live', storesSperm: false, brood: [1, 2] },
+  penguin: { type: 'egg', storesSperm: false, brood: [1, 2] },
+  turtle: { type: 'egg', storesSperm: false, brood: [2, 4] }
 };
 const BREED_DEFAULT = { type: 'egg', storesSperm: false, brood: [3, 6] };
 export const breedOf = (spId) => BREED[spId] || BREED_DEFAULT;
@@ -222,9 +283,6 @@ export const REWARDS = { eat: 1, poop: 2, algae: 1, waterChange: 10, juvenile: 2
 export const SAVE_KEY = 'bps_aquarium_v1';
 let uidSeq = 0;
 export const newUid = () => `${Date.now().toString(36)}${(uidSeq++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-// 바다 친구도 아기 모습으로 와서 자란다 (밥 대신 물 깨끗함에 따라 자람)
-export const newFriend = (id) => ({ uid: newUid(), id, growth: 0, shiny: rollShiny(), bornAt: Date.now() });
-export const friendGrowFactor = (dirt) => (dirt > 70 ? 0 : Math.max(0.15, Math.min(1, (100 - dirt) / 70)));
 
 export const newFish = (sp) => ({
   uid: newUid(), sp, growth: 0, full: 80, happy: 80, bornAt: Date.now(),
@@ -263,7 +321,6 @@ export function createNewGame() {
       return f;
     }),
     eggs: [],
-    friends: [],
     decor: [
       { uid: newUid(), id: 'grass', x: 0.12 },
       { uid: newUid(), id: 'rock', x: 0.72 },
@@ -283,8 +340,16 @@ export function loadGame() {
       if (g && g.version === 1 && Array.isArray(g.fish)) {
         // 디자인이 생기기 전에 들어온 구피는 원래 모습(무지개)으로
         g.fish.forEach(f => { if (f.sp === 'guppy' && !f.variant) f.variant = 'rainbow'; });
-        // 자라기 기능 전에 산 바다 친구는 이미 다 큰 모습
-        (g.friends || []).forEach(fr => { if (typeof fr.growth !== 'number') fr.growth = 1; });
+        // 예전 '바다 친구'는 이제 물고기와 똑같이 돌보는 개체로 옮긴다 (니모 물고기 → 흰동가리)
+        (g.friends || []).forEach(fr => {
+          const sp = fr.id === 'fish' ? 'clownfish' : fr.id;
+          if (!FISH_BY_ID[sp]) return;
+          g.fish.push({
+            uid: fr.uid || newUid(), sp, growth: typeof fr.growth === 'number' ? fr.growth : 1, full: 80, happy: 80,
+            bornAt: fr.bornAt || Date.now(), shiny: !!fr.shiny, sex: randomSex()
+          });
+        });
+        g.friends = [];
         // 암수가 생기기 전의 물고기에게 성별을 정해 준다
         g.fish.forEach(f => { if (!f.sex) f.sex = randomSex(); });
         if (!Array.isArray(g.eggs)) g.eggs = [];
@@ -315,11 +380,6 @@ export function catchUpOffline(game, now = Date.now()) {
       if (f.preg != null) f.preg = Math.min(0.98, f.preg + step / RATES.pregSec * RATES.offlinePregMul);
     });
     (game.eggs || []).forEach(e => { e.t = Math.max(1, e.t - step); });
-    (game.friends || []).forEach(fr => {
-      const before = stageOf(fr.growth);
-      fr.growth = Math.min(1, fr.growth + RATES.growPerSec * RATES.offlineGrowMul * friendGrowFactor(game.dirt) * step);
-      if (stageOf(fr.growth) !== before) grown.push(fr);
-    });
   }
   game.lastTick = now;
   return { goneSec: gone, grown };

@@ -3800,7 +3800,7 @@ export default function App() {
           {/* ===== 모듈 3: 🐠 내 어항 키우기 (치어 돌보기·청소·물갈이·상점·꾸미기, AquariumGame.jsx) ===== */}
           {activeTab === 'ocean' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-              <AquariumGame creatures={OCEAN_CREATURES} CreatureSVG={OceanCreatureSVG} audio={audioEngine} speak={speakNaturalKorean} />
+              <AquariumGame audio={audioEngine} speak={speakNaturalKorean} />
             </div>
           )}
 
