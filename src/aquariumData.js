@@ -36,50 +36,68 @@ export const FISH_SPECIES = [
     tail: { color: 'rgba(251,146,60,0.72)', len: 0.75, spread: 0.62, double: true }, fin: 'rgba(251,146,60,0.65)'
   },
   {
-    id: 'platy', name: '플래티', price: 1500, len: 40, hRatio: 0.4, shape: 'normal',
+    id: 'platy', name: '플래티', price: 250, len: 40, hRatio: 0.4, shape: 'normal',
     speed: 0.9, growMul: 1.1, school: true, zone: 'mid',
     top: '#dc2626', belly: '#fdba74',
     tail: { color: 'rgba(15,23,42,0.75)', len: 0.36, spread: 0.36 }, fin: 'rgba(248,113,113,0.6)'
   },
   {
-    id: 'cory', name: '코리도라스', price: 2000, len: 40, hRatio: 0.36, shape: 'cory',
+    id: 'cory', name: '코리도라스', price: 330, len: 40, hRatio: 0.36, shape: 'cory',
     speed: 0.55, growMul: 1, school: true, zone: 'bottom',
     top: '#78716c', belly: '#f5f5f4', spots: '#44403c',
     tail: { color: 'rgba(214,211,209,0.6)', len: 0.3, spread: 0.32 }, fin: 'rgba(214,211,209,0.55)'
   },
   {
     // 비파(플레코): 바닥과 유리에 붙어 다니며 유리 이끼를 먹어 치운다
-    id: 'pleco', name: '비파', price: 3000, len: 58, hRatio: 0.3, shape: 'pleco',
+    id: 'pleco', name: '비파', price: 500, len: 58, hRatio: 0.3, shape: 'pleco',
     speed: 0.45, growMul: 0.9, school: false, zone: 'bottom', algaeEater: true,
     top: '#44403c', belly: '#78716c', spots: '#e7e5e4',
     tail: { color: 'rgba(68,64,60,0.85)', len: 0.3, spread: 0.36, solid: true }, fin: 'rgba(87,83,78,0.85)'
   },
   {
-    id: 'betta', name: '베타', price: 2500, len: 54, hRatio: 0.3, shape: 'betta',
+    id: 'betta', name: '베타', price: 420, len: 54, hRatio: 0.3, shape: 'betta',
     speed: 0.5, growMul: 0.95, school: false, zone: 'top',
     top: '#1d4ed8', belly: '#7c3aed',
     tail: { grad: ['#2563eb', '#7c3aed', '#dc2626'], len: 1.05, spread: 0.85 }, fin: 'rgba(124,58,237,0.6)'
   },
   {
-    id: 'angel', name: '엔젤피시', price: 4000, len: 52, hRatio: 0.95, shape: 'angel',
+    id: 'angel', name: '엔젤피시', price: 670, len: 52, hRatio: 0.95, shape: 'angel',
     speed: 0.55, growMul: 0.9, school: false, zone: 'mid',
     top: '#cbd5e1', belly: '#f8fafc', bars: '#1e293b',
     tail: { color: 'rgba(226,232,240,0.6)', len: 0.4, spread: 0.45 }, fin: 'rgba(226,232,240,0.55)'
   },
   {
-    id: 'tang', name: '블루탱', price: 6000, len: 60, hRatio: 0.62, shape: 'tang',
+    id: 'tang', name: '블루탱', price: 1000, len: 60, hRatio: 0.62, shape: 'tang',
     speed: 0.8, growMul: 0.85, school: false, zone: 'mid',
     top: '#1d4ed8', belly: '#3b82f6', mark: '#0f172a',
     tail: { color: '#facc15', len: 0.38, spread: 0.4, solid: true }, fin: 'rgba(15,23,42,0.75)'
   },
   {
-    id: 'discus', name: '디스커스', price: 8000, len: 62, hRatio: 0.95, shape: 'disc',
+    id: 'discus', name: '디스커스', price: 1330, len: 62, hRatio: 0.95, shape: 'disc',
     speed: 0.45, growMul: 0.8, school: false, zone: 'mid',
     top: '#ea580c', belly: '#f59e0b', waves: '#38bdf8',
     tail: { color: 'rgba(234,88,12,0.6)', len: 0.25, spread: 0.3 }, fin: 'rgba(234,88,12,0.55)'
   }
 ];
 export const FISH_BY_ID = Object.fromEntries(FISH_SPECIES.map(f => [f.id, f]));
+
+// 구피는 실제처럼 디자인이 다양하다: 들어올 때마다 무작위로 하나 (glowTail: 어두우면 꼬리가 빛남)
+export const GUPPY_VARIANTS = [
+  { id: 'rainbow', name: '무지개', tail: ['#f97316', '#ec4899', '#3b82f6'] },
+  { id: 'redcobra', name: '레드 코브라', tail: ['#991b1b', '#ef4444', '#fca5a5'], tailSpots: '#1f2937', top: '#9a3412', belly: '#fed7aa' },
+  { id: 'bluegrass', name: '블루 그라스', tail: ['#1e3a8a', '#3b82f6', '#bfdbfe'], tailSpots: '#0f172a', top: '#475569', belly: '#e0f2fe' },
+  { id: 'tuxedo', name: '옐로 턱시도', tail: ['#ca8a04', '#facc15', '#fef08a'], tuxedo: '#111827', fin: 'rgba(250,204,21,0.65)' },
+  { id: 'albino', name: '알비노 레드', tail: ['#e11d48', '#fb7185', '#ffe4e6'], top: '#fecdd3', belly: '#fff1f2', eye: '#e11d48' },
+  { id: 'mosaic', name: '드래곤 모자이크', tail: ['#6d28d9', '#db2777', '#f59e0b'], tailSpots: '#fde68a', fin: 'rgba(219,39,119,0.6)' },
+  { id: 'koi', name: '코이', tail: ['#ffffff', '#fecaca', '#ef4444'], top: '#f8fafc', belly: '#ffffff', patches: '#ef4444', fin: 'rgba(255,255,255,0.7)' },
+  { id: 'neonblue', name: '형광 네온블루', tail: ['#0e7490', '#22d3ee', '#a5f3fc'], glowTail: true, top: '#155e75', belly: '#cffafe', fin: 'rgba(34,211,238,0.6)' },
+  { id: 'black', name: '풀 블랙', tail: ['#030712', '#1f2937', '#4b5563'], top: '#111827', belly: '#374151', fin: 'rgba(31,41,55,0.75)' }
+];
+export const GUPPY_BY_ID = Object.fromEntries(GUPPY_VARIANTS.map(v => [v.id, v]));
+
+// 이로치(색이 다른 희귀 개체)가 나올 확률 – 물고기·바다 친구 모두 같은 확률
+export const SHINY_RATE = 1 / 40;
+export const rollShiny = () => Math.random() < SHINY_RATE;
 
 // 장식 (모래 위에 놓는다) – 그림은 AquariumGame.jsx 의 drawDecor 가 그린다
 export const DECOR_ITEMS = [
@@ -101,7 +119,7 @@ export const FRIEND_PRICES = {
 };
 
 // 기본 물고기(처음 받는 치어 종류)를 상점에서 더 살 때 가격
-export const STARTER_FISH_PRICE = 600;
+export const STARTER_FISH_PRICE = 100;
 
 export const LIMITS = { fish: 14, friends: 4, decor: 10 };
 
@@ -135,7 +153,11 @@ export const REWARDS = { eat: 1, poop: 2, algae: 1, waterChange: 10, juvenile: 2
 export const SAVE_KEY = 'bps_aquarium_v1';
 let uidSeq = 0;
 export const newUid = () => `${Date.now().toString(36)}${(uidSeq++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-export const newFish = (sp) => ({ uid: newUid(), sp, growth: 0, full: 80, happy: 80, bornAt: Date.now() });
+export const newFish = (sp) => ({
+  uid: newUid(), sp, growth: 0, full: 80, happy: 80, bornAt: Date.now(),
+  variant: sp === 'guppy' ? GUPPY_VARIANTS[Math.floor(Math.random() * GUPPY_VARIANTS.length)].id : undefined,
+  shiny: rollShiny()
+});
 
 export function createNewGame() {
   return {
@@ -163,7 +185,11 @@ export function loadGame() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) {
       const g = JSON.parse(raw);
-      if (g && g.version === 1 && Array.isArray(g.fish)) return g;
+      if (g && g.version === 1 && Array.isArray(g.fish)) {
+        // 디자인이 생기기 전에 들어온 구피는 원래 모습(무지개)으로
+        g.fish.forEach(f => { if (f.sp === 'guppy' && !f.variant) f.variant = 'rainbow'; });
+        return g;
+      }
     }
   } catch (e) { /* 저장소를 못 쓰면 새 게임 */ }
   return createNewGame();

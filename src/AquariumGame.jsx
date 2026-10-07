@@ -9,7 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { VOICE, attachJosa } from './voiceLines.js';
 import {
-  FISH_SPECIES, FISH_BY_ID, DECOR_ITEMS, DECOR_BY_ID, FRIEND_PRICES, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
+  FISH_SPECIES, FISH_BY_ID, GUPPY_BY_ID, rollShiny, DECOR_ITEMS, DECOR_BY_ID, FRIEND_PRICES, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
   stageOf, sizeScale, RATES, isSad, conditionOf, growFactor, REWARDS,
   loadGame, saveGame, catchUpOffline, newFish, newUid, todayKey
 } from './aquariumData.js';
@@ -28,6 +28,66 @@ const DECOR_BOX = {
   airstone: [32, 22], chest: [72, 62], castle: [112, 104], diver: [52, 92]
 };
 const FOOD_COLORS = ['#f97316', '#dc2626', '#84cc16', '#facc15', '#a16207'];
+
+// 불 밝기 단계: 0 꺼짐 · 1 · 2 · 3 최대 (어둠 농도 / WebGL 빛 세기)
+const LIGHT_DARK = [0.8, 0.58, 0.3, 0];
+const LIGHT_GL = [0.08, 0.4, 0.75, 1];
+
+// ═══════════════════════════════ 이로치 색 · 구피 디자인 ═══════════════════════════════
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+  if (mx === mn) return [0, 0, l];
+  const d = mx - mn, sat = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+  const h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, sat, l];
+}
+function hslToRgb(h, sat, l) {
+  const k = (n) => (n + h / 30) % 12, a = sat * Math.min(l, 1 - l);
+  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+}
+// 색상환을 돌리고 채도를 올려 '이로치' 색을 만든다 (#rrggbb / rgba() 모두 지원)
+function shinyColor(c) {
+  let r, g, b, a = null;
+  if (typeof c !== 'string') return c;
+  if (c[0] === '#') { r = parseInt(c.slice(1, 3), 16); g = parseInt(c.slice(3, 5), 16); b = parseInt(c.slice(5, 7), 16); }
+  else {
+    const m = c.match(/rgba?\(([^)]+)\)/); if (!m) return c;
+    [r, g, b, a] = m[1].split(',').map(Number);
+  }
+  const [h, sat, l] = rgbToHsl(r, g, b);
+  const [nr, ng, nb] = hslToRgb((h + 150) % 360, Math.min(1, sat * 1.25 + 0.15), Math.min(0.82, l * 1.05 + 0.04));
+  return a == null || Number.isNaN(a) ? `rgb(${nr},${ng},${nb})` : `rgba(${nr},${ng},${nb},${a})`;
+}
+const lookCache = new Map();
+// 개체 한 마리의 실제 모습: 종류 기본값 + 구피 디자인 + 이로치 색
+export function lookOf(sp, f) {
+  const key = `${sp.id}|${f.variant || ''}|${f.shiny ? 1 : 0}`;
+  if (lookCache.has(key)) return lookCache.get(key);
+  let look = sp;
+  const v = sp.id === 'guppy' && f.variant ? GUPPY_BY_ID[f.variant] : null;
+  if (v) {
+    look = {
+      ...sp, top: v.top || sp.top, belly: v.belly || sp.belly, fin: v.fin || sp.fin,
+      tail: { ...sp.tail, grad: v.tail, spots: v.tailSpots, glow: !!v.glowTail },
+      tuxedo: v.tuxedo, patches: v.patches, eyeColor: v.eye
+    };
+  }
+  if (f.shiny) {
+    const t = look.tail;
+    look = {
+      ...look, shiny: true,
+      top: shinyColor(look.top), belly: shinyColor(look.belly), fin: shinyColor(look.fin),
+      bars: shinyColor(look.bars), spots: shinyColor(look.spots), waves: shinyColor(look.waves), mark: shinyColor(look.mark),
+      tuxedo: shinyColor(look.tuxedo), patches: shinyColor(look.patches),
+      bands: look.bands && look.bands.map(b => ({ ...b, color: shinyColor(b.color) })),
+      tail: { ...t, color: shinyColor(t.color), grad: t.grad && t.grad.map(shinyColor), spots: shinyColor(t.spots) }
+    };
+  }
+  lookCache.set(key, look);
+  return look;
+}
 
 // ═══════════════════════════════ 물고기 그리기 ═══════════════════════════════
 function bodyProfile(shape, s) {
@@ -50,7 +110,9 @@ function smoothClosed(ctx, pts) {
 }
 
 // 원점(몸 가운데)에서 +x 방향을 보는 물고기를 그린다. L: 현재 몸 길이(px)
+// o.glowOnly: 어두울 때 빛나는 부분(야광 줄무늬·형광 꼬리)만 덧그린다 (o.glowK: 빛 세기 0~1)
 export function drawFish(ctx, sp, L, o = {}) {
+  const glowOnly = !!o.glowOnly;
   const growth = o.growth ?? 1;
   const fry = 1 - Math.min(1, growth / 0.6);           // 1 이면 갓 태어난 치어
   const H = L * sp.hRatio * (1 + fry * 0.12);
@@ -70,7 +132,9 @@ export function drawFish(ctx, sp, L, o = {}) {
   // ── 지느러미 (몸 뒤) ──
   const finFill = sp.fin;
   ctx.fillStyle = finFill;
-  if (sp.shape === 'angel') {
+  if (glowOnly) {
+    // 야광 모드에서는 지느러미를 그리지 않는다
+  } else if (sp.shape === 'angel') {
     // 길게 뒤로 뻗은 등·뒷지느러미
     ctx.beginPath();
     ctx.moveTo(xs(0.3), wave(0.3) - half(0.3) * 0.9);
@@ -143,13 +207,32 @@ export function drawFish(ctx, sp, L, o = {}) {
     ctx.fill();
   };
   ctx.fillStyle = tailFill;
-  if (t.double) {
+  if (glowOnly) {
+    if (t.glow) {
+      ctx.save();
+      ctx.globalAlpha *= o.glowK ?? 1;
+      ctx.shadowColor = t.grad ? t.grad[t.grad.length - 1] : t.color;
+      ctx.shadowBlur = L * 0.4;
+      tailLobe(0, 1);
+      ctx.restore();
+    }
+  } else if (t.double) {
     ctx.save(); ctx.globalAlpha *= 0.7; tailLobe(-tsp * 0.12, 0.8); ctx.restore();
     tailLobe(tsp * 0.1, 0.85);
   } else {
     tailLobe(0, 1);
   }
-  if (o.detail && fry < 0.6) {
+  if (!glowOnly && t.spots && fry < 0.7) {
+    // 구피 꼬리 점무늬
+    ctx.fillStyle = t.spots;
+    for (let i = 0; i < 12; i++) {
+      const q = 0.25 + ((i * 0.37) % 1) * 0.68;
+      ctx.beginPath();
+      ctx.arc(tailX - tl * q, tailY + swing * q + (((i * 0.61) % 1) - 0.5) * tsp * 0.85 * q, Math.max(0.7, L * 0.018), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  if (!glowOnly && o.detail && fry < 0.6) {
     // 꼬리 지느러미 줄무늬
     ctx.strokeStyle = 'rgba(255,255,255,0.22)';
     ctx.lineWidth = Math.max(0.6, L * 0.012);
@@ -172,17 +255,19 @@ export function drawFish(ctx, sp, L, o = {}) {
   bg.addColorStop(0.62, sp.belly);
   bg.addColorStop(1, sp.belly);
   ctx.fillStyle = bg;
-  ctx.fill();
+  if (!glowOnly) ctx.fill();
 
   // ── 무늬 (몸 모양으로 잘라 그리기) ──
   ctx.save();
   ctx.clip();
+  if (glowOnly) ctx.globalAlpha *= o.glowK ?? 1;
   if (sp.bands) {
     sp.bands.forEach(b => {
+      if (glowOnly && !b.glow) return;
       ctx.strokeStyle = b.color;
       ctx.lineWidth = H * b.w;
       ctx.lineCap = 'round';
-      if (b.glow) { ctx.shadowColor = b.color; ctx.shadowBlur = L * 0.15; }
+      if (b.glow) { ctx.shadowColor = b.color; ctx.shadowBlur = L * (glowOnly ? 0.45 : 0.15); }
       ctx.beginPath();
       for (let i = 0; i <= 8; i++) {
         const s = b.from + (b.to - b.from) * i / 8;
@@ -191,6 +276,20 @@ export function drawFish(ctx, sp, L, o = {}) {
       }
       ctx.stroke();
       ctx.shadowBlur = 0;
+    });
+  }
+  if (glowOnly) { ctx.restore(); ctx.restore(); return; }
+  if (sp.tuxedo) {
+    // 턱시도 구피: 몸 뒤쪽 절반이 검다
+    ctx.save(); ctx.globalAlpha *= 0.88; ctx.fillStyle = sp.tuxedo;
+    ctx.fillRect(xs(1) - L * 0.1, -H, xs(0.48) - xs(1) + L * 0.1, H * 2);
+    ctx.restore();
+  }
+  if (sp.patches) {
+    // 코이 구피: 붉은 얼룩
+    ctx.fillStyle = sp.patches;
+    [[0.22, -0.15, 0.3], [0.55, 0.05, 0.34], [0.82, -0.1, 0.24]].forEach(([q, yy, rr]) => {
+      ctx.beginPath(); ctx.ellipse(xs(q), wave(q) + yy * H, L * rr * 0.32, H * rr, 0.3, 0, Math.PI * 2); ctx.fill();
     });
   }
   if (sp.bars) {
@@ -270,7 +369,7 @@ export function drawFish(ctx, sp, L, o = {}) {
   const er = Math.max(1.3, L * 0.052 * (1 + fry * 0.75));
   ctx.fillStyle = '#f8fafc';
   ctx.beginPath(); ctx.arc(ex, ey, er * 1.3, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#0f172a';
+  ctx.fillStyle = sp.eyeColor || '#0f172a';
   ctx.beginPath(); ctx.arc(ex + er * 0.15, ey, er, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#ffffff';
   ctx.beginPath(); ctx.arc(ex + er * 0.45, ey - er * 0.4, er * 0.36, 0, Math.PI * 2); ctx.fill();
@@ -454,7 +553,7 @@ precision highp float;
 #else
 precision mediump float;
 #endif
-uniform vec2 uRes; uniform float uTime; uniform float uSurface; uniform float uFloor; uniform vec2 uTilt; uniform float uMurk;
+uniform vec2 uRes; uniform float uTime; uniform float uSurface; uniform float uFloor; uniform vec2 uTilt; uniform float uMurk; uniform float uLight;
 float caustic(vec2 uv, float t) {
   vec2 p = mod(uv * 6.28318, 6.28318) - 250.0;
   vec2 i = p; float c = 1.0; float inten = 0.005;
@@ -484,7 +583,7 @@ void main() {
   rays *= (1.0 - smoothstep(0.0, 0.85, depth)) * water * 0.3 * clear;
   float surf = exp(-abs(y - uSurface) * 90.0) * (0.45 + 0.35 * sin(uv.x * 90.0 + uTime * 3.0));
   vec3 col = vec3(0.72, 0.95, 1.0) * (light + rays) + vec3(1.0) * surf * 0.45;
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(col * uLight, 1.0);
 }`;
 
 function initLightLayer(canvas) {
@@ -510,7 +609,7 @@ function initLightLayer(canvas) {
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   const u = (n) => gl.getUniformLocation(prog, n);
-  return { gl, uRes: u('uRes'), uTime: u('uTime'), uSurface: u('uSurface'), uFloor: u('uFloor'), uTilt: u('uTilt'), uMurk: u('uMurk') };
+  return { gl, uRes: u('uRes'), uTime: u('uTime'), uSurface: u('uSurface'), uFloor: u('uFloor'), uTilt: u('uTilt'), uMurk: u('uMurk'), uLight: u('uLight') };
 }
 
 // ═══════════════════════════════ 상점 미리보기 ═══════════════════════════════
@@ -523,7 +622,7 @@ function FishPreview({ species }) {
     ctx.translate(58, 37);
     // 작은 물고기도 잘 보이게 크게 (몸이 높은 종류는 칸에 맞게 조금 작게)
     const L = species.hRatio > 0.8 ? 58 : clamp(species.len * 1.5, 56, 74);
-    drawFish(ctx, species, L, { phase: 0.6, growth: 1, detail: true });
+    drawFish(ctx, lookOf(species, { variant: species.id === 'guppy' ? 'rainbow' : undefined }), L, { phase: 0.6, growth: 1, detail: true });
   }, [species]);
   return <canvas ref={ref} style={{ width: 110, height: 74 }} />;
 }
@@ -599,6 +698,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
   const [placed, setPlaced] = useState({ decor: [], friends: [] });
   const [toast, setToast] = useState(null);
   const [tiltState, setTiltState] = useState('none');
+  const [light, setLight] = useState(0);            // 조명 단계 (처음엔 꺼짐)
 
   const creatureById = (id) => creatures.find(c => c.id === id);
   const setMode = (m) => { modeRef.current = m; setModeState(m); };
@@ -628,7 +728,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       food: [], bubbles: [], ripples: [], pops: [], pearls: [], drops: [], algae: [],
       pointer: { down: false, x: 0, y: 0, downAt: 0, drag: null },
       tilt: { x: 0, y: 0 }, tiltRaw: { x: 0, y: 0 }, tiltBase: null,
-      shaker: null, waterChange: null, overlayKey: '',
+      shaker: null, waterChange: null, overlayKey: '', algaeLayer: null,
+      light: 0, darkNow: LIGHT_DARK[0], glNow: LIGHT_GL[0],
       lastSave: 0, lastHud: 0, lastVoice: {}, lastYum: 0, bubbleT: 0, backdrop: null, gravel: null
     };
     simRef.current = s;
@@ -736,6 +837,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       edge.addColorStop(0, 'rgba(255,255,255,0.18)'); edge.addColorStop(1, 'rgba(255,255,255,0)');
       gx.fillStyle = edge; gx.fillRect(0, s.floor - 6, s.W, 24);
       s.gravel = gc;
+      [s.algaeLayer, s.algaeCtx] = makeLayer(s.W, s.H);
       s.overlayKey = '';
       if (s.algae.length !== game.algae) regenAlgae();
     };
@@ -868,6 +970,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     };
 
     const onDown = (e) => {
+      // 버튼·정보 카드·상점 같은 화면 요소를 누른 것은 어항 터치로 치지 않는다
+      if (e.target.closest && e.target.closest('button, [data-ui]')) return;
       const { x, y } = local(e);
       s.pointer = { down: true, x, y, downAt: s.t, drag: null };
       const m = modeRef.current;
@@ -987,6 +1091,10 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         }
         // 다 큰 물고기가 기분 좋으면 가끔 반짝 조개를 떨어뜨린다
         const r = s.rt[f.uid];
+        if (r && f.shiny) {
+          r.sparkT = (r.sparkT ?? Math.random()) - dt;
+          if (r.sparkT <= 0) { r.sparkT = 0.5 + Math.random() * 0.6; s.pops.push({ x: r.x + (Math.random() - 0.5) * 30, y: r.y + (Math.random() - 0.5) * 20, text: '✨', life: 0.7, vy: -18 }); }
+        }
         if (r && after === 'adult' && !isSad(f, game.dirt) && s.pearls.length < 4) {
           r.pearlT -= dt;
           if (r.pearlT <= 0) { r.pearlT = 70 + Math.random() * 60; s.drops.push({ kind: 'pearl', x: r.x, y: r.y, vy: 30 }); }
@@ -1288,6 +1396,12 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       say('release', VOICE.aquaRelease(FISH_BY_ID[f.sp]));
       return true;
     };
+    // 조명: 꺼짐 → 1단 → 2단 → 3단 → 꺼짐
+    s.toggleLight = () => {
+      s.light = (s.light + 1) % 4;
+      audio.playFreq(s.light ? 660 + s.light * 160 : 330, 'triangle', 0.08, 0.35);
+      return s.light;
+    };
     s.startWaterChange = () => {
       if (s.waterChange) return;
       if (game.dirt < 8) { showToast('💧 물이 아직 깨끗해요!'); return; }
@@ -1352,10 +1466,11 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         ctx.save();
         ctx.translate(r.x, r.y);
         const ang = clamp(Math.atan2(r.vy, Math.abs(r.vx) + 8) * 0.6, -0.6, 0.6);
+        r.drawL = L; r.drawAng = ang;
         ctx.scale(r.dir, 1);
         ctx.rotate(ang * 1);
         ctx.globalAlpha = (0.72 + r.z * 0.28) * (r.leaving != null ? clamp(1 - r.leaving / 2.6, 0, 1) : 1);
-        drawFish(ctx, sp, L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26 });
+        drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26 });
         ctx.restore();
         if (info === f.uid) {
           ctx.strokeStyle = 'rgba(254,240,138,0.9)'; ctx.lineWidth = 2.5;
@@ -1433,28 +1548,85 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       }
     };
 
-    // 유리 위 이끼 + 탁한 물 (값이 바뀔 때만 다시 그림)
+    // 맨 위 레이어: 탁한 물·유리 이끼(값이 바뀔 때만 캐시에 다시 그림) → 어둠 → 야광
     const drawOverlay = () => {
       const key = `${Math.round(game.dirt / 2)}|${s.algae.length}|${Math.round(s.surface)}|${s.W}x${s.H}`;
-      if (key === s.overlayKey) return;
-      s.overlayKey = key;
+      if (key !== s.overlayKey) {
+        s.overlayKey = key;
+        const ac = s.algaeCtx;
+        ac.clearRect(0, 0, s.W, s.H);
+        const d = game.dirt / 100;
+        if (d > 0.05) {
+          ac.fillStyle = `rgba(101,108,36,${Math.pow(d, 1.3) * 0.38})`;
+          ac.fillRect(0, s.surface, s.W, s.H - s.surface);
+        }
+        s.algae.forEach(a => {
+          for (let i = 0; i < a.blobs; i++) {
+            const ang = a.seed + i * 2.1, rr = a.r * (0.45 + (i % 3) * 0.2);
+            const bx = a.x + Math.cos(ang) * a.r * 0.5, by = a.y + Math.sin(ang) * a.r * 0.4;
+            const g = ac.createRadialGradient(bx, by, 0, bx, by, rr);
+            g.addColorStop(0, `rgba(77,124,15,${a.a})`); g.addColorStop(1, 'rgba(77,124,15,0)');
+            ac.fillStyle = g;
+            ac.beginPath(); ac.arc(bx, by, rr, 0, Math.PI * 2); ac.fill();
+          }
+        });
+      }
       octx.setTransform(s.dpr, 0, 0, s.dpr, 0, 0);
       octx.clearRect(0, 0, s.W, s.H);
-      const d = game.dirt / 100;
-      if (d > 0.05) {
-        octx.fillStyle = `rgba(101,108,36,${Math.pow(d, 1.3) * 0.38})`;
-        octx.fillRect(0, s.surface, s.W, s.H - s.surface);
-      }
-      s.algae.forEach(a => {
-        for (let i = 0; i < a.blobs; i++) {
-          const ang = a.seed + i * 2.1, rr = a.r * (0.45 + (i % 3) * 0.2);
-          const bx = a.x + Math.cos(ang) * a.r * 0.5, by = a.y + Math.sin(ang) * a.r * 0.4;
-          const g = octx.createRadialGradient(bx, by, 0, bx, by, rr);
-          g.addColorStop(0, `rgba(77,124,15,${a.a})`); g.addColorStop(1, 'rgba(77,124,15,0)');
-          octx.fillStyle = g;
-          octx.beginPath(); octx.arc(bx, by, rr, 0, Math.PI * 2); octx.fill();
+      octx.drawImage(s.algaeLayer, 0, 0, s.W, s.H);
+
+      const dark = s.darkNow;
+      if (dark < 0.01) return;
+      // 어둠 (조명 아래쪽은 덜 어둡게)
+      const lampOn = s.light > 0;
+      const g = octx.createRadialGradient(s.W / 2, 0, 10, s.W / 2, s.H * 0.3, Math.max(s.W, s.H) * 0.9);
+      g.addColorStop(0, `rgba(2,8,28,${dark * (lampOn ? 0.45 : 1)})`);
+      g.addColorStop(1, `rgba(2,8,28,${dark})`);
+      octx.fillStyle = g;
+      octx.fillRect(0, 0, s.W, s.H);
+
+      // 야광: 어두울수록 더 밝게 빛난다
+      const gk = clamp(dark / LIGHT_DARK[0], 0, 1);
+      octx.globalCompositeOperation = 'lighter';
+      game.fish.forEach(f => {
+        const r = s.rt[f.uid], sp = FISH_BY_ID[f.sp];
+        if (!r || !sp || r.drawL == null) return;
+        const look = lookOf(sp, f);
+        const fade = r.leaving != null ? clamp(1 - r.leaving / 2.6, 0, 1) : 1;
+        if (f.shiny) {
+          const aura = octx.createRadialGradient(r.x, r.y, 2, r.x, r.y, r.drawL * 0.9);
+          aura.addColorStop(0, `rgba(253,224,71,${0.4 * gk * fade})`); aura.addColorStop(1, 'rgba(253,224,71,0)');
+          octx.fillStyle = aura;
+          octx.fillRect(r.x - r.drawL, r.y - r.drawL, r.drawL * 2, r.drawL * 2);
         }
+        const glows = (look.bands && look.bands.some(b => b.glow)) || look.tail.glow;
+        if (!glows) return;
+        octx.save();
+        octx.translate(r.x, r.y);
+        octx.scale(r.dir, 1);
+        octx.rotate(r.drawAng || 0);
+        octx.globalAlpha = fade;
+        drawFish(octx, look, r.drawL, { phase: r.phase, growth: f.growth, glowOnly: true, glowK: 0.55 + gk * 0.45 });
+        octx.restore();
       });
+      // 해파리 친구·이로치 친구·반짝 조개도 은은하게 빛난다
+      game.friends.forEach(fr => {
+        const q = s.fr[fr.uid];
+        if (!q || (fr.id !== 'jellyfish' && !fr.shiny)) return;
+        const col = fr.shiny ? '253,224,71' : '192,132,252';
+        const rad = q.size * 0.75;
+        const aura = octx.createRadialGradient(q.x, q.y, 4, q.x, q.y, rad);
+        aura.addColorStop(0, `rgba(${col},${0.45 * gk})`); aura.addColorStop(1, `rgba(${col},0)`);
+        octx.fillStyle = aura;
+        octx.fillRect(q.x - rad, q.y - rad, rad * 2, rad * 2);
+      });
+      s.pearls.forEach(p => {
+        const aura = octx.createRadialGradient(p.x, p.y, 1, p.x, p.y, 30 * s.k);
+        aura.addColorStop(0, `rgba(255,255,255,${0.6 * gk})`); aura.addColorStop(1, 'rgba(255,255,255,0)');
+        octx.fillStyle = aura;
+        octx.fillRect(p.x - 30 * s.k, p.y - 30 * s.k, 60 * s.k, 60 * s.k);
+      });
+      octx.globalCompositeOperation = 'source-over';
     };
 
     // 바다 친구 SVG 위치 갱신
@@ -1484,6 +1656,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       gl.uniform1f(light.uFloor, s.floor / s.H);
       gl.uniform2f(light.uTilt, s.tilt.x, s.tilt.y);
       gl.uniform1f(light.uMurk, game.dirt / 100);
+      gl.uniform1f(light.uLight, s.glNow);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
@@ -1500,6 +1673,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       }
       s.tilt.x += (s.tiltRaw.x - s.tilt.x) * Math.min(1, dt * 4);
       s.tilt.y += (s.tiltRaw.y - s.tilt.y) * Math.min(1, dt * 4);
+      s.darkNow += (LIGHT_DARK[s.light] - s.darkNow) * Math.min(1, dt * 5);
+      s.glNow += (LIGHT_GL[s.light] - s.glNow) * Math.min(1, dt * 5);
 
       tickCare(dt);
       updateFish(dt);
@@ -1570,16 +1745,25 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       game.fish.push(f);
       s.ensureFishRt(f, true);
       for (let i = 0; i < 12; i++) s.bubbles.push({ x: s.rt[f.uid].x + (Math.random() - 0.5) * 30, y: s.surface + 10, r: 2 + Math.random() * 4, wob: Math.random() * 6, vy: 40 });
-      s.say('buy', VOICE.aquaNewFish(FISH_BY_ID[id]));
+      const v = f.variant ? GUPPY_BY_ID[f.variant] : null;
+      if (f.shiny) {
+        s.say('buy', VOICE.aquaShiny(FISH_BY_ID[id]));
+        showToast(`✨ 이로치 ${FISH_BY_ID[id].name}${v ? ` (${v.name})` : ''} 등장! ✨`);
+        for (let i = 0; i < 20; i++) s.pops.push({ x: s.rt[f.uid].x + (Math.random() - 0.5) * 80, y: s.surface + 20 + Math.random() * 60, text: i % 2 ? '✨' : '⭐', life: 1.4, vy: -30 });
+      } else {
+        s.say('buy', VOICE.aquaNewFish(FISH_BY_ID[id]));
+        if (v) showToast(`🎲 ${v.name} 구피가 왔어요!`);
+      }
     } else if (kind === 'decor') {
       game.decor.push({ uid: newUid(), id, x: 0.1 + Math.random() * 0.8 });
     } else {
-      const fr = { uid: newUid(), id };
+      const fr = { uid: newUid(), id, shiny: rollShiny() };
       game.friends.push(fr);
       s.ensureFriendRt(fr, true);
       setFriends(game.friends.slice());
       const c = creatureById(id);
-      if (c) s.say('buy', VOICE.aquaNewFriend(c));
+      if (c && fr.shiny) { s.say('buy', VOICE.aquaShiny(c)); showToast(`✨ 이로치 ${c.name} 등장! ✨`); }
+      else if (c) s.say('buy', VOICE.aquaNewFriend(c));
     }
     audio.playFanfare();
     saveGame(game);
@@ -1668,7 +1852,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
               ref={el => { const m = friendEls.current[fr.uid] || (friendEls.current[fr.uid] = {}); m.outer = el; }}
               style={{ position: 'absolute', left: 0, top: 0, width: `${size * 1.1}px`, height: `${size}px`, opacity: 0, pointerEvents: 'none', zIndex: 2, willChange: 'transform' }}
             >
-              <div ref={el => { const m = friendEls.current[fr.uid] || (friendEls.current[fr.uid] = {}); m.inner = el; }} style={{ width: '100%', height: '100%' }}>
+              <div ref={el => { const m = friendEls.current[fr.uid] || (friendEls.current[fr.uid] = {}); m.inner = el; }} style={{ width: '100%', height: '100%', filter: fr.shiny ? 'hue-rotate(150deg) saturate(1.5) drop-shadow(0 0 6px #fde047)' : 'none' }}>
                 <CreatureSVG id={fr.id} />
               </div>
             </div>
@@ -1683,10 +1867,35 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           boxShadow: 'inset 0 0 70px rgba(8,47,73,0.45)'
         }} />
 
+        {/* 수조 조명: 누를 때마다 꺼짐 → 1단 → 2단 → 3단 */}
+        <button
+          onPointerDown={stop}
+          onClick={() => { if (simRef.current) setLight(simRef.current.toggleLight()); }}
+          aria-label="조명"
+          title="조명"
+          style={{
+            // transform 으로 가운데 정렬하면 전역 button:active 효과가 덮어써 누르는 순간 버튼이 밀려난다 → margin 정렬
+            position: 'absolute', top: 0, left: 0, right: 0, margin: '0 auto', zIndex: 9,
+            width: 'min(230px, 46%)', height: '46px', border: 'none', borderRadius: '0 0 20px 20px', cursor: 'pointer',
+            background: 'linear-gradient(180deg, #0f172a, #1e293b)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            boxShadow: light ? `0 8px ${10 + light * 12}px rgba(254,240,138,${0.2 + light * 0.15})` : '0 6px 12px rgba(0,0,0,0.35)',
+            touchAction: 'manipulation'
+          }}
+        >
+          <span style={{ fontSize: '1.7rem', lineHeight: 1, filter: light ? `drop-shadow(0 0 ${4 + light * 4}px #fde047)` : 'grayscale(1) brightness(0.55)' }}>💡</span>
+          {[1, 2, 3].map(i => (
+            <span key={i} style={{
+              width: '14px', height: '14px', borderRadius: '50%',
+              background: light >= i ? '#fde047' : '#475569',
+              boxShadow: light >= i ? '0 0 10px #fde047' : 'inset 0 1px 2px rgba(0,0,0,0.5)'
+            }} />
+          ))}
+        </button>
+
         {/* 모드 안내 */}
         {mode !== 'play' && (
           <div style={{
-            position: 'absolute', left: '50%', top: '10px', transform: 'translateX(-50%)', zIndex: 6, pointerEvents: 'none',
+            position: 'absolute', left: '50%', top: '56px', transform: 'translateX(-50%)', zIndex: 6, pointerEvents: 'none',
             background: 'rgba(15,23,42,0.75)', color: '#ffffff', fontWeight: 900, padding: '8px 16px', borderRadius: '16px', fontSize: '0.95rem', whiteSpace: 'nowrap'
           }}>
             {mode === 'clean' ? '🧽 유리 이끼와 바닥 똥을 문질러 치워요' : '🎨 장식과 바다 친구를 끌어서 옮겨요'}
@@ -1695,7 +1904,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
 
         {toast && (
           <div key={toast.key} style={{
-            position: 'absolute', left: '50%', top: mode !== 'play' ? '54px' : '14px', transform: 'translateX(-50%)', zIndex: 7, pointerEvents: 'none',
+            position: 'absolute', left: '50%', top: mode !== 'play' ? '100px' : '58px', transform: 'translateX(-50%)', zIndex: 7, pointerEvents: 'none',
             background: '#ffffff', color: '#0f172a', fontWeight: 900, padding: '10px 18px', borderRadius: '18px', boxShadow: '0 8px 20px rgba(0,0,0,0.25)', whiteSpace: 'nowrap'
           }}>
             {toast.text}
@@ -1718,14 +1927,17 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           const cond = conditionOf(infoFish, dirt);
           const speed = growFactor(infoFish, dirt);
           return (
-            <div onPointerDown={stop} data-tick={infoTick} style={{
+            <div data-ui onPointerDown={stop} data-tick={infoTick} style={{
               position: 'absolute', left: '50%', bottom: '12px', transform: 'translateX(-50%)', zIndex: 8,
               background: 'rgba(255,255,255,0.96)', borderRadius: '22px', padding: '12px 16px', width: 'min(360px, calc(100% - 24px))',
               boxShadow: '0 12px 28px rgba(0,0,0,0.3)', border: `3px solid ${sad ? '#94a3b8' : '#38bdf8'}`
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ fontWeight: 900, fontSize: '1.15rem', color: '#0f172a' }}>
-                  {sad ? '😢' : '😊'} {sp.name} <span style={{ fontSize: '0.85rem', color: '#0369a1' }}>· {STAGE_NAMES[stage]}</span>
+                  {sad ? '😢' : '😊'} {sp.name}
+                  {infoFish.variant && <span style={{ fontSize: '0.8rem', color: '#be185d' }}> ({GUPPY_BY_ID[infoFish.variant]?.name})</span>}
+                  {' '}<span style={{ fontSize: '0.85rem', color: '#0369a1' }}>· {STAGE_NAMES[stage]}</span>
+                  {infoFish.shiny && <span style={{ marginLeft: '6px', fontSize: '0.78rem', background: 'linear-gradient(135deg, #fde047, #f59e0b)', color: '#713f12', padding: '2px 8px', borderRadius: '10px' }}>✨ 이로치</span>}
                 </div>
                 <button onClick={() => setInfo(null)} style={{ border: 'none', background: '#e2e8f0', borderRadius: '12px', padding: '4px 10px', fontWeight: 900, cursor: 'pointer' }}>✕</button>
               </div>
@@ -1779,7 +1991,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
 
         {/* 꾸미기: 놓인 장식·친구 목록 (✕ 는 반값에 되팔기) */}
         {mode === 'decorate' && (
-          <div onPointerDown={stop} style={{
+          <div data-ui onPointerDown={stop} style={{
             position: 'absolute', left: '10px', right: '10px', bottom: '10px', zIndex: 8, display: 'flex', gap: '6px', overflowX: 'auto',
             background: 'rgba(255,255,255,0.92)', borderRadius: '18px', padding: '8px'
           }}>
@@ -1804,7 +2016,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
 
         {/* 상점 */}
         {shopOpen && (
-          <div onPointerDown={stop} style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
+          <div data-ui onPointerDown={stop} style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
             <div style={{ background: '#ffffff', borderRadius: '26px', width: 'min(760px, 100%)', maxHeight: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.35)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#ffffff' }}>
                 <div style={{ fontWeight: 900, fontSize: '1.3rem' }}>🛒 바다 상점</div>
@@ -1828,7 +2040,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                     <div key={sp.id} style={{ border: '2px solid #e2e8f0', borderRadius: '18px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f0f9ff' }}>
                       <FishPreview species={sp} />
                       <div style={{ fontWeight: 900, color: '#0f172a' }}>{sp.name}</div>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>아기 치어로 와요</div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>{sp.id === 'guppy' ? '🎲 디자인은 랜덤!' : '아기 치어로 와요'}</div>
                       <button onClick={() => buy('fish', sp.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= price ? '#8b5cf6' : '#cbd5e1', color: '#ffffff' }}>🐚 {price}</button>
                     </div>
                   );
@@ -1849,7 +2061,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                 ))}
               </div>
               <div style={{ padding: '0 16px 14px', fontSize: '0.8rem', fontWeight: 800, color: '#64748b' }}>
-                물고기 {sim ? sim.game.fish.length : 0}/{LIMITS.fish} · 장식 {placed.decor.length}/{LIMITS.decor} · 바다 친구 {placed.friends.length}/{LIMITS.friends}
+                ✨ 아주 가끔 특별한 색깔의 이로치가 나와요 · 물고기 {sim ? sim.game.fish.length : 0}/{LIMITS.fish} · 장식 {placed.decor.length}/{LIMITS.decor} · 바다 친구 {placed.friends.length}/{LIMITS.friends}
               </div>
             </div>
           </div>
