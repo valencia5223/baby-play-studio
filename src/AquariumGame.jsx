@@ -10,7 +10,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VOICE, attachJosa } from './voiceLines.js';
 import {
   FISH_SPECIES, FISH_BY_ID, GUPPY_BY_ID, rollShiny, DECOR_ITEMS, DECOR_BY_ID, FRIEND_PRICES, FRIEND_DESC, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
-  stageOf, sizeScale, RATES, newFriend, friendGrowFactor, breedOf, mateStatus, SEX_NAMES, isSad, conditionOf, growFactor, REWARDS,
+  stageOf, sizeScale, RATES, newFriend, friendGrowFactor, breedOf, mateStatus, SEX_NAMES, isNightTime, isSad, conditionOf, growFactor, REWARDS,
   loadGame, saveGame, catchUpOffline, newFish, newUid, todayKey
 } from './aquariumData.js';
 
@@ -32,6 +32,8 @@ const FOOD_COLORS = ['#f97316', '#dc2626', '#84cc16', '#facc15', '#a16207'];
 // 불 밝기 단계: 0 꺼짐 · 1 · 2 · 3 최대 (어둠 농도 / WebGL 빛 세기)
 const LIGHT_DARK = [0.8, 0.58, 0.3, 0];
 const LIGHT_GL = [0.08, 0.4, 0.75, 1];
+// 밤에는 조명을 켜도 이 정도까지만 밝다 (달빛 어항)
+const NIGHT_DARK = 0.62, NIGHT_GL = 0.25;
 
 // ═══════════════════════════════ 이로치 색 · 구피 디자인 ═══════════════════════════════
 function rgbToHsl(r, g, b) {
@@ -445,6 +447,13 @@ export function drawFish(ctx, sp, L, o = {}) {
   // ── 눈 ──
   const ex = xs(0.15), ey = wave(0.15) - H * (sp.shape === 'disc' || sp.shape === 'angel' ? 0.12 : 0.07);
   const er = Math.max(1.3, L * 0.052 * (1 + fry * 0.75));
+  if (o.sleep) {
+    // 자는 물고기: 감은 눈 (◡)
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = Math.max(0.8, er * 0.45); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(ex, ey - er * 0.35, er * 1.05, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    ctx.restore();
+    return;
+  }
   ctx.fillStyle = '#f8fafc';
   ctx.beginPath(); ctx.arc(ex, ey, er * 1.3, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = sp.eyeColor || '#0f172a';
@@ -824,6 +833,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
   const simRef = useRef(null);
   const modeRef = useRef('play');
 
+  const [night, setNight] = useState(isNightTime());
   const [hud, setHud] = useState({ points: 0, clean: 100, sad: 0, sick: 0 });
   const [mode, setModeState] = useState('play');
   const [shopOpen, setShopOpen] = useState(false);
@@ -868,7 +878,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       pointer: { down: false, x: 0, y: 0, downAt: 0, drag: null },
       tilt: { x: 0, y: 0 }, tiltRaw: { x: 0, y: 0 }, tiltBase: null,
       shaker: null, waterChange: null, overlayKey: '', algaeLayer: null,
-      light: 3, darkNow: LIGHT_DARK[3], glNow: LIGHT_GL[3],
+      light: 3, darkNow: LIGHT_DARK[3], glNow: LIGHT_GL[3], night: isNightTime(),
       lastSave: 0, lastHud: 0, lastVoice: {}, lastYum: 0, bubbleT: 0, backdrop: null, gravel: null
     };
     simRef.current = s;
@@ -885,6 +895,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       setTimeout(() => showToast(`🎁 오늘의 선물! 조개 +${REWARDS.daily}`), 400);
     }
     if (offline.grown.length) setTimeout(() => showToast(`🌱 그동안 ${offline.grown.length}마리가 자랐어요!`), 3200);
+    if (s.night) welcomeLines.unshift(VOICE.aquaNight());   // 밤에는 잘 자는 물고기 안내가 먼저
     if (welcomeLines.length) setTimeout(() => speak(welcomeLines[0]), 500);
 
     setFriends(game.friends.slice());
@@ -1160,6 +1171,13 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         return;
       }
       const f = hitFish(x, y);
+      if (f && s.rt[f.uid].asleep) {
+        // 자는 물고기는 깨우지 않고 쉿!
+        const r = s.rt[f.uid];
+        s.pops.push({ x: r.x, y: r.y - fishLen(f) * 0.6 - 10, text: '🤫 쉿!', life: 1.6, vy: -18, color: '#e0f2fe' });
+        say('sleeptap', VOICE.aquaSleepTap(), 4);
+        return;
+      }
       if (f) {
         const r = s.rt[f.uid];
         r.boing = 1; r.happyT = 2;
@@ -1193,7 +1211,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       game.fish.forEach(fi => {
         const r = s.rt[fi.uid]; if (!r) return;
         const dx = r.x - x, dy = r.y - y, d = Math.hypot(dx, dy) || 1;
-        if (d < 200) { const kk = 380 * (1 - d / 200); r.vx += dx / d * kk; r.vy += dy / d * kk; r.panic = 1; if (fi.sp === 'puffer') r.puffT = 2; }
+        // 자는 물고기는 깨우지 않는다
+        if (d < 200 && !r.asleep) { const kk = 380 * (1 - d / 200); r.vx += dx / d * kk; r.vy += dy / d * kk; r.panic = 1; if (fi.sp === 'puffer') r.puffT = 2; }
       });
       Object.values(s.fr).forEach(q => { if (Math.hypot(q.x - x, q.y - y) < 160) q.startle = 1; });
     };
@@ -1284,7 +1303,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       }
       game.fish.forEach(f => {
         const sp = FISH_BY_ID[f.sp]; if (!sp) return;
-        f.full = Math.max(0, f.full - RATES.fullDropPerSec * dt);
+        f.full = Math.max(0, f.full - RATES.fullDropPerSec * (s.night ? 0.5 : 1) * dt);
         const comfy = f.full > 60 && game.dirt < 40;
         f.happy = clamp(f.happy + (comfy ? 0.6 : -RATES.happyDropPerSec * (isSad(f, game.dirt) ? 2 : 1)) * dt, 0, 100);
         const before = stageOf(f.growth);
@@ -1474,14 +1493,22 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           const dx = p.x - r.x, dy = p.y - r.y, d = Math.hypot(dx, dy) || 1;
           if (d < 460) { const pull = d > 45 ? 380 : -140; fx += dx / d * pull - dy / d * 60; fy += dy / d * pull + dx / d * 60; }
         }
+        // 밤에는 잔다: 밥을 쫓거나 놀란 게 아니면 아래쪽 자기 자리에서 거의 움직이지 않는다
+        const asleep = s.night && !chasing && r.panic < 0.05;
+        r.asleep = asleep;
+        if (asleep) {
+          if (r.sleepY == null) r.sleepY = bottom - span * (0.08 + Math.random() * 0.4);
+          fx *= 0.12; fy = fy * 0.12 + (r.sleepY - r.y) * 0.8;
+          maxSp *= 0.25;
+        } else r.sleepY = null;
         fx += s.tilt.x * 140; fy += s.tilt.y * 80;
         // 광어는 먹이가 없으면 바닥에 납작 엎드려 거의 움직이지 않는다
         const resting = sp.lieDown && !target && !following;
         if (resting) { fx *= 0.2; fy = fy * 0.2 + (bottom - 2 - r.y) * 3; }   // 바닥으로는 확실히 내려앉게
 
         r.vx += fx * dt; r.vy += fy * dt;
-        if (resting) { r.vx *= 1 - Math.min(1, dt * 1.2); r.vy *= 1 - Math.min(1, dt * 1.2); }
-        const spd = Math.hypot(r.vx, r.vy) || 1, minSp = resting ? 0 : 14 * s.k;
+        if (resting || asleep) { r.vx *= 1 - Math.min(1, dt * 1.2); r.vy *= 1 - Math.min(1, dt * 1.2); }
+        const spd = Math.hypot(r.vx, r.vy) || 1, minSp = resting || asleep ? 0 : 14 * s.k;
         if (spd > maxSp) { r.vx *= maxSp / spd; r.vy *= maxSp / spd; } else if (spd < minSp) { r.vx *= minSp / spd; r.vy *= minSp / spd; }
         r.panic = Math.max(0, r.panic - dt);
         r.puffT = Math.max(0, (r.puffT || 0) - dt);
@@ -1491,7 +1518,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         // 밥을 쫓을 때는 수면·바닥 가까이까지 갈 수 있다
         const yLo = chasing ? Math.min(top, target.y + 2) : top, yHi = chasing ? Math.max(bottom, target.y - 3) : bottom;
         r.x = clamp(r.x + r.vx * dt, 6, s.W - 6); r.y = clamp(r.y + r.vy * dt, yLo, yHi);
-        r.phase += dt * (5 + spd * 0.12 / s.k) * (sad ? 0.6 : 1) * (1 + (r.eager || 0) * 0.8);
+        r.phase += dt * (5 + spd * 0.12 / s.k) * (sad ? 0.6 : 1) * (asleep ? 0.3 : 1) * (1 + (r.eager || 0) * 0.8);
         r.eager = Math.max(0, (r.eager || 0) - dt);
         // 진행 방향 (좌우가 자주 바뀌지 않게)
         if (r.vx > 5) r.dir = 1; else if (r.vx < -5) r.dir = -1; else r.dir = r.dir || 1;
@@ -1770,7 +1797,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         ctx.rotate(ang * 1);
         ctx.globalAlpha = (0.72 + r.z * 0.28) * (r.leaving != null ? clamp(1 - r.leaving / 2.6, 0, 1) : 1);
         const belly = f.preg != null ? Math.pow(f.preg, 0.8) : 0;
-        drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0, belly, gravidSpot: breedOf(f.sp).type === 'live' });
+        drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0, belly, sleep: !!r.asleep, gravidSpot: breedOf(f.sp).type === 'live' });
         ctx.restore();
         // 아픈 물고기 위에는 상단 치료 버튼과 똑같은 모양(분홍 동그라미 + 반창고)을 띄운다
         if (f.sick) {
@@ -1895,6 +1922,20 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       octx.fillStyle = g;
       octx.fillRect(0, 0, s.W, s.H);
 
+      // 자는 물고기 위로 z Z 가 피어오른다
+      octx.textAlign = 'center'; octx.textBaseline = 'middle';
+      game.fish.forEach(f => {
+        const r = s.rt[f.uid];
+        if (!r || !r.asleep || !r.drawL) return;
+        for (let j = 0; j < 2; j++) {
+          const zt = (s.t * 0.45 + r.phase * 0.05 + j * 0.5) % 1;
+          octx.globalAlpha = Math.sin(zt * Math.PI) * 0.9;
+          octx.fillStyle = '#e0f2fe';
+          octx.font = `900 ${Math.round(Math.max(10, r.drawL * 0.28) * (0.7 + zt * 0.6))}px system-ui, sans-serif`;
+          octx.fillText(j ? 'Z' : 'z', r.x + r.dir * r.drawL * 0.25 + zt * 10, r.y - r.drawL * 0.3 - zt * 26);
+        }
+      });
+      octx.globalAlpha = 1;
       // 야광: 어두울수록 더 밝게 빛난다
       const gk = clamp(dark / LIGHT_DARK[0], 0, 1);
       octx.globalCompositeOperation = 'lighter';
@@ -1983,8 +2024,10 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       }
       s.tilt.x += (s.tiltRaw.x - s.tilt.x) * Math.min(1, dt * 4);
       s.tilt.y += (s.tiltRaw.y - s.tilt.y) * Math.min(1, dt * 4);
-      s.darkNow += (LIGHT_DARK[s.light] - s.darkNow) * Math.min(1, dt * 5);
-      s.glNow += (LIGHT_GL[s.light] - s.glNow) * Math.min(1, dt * 5);
+      const darkT = s.night ? Math.max(LIGHT_DARK[s.light], NIGHT_DARK) : LIGHT_DARK[s.light];
+      const glT = s.night ? Math.min(LIGHT_GL[s.light], NIGHT_GL) : LIGHT_GL[s.light];
+      s.darkNow += (darkT - s.darkNow) * Math.min(1, dt * (s.night ? 1.5 : 5));
+      s.glNow += (glT - s.glNow) * Math.min(1, dt * (s.night ? 1.5 : 5));
 
       tickCare(dt);
       updateFish(dt);
@@ -2001,6 +2044,9 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         const next = { points: game.points, clean: Math.round(100 - game.dirt), sad: fish.filter(f => isSad(f, game.dirt)).length, sick: fish.filter(f => f.sick).length };
         setHud(prev => (prev.points === next.points && prev.clean === next.clean && prev.sad === next.sad && prev.sick === next.sick ? prev : next));
         setInfoTick(v => (v + 1) % 1000);
+        const nightNow = isNightTime();
+        if (nightNow !== s.night) { s.night = nightNow; if (nightNow) say('night', VOICE.aquaNight(), 60); }
+        setNight(nightNow);
       }
       if (s.t - s.lastSave > 4) { s.lastSave = s.t; game.lastTick = Date.now(); saveGame(game); }
       raf = requestAnimationFrame(frame);
@@ -2130,6 +2176,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           🐚 {hud.points}
         </div>
         <WaterMeter value={hud.clean} />
+        {night && <div title="밤 (저녁 8시 ~ 아침 7시)" style={{ fontSize: '1.9rem', lineHeight: 1, filter: 'drop-shadow(0 0 6px #fde68a)' }}>🌙</div>}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>
           {/* 수조 조명: 누를 때마다 꺼짐 → 1단 → 2단 → 3단 (수조를 가리지 않게 상단 버튼줄에 둠) */}
           <button

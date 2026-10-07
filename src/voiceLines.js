@@ -85,6 +85,8 @@ export const VOICE = {
   // 직접 지은 이름은 미리 만든 음성이 없어 기기 음성(TTS)으로 읽는다
   aquaHello: (species, name) => `안녕! 나는 ${species.name} ${attachJosa(name, '이에요/예요')}`,
   aquaRelease: (species) => `안녕, ${attachJosa(species.name, '아/야')}! 넓은 자연에서 행복하게 지내!`,
+  aquaNight: () => '밤이 됐어요. 물고기들이 코 자고 있어요.',
+  aquaSleepTap: () => '쉿, 자고 있어요. 유나도 물고기처럼 자야 할 시간이에요.',
   aquaPregnant: (species, type) => `${species.name} 배 속에 ${type === 'live' ? '아기가' : '알이'} 생겼어요! 배가 점점 불러질 거예요!`,
   aquaBirth: (species) => `와아! ${attachJosa(species.name, '이/가')} 아기를 낳았어요!`,
   aquaEggs: (species) => `${attachJosa(species.name, '이/가')} 알을 낳았어요! 곧 아기가 나와요!`,
@@ -120,7 +122,7 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   oceanCreatures.forEach(c => lines.push(VOICE.itemSound(c), VOICE.aquaNewFriend(c), VOICE.aquaShiny(c),
     VOICE.aquaFriendGrow(c, 'juvenile'), VOICE.aquaFriendGrow(c, 'adult'), VOICE.aquaBabyFriend(c, 'fry'), VOICE.aquaBabyFriend(c, 'juvenile')));
   lines.push(VOICE.aquaWelcome(), VOICE.aquaWelcomeBack(), VOICE.aquaHungry(), VOICE.aquaDirty(), VOICE.aquaFeed(),
-    VOICE.aquaWaterChange(), VOICE.aquaClean(), VOICE.aquaPearl(), VOICE.aquaNeedMore(), VOICE.aquaNotSick(), VOICE.aquaHealMode());
+    VOICE.aquaWaterChange(), VOICE.aquaClean(), VOICE.aquaPearl(), VOICE.aquaNeedMore(), VOICE.aquaNotSick(), VOICE.aquaHealMode(), VOICE.aquaNight(), VOICE.aquaSleepTap());
   FISH_SPECIES.forEach(sp => {
     lines.push(VOICE.aquaGrow(sp, 'juvenile'), VOICE.aquaGrow(sp, 'adult'), VOICE.aquaNewFish(sp), VOICE.aquaSadFish(sp), VOICE.aquaRelease(sp), VOICE.aquaShiny(sp), VOICE.aquaSick(sp), VOICE.aquaHeal(sp));
     const bt = breedOf(sp.id).type;

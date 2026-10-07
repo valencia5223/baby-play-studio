@@ -205,6 +205,10 @@ export const RATES = {
   pregRestSec: 1200,        // 낳은 뒤 20분은 쉰다
   eggHatchSec: 90           // 알에서 깨어나기까지 1분 30초
 };
+// ── 낮과 밤 (실제 시계) ── 저녁 8시 ~ 아침 7시는 밤: 어항이 어두워지고 물고기들이 잔다
+export const NIGHT_HOURS = { from: 20, to: 7 };
+export const isNightTime = (d = new Date()) => { const h = d.getHours(); return h >= NIGHT_HOURS.from || h < NIGHT_HOURS.to; };
+
 export const isSad = (fish, dirt) => fish.full < 25 || dirt > 70 || !!fish.sick;
 // 컨디션 점수 0~100 (배부름 40% + 물 깨끗함 40% + 기분 20%)
 export const conditionOf = (fish, dirt) => Math.round(fish.full * 0.4 + (100 - dirt) * 0.4 + fish.happy * 0.2);
