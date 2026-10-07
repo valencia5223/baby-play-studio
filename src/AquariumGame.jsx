@@ -698,7 +698,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
   const [placed, setPlaced] = useState({ decor: [], friends: [] });
   const [toast, setToast] = useState(null);
   const [tiltState, setTiltState] = useState('none');
-  const [light, setLight] = useState(0);            // 조명 단계 (처음엔 꺼짐)
+  const [light, setLight] = useState(3);            // 조명 단계 (처음엔 가장 밝게 켜짐)
 
   const creatureById = (id) => creatures.find(c => c.id === id);
   const setMode = (m) => { modeRef.current = m; setModeState(m); };
@@ -729,7 +729,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       pointer: { down: false, x: 0, y: 0, downAt: 0, drag: null },
       tilt: { x: 0, y: 0 }, tiltRaw: { x: 0, y: 0 }, tiltBase: null,
       shaker: null, waterChange: null, overlayKey: '', algaeLayer: null,
-      light: 0, darkNow: LIGHT_DARK[0], glNow: LIGHT_GL[0],
+      light: 3, darkNow: LIGHT_DARK[3], glNow: LIGHT_GL[3],
       lastSave: 0, lastHud: 0, lastVoice: {}, lastYum: 0, bubbleT: 0, backdrop: null, gravel: null
     };
     simRef.current = s;
@@ -1396,7 +1396,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       say('release', VOICE.aquaRelease(FISH_BY_ID[f.sp]));
       return true;
     };
-    // 조명: 꺼짐 → 1단 → 2단 → 3단 → 꺼짐
+    // 조명: 3단(기본) → 꺼짐 → 1단 → 2단 → 3단
     s.toggleLight = () => {
       s.light = (s.light + 1) % 4;
       audio.playFreq(s.light ? 660 + s.light * 160 : 330, 'triangle', 0.08, 0.35);
