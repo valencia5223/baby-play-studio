@@ -7,7 +7,7 @@
 //  - 진행 상황은 이 기기의 localStorage 에 저장된다 (aquariumData.js)
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
-import { VOICE } from './voiceLines.js';
+import { VOICE, attachJosa } from './voiceLines.js';
 import {
   FISH_SPECIES, FISH_BY_ID, DECOR_ITEMS, DECOR_BY_ID, FRIEND_PRICES, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
   stageOf, sizeScale, RATES, isSad, conditionOf, growFactor, REWARDS,
@@ -593,6 +593,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
   const [shopOpen, setShopOpen] = useState(false);
   const [shopTab, setShopTab] = useState('fish');
   const [info, setInfo] = useState(null);          // 터치한 물고기 uid
+  const [confirmRelease, setConfirmRelease] = useState(false);
   const [infoTick, setInfoTick] = useState(0);
   const [friends, setFriends] = useState([]);      // 화면에 그릴 바다 친구 목록
   const [placed, setPlaced] = useState({ decor: [], friends: [] });
@@ -818,7 +819,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     const hitFish = (x, y) => {
       let best = null, bd = Infinity;
       game.fish.forEach(f => {
-        const r = s.rt[f.uid]; if (!r) return;
+        const r = s.rt[f.uid]; if (!r || r.leaving != null) return;
         const d = Math.hypot(r.x - x, r.y - y), rad = Math.max(26, fishLen(f) * 0.75);
         if (d < rad && d < bd) { best = f; bd = d; }
       });
@@ -1007,6 +1008,16 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       list.forEach(f => {
         const r = s.rt[f.uid]; const sp = FISH_BY_ID[f.sp];
         if (!r || !sp) return;
+        if (r.leaving != null) {
+          r.leaving += dt;
+          r.vx += (Math.sin(r.leaving * 3) * 40 - r.vx) * dt * 2;
+          r.vy += (-90 * s.k - r.vy) * dt * 2;
+          r.x = clamp(r.x + r.vx * dt, 6, s.W - 6); r.y += r.vy * dt;
+          r.phase += dt * 12; r.dir = r.vx >= 0 ? 1 : -1;
+          if (Math.random() < 0.3) s.pops.push({ x: r.x + (Math.random() - 0.5) * 30, y: r.y, text: '✨', life: 0.8, vy: -30 });
+          if (r.leaving > 2.6 || r.y < s.surface - 10) r.gone = true;
+          return;
+        }
         const L = fishLen(f);
         const sad = isSad(f, game.dirt);
         let fx = 0, fy = 0, ax = 0, ay = 0, cx = 0, cy = 0, cnt = 0;
@@ -1035,18 +1046,24 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           const dx = r.x - q.x, dy = r.y - q.y, d = Math.hypot(dx, dy) || 1, rr = q.size * 0.55;
           if (d < rr) { fx += dx / d * (rr - d) * 6; fy += dy / d * (rr - d) * 6; }
         });
-        // 먹이 쫓기
-        let target = null, td = 420 * 420;
+        // 먹이 쫓기: 배고플수록(hunger 0~1) 멀리서 알아채고, 더 세게·더 빨리 달려든다.
+        // 많이 배고픈 물고기는 수면에 떠 있는 먹이도 바로 낚아챈다.
+        const hunger = clamp((100 - f.full) / 100, 0, 1);
+        const reach = 220 + hunger * 1000;
+        let target = null, td = reach * reach;
         s.food.forEach(fd => {
-          if (fd.state === 'float' && fd.t > 0.6) return;
+          if (fd.state === 'float' && fd.t > 0.6 && hunger < 0.45) return;
           const dx = fd.x - r.x, dy = fd.y - r.y, d2 = dx * dx + dy * dy;
           if (d2 < td) { td = d2; target = fd; }
         });
-        let maxSp = 70 * sp.speed * (1 + r.panic * 1.6) * (sad ? 0.5 : 1) * (0.7 + 0.3 * sizeScale(f.growth)) * s.k;
-        if (target && f.full < 98) {
+        // 배고프면 슬퍼도 밥 앞에서는 힘을 낸다
+        let maxSp = 70 * sp.speed * (1 + r.panic * 1.6) * (sad && !(target && hunger > 0.5) ? 0.5 : 1) * (0.7 + 0.3 * sizeScale(f.growth)) * s.k;
+        if (target && f.full < 98 && (hunger > 0.12 || td < 110 * 110)) {
           const dx = target.x - r.x, dy = target.y - r.y, d = Math.sqrt(td) || 1;
-          fx += dx / d * 520; fy += dy / d * 520;
-          maxSp *= 1.7;
+          const pull = 360 + hunger * 1100;
+          fx += dx / d * pull; fy += dy / d * pull;
+          maxSp *= 1.3 + hunger * 1.9;
+          r.eager = hunger;
           if (d < Math.max(8, L * 0.45)) {
             target.eaten = true;
             const wasHungry = f.full < 70;
@@ -1057,6 +1074,10 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
             if (s.t - s.lastYum > 0.12) { s.lastYum = s.t; audio.playFreq(820 + Math.random() * 420, 'sine', 0.07, 0.22); }
             if (r.poopDue >= 4) { r.poopDue = 0; s.drops.push({ kind: 'poop', x: r.x - L * 0.5, y: r.y, vy: 18, delay: 2 + Math.random() * 3 }); }
           }
+        } else if (s.shaker && hunger > 0.3) {
+          const dx = s.shaker.x - r.x, dy = (s.surface + 30) - r.y, d = Math.hypot(dx, dy) || 1;
+          fx += dx / d * (300 + hunger * 600); fy += dy / d * (300 + hunger * 600);
+          maxSp *= 1.2 + hunger;
         } else if (sp.algaeEater && s.algae.length) {
           // 비파: 가장 가까운 유리 이끼로 가서 냠냠 먹는다
           let ag = null, ad = Infinity;
@@ -1090,11 +1111,19 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         r.boing = Math.max(0, r.boing - dt * 1.8);
         r.happyT = Math.max(0, r.happyT - dt);
         r.x = clamp(r.x + r.vx * dt, 6, s.W - 6); r.y = clamp(r.y + r.vy * dt, top, bottom);
-        r.phase += dt * (5 + spd * 0.12 / s.k) * (sad ? 0.6 : 1);
+        r.phase += dt * (5 + spd * 0.12 / s.k) * (sad ? 0.6 : 1) * (1 + (r.eager || 0) * 0.8);
+        r.eager = Math.max(0, (r.eager || 0) - dt);
         // 진행 방향 (좌우가 자주 바뀌지 않게)
         if (r.vx > 5) r.dir = 1; else if (r.vx < -5) r.dir = -1; else r.dir = r.dir || 1;
       });
       s.food = s.food.filter(fd => !fd.eaten);
+      // 자연으로 떠난 물고기 정리
+      const goneUids = list.filter(f => s.rt[f.uid] && s.rt[f.uid].gone).map(f => f.uid);
+      if (goneUids.length) {
+        game.fish = game.fish.filter(f => !goneUids.includes(f.uid));
+        goneUids.forEach(uid => { delete s.rt[uid]; });
+        saveGame(game);
+      }
     };
 
     // ── 바다 친구 움직임 ──
@@ -1247,6 +1276,18 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         }
       }
     };
+    // 물고기 한 마리를 자연으로 보낸다 (마지막 한 마리는 남겨 둔다)
+    s.releaseFish = (uid) => {
+      const f = game.fish.find(it => it.uid === uid);
+      const r = s.rt[uid];
+      if (!f || !r || r.leaving != null) return false;
+      const staying = game.fish.filter(it => s.rt[it.uid] && s.rt[it.uid].leaving == null);
+      if (staying.length <= 1) { showToast('🐟 마지막 친구는 어항에 남겨 둬요!'); return false; }
+      r.leaving = 0;
+      audio.playFanfare();
+      say('release', VOICE.aquaRelease(FISH_BY_ID[f.sp]));
+      return true;
+    };
     s.startWaterChange = () => {
       if (s.waterChange) return;
       if (game.dirt < 8) { showToast('💧 물이 아직 깨끗해요!'); return; }
@@ -1313,7 +1354,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         const ang = clamp(Math.atan2(r.vy, Math.abs(r.vx) + 8) * 0.6, -0.6, 0.6);
         ctx.scale(r.dir, 1);
         ctx.rotate(ang * 1);
-        ctx.globalAlpha = 0.72 + r.z * 0.28;
+        ctx.globalAlpha = (0.72 + r.z * 0.28) * (r.leaving != null ? clamp(1 - r.leaving / 2.6, 0, 1) : 1);
         drawFish(ctx, sp, L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26 });
         ctx.restore();
         if (info === f.uid) {
@@ -1509,6 +1550,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
   // 선택한 물고기 표시 링
   useEffect(() => { if (simRef.current) simRef.current.setInfoUid(info); }, [info]);
   useEffect(() => {
+    setConfirmRelease(false);
     if (!info) return undefined;
     const tm = setTimeout(() => setInfo(null), 9000);
     return () => clearTimeout(tm);
@@ -1710,6 +1752,27 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                 }}
                 style={{ marginTop: '10px', width: '100%', border: 'none', borderRadius: '16px', padding: '10px', fontWeight: 900, fontSize: '1rem', background: '#f472b6', color: '#ffffff', cursor: 'pointer' }}
               >💗 쓰다듬기</button>
+              {/* 자연으로 보내기 (아기가 실수로 누르지 않게 한 번 더 확인) */}
+              {!confirmRelease ? (
+                <button
+                  onClick={() => setConfirmRelease(true)}
+                  style={{ marginTop: '6px', width: '100%', border: '2px solid #7dd3fc', borderRadius: '14px', padding: '7px', fontWeight: 900, fontSize: '0.88rem', background: '#f0f9ff', color: '#0369a1', cursor: 'pointer' }}
+                >🌊 자연으로 보내기</button>
+              ) : (
+                <div style={{ marginTop: '6px', background: '#e0f2fe', borderRadius: '14px', padding: '8px', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 900, fontSize: '0.88rem', color: '#0c4a6e' }}>정말 {attachJosa(sp.name, '을/를')} 넓은 자연으로 보낼까요?</div>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                    <button
+                      onClick={() => { if (sim.releaseFish(infoFish.uid)) setInfo(null); else setConfirmRelease(false); }}
+                      style={{ flex: 1, border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, background: '#0284c7', color: '#ffffff', cursor: 'pointer' }}
+                    >🌊 보내기</button>
+                    <button
+                      onClick={() => setConfirmRelease(false)}
+                      style={{ flex: 1, border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, background: '#e2e8f0', color: '#334155', cursor: 'pointer' }}
+                    >취소</button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })()}

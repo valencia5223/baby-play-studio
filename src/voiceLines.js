@@ -18,6 +18,7 @@ export function attachJosa(word, josaType) {
   if (josaType === '을/를') return word + (hasBatchim ? '을' : '를');
   if (josaType === '과/와') return word + (hasBatchim ? '과' : '와');
   if (josaType === '이에요/예요') return word + (hasBatchim ? '이에요' : '예요');
+  if (josaType === '아/야') return word + (hasBatchim ? '아' : '야');
   return word;
 }
 
@@ -78,6 +79,7 @@ export const VOICE = {
   aquaNewFish: (species) => `새 친구 ${attachJosa(species.name, '이/가')} 왔어요! 잘 키워 주세요!`,
   aquaNewFriend: (creature) => `바다 친구 ${attachJosa(creature.name, '이/가')} 어항에 왔어요!`,
   aquaFishInfo: (species, stage) => `${attachJosa(species.name, '이에요/예요')} 지금은 ${attachJosa(STAGE_NAMES[stage], '이에요/예요')}`,
+  aquaRelease: (species) => `안녕, ${attachJosa(species.name, '아/야')}! 넓은 자연에서 행복하게 지내!`,
   aquaSadFish: (species) => `${attachJosa(species.name, '이/가')} 슬퍼요. 밥을 주고 물을 깨끗하게 해 주세요!`,
 
   // 📸 동물 · 탈것 · 바다생물 소리 / 🍎 과일
@@ -106,7 +108,7 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   lines.push(VOICE.aquaWelcome(), VOICE.aquaWelcomeBack(), VOICE.aquaHungry(), VOICE.aquaDirty(), VOICE.aquaFeed(),
     VOICE.aquaWaterChange(), VOICE.aquaClean(), VOICE.aquaPearl(), VOICE.aquaNeedMore());
   FISH_SPECIES.forEach(sp => {
-    lines.push(VOICE.aquaGrow(sp, 'juvenile'), VOICE.aquaGrow(sp, 'adult'), VOICE.aquaNewFish(sp), VOICE.aquaSadFish(sp));
+    lines.push(VOICE.aquaGrow(sp, 'juvenile'), VOICE.aquaGrow(sp, 'adult'), VOICE.aquaNewFish(sp), VOICE.aquaSadFish(sp), VOICE.aquaRelease(sp));
     Object.keys(STAGE_NAMES).forEach(stage => lines.push(VOICE.aquaFishInfo(sp, stage)));
   });
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
