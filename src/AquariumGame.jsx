@@ -709,7 +709,7 @@ function DecorPreview({ id }) {
 
 // ═══════════════════════════════ 상단 버튼·물 상태 ═══════════════════════════════
 // 큰 둥근 그림 버튼 (아래 작은 글자는 부모용)
-function IconButton({ icon, label, color, active, onClick, badge }) {
+function IconButton({ icon, label, color, active, onClick, badge, keepColor }) {
   return (
     <button
       onClick={onClick}
@@ -717,7 +717,7 @@ function IconButton({ icon, label, color, active, onClick, badge }) {
       title={label}
       style={{
         width: '68px', height: '68px', borderRadius: '50%', cursor: 'pointer', touchAction: 'manipulation',
-        background: active ? '#fef08a' : color, border: active ? '4px solid #ffffff' : '4px solid rgba(255,255,255,0.35)',
+        background: active && !keepColor ? '#fef08a' : color, border: active ? '4px solid #ffffff' : '4px solid rgba(255,255,255,0.35)',
         boxShadow: active ? '0 0 0 4px #facc15, 0 6px 14px rgba(0,0,0,0.25)' : '0 6px 14px rgba(0,0,0,0.22)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 0,
         transform: active ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.15s ease', position: 'relative'
@@ -731,7 +731,7 @@ function IconButton({ icon, label, color, active, onClick, badge }) {
         }}>{badge}</span>
       ) : null}
       <span style={{ fontSize: '2rem', lineHeight: 1 }}>{icon}</span>
-      <span style={{ fontSize: '0.62rem', fontWeight: 900, color: active ? '#713f12' : '#ffffff', marginTop: '1px' }}>{label}</span>
+      <span style={{ fontSize: '0.62rem', fontWeight: 900, color: active && !keepColor ? '#713f12' : '#ffffff', marginTop: '1px' }}>{label}</span>
     </button>
   );
 }
@@ -750,6 +750,28 @@ function RiceBowlIcon() {
       <rect x="15" y="36.5" width="14" height="3" rx="1.2" fill="#0369a1" />
     </svg>
   );
+}
+
+// 캔버스용: 치료 버튼과 같은 모양 (분홍 동그라미 + 비스듬한 반창고). size = 동그라미 지름
+function drawBandageBadge(ctx, x, y, size) {
+  const k = size / 68;   // 버튼(68px) 기준 비율
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = '#f43f5e';
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3 * k;
+  ctx.beginPath(); ctx.arc(0, 0, size / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  // 아이콘(44x40 그림을 40px 로)과 같은 비율
+  const u = 40 / 44 * k;
+  ctx.scale(u, u);
+  ctx.rotate(-35 * Math.PI / 180);
+  const rr = (rx, ry, w, h, rad) => { ctx.beginPath(); ctx.moveTo(rx + rad, ry); ctx.arcTo(rx + w, ry, rx + w, ry + h, rad); ctx.arcTo(rx + w, ry + h, rx, ry + h, rad); ctx.arcTo(rx, ry + h, rx, ry, rad); ctx.arcTo(rx, ry, rx + w, ry, rad); ctx.closePath(); };
+  rr(-21, -8, 42, 16, 8); ctx.fillStyle = '#fbbf8a'; ctx.fill(); ctx.strokeStyle = '#c2410c'; ctx.lineWidth = 1.4; ctx.stroke();
+  rr(-7, -6.5, 14, 13, 2.5); ctx.fillStyle = '#fde7d3'; ctx.fill(); ctx.strokeStyle = '#ea9a63'; ctx.lineWidth = 0.8; ctx.stroke();
+  ctx.fillStyle = '#ea9a63';
+  [-3.5, 0, 3.5].forEach(px => [-3, 0, 3].forEach(py => { ctx.beginPath(); ctx.arc(px, py, 0.7, 0, Math.PI * 2); ctx.fill(); }));
+  ctx.fillStyle = 'rgba(194,65,12,0.6)';
+  [[-16, -3], [-13, 2], [-16, 3], [13, -3], [16, 2], [13, 3], [16, -3]].forEach(([px, py]) => { ctx.beginPath(); ctx.arc(px, py, 0.9, 0, Math.PI * 2); ctx.fill(); });
+  ctx.restore();
 }
 
 // 치료 버튼 그림: 비스듬한 반창고(데일밴드)
@@ -1092,7 +1114,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         if (!f.sick) { audio.playBubble(); say('notsick', VOICE.aquaNotSick(), 2); return; }
         f.sick = false;
         f.happy = Math.min(100, f.happy + 25);
-        r.bandT = 3; r.happyT = 3;
+        r.happyT = 3;
         addPoints(REWARDS.heal, r.x, r.y - 30);
         audio.playFanfare();
         say('heal', VOICE.aquaHeal(sp));
@@ -1222,7 +1244,6 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           say('grow', VOICE.aquaGrow(sp, after));
           if (r) for (let i = 0; i < 16; i++) s.pops.push({ x: r.x + (Math.random() - 0.5) * 60, y: r.y + (Math.random() - 0.5) * 40, text: i % 2 ? '✨' : '⭐', life: 1.2, vy: -40 });
         }
-        { const rr = s.rt[f.uid]; if (rr && rr.bandT > 0) rr.bandT -= dt; }
         // 가끔 랜덤으로 아프다 (배고프거나 물이 더러우면 더 잘 아픔). 아프면 자라지 않는다
         if (!f.sick && s.t > 20 && game.fish.filter(fi => fi.sick).length < RATES.sickMax &&
             Math.random() < RATES.sickPerSec * (f.full < 25 || game.dirt > 70 ? 3 : 1) * dt) {
@@ -1230,7 +1251,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           saveGame(game);
           audio.playFreq(330, 'sine', 0.25, 0.3);
           say('sick', VOICE.aquaSick(sp), 8);
-          showToast(`🤒 ${f.name || sp.name}${f.name ? ` (${sp.name})` : ''} 이(가) 아파요! 🩹 밴드를 붙여 주세요`);
+          showToast(`🩹 ${f.name || sp.name}${f.name ? ` (${sp.name})` : ''} 이(가) 아파요! 밴드를 붙여 주세요`);
         }
         // 다 큰 물고기가 기분 좋으면 가끔 반짝 조개를 떨어뜨린다
         const r = s.rt[f.uid];
@@ -1654,23 +1675,15 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         ctx.globalAlpha = (0.72 + r.z * 0.28) * (r.leaving != null ? clamp(1 - r.leaving / 2.6, 0, 1) : 1);
         drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0 });
         ctx.restore();
-        if (f.sick || r.bandT > 0) {
-          ctx.save();
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          if (f.sick) {
-            ctx.font = `${Math.round(Math.max(18, L * 0.45))}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`; ctx.fillStyle = "#000000"; ctx.globalAlpha = 1;
-            ctx.fillText('🤒', r.x, r.y - L * 0.55 - 12 + Math.sin(s.t * 3 + r.phase) * 3);
-            // 치료 모드에서는 아픈 물고기를 빨간 원으로 알려준다
-            if (modeRef.current === 'heal') {
-              ctx.strokeStyle = `rgba(239,68,68,${0.6 + Math.sin(s.t * 6) * 0.3})`; ctx.lineWidth = 3;
-              ctx.beginPath(); ctx.arc(r.x, r.y, L * 0.7 + 8, 0, Math.PI * 2); ctx.stroke();
-            }
-          } else {
-            ctx.globalAlpha = Math.min(1, r.bandT);
-            ctx.font = `${Math.round(Math.max(16, L * 0.4))}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`; ctx.fillStyle = "#000000";
-            ctx.fillText('🩹', r.x, r.y);
+        // 아픈 물고기 위에는 상단 치료 버튼과 똑같은 모양(분홍 동그라미 + 반창고)을 띄운다
+        if (f.sick) {
+          const size = Math.max(30, L * 0.75) * (modeRef.current === 'heal' ? 1 + Math.sin(s.t * 6) * 0.08 : 1);
+          drawBandageBadge(ctx, r.x, r.y - L * 0.5 - size * 0.55 + Math.sin(s.t * 3 + r.phase) * 3, size);
+          // 치료 모드에서는 아픈 물고기를 빨간 원으로 알려준다
+          if (modeRef.current === 'heal') {
+            ctx.strokeStyle = `rgba(239,68,68,${0.6 + Math.sin(s.t * 6) * 0.3})`; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(r.x, r.y, L * 0.7 + 8, 0, Math.PI * 2); ctx.stroke();
           }
-          ctx.restore();
         }
         if (info === f.uid) {
           ctx.strokeStyle = 'rgba(254,240,138,0.9)'; ctx.lineWidth = 2.5;
@@ -2021,8 +2034,31 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         </div>
         <WaterMeter value={hud.clean} />
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>
+          {/* 수조 조명: 누를 때마다 꺼짐 → 1단 → 2단 → 3단 (수조를 가리지 않게 상단 버튼줄에 둠) */}
+          <button
+            onClick={() => { if (simRef.current) setLight(simRef.current.toggleLight()); }}
+            aria-label="조명"
+            title="조명"
+            style={{
+              width: '68px', height: '68px', borderRadius: '50%', cursor: 'pointer', touchAction: 'manipulation', padding: 0,
+              background: 'linear-gradient(180deg, #1e293b, #0f172a)', border: '4px solid rgba(255,255,255,0.35)',
+              boxShadow: light ? `0 0 ${8 + light * 8}px rgba(254,240,138,${0.25 + light * 0.15}), 0 6px 14px rgba(0,0,0,0.22)` : '0 6px 14px rgba(0,0,0,0.22)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px'
+            }}
+          >
+            <span style={{ fontSize: '1.8rem', lineHeight: 1, filter: light ? `drop-shadow(0 0 ${4 + light * 4}px #fde047)` : 'grayscale(1) brightness(0.55)' }}>💡</span>
+            <span style={{ display: 'flex', gap: '4px' }}>
+              {[1, 2, 3].map(i => (
+                <span key={i} style={{
+                  width: '9px', height: '9px', borderRadius: '50%',
+                  background: light >= i ? '#fde047' : '#475569',
+                  boxShadow: light >= i ? '0 0 6px #fde047' : 'inset 0 1px 2px rgba(0,0,0,0.5)'
+                }} />
+              ))}
+            </span>
+          </button>
           <IconButton icon={<RiceBowlIcon />} label="밥" color="#f97316" onClick={() => { setMode('play'); if (simRef.current) simRef.current.feed(); }} />
-          <IconButton icon={<BandageIcon />} label="치료" color="#f43f5e" badge={hud.sick} active={mode === 'heal'} onClick={() => { const m = mode === 'heal' ? 'play' : 'heal'; setMode(m); if (m === 'heal' && simRef.current) simRef.current.say('healmode', VOICE.aquaHealMode(), 3); }} />
+          <IconButton icon={<BandageIcon />} label="치료" color="#f43f5e" keepColor badge={hud.sick} active={mode === 'heal'} onClick={() => { const m = mode === 'heal' ? 'play' : 'heal'; setMode(m); if (m === 'heal' && simRef.current) simRef.current.say('healmode', VOICE.aquaHealMode(), 3); }} />
           <IconButton icon="🧽" label="청소" color="#10b981" active={mode === 'clean'} onClick={() => setMode(mode === 'clean' ? 'play' : 'clean')} />
           <IconButton icon="🚿" label="물갈이" color="#0ea5e9" onClick={() => { if (simRef.current) simRef.current.startWaterChange(); }} />
           <IconButton icon="🛒" label="상점" color="#8b5cf6" onClick={() => setShopOpen(true)} />
@@ -2069,44 +2105,19 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           boxShadow: 'inset 0 0 70px rgba(8,47,73,0.45)'
         }} />
 
-        {/* 수조 조명: 누를 때마다 꺼짐 → 1단 → 2단 → 3단 */}
-        <button
-          onPointerDown={stop}
-          onClick={() => { if (simRef.current) setLight(simRef.current.toggleLight()); }}
-          aria-label="조명"
-          title="조명"
-          style={{
-            // transform 으로 가운데 정렬하면 전역 button:active 효과가 덮어써 누르는 순간 버튼이 밀려난다 → margin 정렬
-            position: 'absolute', top: 0, left: 0, right: 0, margin: '0 auto', zIndex: 9,
-            width: 'min(230px, 46%)', height: '46px', border: 'none', borderRadius: '0 0 20px 20px', cursor: 'pointer',
-            background: 'linear-gradient(180deg, #0f172a, #1e293b)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-            boxShadow: light ? `0 8px ${10 + light * 12}px rgba(254,240,138,${0.2 + light * 0.15})` : '0 6px 12px rgba(0,0,0,0.35)',
-            touchAction: 'manipulation'
-          }}
-        >
-          <span style={{ fontSize: '1.7rem', lineHeight: 1, filter: light ? `drop-shadow(0 0 ${4 + light * 4}px #fde047)` : 'grayscale(1) brightness(0.55)' }}>💡</span>
-          {[1, 2, 3].map(i => (
-            <span key={i} style={{
-              width: '14px', height: '14px', borderRadius: '50%',
-              background: light >= i ? '#fde047' : '#475569',
-              boxShadow: light >= i ? '0 0 10px #fde047' : 'inset 0 1px 2px rgba(0,0,0,0.5)'
-            }} />
-          ))}
-        </button>
-
         {/* 모드 안내 */}
         {mode !== 'play' && (
           <div style={{
-            position: 'absolute', left: '50%', top: '56px', transform: 'translateX(-50%)', zIndex: 6, pointerEvents: 'none',
+            position: 'absolute', left: '50%', top: '12px', transform: 'translateX(-50%)', zIndex: 6, pointerEvents: 'none',
             background: 'rgba(15,23,42,0.75)', color: '#ffffff', fontWeight: 900, padding: '8px 16px', borderRadius: '16px', fontSize: '0.95rem', whiteSpace: 'nowrap'
           }}>
-            {mode === 'clean' ? '🧽 유리 이끼와 바닥 똥을 문질러 치워요' : mode === 'heal' ? (hud.sick ? '🩹 아픈 물고기(🤒)를 눌러 밴드를 붙여 줘요' : '🩹 지금은 아픈 물고기가 없어요') : '🎨 장식과 바다 친구를 끌어서 옮겨요'}
+            {mode === 'clean' ? '🧽 유리 이끼와 바닥 똥을 문질러 치워요' : mode === 'heal' ? (hud.sick ? '🩹 밴드 그림이 떠 있는 물고기를 눌러 줘요' : '🩹 지금은 아픈 물고기가 없어요') : '🎨 장식과 바다 친구를 끌어서 옮겨요'}
           </div>
         )}
 
         {toast && (
           <div key={toast.key} style={{
-            position: 'absolute', left: '50%', top: mode !== 'play' ? '100px' : '58px', transform: 'translateX(-50%)', zIndex: 7, pointerEvents: 'none',
+            position: 'absolute', left: '50%', top: mode !== 'play' ? '58px' : '12px', transform: 'translateX(-50%)', zIndex: 7, pointerEvents: 'none',
             background: '#ffffff', color: '#0f172a', fontWeight: 900, padding: '10px 18px', borderRadius: '18px', boxShadow: '0 8px 20px rgba(0,0,0,0.25)', whiteSpace: 'nowrap'
           }}>
             {toast.text}
