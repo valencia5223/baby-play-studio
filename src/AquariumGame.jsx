@@ -709,7 +709,7 @@ function DecorPreview({ id }) {
 
 // ═══════════════════════════════ 상단 버튼·물 상태 ═══════════════════════════════
 // 큰 둥근 그림 버튼 (아래 작은 글자는 부모용)
-function IconButton({ icon, label, color, active, onClick }) {
+function IconButton({ icon, label, color, active, onClick, badge }) {
   return (
     <button
       onClick={onClick}
@@ -720,9 +720,16 @@ function IconButton({ icon, label, color, active, onClick }) {
         background: active ? '#fef08a' : color, border: active ? '4px solid #ffffff' : '4px solid rgba(255,255,255,0.35)',
         boxShadow: active ? '0 0 0 4px #facc15, 0 6px 14px rgba(0,0,0,0.25)' : '0 6px 14px rgba(0,0,0,0.22)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 0,
-        transform: active ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.15s ease'
+        transform: active ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.15s ease', position: 'relative'
       }}
     >
+      {badge ? (
+        <span style={{
+          position: 'absolute', top: '-4px', right: '-4px', minWidth: '24px', height: '24px', borderRadius: '12px', background: '#ef4444',
+          color: '#ffffff', fontSize: '0.85rem', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #ffffff',
+          animation: 'bpsPulse 1s ease-in-out infinite'
+        }}>{badge}</span>
+      ) : null}
       <span style={{ fontSize: '2rem', lineHeight: 1 }}>{icon}</span>
       <span style={{ fontSize: '0.62rem', fontWeight: 900, color: active ? '#713f12' : '#ffffff', marginTop: '1px' }}>{label}</span>
     </button>
@@ -741,6 +748,20 @@ function RiceBowlIcon() {
       <path d="M2 24 H42 C41 33 34 38 22 38 C10 38 3 33 2 24 Z" fill="#38bdf8" stroke="#0369a1" strokeWidth="1.4" />
       <path d="M8 29 H36" stroke="#e0f2fe" strokeWidth="1.6" strokeDasharray="3 2.5" />
       <rect x="15" y="36.5" width="14" height="3" rx="1.2" fill="#0369a1" />
+    </svg>
+  );
+}
+
+// 치료 버튼 그림: 비스듬한 반창고(데일밴드)
+function BandageIcon() {
+  return (
+    <svg width="40" height="36" viewBox="0 0 44 40" aria-hidden="true">
+      <g transform="rotate(-35 22 20)">
+        <rect x="1" y="12" width="42" height="16" rx="8" fill="#fbbf8a" stroke="#c2410c" strokeWidth="1.4" />
+        <rect x="15" y="13.5" width="14" height="13" rx="2.5" fill="#fde7d3" stroke="#ea9a63" strokeWidth="0.8" />
+        {[[6, 17], [9, 22], [6, 23], [35, 17], [38, 22], [35, 23], [38, 17]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="0.9" fill="#c2410c" opacity="0.6" />)}
+        {[[18.5, 17], [22, 17], [25.5, 17], [18.5, 20], [22, 20], [25.5, 20], [18.5, 23], [22, 23], [25.5, 23]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="0.7" fill="#ea9a63" />)}
+      </g>
     </svg>
   );
 }
@@ -770,7 +791,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
   const simRef = useRef(null);
   const modeRef = useRef('play');
 
-  const [hud, setHud] = useState({ points: 0, clean: 100, sad: 0 });
+  const [hud, setHud] = useState({ points: 0, clean: 100, sad: 0, sick: 0 });
   const [mode, setModeState] = useState('play');
   const [shopOpen, setShopOpen] = useState(false);
   const [shopTab, setShopTab] = useState('fish');   // 'fish' = 물고기 + 바다 친구, 'decor' = 장식
@@ -1062,6 +1083,23 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       s.pointer = { down: true, x, y, downAt: s.t, drag: null };
       const m = modeRef.current;
       if (m === 'clean') { cleanAt(x, y); return; }
+      if (m === 'heal') {
+        const f = hitFish(x, y);
+        if (!f) return;
+        const r = s.rt[f.uid], sp = FISH_BY_ID[f.sp];
+        r.boing = 1;
+        if (!f.sick) { audio.playBubble(); say('notsick', VOICE.aquaNotSick(), 2); return; }
+        f.sick = false;
+        f.happy = Math.min(100, f.happy + 25);
+        r.bandT = 3; r.happyT = 3;
+        addPoints(REWARDS.heal, r.x, r.y - 30);
+        audio.playFanfare();
+        say('heal', VOICE.aquaHeal(sp));
+        for (let i = 0; i < 12; i++) s.pops.push({ x: r.x + (Math.random() - 0.5) * 60, y: r.y + (Math.random() - 0.5) * 40, text: i % 3 ? '💗' : '✨', life: 1.2, vy: -40 });
+        saveGame(game);
+        if (!game.fish.some(fi => fi.sick)) setTimeout(() => { if (modeRef.current === 'heal') setMode('play'); }, 900);
+        return;
+      }
       if (m === 'decorate') {
         const fr = hitFriend(x, y);
         if (fr) { s.pointer.drag = { kind: 'friend', uid: fr.uid }; return; }
@@ -1089,7 +1127,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         const sp = FISH_BY_ID[f.sp];
         if (f.sp === 'puffer') { r.puffT = 2.5; audio.playFreq(260, 'sine', 0.25, 0.4); setTimeout(() => audio.playFreq(520, 'sine', 0.2, 0.35), 120); }
         if (f.name) s.pops.push({ x: r.x, y: r.y - fishLen(f) * 0.6 - 10, text: `${sp.name} ${f.name}`, life: 1.6, vy: -22, color: '#fef08a' });
-        if (isSad(f, game.dirt)) say('info', VOICE.aquaSadFish(sp), 1.5);
+        if (f.sick) say('info', VOICE.aquaSick(sp), 1.5);
+        else if (isSad(f, game.dirt)) say('info', VOICE.aquaSadFish(sp), 1.5);
         else if (f.name) say('info', VOICE.aquaHello(sp, f.name), 1.5);   // 종류 + 이름 (직접 지은 이름은 기기 음성으로 읽음)
         else say('info', VOICE.aquaFishInfo(sp, stageOf(f.growth)), 1.5);
         return;
@@ -1181,6 +1220,16 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           audio.playFanfare();
           say('grow', VOICE.aquaGrow(sp, after));
           if (r) for (let i = 0; i < 16; i++) s.pops.push({ x: r.x + (Math.random() - 0.5) * 60, y: r.y + (Math.random() - 0.5) * 40, text: i % 2 ? '✨' : '⭐', life: 1.2, vy: -40 });
+        }
+        { const rr = s.rt[f.uid]; if (rr && rr.bandT > 0) rr.bandT -= dt; }
+        // 가끔 랜덤으로 아프다 (배고프거나 물이 더러우면 더 잘 아픔). 아프면 자라지 않는다
+        if (!f.sick && s.t > 20 && game.fish.filter(fi => fi.sick).length < RATES.sickMax &&
+            Math.random() < RATES.sickPerSec * (f.full < 25 || game.dirt > 70 ? 3 : 1) * dt) {
+          f.sick = true;
+          saveGame(game);
+          audio.playFreq(330, 'sine', 0.25, 0.3);
+          say('sick', VOICE.aquaSick(sp), 8);
+          showToast(`🤒 ${f.name || sp.name}${f.name ? ` (${sp.name})` : ''} 이(가) 아파요! 🩹 밴드를 붙여 주세요`);
         }
         // 다 큰 물고기가 기분 좋으면 가끔 반짝 조개를 떨어뜨린다
         const r = s.rt[f.uid];
@@ -1599,6 +1648,24 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         ctx.globalAlpha = (0.72 + r.z * 0.28) * (r.leaving != null ? clamp(1 - r.leaving / 2.6, 0, 1) : 1);
         drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0 });
         ctx.restore();
+        if (f.sick || r.bandT > 0) {
+          ctx.save();
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          if (f.sick) {
+            ctx.font = `${Math.round(Math.max(18, L * 0.45))}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`; ctx.fillStyle = "#000000"; ctx.globalAlpha = 1;
+            ctx.fillText('🤒', r.x, r.y - L * 0.55 - 12 + Math.sin(s.t * 3 + r.phase) * 3);
+            // 치료 모드에서는 아픈 물고기를 빨간 원으로 알려준다
+            if (modeRef.current === 'heal') {
+              ctx.strokeStyle = `rgba(239,68,68,${0.6 + Math.sin(s.t * 6) * 0.3})`; ctx.lineWidth = 3;
+              ctx.beginPath(); ctx.arc(r.x, r.y, L * 0.7 + 8, 0, Math.PI * 2); ctx.stroke();
+            }
+          } else {
+            ctx.globalAlpha = Math.min(1, r.bandT);
+            ctx.font = `${Math.round(Math.max(16, L * 0.4))}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`; ctx.fillStyle = "#000000";
+            ctx.fillText('🩹', r.x, r.y);
+          }
+          ctx.restore();
+        }
         if (info === f.uid) {
           ctx.strokeStyle = 'rgba(254,240,138,0.9)'; ctx.lineWidth = 2.5;
           ctx.beginPath(); ctx.arc(r.x, r.y, L * 0.7 + 6, 0, Math.PI * 2); ctx.stroke();
@@ -1815,8 +1882,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       if (s.t - s.lastHud > 0.4) {
         s.lastHud = s.t;
         const fish = game.fish;
-        const next = { points: game.points, clean: Math.round(100 - game.dirt), sad: fish.filter(f => isSad(f, game.dirt)).length };
-        setHud(prev => (prev.points === next.points && prev.clean === next.clean && prev.sad === next.sad ? prev : next));
+        const next = { points: game.points, clean: Math.round(100 - game.dirt), sad: fish.filter(f => isSad(f, game.dirt)).length, sick: fish.filter(f => f.sick).length };
+        setHud(prev => (prev.points === next.points && prev.clean === next.clean && prev.sad === next.sad && prev.sick === next.sick ? prev : next));
         setInfoTick(v => (v + 1) % 1000);
       }
       if (s.t - s.lastSave > 4) { s.lastSave = s.t; game.lastTick = Date.now(); saveGame(game); }
@@ -1949,6 +2016,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         <WaterMeter value={hud.clean} />
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>
           <IconButton icon={<RiceBowlIcon />} label="밥" color="#f97316" onClick={() => { setMode('play'); if (simRef.current) simRef.current.feed(); }} />
+          <IconButton icon={<BandageIcon />} label="치료" color="#f43f5e" badge={hud.sick} active={mode === 'heal'} onClick={() => { const m = mode === 'heal' ? 'play' : 'heal'; setMode(m); if (m === 'heal' && simRef.current) simRef.current.say('healmode', VOICE.aquaHealMode(), 3); }} />
           <IconButton icon="🧽" label="청소" color="#10b981" active={mode === 'clean'} onClick={() => setMode(mode === 'clean' ? 'play' : 'clean')} />
           <IconButton icon="🚿" label="물갈이" color="#0ea5e9" onClick={() => { if (simRef.current) simRef.current.startWaterChange(); }} />
           <IconButton icon="🛒" label="상점" color="#8b5cf6" onClick={() => setShopOpen(true)} />
@@ -1964,7 +2032,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           border: '7px solid #1e293b', borderTopWidth: '14px', background: '#0e6f8f',
           boxShadow: '0 14px 30px rgba(15,23,42,0.35), inset 0 0 0 2px rgba(255,255,255,0.15)',
           touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none',
-          cursor: mode === 'clean' ? 'crosshair' : mode === 'decorate' ? 'grab' : 'pointer'
+          cursor: mode === 'clean' || mode === 'heal' ? 'crosshair' : mode === 'decorate' ? 'grab' : 'pointer'
         }}
       >
         <canvas ref={canvasRef} style={{ position: 'absolute', left: 0, top: 0, display: 'block', zIndex: 0 }} />
@@ -2026,7 +2094,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
             position: 'absolute', left: '50%', top: '56px', transform: 'translateX(-50%)', zIndex: 6, pointerEvents: 'none',
             background: 'rgba(15,23,42,0.75)', color: '#ffffff', fontWeight: 900, padding: '8px 16px', borderRadius: '16px', fontSize: '0.95rem', whiteSpace: 'nowrap'
           }}>
-            {mode === 'clean' ? '🧽 유리 이끼와 바닥 똥을 문질러 치워요' : '🎨 장식과 바다 친구를 끌어서 옮겨요'}
+            {mode === 'clean' ? '🧽 유리 이끼와 바닥 똥을 문질러 치워요' : mode === 'heal' ? (hud.sick ? '🩹 아픈 물고기(🤒)를 눌러 밴드를 붙여 줘요' : '🩹 지금은 아픈 물고기가 없어요') : '🎨 장식과 바다 친구를 끌어서 옮겨요'}
           </div>
         )}
 
@@ -2062,7 +2130,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ fontWeight: 900, fontSize: '1.15rem', color: '#0f172a' }}>
-                  {sad ? '😢' : '😊'} {infoFish.name ? <>{infoFish.name} <span style={{ fontSize: '0.8rem', color: '#475569' }}>({sp.name})</span></> : sp.name}
+                  {infoFish.sick ? '🤒' : sad ? '😢' : '😊'} {infoFish.name ? <>{infoFish.name} <span style={{ fontSize: '0.8rem', color: '#475569' }}>({sp.name})</span></> : sp.name}
                   {infoFish.variant && <span style={{ fontSize: '0.8rem', color: '#be185d' }}> ({GUPPY_BY_ID[infoFish.variant]?.name})</span>}
                   {' '}<span style={{ fontSize: '0.85rem', color: '#0369a1' }}>· {STAGE_NAMES[stage]}</span>
                   {infoFish.shiny && <span style={{ marginLeft: '6px', fontSize: '0.78rem', background: 'linear-gradient(135deg, #fde047, #f59e0b)', color: '#713f12', padding: '2px 8px', borderRadius: '10px' }}>✨ 이로치</span>}
@@ -2080,7 +2148,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                 ))}
               </div>
               <div style={{ marginTop: '8px', fontSize: '0.82rem', fontWeight: 800, color: sad ? '#be123c' : '#0f766e' }}>
-                {stage === 'adult' ? '🎉 다 컸어요! 가끔 반짝 조개를 떨어뜨려요' : sad ? '배고프거나 물이 더러워서 자라지 않아요' : `자라는 속도 ${Math.round(speed * 100)}% (컨디션이 좋을수록 빨라요)`}
+                {stage === 'adult' ? '🎉 다 컸어요! 가끔 반짝 조개를 떨어뜨려요' : infoFish.sick ? '🤒 아파서 자라지 않아요. 🩹 치료 버튼을 누르고 이 물고기를 눌러 주세요' : sad ? '배고프거나 물이 더러워서 자라지 않아요' : `자라는 속도 ${Math.round(speed * 100)}% (컨디션이 좋을수록 빨라요)`}
               </div>
               <button
                 onClick={() => {

@@ -36,80 +36,80 @@ export const FISH_SPECIES = [
     tail: { color: 'rgba(251,146,60,0.72)', len: 0.75, spread: 0.62, double: true }, fin: 'rgba(251,146,60,0.65)'
   },
   {
-    id: 'platy', desc: '주황빛 동글동글', name: '플래티', price: 250, len: 40, hRatio: 0.4, shape: 'normal',
+    id: 'platy', desc: '주황빛 동글동글', name: '플래티', price: 125, len: 40, hRatio: 0.4, shape: 'normal',
     speed: 0.9, growMul: 1.1, school: true, zone: 'mid',
     top: '#dc2626', belly: '#fdba74',
     tail: { color: 'rgba(15,23,42,0.75)', len: 0.36, spread: 0.36 }, fin: 'rgba(248,113,113,0.6)'
   },
   {
-    id: 'cory', desc: '바닥을 콕콕 청소해요', name: '코리도라스', price: 330, len: 40, hRatio: 0.36, shape: 'cory',
+    id: 'cory', desc: '바닥을 콕콕 청소해요', name: '코리도라스', price: 165, len: 40, hRatio: 0.36, shape: 'cory',
     speed: 0.55, growMul: 1, school: true, zone: 'bottom',
     top: '#78716c', belly: '#f5f5f4', spots: '#44403c',
     tail: { color: 'rgba(214,211,209,0.6)', len: 0.3, spread: 0.32 }, fin: 'rgba(214,211,209,0.55)'
   },
   {
     // 비파(플레코): 바닥과 유리에 붙어 다니며 유리 이끼를 먹어 치운다
-    id: 'pleco', name: '비파', price: 500, desc: '유리 이끼를 먹어요', len: 58, hRatio: 0.3, shape: 'pleco',
+    id: 'pleco', name: '비파', price: 250, desc: '유리 이끼를 먹어요', len: 58, hRatio: 0.3, shape: 'pleco',
     speed: 0.45, growMul: 0.9, school: false, zone: 'bottom', algaeEater: true,
     top: '#44403c', belly: '#78716c', spots: '#e7e5e4',
     tail: { color: 'rgba(68,64,60,0.85)', len: 0.3, spread: 0.36, solid: true }, fin: 'rgba(87,83,78,0.85)'
   },
   {
-    id: 'betta', desc: '치렁치렁 긴 지느러미', name: '베타', price: 420, len: 54, hRatio: 0.3, shape: 'betta',
+    id: 'betta', desc: '치렁치렁 긴 지느러미', name: '베타', price: 210, len: 54, hRatio: 0.3, shape: 'betta',
     speed: 0.5, growMul: 0.95, school: false, zone: 'top',
     top: '#1d4ed8', belly: '#7c3aed',
     tail: { grad: ['#2563eb', '#7c3aed', '#dc2626'], len: 1.05, spread: 0.85 }, fin: 'rgba(124,58,237,0.6)'
   },
   {
-    id: 'angel', desc: '세모 날개로 우아하게', name: '엔젤피시', price: 670, len: 52, hRatio: 0.95, shape: 'angel',
+    id: 'angel', desc: '세모 날개로 우아하게', name: '엔젤피시', price: 335, len: 52, hRatio: 0.95, shape: 'angel',
     speed: 0.55, growMul: 0.9, school: false, zone: 'mid',
     top: '#cbd5e1', belly: '#f8fafc', bars: '#1e293b',
     tail: { color: 'rgba(226,232,240,0.6)', len: 0.4, spread: 0.45 }, fin: 'rgba(226,232,240,0.55)'
   },
   {
-    id: 'tang', desc: '파란 몸에 노란 꼬리', name: '블루탱', price: 1000, len: 60, hRatio: 0.62, shape: 'tang',
+    id: 'tang', desc: '파란 몸에 노란 꼬리', name: '블루탱', price: 500, len: 60, hRatio: 0.62, shape: 'tang',
     speed: 0.8, growMul: 0.85, school: false, zone: 'mid',
     top: '#1d4ed8', belly: '#3b82f6', mark: '#0f172a',
     tail: { color: '#facc15', len: 0.38, spread: 0.4, solid: true }, fin: 'rgba(15,23,42,0.75)'
   },
   {
-    id: 'discus', desc: '동그란 접시 모양', name: '디스커스', price: 1330, len: 62, hRatio: 0.95, shape: 'disc',
+    id: 'discus', desc: '동그란 접시 모양', name: '디스커스', price: 665, len: 62, hRatio: 0.95, shape: 'disc',
     speed: 0.45, growMul: 0.8, school: false, zone: 'mid',
     top: '#ea580c', belly: '#f59e0b', waves: '#38bdf8',
     tail: { color: 'rgba(234,88,12,0.6)', len: 0.25, spread: 0.3 }, fin: 'rgba(234,88,12,0.55)'
   },
   {
-    id: 'mackerel', name: '고등어', price: 250, len: 64, hRatio: 0.24, shape: 'normal', desc: '떼 지어 쌩쌩!',
+    id: 'mackerel', name: '고등어', price: 125, len: 64, hRatio: 0.24, shape: 'normal', desc: '떼 지어 쌩쌩!',
     speed: 1.3, growMul: 1, school: true, zone: 'mid',
     top: '#0f766e', belly: '#e2e8f0', backStripes: '#0f172a',
     tail: { color: 'rgba(15,118,110,0.85)', len: 0.34, spread: 0.52, fork: true }, fin: 'rgba(148,163,184,0.6)'
   },
   {
-    id: 'rockfish', name: '우럭', price: 300, len: 62, hRatio: 0.36, shape: 'normal', desc: '가시 지느러미 바닥 대장',
+    id: 'rockfish', name: '우럭', price: 150, len: 62, hRatio: 0.36, shape: 'normal', desc: '가시 지느러미 바닥 대장',
     speed: 0.55, growMul: 0.9, school: false, zone: 'bottom',
     top: '#292524', belly: '#78716c', mottle: '#0c0a09', spiny: true, bigMouth: true,
     tail: { color: 'rgba(41,37,36,0.85)', len: 0.3, spread: 0.36, solid: true }, fin: 'rgba(68,64,60,0.85)'
   },
   {
-    id: 'seabream', name: '참돔', price: 400, len: 64, hRatio: 0.46, shape: 'normal', desc: '빨간 바다의 왕',
+    id: 'seabream', name: '참돔', price: 200, len: 64, hRatio: 0.46, shape: 'normal', desc: '빨간 바다의 왕',
     speed: 0.75, growMul: 0.85, school: false, zone: 'mid',
     top: '#e11d48', belly: '#fecdd3', spots: '#7dd3fc', spiny: true,
     tail: { color: 'rgba(225,29,72,0.8)', len: 0.36, spread: 0.54, fork: true }, fin: 'rgba(251,113,133,0.7)'
   },
   {
-    id: 'hairtail', name: '갈치', price: 450, len: 112, hRatio: 0.09, shape: 'ribbon', desc: '은빛 리본처럼 길쭉',
+    id: 'hairtail', name: '갈치', price: 225, len: 112, hRatio: 0.09, shape: 'ribbon', desc: '은빛 리본처럼 길쭉',
     speed: 0.6, growMul: 0.85, school: false, zone: 'mid',
     top: '#94a3b8', belly: '#f8fafc',
     tail: { color: 'rgba(203,213,225,0)', len: 0.01, spread: 0.01 }, fin: 'rgba(226,232,240,0.55)'
   },
   {
-    id: 'puffer', name: '복어', price: 500, len: 48, hRatio: 0.7, shape: 'puffer', desc: '톡 치면 빵빵!',
+    id: 'puffer', name: '복어', price: 250, len: 48, hRatio: 0.7, shape: 'puffer', desc: '톡 치면 빵빵!',
     speed: 0.5, growMul: 0.9, school: false, zone: 'mid',
     top: '#a16207', belly: '#fefce8', spots: '#422006',
     tail: { color: 'rgba(161,98,7,0.7)', len: 0.25, spread: 0.32 }, fin: 'rgba(250,204,21,0.5)'
   },
   {
-    id: 'flounder', name: '광어', price: 600, len: 66, hRatio: 0.55, shape: 'flat', desc: '바닥에 납작 엎드려요', lieDown: true,
+    id: 'flounder', name: '광어', price: 300, len: 66, hRatio: 0.55, shape: 'flat', desc: '바닥에 납작 엎드려요', lieDown: true,
     speed: 0.4, growMul: 0.85, school: false, zone: 'bottom',
     top: '#78716c', belly: '#a8a29e', mottle: '#292524',
     tail: { color: 'rgba(120,113,108,0.85)', len: 0.18, spread: 0.3, solid: true }, fin: 'rgba(120,113,108,0.8)'
@@ -150,8 +150,8 @@ export const DECOR_BY_ID = Object.fromEntries(DECOR_ITEMS.map(d => [d.id, d]));
 
 // 바다 친구(기존 바다 생물 SVG) 가격
 export const FRIEND_PRICES = {
-  fish: 250, crab: 250, starfish: 250, shrimp: 250, seahorse: 330, jellyfish: 330,
-  octopus: 500, squid: 500, turtle: 580, penguin: 580, seal: 670, shark: 920, whale: 1000
+  fish: 125, crab: 125, starfish: 125, shrimp: 125, seahorse: 165, jellyfish: 165,
+  octopus: 250, squid: 250, turtle: 290, penguin: 290, seal: 335, shark: 460, whale: 500
 };
 
 // 상점에 보이는 바다 친구 한 줄 설명
@@ -163,7 +163,7 @@ export const FRIEND_DESC = {
 };
 
 // 기본 물고기(처음 받는 치어 종류)를 상점에서 더 살 때 가격
-export const STARTER_FISH_PRICE = 100;
+export const STARTER_FISH_PRICE = 50;
 
 export const LIMITS = { fish: 14, friends: 4, decor: 10 };
 
@@ -182,16 +182,18 @@ export const RATES = {
   dirtPerSec: 100 / 1500,   // 놀 때 물 더러움 0 → 100 약 25분
   offlineDirtPerSec: 100 / (24 * 3600),
   happyDropPerSec: 100 / 900,
-  offlineCapSec: 24 * 3600
+  offlineCapSec: 24 * 3600,
+  sickPerSec: 1 / 3000,     // 놀 때 물고기 한 마리가 아플 확률 (평균 50분에 한 번, 배고프거나 물이 더러우면 3배)
+  sickMax: 2                // 한 번에 아픈 물고기는 최대 2마리
 };
-export const isSad = (fish, dirt) => fish.full < 25 || dirt > 70;
+export const isSad = (fish, dirt) => fish.full < 25 || dirt > 70 || !!fish.sick;
 // 컨디션 점수 0~100 (배부름 40% + 물 깨끗함 40% + 기분 20%)
 export const conditionOf = (fish, dirt) => Math.round(fish.full * 0.4 + (100 - dirt) * 0.4 + fish.happy * 0.2);
 // 컨디션에 따른 성장 배율 (슬프면 멈춤)
 export const growFactor = (fish, dirt) => (isSad(fish, dirt) ? 0 : Math.max(0.15, Math.min(1, (conditionOf(fish, dirt) - 30) / 55)));
 
 // ── 포인트(조개) 보상 ──
-export const REWARDS = { eat: 1, poop: 2, algae: 1, waterChange: 10, juvenile: 20, adult: 50, pearl: 5, daily: 20, pet: 1 };
+export const REWARDS = { eat: 1, poop: 2, algae: 1, waterChange: 10, juvenile: 20, adult: 50, pearl: 5, daily: 20, pet: 1, heal: 5 };
 
 // ── 저장 ──
 export const SAVE_KEY = 'bps_aquarium_v1';
