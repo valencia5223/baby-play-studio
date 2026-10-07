@@ -10,7 +10,7 @@
 //  growMul: 성장 속도 배율 / zone: 주로 머무는 높이 (mid · bottom · top)
 export const FISH_SPECIES = [
   {
-    id: 'neon', name: '네온테트라', price: 0, starter: true, len: 34, hRatio: 0.3, shape: 'normal',
+    id: 'neon', desc: '파란 줄무늬가 반짝반짝', name: '네온테트라', price: 0, starter: true, len: 34, hRatio: 0.3, shape: 'normal',
     speed: 1.1, growMul: 1.25, school: true, zone: 'mid',
     top: '#475569', belly: '#e2e8f0',
     bands: [{ color: '#22d3ee', y: -0.12, from: 0.05, to: 0.78, w: 0.2, glow: true }, { color: '#ef4444', y: 0.2, from: 0.42, to: 0.92, w: 0.3 }],
@@ -23,26 +23,26 @@ export const FISH_SPECIES = [
     tail: { grad: ['#f97316', '#ec4899', '#3b82f6'], len: 0.8, spread: 0.6 }, fin: 'rgba(236,72,153,0.6)'
   },
   {
-    id: 'danio', name: '지브라다니오', price: 0, starter: true, len: 36, hRatio: 0.27, shape: 'normal',
+    id: 'danio', desc: '줄무늬 달리기 선수', name: '지브라다니오', price: 0, starter: true, len: 36, hRatio: 0.27, shape: 'normal',
     speed: 1.25, growMul: 1.15, school: true, zone: 'mid',
     top: '#94a3b8', belly: '#fefce8',
     bands: [{ color: '#1e3a8a', y: -0.18, from: 0.12, to: 0.98, w: 0.14 }, { color: '#1e40af', y: 0.02, from: 0.1, to: 1, w: 0.14 }, { color: '#1e3a8a', y: 0.22, from: 0.2, to: 1, w: 0.12 }],
     tail: { color: 'rgba(253,224,71,0.5)', len: 0.34, spread: 0.32 }, fin: 'rgba(253,224,71,0.45)'
   },
   {
-    id: 'goldfish', name: '금붕어', price: 0, starter: true, len: 60, hRatio: 0.52, shape: 'normal',
+    id: 'goldfish', desc: '통통한 꼬리 살랑살랑', name: '금붕어', price: 0, starter: true, len: 60, hRatio: 0.52, shape: 'normal',
     speed: 0.6, growMul: 0.85, school: false, zone: 'mid',
     top: '#ea580c', belly: '#fde68a',
     tail: { color: 'rgba(251,146,60,0.72)', len: 0.75, spread: 0.62, double: true }, fin: 'rgba(251,146,60,0.65)'
   },
   {
-    id: 'platy', name: '플래티', price: 250, len: 40, hRatio: 0.4, shape: 'normal',
+    id: 'platy', desc: '주황빛 동글동글', name: '플래티', price: 250, len: 40, hRatio: 0.4, shape: 'normal',
     speed: 0.9, growMul: 1.1, school: true, zone: 'mid',
     top: '#dc2626', belly: '#fdba74',
     tail: { color: 'rgba(15,23,42,0.75)', len: 0.36, spread: 0.36 }, fin: 'rgba(248,113,113,0.6)'
   },
   {
-    id: 'cory', name: '코리도라스', price: 330, len: 40, hRatio: 0.36, shape: 'cory',
+    id: 'cory', desc: '바닥을 콕콕 청소해요', name: '코리도라스', price: 330, len: 40, hRatio: 0.36, shape: 'cory',
     speed: 0.55, growMul: 1, school: true, zone: 'bottom',
     top: '#78716c', belly: '#f5f5f4', spots: '#44403c',
     tail: { color: 'rgba(214,211,209,0.6)', len: 0.3, spread: 0.32 }, fin: 'rgba(214,211,209,0.55)'
@@ -55,25 +55,25 @@ export const FISH_SPECIES = [
     tail: { color: 'rgba(68,64,60,0.85)', len: 0.3, spread: 0.36, solid: true }, fin: 'rgba(87,83,78,0.85)'
   },
   {
-    id: 'betta', name: '베타', price: 420, len: 54, hRatio: 0.3, shape: 'betta',
+    id: 'betta', desc: '치렁치렁 긴 지느러미', name: '베타', price: 420, len: 54, hRatio: 0.3, shape: 'betta',
     speed: 0.5, growMul: 0.95, school: false, zone: 'top',
     top: '#1d4ed8', belly: '#7c3aed',
     tail: { grad: ['#2563eb', '#7c3aed', '#dc2626'], len: 1.05, spread: 0.85 }, fin: 'rgba(124,58,237,0.6)'
   },
   {
-    id: 'angel', name: '엔젤피시', price: 670, len: 52, hRatio: 0.95, shape: 'angel',
+    id: 'angel', desc: '세모 날개로 우아하게', name: '엔젤피시', price: 670, len: 52, hRatio: 0.95, shape: 'angel',
     speed: 0.55, growMul: 0.9, school: false, zone: 'mid',
     top: '#cbd5e1', belly: '#f8fafc', bars: '#1e293b',
     tail: { color: 'rgba(226,232,240,0.6)', len: 0.4, spread: 0.45 }, fin: 'rgba(226,232,240,0.55)'
   },
   {
-    id: 'tang', name: '블루탱', price: 1000, len: 60, hRatio: 0.62, shape: 'tang',
+    id: 'tang', desc: '파란 몸에 노란 꼬리', name: '블루탱', price: 1000, len: 60, hRatio: 0.62, shape: 'tang',
     speed: 0.8, growMul: 0.85, school: false, zone: 'mid',
     top: '#1d4ed8', belly: '#3b82f6', mark: '#0f172a',
     tail: { color: '#facc15', len: 0.38, spread: 0.4, solid: true }, fin: 'rgba(15,23,42,0.75)'
   },
   {
-    id: 'discus', name: '디스커스', price: 1330, len: 62, hRatio: 0.95, shape: 'disc',
+    id: 'discus', desc: '동그란 접시 모양', name: '디스커스', price: 1330, len: 62, hRatio: 0.95, shape: 'disc',
     speed: 0.45, growMul: 0.8, school: false, zone: 'mid',
     top: '#ea580c', belly: '#f59e0b', waves: '#38bdf8',
     tail: { color: 'rgba(234,88,12,0.6)', len: 0.25, spread: 0.3 }, fin: 'rgba(234,88,12,0.55)'
@@ -152,6 +152,14 @@ export const DECOR_BY_ID = Object.fromEntries(DECOR_ITEMS.map(d => [d.id, d]));
 export const FRIEND_PRICES = {
   fish: 250, crab: 250, starfish: 250, shrimp: 250, seahorse: 330, jellyfish: 330,
   octopus: 500, squid: 500, turtle: 580, penguin: 580, seal: 670, shark: 920, whale: 1000
+};
+
+// 상점에 보이는 바다 친구 한 줄 설명
+export const FRIEND_DESC = {
+  fish: '주황 지느러미 친구', crab: '옆으로 엉금엉금', starfish: '바닥을 느릿느릿', shrimp: '톡톡 튀는 새우',
+  seahorse: '꼬리를 말고 둥실둥실', jellyfish: '뿅뿅 떠오르고 빛나요', octopus: '다리가 여덟 개',
+  squid: '쓩 하고 헤엄쳐요', turtle: '느긋하게 헤엄쳐요', penguin: '물속을 쌩쌩',
+  seal: '장난꾸러기 물개', shark: '씩씩한 바다 대장', whale: '바다에서 제일 커요'
 };
 
 // 기본 물고기(처음 받는 치어 종류)를 상점에서 더 살 때 가격

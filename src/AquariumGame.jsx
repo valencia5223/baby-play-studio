@@ -9,7 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { VOICE, attachJosa } from './voiceLines.js';
 import {
-  FISH_SPECIES, FISH_BY_ID, GUPPY_BY_ID, rollShiny, DECOR_ITEMS, DECOR_BY_ID, FRIEND_PRICES, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
+  FISH_SPECIES, FISH_BY_ID, GUPPY_BY_ID, rollShiny, DECOR_ITEMS, DECOR_BY_ID, FRIEND_PRICES, FRIEND_DESC, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
   stageOf, sizeScale, RATES, newFriend, friendGrowFactor, isSad, conditionOf, growFactor, REWARDS,
   loadGame, saveGame, catchUpOffline, newFish, newUid, todayKey
 } from './aquariumData.js';
@@ -1288,7 +1288,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
             if (wasHungry) addPoints(REWARDS.eat, r.x, r.y - 16);
             s.pops.push({ x: r.x + 8, y: r.y - 10, text: '💗', life: 0.9, vy: -30 });
             if (s.t - s.lastYum > 0.12) { s.lastYum = s.t; audio.playFreq(820 + Math.random() * 420, 'sine', 0.07, 0.22); }
-            if (r.poopDue >= 4) { r.poopDue = 0; s.drops.push({ kind: 'poop', x: r.x - L * 0.5, y: r.y, vy: 18, delay: 2 + Math.random() * 3 }); }
+            if (r.poopDue >= 4) { r.poopDue = 0; s.drops.push({ kind: 'poop', uid: f.uid, x: r.x, y: r.y, vy: 6, delay: 2 + Math.random() * 3 }); }
           }
         } else if (s.shaker && hunger > 0.3) {
           const dx = s.shaker.x - r.x, dy = (s.surface + 30) - r.y, d = Math.hypot(dx, dy) || 1;
@@ -1430,7 +1430,20 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       s.food = s.food.filter(fd => !fd.eaten);
 
       s.drops.forEach(d => {
-        if (d.delay > 0) { d.delay -= dt; return; }
+        if (d.delay > 0) {
+          d.delay -= dt;
+          // 똥은 시간이 지난 뒤 그 물고기의 지금 꼬리 쪽에서 떨어진다
+          const r = d.uid && s.rt[d.uid];
+          const f = r && game.fish.find(fi => fi.uid === d.uid);
+          if (f && r.leaving == null) {
+            const L = fishLen(f), ang = r.drawAng || 0, dir = r.dir || 1;
+            d.x = r.x - Math.cos(ang) * L * 0.42 * dir;
+            d.y = r.y - Math.sin(ang) * L * 0.42 + L * 0.06;
+            d.vx = r.vx * 0.3;
+          }
+          return;
+        }
+        if (d.vx) { d.x += d.vx * dt; d.vx *= 1 - Math.min(1, dt * 2.5); }
         d.y += d.vy * dt; d.vy = Math.min(60, d.vy + 20 * dt);
         if (d.y >= groundY(d.x) + 2) {
           d.done = true;
@@ -2182,7 +2195,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                     <div key={sp.id} style={{ border: '2px solid #e2e8f0', borderRadius: '18px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f0f9ff' }}>
                       <FishPreview species={sp} />
                       <div style={{ fontWeight: 900, color: '#0f172a' }}>{sp.name}</div>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>{sp.desc || '아기 치어로 와요'}</div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>{sp.desc}</div>
                       <button onClick={() => buy('fish', sp.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= price ? '#8b5cf6' : '#cbd5e1', color: '#ffffff' }}>🐚 {price}</button>
                     </div>
                   );
@@ -2198,7 +2211,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                   <div key={c.id} style={{ border: '2px solid #e2e8f0', borderRadius: '18px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#eff6ff' }}>
                     <div style={{ width: 96, height: 80 }}><CreatureSVG id={c.id} /></div>
                     <div style={{ fontWeight: 900, color: '#0f172a' }}>{c.name}</div>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>아기로 와서 쑥쑥 자라요</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>{FRIEND_DESC[c.id] || '바다 친구'}</div>
                     <button onClick={() => buy('friend', c.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= FRIEND_PRICES[c.id] ? '#0ea5e9' : '#cbd5e1', color: '#ffffff' }}>🐚 {FRIEND_PRICES[c.id]}</button>
                   </div>
                 ))}
