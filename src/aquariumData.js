@@ -165,7 +165,19 @@ export const FRIEND_DESC = {
 // 기본 물고기(처음 받는 치어 종류)를 상점에서 더 살 때 가격
 export const STARTER_FISH_PRICE = 50;
 
-export const LIMITS = { fish: 14, friends: 4, decor: 10 };
+export const LIMITS = { fish: 20, friends: 4, decor: 10 };
+
+// ── 번식 ──
+// 구피·플래티는 새끼를 낳는 난태생, 나머지는 알을 낳는다.
+// 난태생 암컷은 정자를 몸에 저장해 두어서, 한 번 짝짓기한 뒤에는 수컷이 없어도 가끔 다시 아기를 가진다.
+const BREED = {
+  guppy: { type: 'live', storesSperm: true, brood: [3, 5] },
+  platy: { type: 'live', storesSperm: true, brood: [3, 5] }
+};
+const BREED_DEFAULT = { type: 'egg', storesSperm: false, brood: [3, 6] };
+export const breedOf = (spId) => BREED[spId] || BREED_DEFAULT;
+export const randomSex = () => (Math.random() < 0.5 ? 'm' : 'f');
+export const SEX_NAMES = { m: '수컷', f: '암컷' };
 
 // ── 성장 단계 ──
 export const STAGE_NAMES = { fry: '아기 치어', juvenile: '어린 물고기', adult: '다 큰 물고기' };
@@ -184,7 +196,14 @@ export const RATES = {
   happyDropPerSec: 100 / 900,
   offlineCapSec: 24 * 3600,
   sickPerSec: 1 / 3000,     // 놀 때 물고기 한 마리가 아플 확률 (평균 50분에 한 번, 배고프거나 물이 더러우면 3배)
-  sickMax: 2                // 한 번에 아픈 물고기는 최대 2마리
+  sickMax: 2,               // 한 번에 아픈 물고기는 최대 2마리
+  pregPerSec: 1 / 900,      // 짝이 있고 컨디션 좋은 다 큰 암컷이 아기를 가질 확률 (평균 15분)
+  pregSoloMul: 0.35,        // 저장한 정자로 수컷 없이 가질 때는 훨씬 드물게
+  pregCond: 70,             // 이 컨디션 이상일 때만
+  pregSec: 480,             // 배가 불러서 낳기까지 놀이 시간 8분
+  offlinePregMul: 0.3,      // 꺼둔 동안은 천천히 (낳는 건 보고 있을 때 하도록 98% 에서 멈춤)
+  pregRestSec: 1200,        // 낳은 뒤 20분은 쉰다
+  eggHatchSec: 90           // 알에서 깨어나기까지 1분 30초
 };
 export const isSad = (fish, dirt) => fish.full < 25 || dirt > 70 || !!fish.sick;
 // 컨디션 점수 0~100 (배부름 40% + 물 깨끗함 40% + 기분 20%)
@@ -193,7 +212,7 @@ export const conditionOf = (fish, dirt) => Math.round(fish.full * 0.4 + (100 - d
 export const growFactor = (fish, dirt) => (isSad(fish, dirt) ? 0 : Math.max(0.15, Math.min(1, (conditionOf(fish, dirt) - 30) / 55)));
 
 // ── 포인트(조개) 보상 ──
-export const REWARDS = { eat: 1, poop: 2, algae: 1, waterChange: 10, juvenile: 20, adult: 50, pearl: 5, daily: 20, pet: 1, heal: 5 };
+export const REWARDS = { eat: 1, poop: 2, algae: 1, waterChange: 10, juvenile: 20, adult: 50, pearl: 5, daily: 20, pet: 1, heal: 5, birth: 10 };
 
 // ── 저장 ──
 export const SAVE_KEY = 'bps_aquarium_v1';
@@ -206,8 +225,23 @@ export const friendGrowFactor = (dirt) => (dirt > 70 ? 0 : Math.max(0.15, Math.m
 export const newFish = (sp) => ({
   uid: newUid(), sp, growth: 0, full: 80, happy: 80, bornAt: Date.now(),
   variant: sp === 'guppy' ? GUPPY_VARIANTS[Math.floor(Math.random() * GUPPY_VARIANTS.length)].id : undefined,
-  shiny: rollShiny()
+  shiny: rollShiny(),
+  sex: randomSex()
 });
+
+// 짝짓기 조건: 다 큰 암컷 + 컨디션 좋음 + 쉬는 중 아님 + 아기들이 들어갈 자리.
+// 같은 종류의 다 큰 수컷이 어항에 있어야 한다 (난태생은 예전에 짝짓기했으면 수컷 없이도 가끔)
+export function mateStatus(game, f, now = Date.now()) {
+  if (f.sex !== 'f' || f.preg != null || f.sick || stageOf(f.growth) !== 'adult') return null;
+  if ((f.restUntil || 0) > now) return null;
+  if (conditionOf(f, game.dirt) < RATES.pregCond || isSad(f, game.dirt)) return null;
+  const pending = game.fish.reduce((a, o) => a + (o.preg != null ? breedOf(o.sp).brood[1] : 0), 0) + (game.eggs || []).reduce((a, e) => a + e.n, 0);
+  if (game.fish.length + pending + 2 > LIMITS.fish) return null;
+  const male = game.fish.some(o => o.sp === f.sp && o.sex === 'm' && stageOf(o.growth) === 'adult' && !o.sick);
+  if (male) return 'pair';
+  if (breedOf(f.sp).storesSperm && f.mated) return 'solo';
+  return null;
+}
 
 export function createNewGame() {
   return {
@@ -217,7 +251,14 @@ export function createNewGame() {
     algae: 0,
     poop: [],
     // 처음엔 기본 물고기들의 치어로 시작 (떼 지어 다니는 종류는 여러 마리)
-    fish: ['neon', 'neon', 'neon', 'danio', 'danio', 'guppy', 'guppy', 'goldfish'].map(newFish),
+    // 떼 지어 다니는 종류는 암수가 섞이게
+    fish: ['neon', 'neon', 'neon', 'danio', 'danio', 'guppy', 'guppy', 'goldfish'].map((sp, i, arr) => {
+      const f = newFish(sp);
+      const idx = arr.slice(0, i).filter(x => x === sp).length;
+      if (arr.filter(x => x === sp).length > 1) f.sex = idx % 2 ? 'f' : 'm';
+      return f;
+    }),
+    eggs: [],
     friends: [],
     decor: [
       { uid: newUid(), id: 'grass', x: 0.12 },
@@ -240,6 +281,9 @@ export function loadGame() {
         g.fish.forEach(f => { if (f.sp === 'guppy' && !f.variant) f.variant = 'rainbow'; });
         // 자라기 기능 전에 산 바다 친구는 이미 다 큰 모습
         (g.friends || []).forEach(fr => { if (typeof fr.growth !== 'number') fr.growth = 1; });
+        // 암수가 생기기 전의 물고기에게 성별을 정해 준다
+        g.fish.forEach(f => { if (!f.sex) f.sex = randomSex(); });
+        if (!Array.isArray(g.eggs)) g.eggs = [];
         return g;
       }
     }
@@ -264,7 +308,9 @@ export function catchUpOffline(game, now = Date.now()) {
       const sp = FISH_BY_ID[f.sp];
       f.growth = Math.min(1, f.growth + RATES.growPerSec * RATES.offlineGrowMul * (sp ? sp.growMul : 1) * growFactor(f, game.dirt) * step);
       if (stageOf(f.growth) !== before) grown.push(f);
+      if (f.preg != null) f.preg = Math.min(0.98, f.preg + step / RATES.pregSec * RATES.offlinePregMul);
     });
+    (game.eggs || []).forEach(e => { e.t = Math.max(1, e.t - step); });
     (game.friends || []).forEach(fr => {
       const before = stageOf(fr.growth);
       fr.growth = Math.min(1, fr.growth + RATES.growPerSec * RATES.offlineGrowMul * friendGrowFactor(game.dirt) * step);

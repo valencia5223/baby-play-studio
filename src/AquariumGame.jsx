@@ -10,7 +10,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VOICE, attachJosa } from './voiceLines.js';
 import {
   FISH_SPECIES, FISH_BY_ID, GUPPY_BY_ID, rollShiny, DECOR_ITEMS, DECOR_BY_ID, FRIEND_PRICES, FRIEND_DESC, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
-  stageOf, sizeScale, RATES, newFriend, friendGrowFactor, isSad, conditionOf, growFactor, REWARDS,
+  stageOf, sizeScale, RATES, newFriend, friendGrowFactor, breedOf, mateStatus, SEX_NAMES, isSad, conditionOf, growFactor, REWARDS,
   loadGame, saveGame, catchUpOffline, newFish, newUid, todayKey
 } from './aquariumData.js';
 
@@ -119,6 +119,8 @@ export function drawFish(ctx, sp, L, o = {}) {
   const growth = o.growth ?? 1;
   const fry = 1 - Math.min(1, growth / 0.6);           // 1 이면 갓 태어난 치어
   const puff = o.puff || 0;                            // 복어가 부풀어 오른 정도 0~1
+  const belly = o.belly || 0;                          // 아기·알을 가진 정도 0~1 (배 아래쪽이 불룩)
+  const bulge = (s) => H * 0.62 * belly * Math.exp(-Math.pow((s - 0.42) / 0.2, 2));
   const H = L * sp.hRatio * (1 + fry * 0.12) * (1 + puff * 0.6);
   const ribbon = sp.shape === 'ribbon';
   const amp = L * (sp.shape === 'disc' || sp.shape === 'angel' || sp.shape === 'flat' ? 0.03 : sp.shape === 'betta' ? 0.09 : ribbon ? 0.05 : 0.07);
@@ -274,7 +276,7 @@ export function drawFish(ctx, sp, L, o = {}) {
   const N = 9;
   const pts = [[xs(0) + L * 0.015, wave(0)]];
   for (let i = 1; i <= N; i++) { const s = i / N; pts.push([xs(s), wave(s) - half(s)]); }
-  for (let i = N; i >= 1; i--) { const s = i / N; pts.push([xs(s), wave(s) + half(s)]); }
+  for (let i = N; i >= 1; i--) { const s = i / N; pts.push([xs(s), wave(s) + half(s) + bulge(s)]); }
   smoothClosed(ctx, pts);
   const bg = ctx.createLinearGradient(0, -H * 0.5, 0, H * 0.5);
   bg.addColorStop(0, sp.top);
@@ -314,6 +316,15 @@ export function drawFish(ctx, sp, L, o = {}) {
     });
   }
   if (glowOnly) { ctx.restore(); ctx.restore(); return; }
+  if (belly > 0.05) {
+    // 불룩한 배: 밝은 배 + 난태생은 배 속 아기 눈이 비치는 까만 임신 반점
+    ctx.fillStyle = `rgba(255,255,255,${0.25 * belly})`;
+    ctx.beginPath(); ctx.ellipse(xs(0.42), wave(0.42) + half(0.42) * 0.55 + bulge(0.42) * 0.45, L * 0.16, H * 0.2 + bulge(0.42) * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+    if (o.gravidSpot && belly > 0.35) {
+      ctx.fillStyle = `rgba(15,23,42,${Math.min(0.75, (belly - 0.35) * 1.4)})`;
+      ctx.beginPath(); ctx.ellipse(xs(0.55), wave(0.55) + half(0.55) * 0.45 + bulge(0.55) * 0.5, L * 0.05, H * 0.1 + bulge(0.55) * 0.15, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  }
   if (sp.tuxedo) {
     // 턱시도 구피: 몸 뒤쪽 절반이 검다
     ctx.save(); ctx.globalAlpha *= 0.88; ctx.fillStyle = sp.tuxedo;
@@ -1221,6 +1232,40 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     }
 
     // ── 돌봄 규칙 (배고픔·물 더러움·기분·성장) ──
+    // 아기 물고기들을 (x, y) 근처에 태어나게 한다. 자리가 모자라면 들어갈 만큼만
+    const spawnFry = (spId, n, x, y, variant) => {
+      const room = Math.max(0, LIMITS.fish - game.fish.length);
+      const count = Math.min(n, room);
+      for (let i = 0; i < count; i++) {
+        const baby = newFish(spId);
+        if (variant && Math.random() < 0.7) baby.variant = variant;   // 대부분 엄마를 닮는다
+        game.fish.push(baby);
+        const r = ensureFishRt(baby, false);
+        r.x = clamp(x + (Math.random() - 0.5) * 40, 10, s.W - 10); r.y = clamp(y + (Math.random() - 0.5) * 20, s.surface + 20, s.floor - 10);
+        r.vx = (Math.random() - 0.5) * 80; r.vy = -Math.random() * 30;
+        for (let j = 0; j < 3; j++) s.pops.push({ x: r.x, y: r.y, text: j ? '✨' : '💗', life: 1.2, vy: -30 - Math.random() * 20 });
+      }
+      return count;
+    };
+    // 배 속 아기가 다 자라면: 난태생은 새끼를, 나머지는 바닥에 알을 낳는다
+    const deliver = (f) => {
+      const sp = FISH_BY_ID[f.sp], br = breedOf(f.sp), r = s.rt[f.uid];
+      const n = br.brood[0] + Math.floor(Math.random() * (br.brood[1] - br.brood[0] + 1));
+      delete f.preg;
+      f.restUntil = Date.now() + RATES.pregRestSec * 1000;
+      const x = r ? r.x : s.W / 2, y = r ? r.y : s.H / 2;
+      if (br.type === 'live') {
+        const got = spawnFry(f.sp, n, x, y, f.variant);
+        if (got) { addPoints(REWARDS.birth, x, y - 30); audio.playFanfare(); say('birth', VOICE.aquaBirth(sp)); showToast(`🍼 ${f.name || sp.name} 아기 ${got}마리가 태어났어요!`); }
+      } else {
+        game.eggs.push({ uid: newUid(), sp: f.sp, x: clamp(x / s.W, 0.05, 0.95), n, t: RATES.eggHatchSec, variant: f.variant });
+        audio.playPopSound();
+        say('eggs', VOICE.aquaEggs(sp));
+        showToast(`🥚 ${f.name || sp.name} 이(가) 알 ${n}개를 낳았어요!`);
+      }
+      saveGame(game);
+    };
+
     const tickCare = (dt) => {
       const groundFood = s.food.filter(f => f.state === 'ground').length;
       game.dirt = Math.min(100, game.dirt + (RATES.dirtPerSec + game.poop.length * 0.004 + groundFood * 0.01) * dt);
@@ -1253,6 +1298,21 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           say('sick', VOICE.aquaSick(sp), 8);
           showToast(`🩹 ${f.name || sp.name}${f.name ? ` (${sp.name})` : ''} 이(가) 아파요! 밴드를 붙여 주세요`);
         }
+        // 번식: 짝이 있고 컨디션이 좋으면 가끔 아기(알)를 갖고, 배가 점점 불러서 낳는다
+        if (f.preg != null) {
+          f.preg += dt / RATES.pregSec;
+          if (f.preg >= 1) deliver(f);
+        } else {
+          const ms = mateStatus(game, f);
+          if (ms && Math.random() < RATES.pregPerSec * (ms === 'solo' ? RATES.pregSoloMul : 1) * dt) {
+            f.preg = 0;
+            if (ms === 'pair') f.mated = true;
+            const rr = s.rt[f.uid];
+            if (rr) for (let i = 0; i < 6; i++) s.pops.push({ x: rr.x + (Math.random() - 0.5) * 40, y: rr.y - 10, text: '💕', life: 1.2, vy: -30 });
+            say('preg', VOICE.aquaPregnant(sp, breedOf(f.sp).type), 5);
+            saveGame(game);
+          }
+        }
         // 다 큰 물고기가 기분 좋으면 가끔 반짝 조개를 떨어뜨린다
         const r = s.rt[f.uid];
         if (r && f.shiny) {
@@ -1264,6 +1324,20 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
           if (r.pearlT <= 0) { r.pearlT = 70 + Math.random() * 60; s.drops.push({ kind: 'pearl', x: r.x, y: r.y, vy: 30 }); }
         }
       });
+      // 알 깨어나기
+      if (game.eggs.length) {
+        const hatched = [];
+        game.eggs.forEach(e => { e.t -= dt; if (e.t <= 0) hatched.push(e); });
+        if (hatched.length) {
+          game.eggs = game.eggs.filter(e => !hatched.includes(e));
+          hatched.forEach(e => {
+            const x = e.x * s.W;
+            const n = spawnFry(e.sp, e.n, x, groundY(x) - 14, e.variant);
+            if (n) { addPoints(REWARDS.birth, x, groundY(x) - 40); audio.playFanfare(); say('hatch', VOICE.aquaHatch(FISH_BY_ID[e.sp])); }
+          });
+          saveGame(game);
+        }
+      }
       // 바다 친구 성장: 물이 깨끗할수록 빨리 자란다
       game.friends.forEach(fr => {
         const before = stageOf(fr.growth);
@@ -1638,6 +1712,20 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         ctx.beginPath(); ctx.ellipse(p.x, y, 4.5 * k, 2.6 * k, 0.3, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.ellipse(p.x + 5 * k, y + 1, 3 * k, 2 * k, -0.2, 0, Math.PI * 2); ctx.fill();
       });
+      // 바닥의 알 무더기: 깨어날 때가 되면 눈이 보이고 꼼지락거린다
+      (game.eggs || []).forEach(e => {
+        const ex = e.x * s.W, ey = groundY(ex) - 3 * k;
+        const ready = 1 - clamp(e.t / RATES.eggHatchSec, 0, 1);
+        for (let i = 0; i < e.n + 3; i++) {
+          const a = i * 2.399, rr = Math.sqrt(i) * 4.2 * k;
+          const jig = ready > 0.85 ? Math.sin(t * 20 + i) * 0.8 * k : 0;
+          const px = ex + Math.cos(a) * rr * 1.4 + jig, py = ey - Math.abs(Math.sin(a)) * rr * 0.6;
+          ctx.fillStyle = 'rgba(254,243,199,0.85)'; ctx.strokeStyle = 'rgba(217,119,6,0.55)'; ctx.lineWidth = 0.8;
+          ctx.beginPath(); ctx.arc(px, py, 3.2 * k, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          if (ready > 0.5) { ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(px + 0.8 * k, py - 0.4 * k, 0.9 * k, 0, Math.PI * 2); ctx.fill(); }
+          else { ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(px - 1 * k, py - 1 * k, 0.8 * k, 0, Math.PI * 2); ctx.fill(); }
+        }
+      });
       s.pearls.forEach(p => {
         const glow = 0.5 + 0.5 * Math.sin(t * 4 + p.x);
         const g = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, 26 * k);
@@ -1673,7 +1761,8 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         ctx.scale(r.dir, 1);
         ctx.rotate(ang * 1);
         ctx.globalAlpha = (0.72 + r.z * 0.28) * (r.leaving != null ? clamp(1 - r.leaving / 2.6, 0, 1) : 1);
-        drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0 });
+        const belly = f.preg != null ? Math.pow(f.preg, 0.8) : 0;
+        drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0, belly, gravidSpot: breedOf(f.sp).type === 'live' });
         ctx.restore();
         // 아픈 물고기 위에는 상단 치료 버튼과 똑같은 모양(분홍 동그라미 + 반창고)을 띄운다
         if (f.sick) {
@@ -2148,6 +2237,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ fontWeight: 900, fontSize: '1.15rem', color: '#0f172a' }}>
                   {infoFish.sick ? '🤒' : sad ? '😢' : '😊'} {infoFish.name ? <>{infoFish.name} <span style={{ fontSize: '0.8rem', color: '#475569' }}>({sp.name})</span></> : sp.name}
+                  {infoFish.sex && <span title={SEX_NAMES[infoFish.sex]} style={{ marginLeft: '4px', fontSize: '0.85rem', color: '#ffffff', background: infoFish.sex === 'm' ? '#2563eb' : '#db2777', borderRadius: '10px', padding: '1px 7px' }}>{infoFish.sex === 'm' ? '♂' : '♀'} {SEX_NAMES[infoFish.sex]}</span>}
                   {infoFish.variant && <span style={{ fontSize: '0.8rem', color: '#be185d' }}> ({GUPPY_BY_ID[infoFish.variant]?.name})</span>}
                   {' '}<span style={{ fontSize: '0.85rem', color: '#0369a1' }}>· {STAGE_NAMES[stage]}</span>
                   {infoFish.shiny && <span style={{ marginLeft: '6px', fontSize: '0.78rem', background: 'linear-gradient(135deg, #fde047, #f59e0b)', color: '#713f12', padding: '2px 8px', borderRadius: '10px' }}>✨ 이로치</span>}
@@ -2165,7 +2255,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                 ))}
               </div>
               <div style={{ marginTop: '8px', fontSize: '0.82rem', fontWeight: 800, color: sad ? '#be123c' : '#0f766e' }}>
-                {stage === 'adult' ? '🎉 다 컸어요! 가끔 반짝 조개를 떨어뜨려요' : infoFish.sick ? '🤒 아파서 자라지 않아요. 🩹 치료 버튼을 누르고 이 물고기를 눌러 주세요' : sad ? '배고프거나 물이 더러워서 자라지 않아요' : `자라는 속도 ${Math.round(speed * 100)}% (컨디션이 좋을수록 빨라요)`}
+                {infoFish.preg != null ? `${breedOf(infoFish.sp).type === 'live' ? '🤰 배 속에 아기가 있어요' : '🥚 배 속에 알이 있어요'} (${Math.round(infoFish.preg * 100)}%)` : stage === 'adult' ? '🎉 다 컸어요! 가끔 반짝 조개를 떨어뜨려요' : infoFish.sick ? '🤒 아파서 자라지 않아요. 🩹 치료 버튼을 누르고 이 물고기를 눌러 주세요' : sad ? '배고프거나 물이 더러워서 자라지 않아요' : `자라는 속도 ${Math.round(speed * 100)}% (컨디션이 좋을수록 빨라요)`}
               </div>
               <button
                 onClick={() => {

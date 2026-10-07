@@ -1,4 +1,4 @@
-import { FISH_SPECIES, STAGE_NAMES } from './aquariumData.js';
+import { FISH_SPECIES, STAGE_NAMES, breedOf } from './aquariumData.js';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 🎙️ 음성 안내 문장 모음
@@ -85,6 +85,10 @@ export const VOICE = {
   // 직접 지은 이름은 미리 만든 음성이 없어 기기 음성(TTS)으로 읽는다
   aquaHello: (species, name) => `안녕! 나는 ${species.name} ${attachJosa(name, '이에요/예요')}`,
   aquaRelease: (species) => `안녕, ${attachJosa(species.name, '아/야')}! 넓은 자연에서 행복하게 지내!`,
+  aquaPregnant: (species, type) => `${species.name} 배 속에 ${type === 'live' ? '아기가' : '알이'} 생겼어요! 배가 점점 불러질 거예요!`,
+  aquaBirth: (species) => `와아! ${attachJosa(species.name, '이/가')} 아기를 낳았어요!`,
+  aquaEggs: (species) => `${attachJosa(species.name, '이/가')} 알을 낳았어요! 곧 아기가 나와요!`,
+  aquaHatch: (species) => `알에서 아기 ${attachJosa(species.name, '이/가')} 태어났어요!`,
   aquaSick: (species) => `${attachJosa(species.name, '이/가')} 아파요! 밴드를 붙여 주세요!`,
   aquaHeal: (species) => `${attachJosa(species.name, '이/가')} 다 나았어요! 고마워요!`,
   aquaNotSick: () => '이 친구는 안 아파요! 아픈 친구를 찾아 주세요!',
@@ -119,6 +123,8 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
     VOICE.aquaWaterChange(), VOICE.aquaClean(), VOICE.aquaPearl(), VOICE.aquaNeedMore(), VOICE.aquaNotSick(), VOICE.aquaHealMode());
   FISH_SPECIES.forEach(sp => {
     lines.push(VOICE.aquaGrow(sp, 'juvenile'), VOICE.aquaGrow(sp, 'adult'), VOICE.aquaNewFish(sp), VOICE.aquaSadFish(sp), VOICE.aquaRelease(sp), VOICE.aquaShiny(sp), VOICE.aquaSick(sp), VOICE.aquaHeal(sp));
+    const bt = breedOf(sp.id).type;
+    lines.push(VOICE.aquaPregnant(sp, bt), ...(bt === 'live' ? [VOICE.aquaBirth(sp)] : [VOICE.aquaEggs(sp), VOICE.aquaHatch(sp)]));
     Object.keys(STAGE_NAMES).forEach(stage => lines.push(VOICE.aquaFishInfo(sp, stage)));
   });
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
