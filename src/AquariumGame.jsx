@@ -10,7 +10,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VOICE, attachJosa } from './voiceLines.js';
 import {
   FISH_SPECIES, FISH_BY_ID, GUPPY_BY_ID, rollShiny, DECOR_ITEMS, DECOR_BY_ID, FRIEND_PRICES, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
-  stageOf, sizeScale, RATES, isSad, conditionOf, growFactor, REWARDS,
+  stageOf, sizeScale, RATES, newFriend, friendGrowFactor, isSad, conditionOf, growFactor, REWARDS,
   loadGame, saveGame, catchUpOffline, newFish, newUid, todayKey
 } from './aquariumData.js';
 
@@ -757,7 +757,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
   const [hud, setHud] = useState({ points: 0, clean: 100, sad: 0 });
   const [mode, setModeState] = useState('play');
   const [shopOpen, setShopOpen] = useState(false);
-  const [shopTab, setShopTab] = useState('fish');
+  const [shopTab, setShopTab] = useState('fish');   // 'fish' = 물고기 + 바다 친구, 'decor' = 장식
   const [info, setInfo] = useState(null);          // 터치한 물고기 uid
   const [confirmRelease, setConfirmRelease] = useState(false);
   const [naming, setNaming] = useState(false);
@@ -939,12 +939,13 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     const ensureFriendRt = (fr, entering) => {
       if (s.fr[fr.uid]) return s.fr[fr.uid];
       const c = creatureById(fr.id);
-      const size = c ? c.size * 0.9 * s.k : 90;
+      const base = c ? c.size * 0.9 * s.k : 90;
+      const size = base * sizeScale(fr.growth ?? 1);
       const motion = FRIEND_MOTION[fr.id] || 'swim';
       const fromLeft = Math.random() < 0.5;
       const r = size * 0.5;
       const q = {
-        id: fr.id, size, motion,
+        id: fr.id, base, size, motion,
         x: entering ? (fromLeft ? r : s.W - r) : r + Math.random() * Math.max(1, s.W - 2 * r),
         y: motion === 'crawl' ? s.floor - r * 0.4 : s.surface + r + Math.random() * Math.max(1, s.floor - s.surface - 2 * r - 20),
         vx: fromLeft ? 30 : -30, vy: 0, heading: FRIEND_FLIP.has(fr.id) && !fromLeft ? -1 : 1, wander: fromLeft ? 0 : Math.PI,
@@ -1083,7 +1084,11 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         q.boing = 1;
         audio.playBubble();
         const c = creatureById(fr.id);
-        if (c) say('friend', VOICE.itemSound(c), 1);
+        const stage = stageOf(fr.growth ?? 1);
+        if (c && stage !== 'adult') {
+          s.pops.push({ x: q.x, y: q.y - q.size * 0.6 - 10, text: `${stage === 'fry' ? '아기' : '어린'} ${c.name}`, life: 1.6, vy: -22, color: '#bae6fd' });
+          say('friend', VOICE.aquaBabyFriend(c, stage), 1);
+        } else if (c) say('friend', VOICE.itemSound(c), 1);
         return;
       }
       for (let i = 0; i < 6; i++) s.bubbles.push({ x: x + (Math.random() - 0.5) * 30, y, r: 2 + Math.random() * 6, wob: Math.random() * 6, vy: 60 + Math.random() * 50 });
@@ -1170,6 +1175,21 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
         if (r && after === 'adult' && !isSad(f, game.dirt) && s.pearls.length < 4) {
           r.pearlT -= dt;
           if (r.pearlT <= 0) { r.pearlT = 70 + Math.random() * 60; s.drops.push({ kind: 'pearl', x: r.x, y: r.y, vy: 30 }); }
+        }
+      });
+      // 바다 친구 성장: 물이 깨끗할수록 빨리 자란다
+      game.friends.forEach(fr => {
+        const before = stageOf(fr.growth);
+        fr.growth = Math.min(1, fr.growth + RATES.growPerSec * friendGrowFactor(game.dirt) * dt);
+        const after = stageOf(fr.growth);
+        const q = s.fr[fr.uid];
+        if (q) q.size = q.base * sizeScale(fr.growth);
+        if (after !== before) {
+          addPoints(after === 'adult' ? REWARDS.adult : REWARDS.juvenile, q ? q.x : s.W / 2, q ? q.y - 30 : s.H / 2);
+          audio.playFanfare();
+          const c = creatureById(fr.id);
+          if (c) say('grow', VOICE.aquaFriendGrow(c, after));
+          if (q) for (let i = 0; i < 16; i++) s.pops.push({ x: q.x + (Math.random() - 0.5) * 60, y: q.y + (Math.random() - 0.5) * 40, text: i % 2 ? '✨' : '⭐', life: 1.2, vy: -40 });
         }
       });
       // 돌봄 알림 음성 (너무 자주 말하지 않게)
@@ -1712,11 +1732,11 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
       Object.entries(s.fr).forEach(([uid, c]) => {
         const els = friendEls.current[uid];
         if (!els || !els.outer || !els.inner) return;
-        const w = c.size * 1.1, h = c.size;
+        const w = c.base * 1.1, h = c.base, gs = c.size / c.base;
         els.outer.style.transform = `translate3d(${(c.x - w / 2).toFixed(1)}px, ${(c.y - h / 2).toFixed(1)}px, 0)`;
         els.outer.style.opacity = c.alpha.toFixed(2);
         const bob = c.motion === 'crawl' ? 0 : Math.sin(s.t * 2 + c.phase) * 3;
-        const grow = 1 + Math.sin(c.boing * Math.PI) * 0.22;
+        const grow = (1 + Math.sin(c.boing * Math.PI) * 0.22) * gs;
         const sq = 1 - (c.squash || 0) * 0.14;
         const ang = FRIEND_FLIP.has(c.id) ? clamp(Math.atan2(c.vy, Math.abs(c.vx) + 20) * 0.5, -0.35, 0.35) * 57.3 : Math.sin(s.t * 1.5 + c.phase) * 4;
         els.inner.style.transform = `translateY(${bob.toFixed(1)}px) scale(${(c.heading * grow / sq).toFixed(3)}, ${(grow * sq).toFixed(3)}) rotate(${ang.toFixed(1)}deg)`;
@@ -1836,7 +1856,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
     } else if (kind === 'decor') {
       game.decor.push({ uid: newUid(), id, x: 0.1 + Math.random() * 0.8 });
     } else {
-      const fr = { uid: newUid(), id, shiny: rollShiny() };
+      const fr = newFriend(id);
       game.friends.push(fr);
       s.ensureFriendRt(fr, true);
       setFriends(game.friends.slice());
@@ -2132,7 +2152,7 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '6px', padding: '10px 14px 0' }}>
-                {[['fish', '🐟 물고기'], ['decor', '🪸 장식'], ['friend', '🐙 바다 친구']].map(([k, label]) => (
+                {[['fish', '🐟 물고기·바다 친구'], ['decor', '🪸 장식']].map(([k, label]) => (
                   <button key={k} onClick={() => setShopTab(k)} style={{
                     border: 'none', borderRadius: '14px', padding: '8px 14px', fontWeight: 900, cursor: 'pointer',
                     background: shopTab === k ? '#8b5cf6' : '#f1f5f9', color: shopTab === k ? '#ffffff' : '#475569'
@@ -2158,10 +2178,11 @@ export default function AquariumGame({ creatures, CreatureSVG, audio, speak }) {
                     <button onClick={() => buy('decor', d.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= d.price ? '#10b981' : '#cbd5e1', color: '#ffffff' }}>🐚 {d.price}</button>
                   </div>
                 ))}
-                {shopTab === 'friend' && creatures.map(c => (
+                {shopTab === 'fish' && creatures.map(c => (
                   <div key={c.id} style={{ border: '2px solid #e2e8f0', borderRadius: '18px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#eff6ff' }}>
                     <div style={{ width: 96, height: 80 }}><CreatureSVG id={c.id} /></div>
                     <div style={{ fontWeight: 900, color: '#0f172a' }}>{c.name}</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>아기로 와서 쑥쑥 자라요</div>
                     <button onClick={() => buy('friend', c.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= FRIEND_PRICES[c.id] ? '#0ea5e9' : '#cbd5e1', color: '#ffffff' }}>🐚 {FRIEND_PRICES[c.id]}</button>
                   </div>
                 ))}

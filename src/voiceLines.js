@@ -77,7 +77,9 @@ export const VOICE = {
   aquaNeedMore: () => '조개가 조금 더 필요해요!',
   aquaGrow: (species, stage) => `와아! ${attachJosa(species.name, '이/가')} ${stage === 'juvenile' ? '어린 물고기로' : '다 큰 물고기로'} 자랐어요!`,
   aquaNewFish: (species) => `새 친구 ${attachJosa(species.name, '이/가')} 왔어요! 잘 키워 주세요!`,
-  aquaNewFriend: (creature) => `바다 친구 ${attachJosa(creature.name, '이/가')} 어항에 왔어요!`,
+  aquaNewFriend: (creature) => `아기 ${attachJosa(creature.name, '이/가')} 어항에 왔어요! 잘 키워 주세요!`,
+  aquaFriendGrow: (creature, stage) => `와아! ${attachJosa(creature.name, '이/가')} ${stage === 'juvenile' ? '쑥쑥 자랐어요!' : '다 컸어요!'}`,
+  aquaBabyFriend: (creature, stage) => `${stage === 'fry' ? '아기' : '어린'} ${attachJosa(creature.name, '이에요/예요')} 쑥쑥 크고 있어요!`,
   aquaFishInfo: (species, stage) => `${attachJosa(species.name, '이에요/예요')} 지금은 ${attachJosa(STAGE_NAMES[stage], '이에요/예요')}`,
   aquaShiny: (thing) => `와아! 반짝반짝 특별한 색깔의 ${attachJosa(thing.name, '이/가')} 왔어요!`,
   // 직접 지은 이름은 미리 만든 음성이 없어 기기 음성(TTS)으로 읽는다
@@ -107,7 +109,8 @@ export const VOICE = {
 export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, foods, oceanCreatures, puzzles }) {
   const lines = [VOICE.puzzleWrong()];
   puzzles.forEach(t => lines.push(VOICE.puzzleStart(t), VOICE.puzzleDone(t)));
-  oceanCreatures.forEach(c => lines.push(VOICE.itemSound(c), VOICE.aquaNewFriend(c), VOICE.aquaShiny(c)));
+  oceanCreatures.forEach(c => lines.push(VOICE.itemSound(c), VOICE.aquaNewFriend(c), VOICE.aquaShiny(c),
+    VOICE.aquaFriendGrow(c, 'juvenile'), VOICE.aquaFriendGrow(c, 'adult'), VOICE.aquaBabyFriend(c, 'fry'), VOICE.aquaBabyFriend(c, 'juvenile')));
   lines.push(VOICE.aquaWelcome(), VOICE.aquaWelcomeBack(), VOICE.aquaHungry(), VOICE.aquaDirty(), VOICE.aquaFeed(),
     VOICE.aquaWaterChange(), VOICE.aquaClean(), VOICE.aquaPearl(), VOICE.aquaNeedMore());
   FISH_SPECIES.forEach(sp => {

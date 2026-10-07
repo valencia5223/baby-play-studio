@@ -167,7 +167,7 @@ export const sizeScale = (growth) => 0.55 + 0.45 * (1 - Math.pow(1 - Math.min(1,
 // ── 컨디션 & 성장 규칙 ──
 // 배부름(full)·기분(happy)은 물고기마다, 물 더러움(dirt)은 어항 전체 값이다 (모두 0~100)
 export const RATES = {
-  growPerSec: 1 / 10800,    // 컨디션 최고일 때 치어 → 다 큰 물고기 약 3시간 (종류별 growMul 곱)
+  growPerSec: 1 / 18000,    // 컨디션 최고일 때 치어 → 다 큰 물고기 약 5시간 (종류별 growMul 곱)
   offlineGrowMul: 0.08,     // 앱을 꺼둔 동안은 8% 속도로 자란다 (배고파지면 그마저 멈춤 → 며칠에 걸쳐 자람)
   fullDropPerSec: 100 / 420, // 놀 때 배부름 100 → 0 약 7분
   offlineFullDropPerSec: 100 / (8 * 3600),
@@ -189,6 +189,10 @@ export const REWARDS = { eat: 1, poop: 2, algae: 1, waterChange: 10, juvenile: 2
 export const SAVE_KEY = 'bps_aquarium_v1';
 let uidSeq = 0;
 export const newUid = () => `${Date.now().toString(36)}${(uidSeq++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+// 바다 친구도 아기 모습으로 와서 자란다 (밥 대신 물 깨끗함에 따라 자람)
+export const newFriend = (id) => ({ uid: newUid(), id, growth: 0, shiny: rollShiny(), bornAt: Date.now() });
+export const friendGrowFactor = (dirt) => (dirt > 70 ? 0 : Math.max(0.15, Math.min(1, (100 - dirt) / 70)));
+
 export const newFish = (sp) => ({
   uid: newUid(), sp, growth: 0, full: 80, happy: 80, bornAt: Date.now(),
   variant: sp === 'guppy' ? GUPPY_VARIANTS[Math.floor(Math.random() * GUPPY_VARIANTS.length)].id : undefined,
@@ -224,6 +228,8 @@ export function loadGame() {
       if (g && g.version === 1 && Array.isArray(g.fish)) {
         // 디자인이 생기기 전에 들어온 구피는 원래 모습(무지개)으로
         g.fish.forEach(f => { if (f.sp === 'guppy' && !f.variant) f.variant = 'rainbow'; });
+        // 자라기 기능 전에 산 바다 친구는 이미 다 큰 모습
+        (g.friends || []).forEach(fr => { if (typeof fr.growth !== 'number') fr.growth = 1; });
         return g;
       }
     }
@@ -248,6 +254,11 @@ export function catchUpOffline(game, now = Date.now()) {
       const sp = FISH_BY_ID[f.sp];
       f.growth = Math.min(1, f.growth + RATES.growPerSec * RATES.offlineGrowMul * (sp ? sp.growMul : 1) * growFactor(f, game.dirt) * step);
       if (stageOf(f.growth) !== before) grown.push(f);
+    });
+    (game.friends || []).forEach(fr => {
+      const before = stageOf(fr.growth);
+      fr.growth = Math.min(1, fr.growth + RATES.growPerSec * RATES.offlineGrowMul * friendGrowFactor(game.dirt) * step);
+      if (stageOf(fr.growth) !== before) grown.push(fr);
     });
   }
   game.lastTick = now;
