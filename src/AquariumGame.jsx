@@ -558,6 +558,67 @@ export function drawFish(ctx, sp, L, o = {}) {
   ctx.restore();
 }
 
+// 앞 유리에 빨판 입으로 붙은 비파를 유리 너머(배 쪽)에서 본 모습. 원점이 몸 가운데, +x 가 머리 쪽.
+// 넓적한 머리, 동그란 빨판 입(오물오물), 양옆으로 펼친 가슴·배지느러미, 살랑이는 꼬리
+export function drawPlecoGlass(ctx, sp, L, o = {}) {
+  if (!(L > 0)) return;
+  const ph = o.phase || 0, sw = Math.sin(ph * 0.8) * L * 0.04;
+  ctx.save();
+  // 꼬리
+  ctx.fillStyle = sp.tail.color;
+  ctx.beginPath();
+  ctx.moveTo(-L * 0.34, 0);
+  ctx.quadraticCurveTo(-L * 0.46, -L * 0.06 + sw * 0.5, -L * 0.6, -L * 0.13 + sw);
+  ctx.lineTo(-L * 0.54, sw);
+  ctx.lineTo(-L * 0.6, L * 0.13 + sw);
+  ctx.quadraticCurveTo(-L * 0.46, L * 0.06 + sw * 0.5, -L * 0.34, 0);
+  ctx.closePath(); ctx.fill();
+  // 가슴지느러미(머리 옆으로 넓게)·배지느러미: 유리를 짚고 있어 조금씩 꿈틀
+  ctx.fillStyle = sp.fin;
+  const flap = Math.sin(ph * 1.3) * 0.08;
+  [-1, 1].forEach(side => {
+    ctx.beginPath(); ctx.ellipse(L * 0.12, side * L * 0.17, L * 0.15, L * 0.065, side * (0.55 + flap), 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-L * 0.1, side * L * 0.12, L * 0.1, L * 0.045, side * (0.35 - flap), 0, Math.PI * 2); ctx.fill();
+  });
+  // 몸 (위에서 본 납작한 몸: 머리가 넓고 꼬리로 갈수록 가늘다)
+  const pts = [];
+  const hw = (q) => L * (q < 0.2 ? 0.1 + 0.06 * Math.sin(q / 0.2 * Math.PI / 2) : 0.16 * Math.pow(1 - (q - 0.2) / 0.8, 0.9) + 0.025);
+  const xq = (q) => L * (0.4 - q * 0.76);
+  for (let i = 0; i <= 10; i++) { const q = i / 10; pts.push([xq(q), -hw(q)]); }
+  for (let i = 10; i >= 0; i--) { const q = i / 10; pts.push([xq(q), hw(q)]); }
+  smoothClosed(ctx, pts);
+  const bg = ctx.createRadialGradient(L * 0.05, 0, L * 0.02, L * 0.05, 0, L * 0.4);
+  bg.addColorStop(0, sp.belly); bg.addColorStop(1, sp.top);
+  ctx.fillStyle = bg; ctx.fill();
+  ctx.save(); ctx.clip();
+  ctx.fillStyle = sp.spots;
+  ctx.globalAlpha *= 0.7;
+  for (let i = 0; i < 16; i++) {
+    const q = 0.08 + ((i * 0.5698403) % 1) * 0.85, yy = (((i * 0.7548777) % 1) - 0.5) * 1.6;
+    ctx.beginPath(); ctx.arc(xq(q), yy * hw(q), Math.max(0.7, L * 0.016), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+  if (o.sad) { smoothClosed(ctx, pts); ctx.fillStyle = 'rgba(100,116,139,0.4)'; ctx.fill(); }
+  // 눈 (등 쪽에 있어 가장자리로 살짝 보인다)
+  ctx.fillStyle = '#0f172a';
+  [-1, 1].forEach(side => { ctx.beginPath(); ctx.arc(L * 0.24, side * L * 0.13, Math.max(0.8, L * 0.022), 0, Math.PI * 2); ctx.fill(); });
+  // 빨판 입: 동그란 입술이 유리에 붙어 오물오물
+  const mx = L * 0.33, open = 0.35 + 0.25 * Math.max(0, Math.sin(ph * 2.4));
+  ctx.fillStyle = '#a8a29e';
+  ctx.beginPath(); ctx.ellipse(mx, 0, L * 0.075, L * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(68,64,60,0.6)'; ctx.lineWidth = Math.max(0.6, L * 0.01);
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    ctx.beginPath(); ctx.moveTo(mx + Math.cos(a) * L * 0.045, Math.sin(a) * L * 0.06); ctx.lineTo(mx + Math.cos(a) * L * 0.07, Math.sin(a) * L * 0.093); ctx.stroke();
+  }
+  ctx.fillStyle = '#44403c';
+  ctx.beginPath(); ctx.ellipse(mx, 0, L * 0.025, L * 0.055 * open, 0, 0, Math.PI * 2); ctx.fill();
+  // 입가 짧은 수염
+  ctx.strokeStyle = 'rgba(120,113,108,0.9)';
+  [-1, 1].forEach(side => { ctx.beginPath(); ctx.moveTo(mx + L * 0.02, side * L * 0.09); ctx.lineTo(mx + L * 0.06, side * L * 0.12); ctx.stroke(); });
+  ctx.restore();
+}
+
 // ═══════════════════════════════ 바다 친구 그리기 ═══════════════════════════════
 // 물고기와 같은 규칙으로 그린다: 원점이 몸 가운데, +x 방향을 본다. L: 현재 몸 길이(px)
 // 자면 눈을 감고, 슬프면 색이 바래고 눈물, 기쁘면 볼이 발그레, 아기일 때는 눈이 크고 조금 투명하다.
@@ -1779,9 +1840,9 @@ export default function AquariumGame({ audio, speak }) {
         if (f.name) s.pops.push({ x: r.x, y: r.y - fishLen(f) * 0.6 - 10, text: `${sp.name} ${f.name}`, life: 1.6, vy: -22, color: '#fef08a' });
         const status = f.sick ? VOICE.aquaSick(sp) : isSad(f, game.dirt) ? VOICE.aquaSadFish(sp) : null;
         if (f.name) {
-          // 이름을 지어 준 물고기는 먼저 이름으로 인사하고(기기 음성), 아프거나 슬프면 이어서 알려 준다
-          say('info', VOICE.aquaHello(sp, f.name), 1.5);
-          if (status) audio.later(() => speak(status), 2800);
+          // 이름을 지어 준 물고기는 먼저 이름으로 인사하고(기기 음성), 아프거나 슬프면 이어서 알려 준다.
+          // 기기 음성은 iOS 에서 손가락을 뗄 때(pointerup)만 허락되므로 onUp 에서 말한다
+          s.helloOnUp = { line: VOICE.aquaHello(sp, f.name), status };
         } else if (status) say('info', status, 1.5);
         else say('info', VOICE.aquaFishInfo(sp, stageOf(f.growth)), 1.5);
         return;
@@ -1808,6 +1869,11 @@ export default function AquariumGame({ audio, speak }) {
       }
     };
     const onUp = () => {
+      if (s.helloOnUp) {
+        const { line, status } = s.helloOnUp; s.helloOnUp = null;
+        say('info', line, 1.5);
+        if (status) audio.later(() => speak(status), 2800);
+      }
       if (s.pointer.drag) { saveGame(game); setPlaced({ decor: game.decor.slice() }); }
       s.pointer.down = false; s.pointer.drag = null;
     };
@@ -1962,6 +2028,18 @@ export default function AquariumGame({ audio, speak }) {
       else if (game.dirt > 65) say('dirty', VOICE.aquaDirty(), 90);
     };
 
+    // ── 비파가 유리에 붙어 기어가기: 빨판으로 '꼬물-멈칫' 하며 조금씩 나아간다 ──
+    const turnTo = (a, b, k) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return a + d * Math.min(1, k); };
+    const plecoPulse = (r) => 0.2 + 0.8 * Math.pow(Math.max(0, Math.sin(s.t * 2.4 + (r.wander || 0))), 2);
+    const plecoCrawl = (r, pl, L, mul, dt) => {
+      const v = plecoPulse(r) * 10 * s.k * mul;
+      let nx = r.x + Math.cos(pl.h) * v * dt, ny = r.y + Math.sin(pl.h) * v * dt;
+      const x0 = 30, x1 = s.W - 30, y0 = s.surface + 14 + L * 0.5, y1 = s.floor - 8 - L * 0.4;
+      if (nx < x0 || nx > x1) { pl.h = Math.PI - pl.h; nx = clamp(nx, x0, x1); }
+      if (ny < y0 || ny > y1) { pl.h = -pl.h; ny = clamp(ny, y0, y1); }
+      r.anchor = { x: nx, y: ny, hard: true };
+    };
+
     // ── 물고기 움직임 (Boids + 먹이 쫓기 + 손가락 따라오기) ──
     const updateFish = (dt) => {
       const list = game.fish;
@@ -2045,16 +2123,22 @@ export default function AquariumGame({ audio, speak }) {
           fx += dx / d * (300 + hunger * 600); fy += dy / d * (300 + hunger * 600);
           maxSp *= 1.2 + hunger;
         } else if (sp.algaeEater && s.algae.length) {
-          // 비파: 가장 가까운 유리 이끼로 가서 냠냠 먹는다
+          // 비파: 가장 가까운 유리 이끼 근처까지 헤엄쳐 가서, 앞 유리에 빨판 입을 붙이고 기어가 갉아 먹는다
           let ag = null, ad = Infinity;
           s.algae.forEach(a => { const d = Math.hypot(a.x - r.x, a.y - r.y); if (d < ad) { ad = d; ag = a; } });
-          if (ag) {
+          if (ag && !r.glass && ad > 110 * s.k) {
             if (pref != null) fy -= (pref - r.y) * 0.9;   // 바닥으로 끌려가지 않게
             fx += (ag.x - r.x) / (ad || 1) * 260; fy += (ag.y - r.y) / (ad || 1) * 260;
+          } else if (ag) {
+            const pl = r.pl || (r.pl = { mode: 'move', t: 0 });
+            if (!r.glass) { r.glass = true; pl.h = Math.atan2(ag.y - r.y, ag.x - r.x); }
+            pl.mode = 'glass'; pl.t = Math.max(pl.t || 0, 8);
+            pl.h = turnTo(pl.h, Math.atan2(ag.y - r.y, ag.x - r.x), dt * 2.5);
+            if (ad > ag.r * 0.5) plecoCrawl(r, pl, L, 1.4, dt);
+            else r.anchor = { x: r.x, y: r.y, hard: true };
+            noMin = true;
             if (ad < ag.r + 12) {
-              ag.eat = (ag.eat || 0) + dt;
-              r.vx *= 0.9; r.vy *= 0.9;
-              r.anchor = { x: ag.x, y: ag.y }; r.pose = -0.35; noMin = true;   // 빨판으로 유리에 붙어 갉아 먹는다
+              ag.eat = (ag.eat || 0) + dt;   // 빨판으로 유리에 붙어 갉아 먹는다
               if (ag.eat > 2.5) {
                 s.algae = s.algae.filter(a => a !== ag);
                 game.algae = s.algae.length;
@@ -2123,29 +2207,61 @@ export default function AquariumGame({ audio, speak }) {
           }
         } else if (sp.forager && r.gulp === 1) r.gulp = 2;   // 숨 쉬러 가다 밥·놀람이 생기면 그냥 내려온다
         if (sp.algaeEater && idle && !s.algae.length) {
-          // 비파: 바닥이나 옆 유리벽에 빨판으로 딱 붙어 오래 가만히 있다가, 미끄러지듯 다음 자리로 옮긴다 (밤에 더 부지런하다)
-          const pl = r.pl || (r.pl = { mode: 'move', t: 0, tx: r.x, ty: bottom, wall: 0 });
-          if (pl.mode === 'move' && pl.t <= 0) {
-            pl.t = 1;
-            if (Math.random() < 0.4) {
+          // 비파: 빨판 입으로 유리에 붙어 다닌다.
+          //  · glass: 앞 유리에 붙어 입을 오물거리며 조금씩 기어 다님 (배와 빨판 입이 보인다)
+          //  · wall : 옆 유리에 붙어 머리를 위로 하고 조금씩 타고 오르다가, 위쪽에 닿으면 떨어져 내려온다
+          //  · rest : 바닥에 납작 붙어 쉼
+          // 낮에는 많이 쉬고, 밤에는 유리를 더 부지런히 돌아다닌다
+          const pl = r.pl || (r.pl = { mode: 'move', t: 0 });
+          if (pl.mode === 'move' && !pl.kind) {
+            const roll = Math.random(), night = s.night;
+            pl.kind = roll < (night ? 0.15 : 0.4) ? 'rest' : roll < (night ? 0.45 : 0.65) ? 'wall' : 'glass';
+            if (pl.kind === 'wall') {
               pl.wall = Math.random() < 0.5 ? -1 : 1;
               pl.tx = pl.wall < 0 ? 8 + L * sp.hRatio * 0.5 : s.W - 8 - L * sp.hRatio * 0.5;
-              pl.ty = clamp(top + span * (0.35 + Math.random() * 0.5), top + L * 0.55, bottom - L * 0.55);
+              pl.ty = bottom - L * 0.55;
+            } else if (pl.kind === 'glass') {
+              pl.wall = 0; pl.tx = 50 + Math.random() * (s.W - 100); pl.ty = top + span * (0.3 + Math.random() * 0.55);
             } else {
               pl.wall = 0; pl.tx = 40 + Math.random() * (s.W - 80); pl.ty = groundY(pl.tx) - L * sp.hRatio * 0.45;
             }
           }
           if (pl.mode === 'rest') {
             pl.t -= dt;
-            r.anchor = { x: pl.tx, y: pl.ty, dir: pl.wall }; r.pose = pl.wall ? -Math.PI / 2 : 0; noMin = true;   // 벽에서는 머리를 위로, 배를 유리에
-            if (pl.t <= 0) { pl.mode = 'move'; pl.t = 0; }
+            r.anchor = { x: pl.tx, y: pl.ty }; r.pose = 0; noMin = true;
+            if (pl.t <= 0) { pl.mode = 'move'; pl.kind = null; }
+          } else if (pl.mode === 'wall') {
+            // 옆 유리: 머리를 위로, 배를 유리에 붙이고 빨판으로 꼬물꼬물 타고 오른다
+            pl.t -= dt;
+            const v = plecoPulse(r) * 7 * s.k * (sad ? 0.5 : 1);
+            pl.ty = Math.max(top + L * 0.55, pl.ty - v * dt);
+            r.anchor = { x: pl.tx, y: pl.ty, dir: pl.wall, hard: true }; r.pose = -Math.PI / 2; noMin = true;
+            if (pl.t <= 0 || pl.ty <= top + L * 0.56) { pl.mode = 'move'; pl.kind = null; }
+          } else if (pl.mode === 'glass') {
+            // 앞 유리: 방향을 조금씩 바꾸며 기어 다니다가 가끔 멈춰 유리를 갉는다
+            pl.t -= dt;
+            pl.pause = (pl.pause || 0) - dt;
+            if (pl.pause < -4 - Math.random() * 6) pl.pause = 1.5 + Math.random() * 2.5;
+            pl.h += (Math.random() - 0.5) * dt * 2.4;
+            if (pl.pause > 0) r.anchor = { x: r.x, y: r.y, hard: true };
+            else plecoCrawl(r, pl, L, 1, dt);
+            noMin = true;
+            if (pl.t <= 0) { pl.mode = 'move'; pl.kind = null; r.glass = false; }
           } else {
             const dx = pl.tx - r.x, dy = pl.ty - r.y, d = Math.hypot(dx, dy) || 1;
             if (pref != null) fy -= (pref - r.y) * 0.9;
             fx = fx * 0.2 + dx / d * 320; fy = fy * 0.2 + dy / d * 320; maxSp *= 1.4;
-            if (d < 16 * s.k) { pl.mode = 'rest'; pl.t = s.night ? 3 + Math.random() * 6 : 10 + Math.random() * 20; }
+            if (d < 16 * s.k) {
+              pl.mode = pl.kind; pl.kind = null;
+              if (pl.mode === 'rest') pl.t = s.night ? 3 + Math.random() * 6 : 12 + Math.random() * 20;
+              else if (pl.mode === 'wall') pl.t = 14 + Math.random() * 16;
+              else { pl.t = s.night ? 18 + Math.random() * 20 : 10 + Math.random() * 14; pl.h = Math.random() * Math.PI * 2; pl.pause = 0; r.glass = true; }
+            }
           }
-        } else if (sp.algaeEater && r.pl) { r.pl.mode = 'move'; r.pl.t = 0; }
+        } else if (sp.algaeEater && r.pl && !(s.algae.length && r.glass && idle)) {
+          // 밥·놀람·손가락 따라오기가 생기면 유리에서 떨어져 헤엄친다
+          if (!s.algae.length || !idle) { r.pl.mode = 'move'; r.pl.kind = null; r.glass = false; }
+        }
         fx += s.tilt.x * 140; fy += s.tilt.y * 80;
         // 해파리는 갓을 오므릴 때 뿅 떠올랐다가 천천히 가라앉는다 (그림의 오므림과 박자를 맞춤)
         if (sp.shape === 'jellyfish' && !asleep) fy += Math.sin(r.phase * 0.5) < -0.6 ? -160 : 30;
@@ -2168,11 +2284,12 @@ export default function AquariumGame({ audio, speak }) {
         r.x = clamp(r.x + r.vx * dt, 6, s.W - 6); r.y = clamp(r.y + r.vy * dt, yLo, yHi);
         if (sp.crawl) r.y = groundY(r.x) - L * sp.hRatio * 0.42;   // 모래 위에 발을 딛고
         if (r.anchor) {
-          const ka = Math.min(1, dt * 4);
+          r.anchorEase = Math.hypot(r.anchor.x - r.x, r.anchor.y - r.y) > 4 * s.k;
+          const ka = r.anchor.hard && !r.anchorEase ? 1 : Math.min(1, dt * 4);
           r.x += (r.anchor.x - r.x) * ka; r.y += (r.anchor.y - r.y) * ka; r.vx = 0; r.vy = 0;
           if (r.anchor.dir) r.dir = r.anchor.dir;   // 벽에 붙은 비파는 배가 유리 쪽
         }
-        r.phase += dt * (5 + spd * 0.12 / s.k) * (sad ? 0.6 : 1) * (asleep ? 0.3 : 1) * (1 + (r.eager || 0) * 0.8);
+        r.phase += dt * (r.glass ? 4 : 0) + dt * (5 + spd * 0.12 / s.k) * (sad ? 0.6 : 1) * (asleep ? 0.3 : 1) * (1 + (r.eager || 0) * 0.8);
         r.eager = Math.max(0, (r.eager || 0) - dt);
         // 진행 방향 (좌우가 자주 바뀌지 않게)
         if (r.vx > 5) r.dir = 1; else if (r.vx < -5) r.dir = -1; else r.dir = r.dir || 1;
@@ -2417,7 +2534,8 @@ export default function AquariumGame({ audio, speak }) {
       if (s.fx) drawMotes(false);
 
       // 물고기 (멀리 있는 것부터). 먼 물고기와 가까운 물고기 사이에 옅은 물빛 안개를 깔아 깊이감을 준다
-      const order = game.fish.filter(f => s.rt[f.uid]).sort((a, b) => s.rt[a.uid].z - s.rt[b.uid].z);
+      // 앞 유리에 붙은 비파는 유리 바로 앞이라 맨 나중(가장 앞)에 그린다
+      const order = game.fish.filter(f => s.rt[f.uid]).sort((a, b) => (s.rt[a.uid].glassK > 0.5 ? 2 : s.rt[a.uid].z) - (s.rt[b.uid].glassK > 0.5 ? 2 : s.rt[b.uid].z));
       let hazed = false;
       const badges = [];
       const haze = () => {
@@ -2444,7 +2562,20 @@ export default function AquariumGame({ audio, speak }) {
         ctx.rotate(ang * 1);
         ctx.globalAlpha = (0.72 + r.z * 0.28) * (r.leaving != null ? clamp(1 - r.leaving / 2.6, 0, 1) : 1);
         const belly = f.preg != null ? Math.pow(f.preg, 0.8) : 0;
-        drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0, belly, sleep: !!r.asleep, gloss: s.fx === 1, lit: s.lampNow, gravidSpot: breedOf(f.sp).type === 'live' });
+        r.glassK = (r.glassK || 0) + ((r.glass ? 1 : 0) - (r.glassK || 0)) * Math.min(1, s.dtLast * 5);
+        if (r.glassK > 0.02) {
+          // 앞 유리에 붙은 비파: 옆모습에서 배 쪽 모습으로 바뀐다 (유리에 가까워 조금 크게)
+          const a0 = ctx.globalAlpha;
+          ctx.restore(); ctx.save();
+          ctx.translate(r.x, r.y);
+          ctx.rotate(r.pl ? r.pl.h || 0 : 0);
+          ctx.globalAlpha = a0 * r.glassK;
+          drawPlecoGlass(ctx, lookOf(sp, f), L * 1.08, { phase: r.phase, sad: isSad(f, game.dirt) });
+          ctx.restore(); ctx.save();
+          ctx.translate(r.x, r.y); ctx.scale(r.dir, 1); ctx.rotate(ang);
+          ctx.globalAlpha = a0 * (1 - r.glassK);
+        }
+        if (r.glassK < 0.98) drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0, belly, sleep: !!r.asleep, gloss: s.fx === 1, lit: s.lampNow, gravidSpot: breedOf(f.sp).type === 'live' });
         ctx.restore();
         // 아픈 물고기 위에는 상단 치료 버튼과 똑같은 모양(분홍 동그라미 + 반창고)을 띄운다 (다른 물고기에 가리지 않게 맨 나중에)
         if (f.sick) badges.push(() => {
@@ -2666,7 +2797,7 @@ export default function AquariumGame({ audio, speak }) {
           octx.fillRect(r.x - r.drawL, r.y - r.drawL, r.drawL * 2, r.drawL * 2);
         }
         const glows = (look.bands && look.bands.some(b => b.glow)) || look.tail.glow || look.glow;
-        if (!glows) return;
+        if (!glows || r.glassK > 0.5) return;
         octx.save();
         octx.translate(r.x, r.y);
         octx.scale(r.dir, 1);

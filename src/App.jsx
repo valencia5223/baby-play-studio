@@ -449,10 +449,6 @@ if (typeof window !== 'undefined') {
     if ('speechSynthesis' in window) {
       try {
         window.speechSynthesis.resume();
-        // iOS 는 첫 터치 안에서 한 번 말해 둬야 이후 기기 음성(이름 인사 등 MP3 없는 문장)이 나온다
-        const warm = new SpeechSynthesisUtterance(' ');
-        warm.volume = 0;
-        window.speechSynthesis.speak(warm);
       } catch (e) { }
     }
     ['touchstart', 'touchend', 'pointerdown', 'click'].forEach(evt => {
@@ -462,6 +458,19 @@ if (typeof window !== 'undefined') {
   ['touchstart', 'touchend', 'pointerdown', 'click'].forEach(evt => {
     window.addEventListener(evt, unlockAudioContext, { capture: true, once: true });
   });
+  // iOS 기기 음성(이름 인사 등 MP3 없는 문장): 손가락을 뗄 때(touchend/click) 한 번 말해 둬야 그 뒤로 소리가 난다.
+  // touchstart/pointerdown 은 iOS 가 '사용자 동작'으로 치지 않아 여기서는 잠금이 풀리지 않는다
+  if ('speechSynthesis' in window) {
+    const warmSpeech = () => {
+      try {
+        const warm = new SpeechSynthesisUtterance(' ');
+        warm.volume = 0;
+        window.speechSynthesis.speak(warm);
+      } catch (e) { }
+      ['touchend', 'click'].forEach(evt => window.removeEventListener(evt, warmSpeech, true));
+    };
+    ['touchend', 'click'].forEach(evt => window.addEventListener(evt, warmSpeech, true));
+  }
 }
 
 // =============================================================================
