@@ -37,6 +37,12 @@ const voiceClipUrl = (text) => {
   const key = voiceKey(text);
   return VOICE_KEYS.has(key) ? `/voice/${key}.mp3` : null;
 };
+// 미리 만든 MP3 가 없는 문장(아이가 직접 지은 물고기 이름 인사 등)을 같은 남성 아나운서 목소리로 만들어 주는 서버
+// (supabase/functions/baby-voice, baby-play-studio 전용 Supabase 프로젝트). 비어 있으면 기기 음성으로 읽는다.
+const REMOTE_VOICE_API = '';
+const remoteVoiceUrl = (text) => (REMOTE_VOICE_API && text && text.length <= 60 ? `${REMOTE_VOICE_API}?text=${encodeURIComponent(text)}` : null);
+const isRemoteVoice = (url) => !!REMOTE_VOICE_API && url.startsWith(REMOTE_VOICE_API);
+const REMOTE_VOICE_CACHE = 'bps-voice-v1';   // 한 번 받은 이름 음성은 기기에 저장 (다음부터 서버·인터넷 없이 재생)
 
 // --- 실제 동물 울음소리 MP3 재생 사운드 엔진 ---
 class BabySoundEngine {
@@ -246,8 +252,15 @@ class BabySoundEngine {
     await this.ensureAudioContext();
     if (!this.ctx) return null;
     try {
-      const resp = await fetch(fullUrl, { cache: 'force-cache' });
-      if (!resp.ok) return null;
+      let resp = null;
+      // 서버에서 만든 이름 음성은 기기 저장소(Cache Storage)에 남겨 두고 다음부터 거기서 꺼낸다
+      const store = isRemoteVoice(fullUrl) && typeof caches !== 'undefined' ? await caches.open(REMOTE_VOICE_CACHE).catch(() => null) : null;
+      if (store) resp = await store.match(fullUrl).catch(() => null);
+      if (!resp) {
+        resp = await fetch(fullUrl, { cache: 'force-cache' });
+        if (!resp.ok) return null;
+        if (store) store.put(fullUrl, resp.clone()).catch(() => { });
+      }
       const arrayBuffer = await resp.arrayBuffer();
       const audioBuffer = await this.decodeAudio(arrayBuffer);
       if (audioBuffer) {
@@ -272,7 +285,8 @@ class BabySoundEngine {
 
     const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
     // 📱 iOS에서 resume/decode가 멈춰 있어도 일정 시간 안에 결론을 낸다
-    let buf = this.voiceBufferCache.get(url) || await withTimeout(this.getVoiceBuffer(url).catch(() => null), 2000);
+    // 서버에서 처음 만드는 이름 음성은 조금 더 기다린다
+    let buf = this.voiceBufferCache.get(url) || await withTimeout(this.getVoiceBuffer(url).catch(() => null), isRemoteVoice(url) ? 5000 : 2000);
     if (this.voicePlayToken !== token) return;
     if (buf && this.ctx && this.ctx.state !== 'running') {
       await withTimeout(this.ctx.resume().catch(() => { }), 300);
@@ -288,7 +302,8 @@ class BabySoundEngine {
 
   // 🎙️ 다음에 나올 음성 미리 받아두기 (아이패드에서 지연 없이 바로 재생)
   preloadVoice(text) {
-    const url = voiceClipUrl(text);
+    const spoken = formatSpokenKoreanText(text);
+    const url = voiceClipUrl(spoken) || remoteVoiceUrl(spoken);
     if (url && !this.voiceBufferCache.has(url)) this.getVoiceBuffer(url).catch(() => { });
   }
 
@@ -2076,7 +2091,7 @@ export function speakNaturalKorean(text, ttsOptions = {}) {
   if (typeof window === 'undefined') return;
   const spokenText = formatSpokenKoreanText(text);
   if (!spokenText) return;
-  const url = voiceClipUrl(spokenText);
+  const url = voiceClipUrl(spokenText) || remoteVoiceUrl(spokenText);
   if (url) {
     audioEngine.playVoiceClip(url, () => speakNativeKorean(spokenText, ttsOptions));
   } else {

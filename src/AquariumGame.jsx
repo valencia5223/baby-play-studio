@@ -1511,7 +1511,9 @@ export default function AquariumGame({ audio, speak }) {
   const [infoTick, setInfoTick] = useState(0);
   const [placed, setPlaced] = useState({ decor: [] });
   const [toast, setToast] = useState(null);
-  const [tiltState, setTiltState] = useState('none');
+  const [tiltState, setTiltState] = useState('none');   // 'ask' 면 전체화면 버튼을 누를 때 기울기 권한도 함께 요청
+  const rootRef = useRef(null);
+  const [full, setFull] = useState(false);   // 전체화면 (지원하면 진짜 전체화면, 아니면 화면을 꽉 채우기)
   const [light, setLight] = useState(3);            // 조명 단계 (처음엔 가장 밝게 켜짐)
 
   const setMode = (m) => { modeRef.current = m; setModeState(m); };
@@ -1564,6 +1566,8 @@ export default function AquariumGame({ audio, speak }) {
     if (welcomeLines.length) setTimeout(() => speak(welcomeLines[0]), 500);
 
     setPlaced({ decor: game.decor.slice() });
+    // 이름 지은 물고기의 인사 음성을 미리 받아 둔다 (눌렀을 때 바로 남성 음성으로)
+    game.fish.forEach(f => { if (f.name && FISH_BY_ID[f.sp] && audio.preloadVoice) audio.preloadVoice(VOICE.aquaHello(FISH_BY_ID[f.sp], f.name)); });
 
     const addPoints = (n, x, y) => {
       game.points += n;
@@ -2968,13 +2972,37 @@ export default function AquariumGame({ audio, speak }) {
     setHud(h => ({ ...h, points: game.points }));
   };
 
-  const enableTilt = (e) => {
-    e.stopPropagation();
+  const enableTilt = () => {
     const s = simRef.current;
     window.DeviceOrientationEvent.requestPermission()
       .then(res => { if (res === 'granted' && s) { window.addEventListener('deviceorientation', s.onOrient); setTiltState('on'); } else setTiltState('none'); })
       .catch(() => setTiltState('none'));
   };
+
+  // ── 전체화면: 아이패드에서 어항을 화면 가득 크게 보며 꾸미기 ──
+  // 진짜 전체화면(Fullscreen API, 아이패드 Safari 는 webkit 접두사)을 먼저 시도하고,
+  // 지원하지 않는 기기(아이폰 등)에서는 어항을 화면에 꽉 채워 보여 준다.
+  const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  const toggleFull = (e) => {
+    e.stopPropagation();
+    if (tiltState === 'ask') enableTilt();   // iOS 기울기 권한도 같은 터치에서 함께 받는다
+    const el = rootRef.current;
+    if (!full) {
+      setFull(true);
+      const req = el && (el.requestFullscreen || el.webkitRequestFullscreen);
+      if (req) { try { const r = req.call(el); if (r && r.catch) r.catch(() => { }); } catch (err) { /* 꽉 채우기로 대신 */ } }
+    } else {
+      setFull(false);
+      if (fsElement()) { const exit = document.exitFullscreen || document.webkitExitFullscreen; try { const r = exit.call(document); if (r && r.catch) r.catch(() => { }); } catch (err) { /* 무시 */ } }
+    }
+  };
+  useEffect(() => {
+    // 기기 쪽에서 전체화면을 끄면(아래로 쓸기, Esc) 같이 작게
+    const onChange = () => { if (!fsElement()) setFull(false); };
+    document.addEventListener('fullscreenchange', onChange);
+    document.addEventListener('webkitfullscreenchange', onChange);
+    return () => { document.removeEventListener('fullscreenchange', onChange); document.removeEventListener('webkitfullscreenchange', onChange); };
+  }, []);
 
   const stop = (e) => e.stopPropagation();
   const sim = simRef.current;
@@ -2982,7 +3010,14 @@ export default function AquariumGame({ audio, speak }) {
   const pointsNow = sim ? sim.game.points : hud.points;
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, gap: '0.7rem' }}>
+    <div ref={rootRef} style={{
+      flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, gap: '0.7rem',
+      ...(full ? {
+        position: 'fixed', inset: 0, zIndex: 9999, width: '100vw', height: '100dvh', boxSizing: 'border-box', gap: '0.5rem',
+        background: 'linear-gradient(180deg, #e0f2fe, #bae6fd)',
+        padding: 'max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left))'
+      } : {})
+    }}>
       {/* 상단 상태판: 27개월 아기도 알아보게 큰 그림 버튼 위주 (글자는 부모용으로 작게) */}
       <div style={{
         background: 'linear-gradient(135deg, #0369a1 0%, #075985 100%)', borderRadius: '22px', padding: '0.55rem 0.9rem',
@@ -3068,12 +3103,10 @@ export default function AquariumGame({ audio, speak }) {
           </div>
         )}
 
-        {tiltState === 'ask' && (
-          <button onPointerDown={stop} onClick={enableTilt} style={{
-            position: 'absolute', right: '12px', top: '12px', zIndex: 6, background: 'rgba(255,255,255,0.92)', color: '#0369a1', border: 'none',
-            padding: '9px 14px', borderRadius: '16px', fontWeight: 900, fontSize: '0.9rem', boxShadow: '0 4px 14px rgba(0,0,0,0.2)', cursor: 'pointer'
-          }}>📱 기울여서 놀기</button>
-        )}
+        <button data-ui onPointerDown={stop} onClick={toggleFull} aria-label={full ? '작게 보기' : '전체화면'} style={{
+          position: 'absolute', right: '12px', top: '12px', zIndex: 6, background: 'rgba(255,255,255,0.92)', color: '#0369a1', border: 'none',
+          padding: '9px 14px', borderRadius: '16px', fontWeight: 900, fontSize: '0.95rem', boxShadow: '0 4px 14px rgba(0,0,0,0.2)', cursor: 'pointer', touchAction: 'manipulation'
+        }}>{full ? '↙️ 작게 보기' : '⛶ 전체화면'}</button>
 
         {/* 물고기 정보 카드 */}
         {infoFish && (() => {
