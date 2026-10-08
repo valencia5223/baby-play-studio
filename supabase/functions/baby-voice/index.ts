@@ -2,8 +2,8 @@
 // 앱의 다른 안내와 같은 남성 아나운서 목소리(ko-KR-InJoonNeural) MP3 로 만들어 준다.
 //   GET /functions/v1/baby-voice?text=안녕!%20나는%20게%20뽀뽀예요  →  audio/mpeg
 // 앱은 받은 MP3 를 기기에 저장해 두고 다음부터는 서버 없이 재생한다.
-import WebSocket from 'npm:ws@8.18.0';
 import { synthesize } from './edgeTts.js';
+import { RawWebSocket } from './rawWs.ts';
 
 const MAX_LEN = 60;
 // 한국어 안내 문장만 받는다 (다른 용도로 쓰이지 않게)
@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     return new Response('bad text', { status: 400, headers: cors });
   }
   try {
-    const mp3 = await synthesize(text, WebSocket);
+    const mp3 = await synthesize(text, RawWebSocket);
     return new Response(mp3, {
       headers: { ...cors, 'Content-Type': 'audio/mpeg', 'Cache-Control': 'public, max-age=31536000, immutable' }
     });

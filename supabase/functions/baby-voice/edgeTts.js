@@ -1,6 +1,6 @@
 // Microsoft Edge 온라인 TTS(읽어주기)로 문장 하나를 MP3 로 만든다.
 // baby-play-studio 의 미리 만든 음성(scripts/generate-voices.mjs, msedge-tts)과 같은 목소리·속도를 쓴다.
-// WebSocket 생성자를 받아서 Deno(npm:ws)와 Node(ws) 양쪽에서 같은 코드로 돌 수 있게 했다.
+// WebSocket 생성자를 받아서 Supabase(rawWs.ts)와 Node(ws, 로컬 시험) 양쪽에서 같은 코드로 돌 수 있게 했다.
 
 const TRUSTED_CLIENT_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const WSS_URL = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';

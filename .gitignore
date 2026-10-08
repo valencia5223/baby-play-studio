@@ -5,3 +5,6 @@ dist/
 
 # OneDrive 동기화 충돌 사본
 *-DESKTOP-*
+
+# Supabase CLI 임시 파일
+supabase/.temp/

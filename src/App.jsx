@@ -39,7 +39,7 @@ const voiceClipUrl = (text) => {
 };
 // 미리 만든 MP3 가 없는 문장(아이가 직접 지은 물고기 이름 인사 등)을 같은 남성 아나운서 목소리로 만들어 주는 서버
 // (supabase/functions/baby-voice, baby-play-studio 전용 Supabase 프로젝트). 비어 있으면 기기 음성으로 읽는다.
-const REMOTE_VOICE_API = '';
+const REMOTE_VOICE_API = 'https://auaygojvfrvxmaerzmzi.supabase.co/functions/v1/baby-voice';
 const remoteVoiceUrl = (text) => (REMOTE_VOICE_API && text && text.length <= 60 ? `${REMOTE_VOICE_API}?text=${encodeURIComponent(text)}` : null);
 const isRemoteVoice = (url) => !!REMOTE_VOICE_API && url.startsWith(REMOTE_VOICE_API);
 const REMOTE_VOICE_CACHE = 'bps-voice-v1';   // 한 번 받은 이름 음성은 기기에 저장 (다음부터 서버·인터넷 없이 재생)
@@ -254,8 +254,10 @@ class BabySoundEngine {
     try {
       let resp = null;
       // 서버에서 만든 이름 음성은 기기 저장소(Cache Storage)에 남겨 두고 다음부터 거기서 꺼낸다
-      const store = isRemoteVoice(fullUrl) && typeof caches !== 'undefined' ? await caches.open(REMOTE_VOICE_CACHE).catch(() => null) : null;
-      if (store) resp = await store.match(fullUrl).catch(() => null);
+      // (저장소가 응답하지 않는 기기에서도 음성이 막히지 않게 잠깐만 기다린다)
+      const quick = (p) => Promise.race([p.catch(() => null), new Promise(r => setTimeout(() => r(null), 800))]);
+      const store = isRemoteVoice(fullUrl) && typeof caches !== 'undefined' ? await quick(caches.open(REMOTE_VOICE_CACHE)) : null;
+      if (store) resp = await quick(store.match(fullUrl));
       if (!resp) {
         resp = await fetch(fullUrl, { cache: 'force-cache' });
         if (!resp.ok) return null;

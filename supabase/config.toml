@@ -1,5 +1,6 @@
 # baby-play-studio 전용 Supabase 프로젝트 (Library of Mind 와 분리)
-# 배포: npx supabase functions deploy baby-voice --project-ref <프로젝트 ref>
+# 프로젝트: baby-play-studio (ref auaygojvfrvxmaerzmzi, 서울)
+# 배포: npx supabase functions deploy baby-voice --project-ref auaygojvfrvxmaerzmzi --use-api
 
 [functions.baby-voice]
 verify_jwt = false
