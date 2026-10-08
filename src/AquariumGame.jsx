@@ -1670,10 +1670,13 @@ export default function AquariumGame({ audio, speak }) {
         return;
       }
       if (f) {
+        // 누르면 쓰다듬기: 기분 +15, 💗, 3초에 한 번 조개 +1
         const r = s.rt[f.uid];
         r.boing = 1; r.happyT = 2;
-        f.happy = Math.min(100, f.happy + 6);
-        audio.playBubble();
+        f.happy = Math.min(100, f.happy + 15);
+        s.pops.push({ x: r.x, y: r.y - 20, text: '💗', life: 1, vy: -30 });
+        if (s.t - (s.lastPet || -9) > 3) { s.lastPet = s.t; addPoints(REWARDS.pet, r.x, r.y - 40); }
+        audio.playYum();
         setInfo(f.uid);
         const sp = FISH_BY_ID[f.sp];
         if (f.sp === 'puffer') { r.puffT = 2.5; audio.playFreq(260, 'sine', 0.25, 0.4); setTimeout(() => audio.playFreq(520, 'sine', 0.2, 0.35), 120); }
@@ -1732,12 +1735,15 @@ export default function AquariumGame({ audio, speak }) {
 
     // ── 돌봄 규칙 (배고픔·물 더러움·기분·성장) ──
     // 아기 물고기들을 (x, y) 근처에 태어나게 한다. 자리가 모자라면 들어갈 만큼만
-    const spawnFry = (spId, n, x, y, variant) => {
+    const spawnFry = (spId, n, x, y, variant, family = {}) => {
       const room = Math.max(0, LIMITS.fish - game.fish.length);
       const count = Math.min(n, room);
       for (let i = 0; i < count; i++) {
         const baby = newFish(spId);
         if (variant && Math.random() < 0.7) baby.variant = variant;   // 대부분 엄마를 닮는다
+        // 가족: 엄마·아빠 uid 를 기억한다 (부모가 자연으로 떠나도 그때 이름은 남겨 둔다)
+        if (family.mom) { baby.mom = family.mom; if (family.momName) baby.momName = family.momName; }
+        if (family.dad) { baby.dad = family.dad; if (family.dadName) baby.dadName = family.dadName; }
         game.fish.push(baby);
         const r = ensureFishRt(baby, false);
         r.x = clamp(x + (Math.random() - 0.5) * 40, 10, s.W - 10); r.y = clamp(y + (Math.random() - 0.5) * 20, s.surface + 20, s.floor - 10);
@@ -1749,15 +1755,18 @@ export default function AquariumGame({ audio, speak }) {
     // 배 속 아기가 다 자라면: 난태생은 새끼를, 나머지는 바닥에 알을 낳는다
     const deliver = (f) => {
       const sp = FISH_BY_ID[f.sp], br = breedOf(f.sp), r = s.rt[f.uid];
+      const dadFish = f.pregDad && game.fish.find(o => o.uid === f.pregDad);
+      const family = { mom: f.uid, momName: f.name, dad: f.pregDad, dadName: dadFish ? dadFish.name : undefined };
+      delete f.pregDad;
       const n = br.brood[0] + Math.floor(Math.random() * (br.brood[1] - br.brood[0] + 1));
       delete f.preg;
       f.restUntil = Date.now() + RATES.pregRestSec * 1000;
       const x = r ? r.x : s.W / 2, y = r ? r.y : s.H / 2;
       if (br.type === 'live') {
-        const got = spawnFry(f.sp, n, x, y, f.variant);
+        const got = spawnFry(f.sp, n, x, y, f.variant, family);
         if (got) { addPoints(REWARDS.birth, x, y - 30); audio.playFanfare(); say('birth', VOICE.aquaBirth(sp)); showToast(`🍼 ${f.name || sp.name} 아기 ${got}마리가 태어났어요!`); }
       } else {
-        game.eggs.push({ uid: newUid(), sp: f.sp, x: clamp(x / s.W, 0.05, 0.95), n, t: RATES.eggHatchSec, variant: f.variant });
+        game.eggs.push({ uid: newUid(), sp: f.sp, x: clamp(x / s.W, 0.05, 0.95), n, t: RATES.eggHatchSec, variant: f.variant, family });
         audio.playPopSound();
         say('eggs', VOICE.aquaEggs(sp));
         showToast(`🥚 ${f.name || sp.name} 이(가) 알 ${n}개를 낳았어요!`);
@@ -1805,7 +1814,13 @@ export default function AquariumGame({ audio, speak }) {
           const ms = mateStatus(game, f);
           if (ms && Math.random() < RATES.pregPerSec * (ms === 'solo' ? RATES.pregSoloMul : 1) * dt) {
             f.preg = 0;
-            if (ms === 'pair') f.mated = true;
+            if (ms === 'pair') {
+              // 아빠: 어항에 있는 같은 종류의 다 큰 수컷 중 하나 (난태생은 기억해 두었다가 혼자일 때도 아빠로)
+              const males = game.fish.filter(o => o.sp === f.sp && o.sex === 'm' && stageOf(o.growth) === 'adult' && !o.sick);
+              f.lastMate = males[Math.floor(Math.random() * males.length)].uid;
+              f.mated = true;
+            }
+            f.pregDad = f.lastMate;
             const rr = s.rt[f.uid];
             if (rr) for (let i = 0; i < 6; i++) s.pops.push({ x: rr.x + (Math.random() - 0.5) * 40, y: rr.y - 10, text: '💕', life: 1.2, vy: -30 });
             say('preg', VOICE.aquaPregnant(sp, breedOf(f.sp).type), 5);
@@ -1831,7 +1846,7 @@ export default function AquariumGame({ audio, speak }) {
           game.eggs = game.eggs.filter(e => !hatched.includes(e));
           hatched.forEach(e => {
             const x = e.x * s.W;
-            const n = spawnFry(e.sp, e.n, x, groundY(x) - 14, e.variant);
+            const n = spawnFry(e.sp, e.n, x, groundY(x) - 14, e.variant, e.family);
             if (n) { addPoints(REWARDS.birth, x, groundY(x) - 40); audio.playFanfare(); say('hatch', VOICE.aquaHatch(FISH_BY_ID[e.sp])); }
           });
           saveGame(game);
@@ -1949,11 +1964,26 @@ export default function AquariumGame({ audio, speak }) {
         // 밤에는 잔다: 밥을 쫓거나 놀란 게 아니면 아래쪽 자기 자리에서 거의 움직이지 않는다
         const asleep = s.night && !chasing && r.panic < 0.05;
         r.asleep = asleep;
+        // 아직 다 크지 않은 아기는 엄마가 어항에 있으면 엄마 뒤를 졸졸 따라다닌다
+        const momRt = f.mom && f.growth < 0.8 && s.rt[f.mom] && s.rt[f.mom].leaving == null ? s.rt[f.mom] : null;
         if (asleep) {
-          if (r.sleepY == null) r.sleepY = bottom - span * (0.08 + Math.random() * 0.4);
-          fx *= 0.12; fy = fy * 0.12 + (r.sleepY - r.y) * 0.8;
+          if (momRt && momRt.sleepY != null) {
+            // 밤에는 엄마 바로 옆에서 잔다
+            if (r.sleepOff == null) r.sleepOff = (Math.random() - 0.5) * 50 * s.k;
+            r.sleepY = momRt.sleepY + 8 * s.k;
+            fx = fx * 0.12 + (momRt.x + r.sleepOff - r.x) * 0.8;
+          } else if (r.sleepY == null) r.sleepY = bottom - span * (0.08 + Math.random() * 0.4);
+          if (!momRt) fx *= 0.12;
+          fy = fy * 0.12 + (r.sleepY - r.y) * 0.8;
           maxSp *= 0.25;
-        } else r.sleepY = null;
+        } else {
+          r.sleepY = null;
+          if (momRt && !chasing) {
+            const tx = momRt.x - (momRt.dir || 1) * (momRt.drawL || 30) * 0.9, ty = momRt.y + (r.phase % 1 - 0.5) * 12;
+            const dx = tx - r.x, dy = ty - r.y, d = Math.hypot(dx, dy) || 1;
+            if (d > 22 * s.k) { fx += dx / d * Math.min(260, d * 2.2); fy += dy / d * Math.min(260, d * 2.2); }
+          }
+        }
         fx += s.tilt.x * 140; fy += s.tilt.y * 80;
         // 해파리는 갓을 오므릴 때 뿅 떠올랐다가 천천히 가라앉는다 (그림의 오므림과 박자를 맞춤)
         if (sp.shape === 'jellyfish' && !asleep) fy += Math.sin(r.phase * 0.5) < -0.6 ? -160 : 30;
@@ -2108,6 +2138,8 @@ export default function AquariumGame({ audio, speak }) {
       const staying = game.fish.filter(it => s.rt[it.uid] && s.rt[it.uid].leaving == null);
       if (staying.length <= 1) { showToast('🐟 마지막 친구는 어항에 남겨 둬요!'); return false; }
       r.leaving = 0;
+      // 아기들이 떠난 엄마·아빠의 지금 이름을 기억하게
+      if (f.name) game.fish.forEach(k => { if (k.mom === f.uid) k.momName = f.name; if (k.dad === f.uid) k.dadName = f.name; });
       audio.playFanfare();
       say('release', VOICE.aquaRelease(FISH_BY_ID[f.sp]));
       return true;
@@ -2653,16 +2685,36 @@ export default function AquariumGame({ audio, speak }) {
               <div style={{ marginTop: '8px', fontSize: '0.82rem', fontWeight: 800, color: sad ? '#be123c' : '#0f766e' }}>
                 {infoFish.preg != null ? `${breedOf(infoFish.sp).type === 'live' ? '🤰 배 속에 아기가 있어요' : '🥚 배 속에 알이 있어요'} (${Math.round(infoFish.preg * 100)}%)` : stage === 'adult' ? '🎉 다 컸어요! 가끔 반짝 조개를 떨어뜨려요' : infoFish.sick ? '🤒 아파서 자라지 않아요. 🩹 치료 버튼을 누르고 이 물고기를 눌러 주세요' : sad ? '배고프거나 물이 더러워서 자라지 않아요' : `자라는 속도 ${Math.round(speed * 100)}% (컨디션이 좋을수록 빨라요)`}
               </div>
-              <button
-                onClick={() => {
-                  infoFish.happy = Math.min(100, infoFish.happy + 15);
-                  const r = sim.rt[infoFish.uid];
-                  if (r) { r.boing = 1; r.happyT = 2; sim.pops.push({ x: r.x, y: r.y - 20, text: '💗', life: 1, vy: -30 }); }
-                  if (sim.t - (sim.lastPet || -9) > 3) { sim.lastPet = sim.t; sim.addPoints(REWARDS.pet, r ? r.x : 0, r ? r.y - 40 : 0); }
-                  audio.playYum();
-                }}
-                style={{ marginTop: '10px', width: '100%', border: 'none', borderRadius: '16px', padding: '10px', fontWeight: 900, fontSize: '1rem', background: '#f472b6', color: '#ffffff', cursor: 'pointer' }}
-              >💗 쓰다듬기</button>
+              {/* 가족: 엄마·아빠·아기들. 이름이 없으면 '엄마 구피 ♀' 처럼 종류로 부르고, 누르면 그 물고기 카드로 */}
+              {(() => {
+                const all = sim.game.fish;
+                const chip = (uid, savedName, role) => {
+                  const p = all.find(o => o.uid === uid);
+                  const icon = role === 'mom' ? '♀' : '♂', label = role === 'mom' ? '엄마' : '아빠';
+                  if (!p) return <span key={role} style={{ background: '#f1f5f9', color: '#64748b', borderRadius: '10px', padding: '2px 8px' }}>{label} {savedName || sp.name} {icon} · 자연으로 갔어요</span>;
+                  return (
+                    <button key={role} onClick={() => setInfo(p.uid)} style={{ border: 'none', cursor: 'pointer', background: role === 'mom' ? '#fce7f3' : '#dbeafe', color: role === 'mom' ? '#9d174d' : '#1e40af', borderRadius: '10px', padding: '2px 8px', fontWeight: 900, fontSize: '0.8rem' }}>
+                      {label} {p.name || FISH_BY_ID[p.sp].name} {icon}
+                    </button>
+                  );
+                };
+                const kids = all.filter(o => o.mom === infoFish.uid || o.dad === infoFish.uid);
+                if (!infoFish.mom && !infoFish.dad && !kids.length) return null;
+                const momP = infoFish.mom && all.find(o => o.uid === infoFish.mom);
+                const momLabel = momP ? (momP.name || `엄마 ${FISH_BY_ID[momP.sp].name}`) : infoFish.momName || `엄마 ${sp.name}`;
+                return (
+                  <div style={{ marginTop: '8px', background: '#fff7ed', borderRadius: '14px', padding: '7px 10px', fontSize: '0.8rem', fontWeight: 800, color: '#7c2d12', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
+                    {infoFish.mom && <span>👪 {momLabel}의 아기예요</span>}
+                    {infoFish.mom && chip(infoFish.mom, infoFish.momName, 'mom')}
+                    {infoFish.dad && chip(infoFish.dad, infoFish.dadName, 'dad')}
+                    {kids.length > 0 && (
+                      <button onClick={() => setInfo(kids[Math.floor(Math.random() * kids.length)].uid)} style={{ border: 'none', cursor: 'pointer', background: '#dcfce7', color: '#166534', borderRadius: '10px', padding: '2px 8px', fontWeight: 900, fontSize: '0.8rem' }}>
+                        👶 아기 {kids.length}마리
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
               {/* 이름 짓기: 지은 이름은 물고기를 누르면 불러 준다 */}
               {!naming ? (
                 <button

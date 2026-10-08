@@ -377,7 +377,7 @@ export function catchUpOffline(game, now = Date.now()) {
       const sp = FISH_BY_ID[f.sp];
       f.growth = Math.min(1, f.growth + RATES.growPerSec * RATES.offlineGrowMul * (sp ? sp.growMul : 1) * growFactor(f, game.dirt) * step);
       if (stageOf(f.growth) !== before) grown.push(f);
-      if (f.preg != null) f.preg = Math.min(0.98, f.preg + step / RATES.pregSec * RATES.offlinePregMul);
+      if (f.preg != null) f.preg = Math.max(f.preg, Math.min(0.98, f.preg + step / RATES.pregSec * RATES.offlinePregMul));
     });
     (game.eggs || []).forEach(e => { e.t = Math.max(1, e.t - step); });
   }
