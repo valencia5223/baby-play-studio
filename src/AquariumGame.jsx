@@ -102,7 +102,7 @@ export function lookOf(sp, f) {
 function bodyProfile(shape, s) {
   if (shape === 'disc') return Math.sqrt(Math.max(0, 1 - Math.pow(2 * s - 1.04, 2)));
   if (shape === 'angel') return s < 0.42 ? Math.pow(s / 0.42, 0.65) : Math.pow(Math.max(0, (1 - s) / 0.58), 0.85);
-  if (shape === 'ribbon') return Math.pow(Math.sin(Math.PI * Math.min(1, 0.04 + s * 0.96)), 0.25) * (1 - s * 0.88);
+  if (shape === 'ribbon') return (s < 0.14 ? 0.28 + 0.72 * Math.sin(s / 0.14 * Math.PI / 2) : 1) * (s < 0.22 ? 1 : Math.pow(1 - (s - 0.22) / 0.78, 1.15));
   if (shape === 'puffer') return Math.pow(Math.max(0, 1 - Math.pow((2 * s) / 0.92 - 1, 2)), 0.5);
   if (shape === 'flat') return Math.pow(Math.max(0, 1 - Math.pow((2 * s) / 0.94 - 1, 2)), 0.6);
   if (shape === 'pleco') return Math.pow(Math.sin(Math.PI * Math.min(1, 0.2 + s * 0.8)), 0.45) * (1 - s * 0.5);
@@ -139,6 +139,10 @@ export function drawFish(ctx, sp, L, o = {}) {
   // 갈치는 몸 전체가 뱀장어처럼 여러 번 굽이친다
   const wave = (s) => Math.sin(ph - s * (ribbon ? 7 : 3.2)) * amp * (ribbon ? s : s * s);
   const half = (s) => H * 0.5 * Math.max(0.07, bodyProfile(sp.shape, s));
+  // 코리도라스는 등이 높게 솟고 배가 납작하다 (위·아래 몸 두께를 따로)
+  const flatBelly = sp.shape === 'cory';
+  const up = (s) => (flatBelly ? half(s) * 1.4 : half(s));
+  const dn = (s) => (flatBelly ? H * 0.5 * Math.max(0.07, 0.55 * Math.min(1, bodyProfile(sp.shape, s) * 1.6)) : half(s));
   const xs = (s) => L * (0.5 - s);
   const finK = 0.4 + 0.6 * (1 - fry);
   const tailX = xs(1), tailY = wave(1);
@@ -186,10 +190,10 @@ export function drawFish(ctx, sp, L, o = {}) {
     for (let i = 10; i >= 1; i--) { const q = 0.06 + i * 0.088; rim.push([xs(q), wave(q) + half(q) * 1.3 + H * 0.04]); }
     smoothClosed(ctx, rim); ctx.fill();
   } else if (ribbon) {
-    // 갈치: 등을 따라 길게 이어진 투명한 지느러미
+    // 갈치: 머리 뒤부터 꼬리까지 등을 따라 낮게 이어진 투명한 지느러미 (물결치듯 일렁인다)
     ctx.beginPath();
-    for (let i = 0; i <= 14; i++) { const q = 0.08 + i * 0.062; const y = wave(q) - half(q) - H * 0.9 * (1 - q * 0.6); if (i === 0) ctx.moveTo(xs(q), y); else ctx.lineTo(xs(q), y); }
-    for (let i = 14; i >= 0; i--) { const q = 0.08 + i * 0.062; ctx.lineTo(xs(q), wave(q) - half(q) * 0.8); }
+    for (let i = 0; i <= 16; i++) { const q = 0.1 + i * 0.054; const y = wave(q) - half(q) - H * (0.4 + Math.sin(ph * 1.6 - q * 18) * 0.08) * (1 - q * 0.55) * Math.min(1, i / 3) * finK; if (i === 0) ctx.moveTo(xs(q), y); else ctx.lineTo(xs(q), y); }
+    for (let i = 16; i >= 0; i--) { const q = 0.1 + i * 0.054; ctx.lineTo(xs(q), wave(q) - half(q) * 0.8); }
     ctx.closePath(); ctx.fill();
   } else if (sp.shape === 'pleco') {
     // 커다란 돛 모양 등지느러미 (점무늬)
@@ -207,6 +211,33 @@ export function drawFish(ctx, sp, L, o = {}) {
     ctx.fillStyle = finFill;
     // 배 아래로 넓게 펼친 배지느러미
     ctx.beginPath(); ctx.ellipse(xs(0.32), wave(0.32) + half(0.32) * 0.8, L * 0.12 * finK, H * 0.22 * finK, -0.4, 0, Math.PI * 2); ctx.fill();
+  } else if (flatBelly) {
+    // 코리도라스: 앞쪽에 높이 솟은 삼각 등지느러미(굵은 첫 가시), 꼬리 앞 작은 기름지느러미, 배 아래 작은 지느러미들
+    const dTip = [xs(0.31), wave(0.31) - up(0.31) - H * 0.85 * finK];
+    ctx.beginPath();
+    ctx.moveTo(xs(0.27), wave(0.27) - up(0.27) * 0.92);
+    ctx.lineTo(dTip[0], dTip[1]);
+    ctx.quadraticCurveTo(xs(0.42), wave(0.4) - up(0.4) - H * 0.45 * finK, xs(0.5), wave(0.5) - up(0.5) * 0.9);
+    ctx.closePath(); ctx.fill();
+    if (fry < 0.7) {
+      ctx.strokeStyle = 'rgba(41,37,36,0.55)'; ctx.lineWidth = Math.max(0.7, L * 0.018); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(xs(0.27), wave(0.27) - up(0.27) * 0.92); ctx.lineTo(dTip[0], dTip[1]); ctx.stroke();
+      ctx.fillStyle = 'rgba(41,37,36,0.4)';
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(xs(0.33 + i * 0.035), wave(0.35) - up(0.35) - H * (0.18 + (i % 2) * 0.18) * finK, Math.max(0.6, L * 0.012), 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = finFill;
+    }
+    ctx.beginPath();
+    ctx.moveTo(xs(0.74), wave(0.74) - up(0.74) * 0.9);
+    ctx.quadraticCurveTo(xs(0.79), wave(0.79) - up(0.79) - H * 0.24 * finK, xs(0.85), wave(0.85) - up(0.85) * 0.9);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(xs(0.62), wave(0.62) + dn(0.62) * 0.9);
+    ctx.quadraticCurveTo(xs(0.7), wave(0.7) + dn(0.7) + H * 0.24 * finK, xs(0.78), wave(0.78) + dn(0.78) * 0.85);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(xs(0.4), wave(0.4) + dn(0.4) * 0.9);
+    ctx.quadraticCurveTo(xs(0.47), wave(0.47) + dn(0.47) + H * 0.22 * finK, xs(0.55), wave(0.55) + dn(0.55) * 0.9);
+    ctx.closePath(); ctx.fill();
   } else {
     // 등지느러미 (우럭·참돔은 뾰족한 가시)
     ctx.beginPath();
@@ -285,9 +316,9 @@ export function drawFish(ctx, sp, L, o = {}) {
 
   // ── 몸통 ──
   const N = 9;
-  const pts = [[xs(0) + L * 0.015, wave(0)]];
-  for (let i = 1; i <= N; i++) { const s = i / N; pts.push([xs(s), wave(s) - half(s)]); }
-  for (let i = N; i >= 1; i--) { const s = i / N; pts.push([xs(s), wave(s) + half(s) + bulge(s)]); }
+  const pts = [[xs(0) + L * 0.015, wave(0) + (flatBelly ? H * 0.2 : 0)]];   // 코리도라스는 입이 아래쪽에 있다
+  for (let i = 1; i <= N; i++) { const s = i / N; pts.push([xs(s), wave(s) - up(s)]); }
+  for (let i = N; i >= 1; i--) { const s = i / N; pts.push([xs(s), wave(s) + dn(s) + bulge(s)]); }
   smoothClosed(ctx, pts);
   const bg = ctx.createLinearGradient(0, -H * 0.5, 0, H * 0.5);
   bg.addColorStop(0, sp.top);
@@ -385,6 +416,17 @@ export function drawFish(ctx, sp, L, o = {}) {
       ctx.beginPath(); ctx.arc(xs(s), wave(s) + yy, Math.max(0.8, L * 0.022), 0, Math.PI * 2); ctx.fill();
     }
   }
+  if (flatBelly && fry < 0.6) {
+    // 코리도라스 갑옷: 옆구리 가운데 줄 + 비늘판 이음새
+    ctx.strokeStyle = 'rgba(41,37,36,0.2)'; ctx.lineWidth = Math.max(0.5, L * 0.01);
+    ctx.beginPath();
+    for (let i = 0; i <= 8; i++) { const q = 0.26 + i * 0.085; if (i === 0) ctx.moveTo(xs(q), wave(q) - H * 0.05); else ctx.lineTo(xs(q), wave(q) - H * 0.05); }
+    ctx.stroke();
+    for (let i = 0; i < 12; i++) {
+      const q = 0.28 + i * 0.056;
+      ctx.beginPath(); ctx.moveTo(xs(q) + L * 0.01, wave(q) - up(q)); ctx.quadraticCurveTo(xs(q) - L * 0.02, wave(q) - H * 0.05, xs(q) + L * 0.01, wave(q) + dn(q)); ctx.stroke();
+    }
+  }
   if (sp.waves) {
     ctx.strokeStyle = sp.waves; ctx.lineWidth = Math.max(0.8, L * 0.022); ctx.globalAlpha *= 0.8;
     for (let r = -3; r <= 3; r++) {
@@ -436,7 +478,7 @@ export function drawFish(ctx, sp, L, o = {}) {
     ctx.stroke();
     ctx.strokeStyle = 'rgba(255,255,255,0.32)'; ctx.lineWidth = Math.max(0.5, L * 0.009); ctx.lineCap = 'round';
     ctx.beginPath();
-    for (let i = 1; i <= 6; i++) { const q = 0.08 + i * 0.09; const px = xs(q), py = wave(q) - half(q) * 0.9; if (i === 1) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+    for (let i = 1; i <= 6; i++) { const q = 0.08 + i * 0.09; const px = xs(q), py = wave(q) - up(q) * 0.9; if (i === 1) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
     ctx.stroke();
   }
 
@@ -450,17 +492,29 @@ export function drawFish(ctx, sp, L, o = {}) {
   ctx.save();
   ctx.translate(xs(0.3), wave(0.3) + half(0.3) * 0.35);
   ctx.rotate(0.5 + Math.sin(ph * 1.4) * 0.35);
-  ctx.beginPath(); ctx.ellipse(-L * 0.06, 0, L * 0.09 * finK, H * 0.13 * finK, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-L * (ribbon ? 0.025 : 0.06), 0, L * (ribbon ? 0.035 : 0.09) * finK, H * 0.13 * finK, 0, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
   // 비파 빨판 입
   if (sp.shape === 'pleco') {
     ctx.fillStyle = '#a8a29e';
     ctx.beginPath(); ctx.ellipse(xs(0.02), wave(0) + H * 0.22, L * 0.05, H * 0.16, 0, 0, Math.PI * 2); ctx.fill();
   }
-  // 코리도라스 수염
-  if (sp.shape === 'cory') {
-    ctx.strokeStyle = 'rgba(68,64,60,0.7)'; ctx.lineWidth = Math.max(0.6, L * 0.012);
-    ctx.beginPath(); ctx.moveTo(xs(0.02), wave(0) + H * 0.12); ctx.lineTo(xs(-0.05), wave(0) + H * 0.32); ctx.stroke();
+  // 코리도라스 수염: 아래를 향한 입가에 짧은 수염 세 가닥 (모래를 더듬는다)
+  if (flatBelly) {
+    ctx.strokeStyle = 'rgba(87,83,78,0.85)'; ctx.lineWidth = Math.max(0.6, L * 0.011); ctx.lineCap = 'round';
+    const mx = xs(0.02), my = wave(0) + H * 0.24, wig = Math.sin(ph * 2.2) * H * 0.04;
+    [[0.03, 0.2], [0.01, 0.28], [-0.02, 0.3]].forEach(([bx, by]) => {
+      ctx.beginPath(); ctx.moveTo(mx, my); ctx.quadraticCurveTo(mx + L * 0.02, my + H * 0.05, mx + L * bx, my + H * by + wig); ctx.stroke();
+    });
+  }
+  // 갈치: 아래턱이 앞으로 튀어나온 뾰족한 입과 작은 송곳니
+  if (ribbon && fry < 0.8) {
+    ctx.fillStyle = sp.belly;
+    ctx.beginPath(); ctx.moveTo(xs(0.07), wave(0.07) + half(0.07) * 0.55); ctx.lineTo(xs(0) + L * 0.035, wave(0) - H * 0.03); ctx.lineTo(xs(0.02), wave(0.02) + H * 0.04); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(51,65,85,0.55)'; ctx.lineWidth = Math.max(0.5, L * 0.005);
+    ctx.beginPath(); ctx.moveTo(xs(0) + L * 0.03, wave(0) - H * 0.03); ctx.lineTo(xs(0.075), wave(0.075) + H * 0.02); ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    [0.012, 0.035].forEach(q => { const x = xs(q), y = wave(q) - H * 0.01; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - L * 0.004, y - H * 0.16); ctx.lineTo(x - L * 0.009, y); ctx.closePath(); ctx.fill(); });
   }
 
   if (sp.bigMouth) {
@@ -475,8 +529,11 @@ export function drawFish(ctx, sp, L, o = {}) {
     ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(e2x + e2r * 0.45, e2y - e2r * 0.4, e2r * 0.36, 0, Math.PI * 2); ctx.fill();
   }
   // ── 눈 ──
-  const ex = xs(0.15), ey = wave(0.15) - H * (sp.shape === 'disc' || sp.shape === 'angel' ? 0.12 : 0.07);
-  const er = Math.max(1.3, L * 0.052 * (1 + fry * 0.75));
+  const ex = xs(flatBelly ? 0.13 : 0.15), ey = wave(0.15) - H * (sp.shape === 'disc' || sp.shape === 'angel' ? 0.12 : flatBelly ? 0.24 : ribbon ? 0.1 : 0.07);
+  // 눈 크기: 몸 길이 기준이되, 눈이 있는 자리의 머리 높이에 비해 너무 크지 않게 (sp.eyeK: 흰자 지름 / 머리 높이, 기본 0.45)
+  // 고등어·갈치처럼 몸이 가는 물고기도 실제처럼 머리 안에 쏙 들어간 눈이 된다
+  const headD = up(flatBelly ? 0.13 : 0.15) + dn(flatBelly ? 0.13 : 0.15);
+  const er = Math.max(1, Math.min(L * 0.052 * (1 + fry * 0.75), (sp.eyeK ?? 0.45) * headD / 2.6 * (1 + fry * 0.3)));
   if (o.sleep) {
     // 자는 물고기: 감은 눈 (◡)
     ctx.strokeStyle = '#0f172a'; ctx.lineWidth = Math.max(0.8, er * 0.45); ctx.lineCap = 'round';
@@ -649,7 +706,7 @@ function drawCreature(ctx, sp, L, o = {}) {
       }
       ctx.strokeStyle = 'rgba(15,23,42,0.55)'; ctx.lineWidth = Math.max(0.8, L * 0.014);
       ctx.beginPath(); ctx.moveTo(L * 0.44, H * 0.2); ctx.quadraticCurveTo(L * 0.38, H * 0.3, L * 0.31, H * 0.22); ctx.stroke();
-      creatureEye(ctx, L * 0.33, -H * 0.12, er * 0.9, o);
+      creatureEye(ctx, L * 0.33, -H * 0.12, er * 0.5, o);   // 상어 눈은 몸에 비해 작다
       break;
     }
     case 'whale': {
@@ -688,7 +745,7 @@ function drawCreature(ctx, sp, L, o = {}) {
       ctx.restore();
       ctx.strokeStyle = 'rgba(15,23,42,0.45)'; ctx.lineWidth = Math.max(0.8, L * 0.012);
       ctx.beginPath(); ctx.moveTo(L * 0.49, H * 0.14); ctx.quadraticCurveTo(L * 0.34, H * 0.26, L * 0.2, H * 0.16); ctx.stroke();
-      creatureEye(ctx, L * 0.27, H * 0.02, er * 0.85, o);
+      creatureEye(ctx, L * 0.27, H * 0.02, er * 0.42, o);   // 고래 눈은 큰 몸에 비해 아주 작다
       // 기분 좋으면 머리 위로 물을 뿜는다
       if (o.happy) {
         ctx.fillStyle = 'rgba(186,230,253,0.85)';
@@ -1421,7 +1478,7 @@ export default function AquariumGame({ audio, speak }) {
       game, W: 0, H: 0, dpr: 1, t: 0, k: 1, quality: 1, slow: 0,
       surface: 0, surfaceBase: 0, floor: 0, gravelH: 60,
       rt: {}, decorRt: {},
-      food: [], bubbles: [], ripples: [], pops: [], pearls: [], drops: [], algae: [],
+      food: [], bubbles: [], sand: [], ripples: [], pops: [], pearls: [], drops: [], algae: [],
       pointer: { down: false, x: 0, y: 0, downAt: 0, drag: null },
       tilt: { x: 0, y: 0 }, tiltRaw: { x: 0, y: 0 }, tiltBase: null,
       shaker: null, waterChange: null, overlayKey: '', algaeLayer: null,
@@ -1663,6 +1720,7 @@ export default function AquariumGame({ audio, speak }) {
       if (e.target.closest && e.target.closest('button, [data-ui]')) return;
       const { x, y } = local(e);
       s.pointer = { down: true, x, y, downAt: s.t, drag: null };
+      if (!hitFish(x, y)) setInfo(null);   // 물고기가 아닌 곳을 누르면 정보 카드를 닫는다
       const m = modeRef.current;
       if (m === 'clean') { cleanAt(x, y); return; }
       if (m === 'heal') {
@@ -1719,9 +1777,12 @@ export default function AquariumGame({ audio, speak }) {
         const sp = FISH_BY_ID[f.sp];
         if (f.sp === 'puffer') { r.puffT = 2.5; audio.playFreq(260, 'sine', 0.25, 0.4); setTimeout(() => audio.playFreq(520, 'sine', 0.2, 0.35), 120); }
         if (f.name) s.pops.push({ x: r.x, y: r.y - fishLen(f) * 0.6 - 10, text: `${sp.name} ${f.name}`, life: 1.6, vy: -22, color: '#fef08a' });
-        if (f.sick) say('info', VOICE.aquaSick(sp), 1.5);
-        else if (isSad(f, game.dirt)) say('info', VOICE.aquaSadFish(sp), 1.5);
-        else if (f.name) say('info', VOICE.aquaHello(sp, f.name), 1.5);   // 종류 + 이름 (직접 지은 이름은 기기 음성으로 읽음)
+        const status = f.sick ? VOICE.aquaSick(sp) : isSad(f, game.dirt) ? VOICE.aquaSadFish(sp) : null;
+        if (f.name) {
+          // 이름을 지어 준 물고기는 먼저 이름으로 인사하고(기기 음성), 아프거나 슬프면 이어서 알려 준다
+          say('info', VOICE.aquaHello(sp, f.name), 1.5);
+          if (status) audio.later(() => speak(status), 2800);
+        } else if (status) say('info', status, 1.5);
         else say('info', VOICE.aquaFishInfo(sp, stageOf(f.growth)), 1.5);
         return;
       }
@@ -1922,6 +1983,8 @@ export default function AquariumGame({ audio, speak }) {
         }
         const L = fishLen(f);
         const sad = isSad(f, game.dirt);
+        r.pose = null; r.anchor = null;   // pose: 정해 둔 몸 기울기, anchor: 붙어 있을 자리
+        let noMin = false;
         let fx = 0, fy = 0, ax = 0, ay = 0, cx = 0, cy = 0, cnt = 0;
         list.forEach(o => {
           if (o === f) return;
@@ -1952,6 +2015,7 @@ export default function AquariumGame({ audio, speak }) {
         s.food.forEach(fd => {
           if (fd.state === 'float' && hunger < 0.12) return;   // 배고픈 물고기는 수면 밥도 찾아간다
           if (sp.crawl && !(fd.state === 'ground' || fd.y > bottom - 50)) return;
+          if (sp.bottomFeeder && hunger < 0.75 && fd.y < bottom - span * 0.45) return;   // 바닥 물고기는 가라앉는 밥을 기다린다
           const dx = fd.x - r.x, dy = sp.crawl ? 0 : fd.y - r.y, d2 = dx * dx + dy * dy;
           if (d2 < td) { td = d2; target = fd; }
         });
@@ -1990,6 +2054,7 @@ export default function AquariumGame({ audio, speak }) {
             if (ad < ag.r + 12) {
               ag.eat = (ag.eat || 0) + dt;
               r.vx *= 0.9; r.vy *= 0.9;
+              r.anchor = { x: ag.x, y: ag.y }; r.pose = -0.35; noMin = true;   // 빨판으로 유리에 붙어 갉아 먹는다
               if (ag.eat > 2.5) {
                 s.algae = s.algae.filter(a => a !== ag);
                 game.algae = s.algae.length;
@@ -2005,7 +2070,7 @@ export default function AquariumGame({ audio, speak }) {
           if (d < 460) { const pull = d > 45 ? 380 : -140; fx += dx / d * pull - dy / d * 60; fy += dy / d * pull + dx / d * 60; }
         }
         // 밤에 한동안 아무도 만지지 않으면 잔다: 밥을 쫓거나 놀란 게 아니면 아래쪽 자기 자리에서 거의 움직이지 않는다
-        const asleep = s.sleeping && !chasing && r.panic < 0.05;
+        const asleep = s.sleeping && !sp.nocturnal && !chasing && r.panic < 0.05;
         r.asleep = asleep;
         // 아직 다 크지 않은 아기는 엄마가 어항에 있으면 엄마 뒤를 졸졸 따라다닌다
         const momRt = f.mom && f.growth < 0.8 && s.rt[f.mom] && s.rt[f.mom].leaving == null ? s.rt[f.mom] : null;
@@ -2015,7 +2080,7 @@ export default function AquariumGame({ audio, speak }) {
             if (r.sleepOff == null) r.sleepOff = (Math.random() - 0.5) * 50 * s.k;
             r.sleepY = momRt.sleepY + 8 * s.k;
             fx = fx * 0.12 + (momRt.x + r.sleepOff - r.x) * 0.8;
-          } else if (r.sleepY == null) r.sleepY = bottom - span * (0.08 + Math.random() * 0.4);
+          } else if (r.sleepY == null) r.sleepY = sp.zone === 'bottom' ? bottom - 4 : bottom - span * (0.08 + Math.random() * 0.4);
           if (!momRt) fx *= 0.12;
           fy = fy * 0.12 + (r.sleepY - r.y) * 0.8;
           maxSp *= 0.25;
@@ -2027,6 +2092,60 @@ export default function AquariumGame({ audio, speak }) {
             if (d > 22 * s.k) { fx += dx / d * Math.min(260, d * 2.2); fy += dy / d * Math.min(260, d * 2.2); }
           }
         }
+        const idle = !asleep && !chasing && !following && r.panic < 0.05 && !(s.shaker && hunger > 0.3);
+        if (sp.forager && idle) {
+          // 코리도라스: 무리 지어 바닥에 코를 대고 수염으로 모래를 훑으며 다니다가,
+          // 가끔 수면으로 쏜살같이 올라가 숨을 한 모금 쉬고 다시 내려온다
+          if (r.gulp === 1) {
+            fx *= 0.2; fy = -1400; maxSp *= 3;
+            if (r.y < top + 26) { r.gulp = 2; s.ripples.push({ x: r.x, y: s.surface + 1, r: 3, life: 0.6, flat: true }); s.bubbles.push({ x: r.x, y: r.y + 6, r: 2, wob: 0, vy: 30 }); }
+          } else if (r.gulp === 2) {
+            fx *= 0.3; fy = 700; maxSp *= 1.6;
+            if (r.y > bottom - 40) { r.gulp = 0; r.airT = 40 + Math.random() * 80; }
+          } else {
+            r.airT = (r.airT ?? 20 + Math.random() * 80) - dt;
+            if (r.airT <= 0 && !sad) r.gulp = 1;
+            r.siftT = (r.siftT ?? Math.random() * 2) - dt;
+            if (r.siftT <= 0) { r.sifting = !r.sifting; r.siftT = r.sifting ? 1.2 + Math.random() * 2.5 : 1 + Math.random() * 3; }
+            fy = fy * 0.15 + (groundY(r.x) - L * sp.hRatio * 0.6 - r.y) * 8;
+            if (r.sifting) {
+              // 멈춰 서서 코를 모래에 박고 뒤적뒤적 (모래가 폴폴 날린다)
+              fx *= 0.08; r.vx *= 1 - Math.min(1, dt * 5); noMin = true;
+              r.pose = 0.5 + Math.sin(s.t * 9 + r.wander) * 0.07;
+              if (Math.random() < dt * 7) {
+                const nx = r.x + (r.dir || 1) * L * 0.45;
+                s.sand.push({ x: nx, y: groundY(nx) - 2, vx: (Math.random() - 0.5) * 30 + (r.dir || 1) * 12, vy: -20 - Math.random() * 35, r: 0.8 + Math.random() * 1.4, life: 0.7 + Math.random() * 0.5 });
+              }
+            } else {
+              // 코를 바닥에 댄 채 조금씩 앞으로
+              fx = fx * 0.5 + (r.dir || 1) * 50; maxSp *= 0.6; r.pose = 0.16;
+            }
+          }
+        } else if (sp.forager && r.gulp === 1) r.gulp = 2;   // 숨 쉬러 가다 밥·놀람이 생기면 그냥 내려온다
+        if (sp.algaeEater && idle && !s.algae.length) {
+          // 비파: 바닥이나 옆 유리벽에 빨판으로 딱 붙어 오래 가만히 있다가, 미끄러지듯 다음 자리로 옮긴다 (밤에 더 부지런하다)
+          const pl = r.pl || (r.pl = { mode: 'move', t: 0, tx: r.x, ty: bottom, wall: 0 });
+          if (pl.mode === 'move' && pl.t <= 0) {
+            pl.t = 1;
+            if (Math.random() < 0.4) {
+              pl.wall = Math.random() < 0.5 ? -1 : 1;
+              pl.tx = pl.wall < 0 ? 8 + L * sp.hRatio * 0.5 : s.W - 8 - L * sp.hRatio * 0.5;
+              pl.ty = clamp(top + span * (0.35 + Math.random() * 0.5), top + L * 0.55, bottom - L * 0.55);
+            } else {
+              pl.wall = 0; pl.tx = 40 + Math.random() * (s.W - 80); pl.ty = groundY(pl.tx) - L * sp.hRatio * 0.45;
+            }
+          }
+          if (pl.mode === 'rest') {
+            pl.t -= dt;
+            r.anchor = { x: pl.tx, y: pl.ty, dir: pl.wall }; r.pose = pl.wall ? -Math.PI / 2 : 0; noMin = true;   // 벽에서는 머리를 위로, 배를 유리에
+            if (pl.t <= 0) { pl.mode = 'move'; pl.t = 0; }
+          } else {
+            const dx = pl.tx - r.x, dy = pl.ty - r.y, d = Math.hypot(dx, dy) || 1;
+            if (pref != null) fy -= (pref - r.y) * 0.9;
+            fx = fx * 0.2 + dx / d * 320; fy = fy * 0.2 + dy / d * 320; maxSp *= 1.4;
+            if (d < 16 * s.k) { pl.mode = 'rest'; pl.t = s.night ? 3 + Math.random() * 6 : 10 + Math.random() * 20; }
+          }
+        } else if (sp.algaeEater && r.pl) { r.pl.mode = 'move'; r.pl.t = 0; }
         fx += s.tilt.x * 140; fy += s.tilt.y * 80;
         // 해파리는 갓을 오므릴 때 뿅 떠올랐다가 천천히 가라앉는다 (그림의 오므림과 박자를 맞춤)
         if (sp.shape === 'jellyfish' && !asleep) fy += Math.sin(r.phase * 0.5) < -0.6 ? -160 : 30;
@@ -2037,7 +2156,7 @@ export default function AquariumGame({ audio, speak }) {
         if (sp.crawl) { fy = 0; r.vy = 0; }   // 기는 친구는 좌우로만 움직인다
         r.vx += fx * dt; r.vy += fy * dt;
         if (resting || asleep) { r.vx *= 1 - Math.min(1, dt * 1.2); r.vy *= 1 - Math.min(1, dt * 1.2); }
-        const spd = Math.hypot(r.vx, r.vy) || 1, minSp = resting || asleep ? 0 : 14 * s.k;
+        const spd = Math.hypot(r.vx, r.vy) || 1, minSp = resting || asleep || noMin ? 0 : 14 * s.k;
         if (spd > maxSp) { r.vx *= maxSp / spd; r.vy *= maxSp / spd; } else if (spd < minSp) { r.vx *= minSp / spd; r.vy *= minSp / spd; }
         r.panic = Math.max(0, r.panic - dt);
         r.puffT = Math.max(0, (r.puffT || 0) - dt);
@@ -2048,6 +2167,11 @@ export default function AquariumGame({ audio, speak }) {
         const yLo = chasing ? Math.min(top, target.y + 2) : top, yHi = chasing ? Math.max(bottom, target.y - 3) : bottom;
         r.x = clamp(r.x + r.vx * dt, 6, s.W - 6); r.y = clamp(r.y + r.vy * dt, yLo, yHi);
         if (sp.crawl) r.y = groundY(r.x) - L * sp.hRatio * 0.42;   // 모래 위에 발을 딛고
+        if (r.anchor) {
+          const ka = Math.min(1, dt * 4);
+          r.x += (r.anchor.x - r.x) * ka; r.y += (r.anchor.y - r.y) * ka; r.vx = 0; r.vy = 0;
+          if (r.anchor.dir) r.dir = r.anchor.dir;   // 벽에 붙은 비파는 배가 유리 쪽
+        }
         r.phase += dt * (5 + spd * 0.12 / s.k) * (sad ? 0.6 : 1) * (asleep ? 0.3 : 1) * (1 + (r.eager || 0) * 0.8);
         r.eager = Math.max(0, (r.eager || 0) - dt);
         // 진행 방향 (좌우가 자주 바뀌지 않게)
@@ -2146,6 +2270,8 @@ export default function AquariumGame({ audio, speak }) {
       s.bubbles = s.bubbles.filter(b => !b.pop).slice(-220);
       s.ripples.forEach(r => { r.r += (r.flat ? 40 : 170) * dt; r.life -= dt * 1.4; });
       s.ripples = s.ripples.filter(r => r.life > 0).slice(-60);
+      s.sand.forEach(g => { g.vy += 70 * dt; g.x += g.vx * dt; g.y += g.vy * dt; g.life -= dt; });
+      s.sand = s.sand.filter(g => g.life > 0).slice(-120);
       s.pops.forEach(p => { p.y += p.vy * dt; p.life -= dt; });
       s.pops = s.pops.filter(p => p.life > 0).slice(-60);
 
@@ -2306,7 +2432,13 @@ export default function AquariumGame({ audio, speak }) {
         const L = fishLen(f) * (0.82 + r.z * 0.18) * (1 + Math.sin(r.boing * Math.PI) * 0.25);
         ctx.save();
         ctx.translate(r.x, r.y);
-        const ang = sp.lieDown || sp.crawl || sp.upright ? 0 : clamp(Math.atan2(r.vy, Math.abs(r.vx) + 8) * 0.6, -0.6, 0.6);
+        let ang = sp.lieDown || sp.crawl || sp.upright ? 0 : clamp(Math.atan2(r.vy, Math.abs(r.vx) + 8) * 0.6, -0.6, 0.6);
+        if (sp.forager || sp.algaeEater) {
+          // 코를 박거나 벽에 붙을 때 정해 둔 기울기로 부드럽게 돌아간다
+          const want = r.pose != null ? r.pose : ang;
+          r.angNow = r.angNow == null ? want : r.angNow + (want - r.angNow) * Math.min(1, s.dtLast * 4);
+          ang = r.angNow;
+        }
         r.drawL = L; r.drawAng = ang;
         ctx.scale(r.dir, 1);
         ctx.rotate(ang * 1);
@@ -2355,6 +2487,11 @@ export default function AquariumGame({ audio, speak }) {
         ctx.beginPath(); ctx.arc(d.x, d.y, (d.kind === 'pearl' ? 4.5 : 3) * k, 0, Math.PI * 2); ctx.fill();
       });
 
+      // 코리도라스가 일으킨 모래 알갱이
+      s.sand.forEach(g => {
+        ctx.fillStyle = `rgba(214,196,160,${clamp(g.life, 0, 1) * 0.85})`;
+        ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2); ctx.fill();
+      });
       // 거품
       s.bubbles.forEach(b => {
         ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);

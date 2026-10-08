@@ -449,6 +449,10 @@ if (typeof window !== 'undefined') {
     if ('speechSynthesis' in window) {
       try {
         window.speechSynthesis.resume();
+        // iOS 는 첫 터치 안에서 한 번 말해 둬야 이후 기기 음성(이름 인사 등 MP3 없는 문장)이 나온다
+        const warm = new SpeechSynthesisUtterance(' ');
+        warm.volume = 0;
+        window.speechSynthesis.speak(warm);
       } catch (e) { }
     }
     ['touchstart', 'touchend', 'pointerdown', 'click'].forEach(evt => {
@@ -2037,6 +2041,12 @@ function speakNativeKorean(spokenText, { pitch = 1.0, rate = 0.95 } = {}) {
     utterance.onerror = cleanup;
     window._activeUtterances.push(utterance);
 
+    // 말하고 있는 게 없으면 바로 발화한다 (터치 이벤트 안에서 말해야 iOS 가 막지 않는다)
+    const synth = window.speechSynthesis;
+    if (!nativeSpeechTimer && !synth.speaking && !synth.pending) {
+      try { synth.resume(); synth.speak(utterance); } catch (e) { }
+      return;
+    }
     // cancel() 직후 바로 speak() 하면 iOS에서 발화가 누락되므로 짧게 띄운 뒤 한 문장만 발화
     cancelNativeSpeech();
     nativeSpeechTimer = setTimeout(() => {

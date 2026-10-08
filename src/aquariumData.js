@@ -7,6 +7,7 @@
 // 물고기 종류
 //  len: 다 큰 물고기 길이(px, 화면 크기에 따라 조금 더 커짐) / hRatio: 몸 높이 비율
 //  shape: normal(보통) · angel(세로로 긴 마름모) · disc(동그란 원반) · betta(긴 지느러미) · tang(타원) · cory(바닥 메기)
+//  eyeK: 눈(흰자) 지름 / 눈 자리 머리 높이 (기본 0.45, 몸이 가는 물고기 눈이 너무 커지지 않게)
 //  growMul: 성장 속도 배율 / zone: 주로 머무는 높이 (mid · bottom · top)
 export const FISH_SPECIES = [
   {
@@ -42,15 +43,17 @@ export const FISH_SPECIES = [
     tail: { color: 'rgba(15,23,42,0.75)', len: 0.36, spread: 0.36 }, fin: 'rgba(248,113,113,0.6)'
   },
   {
-    id: 'cory', desc: '바닥을 콕콕 청소해요', name: '코리도라스', price: 165, len: 40, hRatio: 0.36, shape: 'cory',
-    speed: 0.55, growMul: 1, school: true, zone: 'bottom',
-    top: '#78716c', belly: '#f5f5f4', spots: '#44403c',
-    tail: { color: 'rgba(214,211,209,0.6)', len: 0.3, spread: 0.32 }, fin: 'rgba(214,211,209,0.55)'
+    // 코리도라스(페퍼드): 등이 솟고 배가 납작한 갑옷 메기. 무리 지어 바닥 모래를 수염으로 훑고(forager), 가끔 수면에서 숨을 쉰다
+    id: 'cory', desc: '바닥을 콕콕 청소해요', name: '코리도라스', price: 165, len: 40, hRatio: 0.34, shape: 'cory', eyeK: 0.4,
+    speed: 0.55, growMul: 1, school: true, zone: 'bottom', forager: true, bottomFeeder: true,
+    top: '#857f66', belly: '#efe4d4', spots: '#3b3628',
+    bands: [{ color: 'rgba(110,160,140,0.35)', y: -0.08, from: 0.22, to: 0.92, w: 0.34 }],
+    tail: { color: 'rgba(214,206,190,0.6)', len: 0.28, spread: 0.36, fork: true, spots: 'rgba(59,54,40,0.55)' }, fin: 'rgba(214,206,190,0.55)'
   },
   {
-    // 비파(플레코): 바닥과 유리에 붙어 다니며 유리 이끼를 먹어 치운다
-    id: 'pleco', name: '비파', price: 250, desc: '유리 이끼를 먹어요', len: 58, hRatio: 0.3, shape: 'pleco',
-    speed: 0.45, growMul: 0.9, school: false, zone: 'bottom', algaeEater: true,
+    // 비파(플레코): 바닥·유리벽에 빨판으로 붙어 오래 가만히 있고 유리 이끼를 먹어 치운다. 밤에 더 부지런하다(nocturnal: 밤에 자지 않음)
+    id: 'pleco', name: '비파', price: 250, desc: '유리 이끼를 먹어요', len: 58, hRatio: 0.3, shape: 'pleco', eyeK: 0.3,
+    speed: 0.45, growMul: 0.9, school: false, zone: 'bottom', algaeEater: true, nocturnal: true, bottomFeeder: true,
     top: '#44403c', belly: '#78716c', spots: '#e7e5e4',
     tail: { color: 'rgba(68,64,60,0.85)', len: 0.3, spread: 0.36, solid: true }, fin: 'rgba(87,83,78,0.85)'
   },
@@ -79,7 +82,7 @@ export const FISH_SPECIES = [
     tail: { color: 'rgba(234,88,12,0.6)', len: 0.25, spread: 0.3 }, fin: 'rgba(234,88,12,0.55)'
   },
   {
-    id: 'mackerel', name: '고등어', price: 125, len: 64, hRatio: 0.24, shape: 'normal', desc: '떼 지어 쌩쌩!',
+    id: 'mackerel', name: '고등어', price: 125, len: 64, hRatio: 0.24, shape: 'normal', eyeK: 0.4, desc: '떼 지어 쌩쌩!',
     speed: 1.3, growMul: 1, school: true, zone: 'mid',
     top: '#0f766e', belly: '#e2e8f0', backStripes: '#0f172a',
     tail: { color: 'rgba(15,118,110,0.85)', len: 0.34, spread: 0.52, fork: true }, fin: 'rgba(148,163,184,0.6)'
@@ -97,7 +100,7 @@ export const FISH_SPECIES = [
     tail: { color: 'rgba(225,29,72,0.8)', len: 0.36, spread: 0.54, fork: true }, fin: 'rgba(251,113,133,0.7)'
   },
   {
-    id: 'hairtail', name: '갈치', price: 225, len: 112, hRatio: 0.09, shape: 'ribbon', desc: '은빛 리본처럼 길쭉',
+    id: 'hairtail', name: '갈치', price: 225, len: 112, hRatio: 0.09, shape: 'ribbon', eyeK: 0.5, desc: '은빛 리본처럼 길쭉',
     speed: 0.6, growMul: 0.85, school: false, zone: 'mid',
     top: '#94a3b8', belly: '#f8fafc',
     tail: { color: 'rgba(203,213,225,0)', len: 0.01, spread: 0.01 }, fin: 'rgba(226,232,240,0.55)'
