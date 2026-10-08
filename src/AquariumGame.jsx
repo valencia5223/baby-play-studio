@@ -415,8 +415,29 @@ export function drawFish(ctx, sp, L, o = {}) {
   shine.addColorStop(1, 'rgba(15,23,42,0.28)');
   ctx.fillStyle = shine;
   ctx.fillRect(-L, -H, L * 2, H * 2);
+  // 비늘 광택: 헤엄칠 때 몸을 따라 천천히 지나가는 반짝임
+  if (o.gloss && L > 18 && !o.sad) {
+    const u = ((ph * 0.035) % 2.2) - 0.6;
+    if (u > -0.2 && u < 1.2) {
+      const sg = ctx.createLinearGradient(xs(u - 0.16), -H * 0.4, xs(u + 0.16), H * 0.2);
+      sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(0.5, 'rgba(255,255,255,0.24)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = sg;
+      ctx.fillRect(-L, -H, L * 2, H * 2);
+    }
+  }
   if (o.sad) { ctx.fillStyle = 'rgba(100,116,139,0.4)'; ctx.fillRect(-L, -H, L * 2, H * 2); }
   ctx.restore();
+
+  // 외곽선(그늘)과 등 쪽 빛 테두리로 몸의 윤곽을 또렷하게
+  if (o.gloss && L > 24) {
+    smoothClosed(ctx, pts);
+    ctx.strokeStyle = 'rgba(8,24,40,0.22)'; ctx.lineWidth = Math.max(0.6, L * 0.011);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.32)'; ctx.lineWidth = Math.max(0.5, L * 0.009); ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let i = 1; i <= 6; i++) { const q = 0.08 + i * 0.09; const px = xs(q), py = wave(q) - half(q) * 0.9; if (i === 1) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+    ctx.stroke();
+  }
 
   // 아가미 선
   if (fry < 0.7) {
@@ -1236,7 +1257,7 @@ function FishPreview({ species }) {
     ctx.translate(58, 37);
     // 작은 물고기도 잘 보이게 크게 (몸이 높은 종류는 칸에 맞게 조금 작게)
     const L = species.hRatio > 1.1 ? 66 / species.hRatio : species.hRatio > 0.8 ? 58 : clamp(species.len * 1.5, 56, 74);
-    drawFish(ctx, lookOf(species, { variant: species.id === 'guppy' ? 'rainbow' : undefined }), L, { phase: 0.6, growth: 1, detail: true });
+    drawFish(ctx, lookOf(species, { variant: species.id === 'guppy' ? 'rainbow' : undefined }), L, { phase: 0.6, growth: 1, detail: true, gloss: true });
   }, [species]);
   return <canvas ref={ref} style={{ width: 110, height: 74 }} />;
 }
@@ -1402,7 +1423,7 @@ export default function AquariumGame({ audio, speak }) {
       pointer: { down: false, x: 0, y: 0, downAt: 0, drag: null },
       tilt: { x: 0, y: 0 }, tiltRaw: { x: 0, y: 0 }, tiltBase: null,
       shaker: null, waterChange: null, overlayKey: '', algaeLayer: null,
-      light: 3, ambient: ambientDark(), darkNow: 0, glNow: 1, night: isNightTime(),
+      dtLast: 0, fx: 1, light: 3, ambient: ambientDark(), darkNow: 0, glNow: 1, night: isNightTime(),
       lastSave: 0, lastHud: 0, lastVoice: {}, lastYum: 0, bubbleT: 0, backdrop: null, gravel: null
     };
     simRef.current = s;
@@ -1517,7 +1538,20 @@ export default function AquariumGame({ audio, speak }) {
       const edge = gx.createLinearGradient(0, s.floor - 6, 0, s.floor + 18);
       edge.addColorStop(0, 'rgba(255,255,255,0.18)'); edge.addColorStop(1, 'rgba(255,255,255,0)');
       gx.fillStyle = edge; gx.fillRect(0, s.floor - 6, s.W, 24);
+      // 자갈 앞쪽(유리 가까이)은 조금 어둡게, 물과 닿는 경계는 살짝 그늘지게 → 바닥에 깊이감
+      const front = gx.createLinearGradient(0, s.floor + 10, 0, s.H);
+      front.addColorStop(0, 'rgba(15,23,42,0)'); front.addColorStop(1, 'rgba(15,23,42,0.22)');
+      gx.fillStyle = front; gx.fillRect(0, s.floor + 10, s.W, s.H - s.floor);
       s.gravel = gc;
+      // 물속을 천천히 떠도는 작은 부유물 (z: 0 먼 곳 ~ 1 가까운 곳)
+      if (!s.motes) s.motes = [];
+      const moteN = Math.round(clamp(s.W * s.H / 22000, 18, 60));
+      s.motes = Array.from({ length: moteN }, (_, i) => ({
+        x: Math.random() * s.W, y: s.surface + Math.random() * (s.floor - s.surface), z: Math.random(),
+        ph: Math.random() * 6, sp: 0.4 + Math.random() * 0.8
+      }));
+      // 앞쪽 유리 가까이 지나가는 흐릿한 빛망울 (몇 개만)
+      s.bokeh = Array.from({ length: 4 }, () => ({ x: Math.random() * s.W, y: s.surface + Math.random() * (s.floor - s.surface), r: 18 + Math.random() * 30, ph: Math.random() * 6 }));
       [s.algaeLayer, s.algaeCtx] = makeLayer(s.W, s.H);
       s.overlayKey = '';
       if (s.algae.length !== game.algae) regenAlgae();
@@ -2175,6 +2209,16 @@ export default function AquariumGame({ audio, speak }) {
       // 장식 (수초·바위 등) – 자갈보다 먼저 그려 밑동이 자갈에 묻히게
       game.decor.forEach(d => { const x = d.x * W; drawDecor(ctx, d.id, x, groundY(x) + 8, k, t, s.decorRt[d.uid], flow); });
       ctx.drawImage(s.gravel, 0, 0, W, H);
+      // 장식 밑동 그림자: 바닥에 단단히 붙어 보이게
+      game.decor.forEach(d => {
+        const x = d.x * W, box = DECOR_BOX[d.id]; if (!box) return;
+        const rw = box[0] * k * 0.62, gy = groundY(x) + 5;
+        const sh = ctx.createRadialGradient(x, gy, 1, x, gy, rw);
+        sh.addColorStop(0, 'rgba(15,23,42,0.34)'); sh.addColorStop(1, 'rgba(15,23,42,0)');
+        ctx.save(); ctx.translate(x, gy); ctx.scale(1, 0.22); ctx.translate(-x, -gy);
+        ctx.fillStyle = sh; ctx.beginPath(); ctx.arc(x, gy, rw, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      });
 
       // 똥, 바닥 먹이, 조개
       game.poop.forEach(p => {
@@ -2220,10 +2264,35 @@ export default function AquariumGame({ audio, speak }) {
         ctx.beginPath(); ctx.ellipse(r.x + hgt * 0.08, gy, L * 0.45, L * 0.09 + 1, 0, 0, Math.PI * 2); ctx.fill();
       });
 
-      // 물고기 (멀리 있는 것부터)
+      // 먼 곳의 부유물 (물고기 뒤)
+      // 한 번에 그린다 (경로 하나 + 칠하기 한 번)
+      const drawMotes = (near) => {
+        ctx.fillStyle = near ? 'rgba(224,242,254,0.3)' : 'rgba(224,242,254,0.16)';
+        ctx.beginPath();
+        s.motes.forEach(m => {
+          if ((m.z >= 0.55) !== near) return;
+          m.y -= (2 + m.z * 4) * m.sp * s.dtLast; m.x += Math.sin(t * 0.3 + m.ph) * 4 * s.dtLast + flow * 10 * s.dtLast;
+          if (m.y < s.surface + 4) { m.y = s.floor - 4; m.x = Math.random() * W; }
+          if (m.x < 0) m.x += W; if (m.x > W) m.x -= W;
+          const rr = (0.6 + m.z * 1.6) * k;
+          ctx.moveTo(m.x + rr, m.y); ctx.arc(m.x, m.y, rr, 0, Math.PI * 2);
+        });
+        ctx.fill();
+      };
+      if (s.fx) drawMotes(false);
+
+      // 물고기 (멀리 있는 것부터). 먼 물고기와 가까운 물고기 사이에 옅은 물빛 안개를 깔아 깊이감을 준다
       const order = game.fish.filter(f => s.rt[f.uid]).sort((a, b) => s.rt[a.uid].z - s.rt[b.uid].z);
+      let hazed = false;
+      const haze = () => {
+        hazed = true;
+        const hg = ctx.createLinearGradient(0, s.surface, 0, s.floor);
+        hg.addColorStop(0, 'rgba(56,189,248,0.07)'); hg.addColorStop(1, 'rgba(12,74,110,0.16)');
+        ctx.fillStyle = hg; ctx.fillRect(0, s.surface, W, s.floor - s.surface);
+      };
       order.forEach(f => {
         const r = s.rt[f.uid], sp = FISH_BY_ID[f.sp]; if (!sp) return;
+        if (!hazed && r.z >= 0.55) haze();
         const L = fishLen(f) * (0.82 + r.z * 0.18) * (1 + Math.sin(r.boing * Math.PI) * 0.25);
         ctx.save();
         ctx.translate(r.x, r.y);
@@ -2233,7 +2302,7 @@ export default function AquariumGame({ audio, speak }) {
         ctx.rotate(ang * 1);
         ctx.globalAlpha = (0.72 + r.z * 0.28) * (r.leaving != null ? clamp(1 - r.leaving / 2.6, 0, 1) : 1);
         const belly = f.preg != null ? Math.pow(f.preg, 0.8) : 0;
-        drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0, belly, sleep: !!r.asleep, gravidSpot: breedOf(f.sp).type === 'live' });
+        drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0, belly, sleep: !!r.asleep, gloss: s.fx === 1, gravidSpot: breedOf(f.sp).type === 'live' });
         ctx.restore();
         // 아픈 물고기 위에는 상단 치료 버튼과 똑같은 모양(분홍 동그라미 + 반창고)을 띄운다
         if (f.sick) {
@@ -2250,6 +2319,9 @@ export default function AquariumGame({ audio, speak }) {
           ctx.beginPath(); ctx.arc(r.x, r.y, L * 0.7 + 6, 0, Math.PI * 2); ctx.stroke();
         }
       });
+
+      if (!hazed) haze();
+      if (s.fx) drawMotes(true);
 
       // 떨어지는 먹이·똥·조개
       s.food.forEach(fd => {
@@ -2271,6 +2343,28 @@ export default function AquariumGame({ audio, speak }) {
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
         ctx.beginPath(); ctx.arc(b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.28, 0, Math.PI * 2); ctx.fill();
       });
+
+      // 유리 가까이 지나가는 흐릿한 빛망울 (초점이 안 맞은 듯한 깊이감)
+      if (s.fx) s.bokeh.forEach(b => {
+        b.y -= 3 * s.dtLast; b.x += Math.sin(t * 0.2 + b.ph) * 6 * s.dtLast;
+        if (b.y < s.surface + b.r) { b.y = s.floor - b.r; b.x = Math.random() * W; }
+        const a = 0.05 + 0.03 * Math.sin(t * 0.7 + b.ph);
+        const bg = ctx.createRadialGradient(b.x, b.y, b.r * 0.2, b.x, b.y, b.r * k);
+        bg.addColorStop(0, `rgba(240,249,255,${a})`); bg.addColorStop(0.7, `rgba(240,249,255,${a * 0.6})`); bg.addColorStop(1, 'rgba(240,249,255,0)');
+        ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(b.x, b.y, b.r * k, 0, Math.PI * 2); ctx.fill();
+      });
+
+      // 수면 바로 아래 일렁이는 빛줄 (수면이 빛을 굴절시키는 느낌)
+      ctx.lineWidth = 1.2; ctx.lineCap = 'round';
+      for (let j = 0; j < (s.fx ? 3 : 0); j++) {
+        ctx.strokeStyle = `rgba(255,255,255,${0.16 - j * 0.04})`;
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 18) {
+          const y = s.surface + (7 + j * 9) * k + Math.sin(x * (0.02 + j * 0.007) + t * (1.3 - j * 0.25) + j * 2) * (2 + j) + Math.sin(x * 0.051 - t * 1.7) * 1.2;
+          if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
 
       // 수면 아래 반사 띠 & 수면선
       const ug = ctx.createLinearGradient(0, s.surface, 0, s.surface + 16);
@@ -2427,7 +2521,13 @@ export default function AquariumGame({ audio, speak }) {
     let raf = 0, last = performance.now();
     const frame = (now) => {
       const dt = Math.min(0.05, (now - last) / 1000);
-      last = now; s.t += dt;
+      last = now; s.t += dt; s.dtLast = dt;
+      // 자잘한 효과(광택·부유물·빛망울·수면 빛줄)는 프레임이 3초 넘게 버거우면 자동으로 끈다 (오래된 태블릿 배려)
+      s.emaDt = (s.emaDt ?? 1 / 60) * 0.95 + dt * 0.05;
+      if (s.fx && s.t > 4) {
+        s.slowFx = s.emaDt > 1 / 50 ? (s.slowFx || 0) + dt : 0;
+        if (s.slowFx > 3) s.fx = 0;
+      }
       if (s.quality === 1) {
         s.slow = dt > 0.03 ? s.slow + 1 : Math.max(0, s.slow - 1);
         if (s.slow > 120) { s.quality = 0.6; resize(); }
@@ -2618,7 +2718,7 @@ export default function AquariumGame({ audio, speak }) {
         {/* 유리 반사 */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 4, pointerEvents: 'none',
-          background: 'linear-gradient(112deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0) 16%, rgba(255,255,255,0) 58%, rgba(255,255,255,0.08) 63%, rgba(255,255,255,0) 69%)',
+          background: 'linear-gradient(112deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0) 16%, rgba(255,255,255,0) 58%, rgba(255,255,255,0.08) 63%, rgba(255,255,255,0) 69%), radial-gradient(ellipse 75% 70% at 50% 42%, rgba(4,30,50,0) 60%, rgba(4,30,50,0.22) 100%)',
           boxShadow: 'inset 0 0 70px rgba(8,47,73,0.45)'
         }} />
 
