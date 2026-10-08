@@ -10,7 +10,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VOICE, attachJosa } from './voiceLines.js';
 import {
   FISH_SPECIES, FISH_BY_ID, GUPPY_BY_ID, DECOR_ITEMS, DECOR_BY_ID, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
-  stageOf, sizeScale, RATES, breedOf, mateStatus, SEX_NAMES, isNightTime, isSad, conditionOf, growFactor, REWARDS,
+  stageOf, sizeScale, RATES, breedOf, mateStatus, SEX_NAMES, isNightTime, SLEEP_IDLE_SEC, isSad, conditionOf, growFactor, REWARDS,
   loadGame, saveGame, catchUpOffline, newFish, newUid, todayKey
 } from './aquariumData.js';
 
@@ -1425,7 +1425,7 @@ export default function AquariumGame({ audio, speak }) {
       pointer: { down: false, x: 0, y: 0, downAt: 0, drag: null },
       tilt: { x: 0, y: 0 }, tiltRaw: { x: 0, y: 0 }, tiltBase: null,
       shaker: null, waterChange: null, overlayKey: '', algaeLayer: null,
-      dtLast: 0, fx: 1, lampNow: LAMP[3], light: 3, ambient: ambientDark(), darkNow: 0, glNow: 1, night: isNightTime(),
+      dtLast: 0, fx: 1, lampNow: LAMP[3], light: 3, ambient: ambientDark(), darkNow: 0, glNow: 1, night: isNightTime(), sleeping: false, lastActive: 0, touched: false,
       lastSave: 0, lastHud: 0, lastVoice: {}, lastYum: 0, bubbleT: 0, backdrop: null, gravel: null
     };
     simRef.current = s;
@@ -1443,7 +1443,6 @@ export default function AquariumGame({ audio, speak }) {
     }
     if (offline.grown.length) setTimeout(() => showToast(`🌱 그동안 ${offline.grown.length}마리가 자랐어요!`), 3200);
     if (offline.sick && offline.sick.length) setTimeout(() => { showToast(`🩹 그동안 ${offline.sick.length}마리가 아파졌어요! 밴드를 붙여 주세요`); speak(VOICE.aquaSick(FISH_BY_ID[offline.sick[0].sp])); }, 6000);
-    if (s.night) welcomeLines.unshift(VOICE.aquaNight());   // 밤에는 잘 자는 물고기 안내가 먼저
     if (welcomeLines.length) setTimeout(() => speak(welcomeLines[0]), 500);
 
     setPlaced({ decor: game.decor.slice() });
@@ -1700,8 +1699,10 @@ export default function AquariumGame({ audio, speak }) {
       }
       const f = hitFish(x, y);
       if (f && s.rt[f.uid].asleep) {
-        // 자는 물고기는 깨우지 않고 쉿!
+        // 자는 물고기는 깨우지 않고 쉿! (정보 카드는 보여 준다)
         const r = s.rt[f.uid];
+        s.touched = false;
+        setInfo(f.uid);
         s.pops.push({ x: r.x, y: r.y - fishLen(f) * 0.6 - 10, text: '🤫 쉿!', life: 1.6, vy: -18, color: '#e0f2fe' });
         say('sleeptap', VOICE.aquaSleepTap(), 4);
         return;
@@ -1751,6 +1752,11 @@ export default function AquariumGame({ audio, speak }) {
     };
     wrap.addEventListener('pointerdown', onDown);
     wrap.addEventListener('pointermove', onMove);
+    // 밤에도 아이가 놀고 있으면 물고기는 깨어 있다. 화면 어디를 눌러도(버튼 포함) 깨어 있는 시간이 늘어나지만,
+    // 자는 물고기를 누르거나(onDown 에서 touched 를 지움) 정보 카드를 만지는 건 깨우지 않는다
+    const onActive = (e) => { if (!(e.target && e.target.closest && e.target.closest('[data-quiet]'))) s.touched = true; };
+    window.addEventListener('pointerdown', onActive, true);
+    window.addEventListener('keydown', onActive, true);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
 
@@ -1998,8 +2004,8 @@ export default function AquariumGame({ audio, speak }) {
           const dx = p.x - r.x, dy = p.y - r.y, d = Math.hypot(dx, dy) || 1;
           if (d < 460) { const pull = d > 45 ? 380 : -140; fx += dx / d * pull - dy / d * 60; fy += dy / d * pull + dx / d * 60; }
         }
-        // 밤에는 잔다: 밥을 쫓거나 놀란 게 아니면 아래쪽 자기 자리에서 거의 움직이지 않는다
-        const asleep = s.night && !chasing && r.panic < 0.05;
+        // 밤에 한동안 아무도 만지지 않으면 잔다: 밥을 쫓거나 놀란 게 아니면 아래쪽 자기 자리에서 거의 움직이지 않는다
+        const asleep = s.sleeping && !chasing && r.panic < 0.05;
         r.asleep = asleep;
         // 아직 다 크지 않은 아기는 엄마가 어항에 있으면 엄마 뒤를 졸졸 따라다닌다
         const momRt = f.mom && f.growth < 0.8 && s.rt[f.mom] && s.rt[f.mom].leaving == null ? s.rt[f.mom] : null;
@@ -2582,6 +2588,7 @@ export default function AquariumGame({ audio, speak }) {
       s.lampNow += (LAMP[s.light] - s.lampNow) * Math.min(1, dt * 5);
 
       tickCare(dt);
+      if (s.touched) { s.touched = false; s.lastActive = s.t; s.sleeping = false; }
       updateFish(dt);
       updateParticles(dt);
       draw();
@@ -2596,8 +2603,11 @@ export default function AquariumGame({ audio, speak }) {
         setInfoTick(v => (v + 1) % 1000);
         s.ambient = ambientDark();
         const nightNow = isNightTime();
-        if (nightNow !== s.night) { s.night = nightNow; if (nightNow) say('night', VOICE.aquaNight(), 60); }
+        s.night = nightNow;
         setNight(nightNow);
+        const sleepNow = nightNow && s.t - s.lastActive > SLEEP_IDLE_SEC;
+        if (sleepNow && !s.sleeping) say('night', VOICE.aquaNight(), 60);
+        s.sleeping = sleepNow;
       }
       if (s.t - s.lastSave > 4) { s.lastSave = s.t; game.lastTick = Date.now(); saveGame(game); }
       raf = requestAnimationFrame(frame);
@@ -2611,6 +2621,7 @@ export default function AquariumGame({ audio, speak }) {
       const back = catchUpOffline(game);
       back.grown.forEach(f => { game.points += stageOf(f.growth) === 'adult' ? REWARDS.adult : REWARDS.juvenile; });
       if (back.sick.length) { showToast(`🩹 그동안 ${back.sick.length}마리가 아파졌어요! 밴드를 붙여 주세요`); say('sick', VOICE.aquaSick(FISH_BY_ID[back.sick[0].sp]), 8); }
+      s.touched = true;   // 돌아오면 잠깐은 깨어 있다
       last = performance.now();
     };
     document.addEventListener('visibilitychange', onVis);
@@ -2624,6 +2635,8 @@ export default function AquariumGame({ audio, speak }) {
       wrap.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
+      window.removeEventListener('pointerdown', onActive, true);
+      window.removeEventListener('keydown', onActive, true);
       window.removeEventListener('deviceorientation', s.onOrient);
       document.removeEventListener('visibilitychange', onVis);
       window.removeEventListener('pagehide', persist);
@@ -2803,14 +2816,14 @@ export default function AquariumGame({ audio, speak }) {
           const cond = conditionOf(infoFish, dirt);
           const speed = growFactor(infoFish, dirt);
           return (
-            <div data-ui onPointerDown={stop} data-tick={infoTick} style={{
+            <div data-ui data-quiet onPointerDown={stop} data-tick={infoTick} style={{
               position: 'absolute', left: '50%', bottom: '12px', transform: 'translateX(-50%)', zIndex: 8,
               background: 'rgba(255,255,255,0.96)', borderRadius: '22px', padding: '12px 16px', width: 'min(360px, calc(100% - 24px))',
               boxShadow: '0 12px 28px rgba(0,0,0,0.3)', border: `3px solid ${sad ? '#94a3b8' : '#38bdf8'}`
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ fontWeight: 900, fontSize: '1.15rem', color: '#0f172a' }}>
-                  {infoFish.sick ? '🤒' : sad ? '😢' : '😊'} {infoFish.name ? <>{infoFish.name} <span style={{ fontSize: '0.8rem', color: '#475569' }}>({sp.name})</span></> : sp.name}
+                  {sim.rt[infoFish.uid]?.asleep ? '😴' : infoFish.sick ? '🤒' : sad ? '😢' : '😊'} {infoFish.name ? <>{infoFish.name} <span style={{ fontSize: '0.8rem', color: '#475569' }}>({sp.name})</span></> : sp.name}
                   {infoFish.sex && <span title={SEX_NAMES[infoFish.sex]} style={{ marginLeft: '4px', fontSize: '0.85rem', color: '#ffffff', background: infoFish.sex === 'm' ? '#2563eb' : '#db2777', borderRadius: '10px', padding: '1px 7px' }}>{infoFish.sex === 'm' ? '♂' : '♀'} {SEX_NAMES[infoFish.sex]}</span>}
                   {infoFish.variant && <span style={{ fontSize: '0.8rem', color: '#be185d' }}> ({GUPPY_BY_ID[infoFish.variant]?.name})</span>}
                   {' '}<span style={{ fontSize: '0.85rem', color: '#0369a1' }}>· {STAGE_NAMES[stage]}</span>

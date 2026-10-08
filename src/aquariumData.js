@@ -267,8 +267,9 @@ export const RATES = {
   pregRestSec: 1200,        // 낳은 뒤 20분은 쉰다
   eggHatchSec: 90           // 알에서 깨어나기까지 1분 30초
 };
-// ── 낮과 밤 (실제 시계) ── 저녁 8시 ~ 아침 7시는 밤: 어항이 어두워지고 물고기들이 잔다
+// ── 낮과 밤 (실제 시계) ── 저녁 8시 ~ 아침 7시는 밤: 한동안(SLEEP_IDLE_SEC) 아무도 만지지 않으면 물고기들이 잔다
 export const NIGHT_HOURS = { from: 20, to: 7 };
+export const SLEEP_IDLE_SEC = 30;   // 밤에 이만큼(초) 아무 동작이 없으면 잠든다
 export const isNightTime = (d = new Date()) => { const h = d.getHours(); return h >= NIGHT_HOURS.from || h < NIGHT_HOURS.to; };
 
 export const isSad = (fish, dirt) => fish.full < 25 || dirt > 70 || !!fish.sick;
