@@ -40,7 +40,7 @@ function ambientDark(d = new Date()) {
 const LAMP = [0, 0.45, 0.75, 1];
 const darkFor = (ambient, light) => ambient * (1 - LAMP[light]);
 // WebGL 빛무늬·햇살 세기: 낮엔 햇빛만으로 충분하고, 어두울 때는 조명이 빛을 채운다
-const glFor = (ambient, light) => { const sun = 0.08 + 0.92 * (1 - ambient / MAX_DARK); return (sun + (1 - sun) * LAMP[light]) * (1 + 0.45 * LAMP[light]); };   // 조명은 햇빛보다 더 밝게 빛무늬·햇살을 키운다
+const glFor = (ambient, light) => { const sun = 0.08 + 0.92 * (1 - ambient / MAX_DARK); return (sun + (1 - sun) * LAMP[light]) * (1 + 0.15 * LAMP[light]); };   // 조명은 햇빛보다 더 밝게 빛무늬·햇살을 키운다
 
 // ═══════════════════════════════ 이로치 색 · 구피 디자인 ═══════════════════════════════
 function rgbToHsl(r, g, b) {
@@ -1212,11 +1212,11 @@ void main() {
   float cs = caustic(cuv, uTime * 0.45 + 23.0);
   float floorMask = smoothstep(uFloor - 0.05, uFloor + 0.01, y);
   float clear = 1.0 - uMurk * 0.75;
-  float light = cs * (0.09 * (1.0 - depth) + floorMask * 0.5) * water * clear;
+  float light = cs * (0.05 * (1.0 - depth) + floorMask * 0.5) * water * clear;   // 물속 빛무늬는 은은하게, 바닥은 또렷하게
   float lean = 0.32 + uTilt.x * 0.35;
   float rx = uv.x * aspect + (y - uSurface) * lean;
   float rays = pow(0.5 + 0.5 * sin(rx * 6.0 + uTime * 0.3), 9.0) + 0.6 * pow(0.5 + 0.5 * sin(rx * 11.0 - uTime * 0.22 + 1.7), 14.0);
-  rays *= (1.0 - smoothstep(0.0, 0.85, depth)) * water * 0.3 * clear;
+  rays *= (1.0 - smoothstep(0.0, 0.7, depth)) * water * 0.16 * clear;   // 햇살이 뿌연 막처럼 덮지 않게
   float surf = exp(-abs(y - uSurface) * 90.0) * (0.45 + 0.35 * sin(uv.x * 90.0 + uTime * 3.0));
   vec3 col = vec3(0.72, 0.95, 1.0) * (light + rays) + vec3(1.0) * surf * 0.45;
   gl_FragColor = vec4(col * uLight, 1.0);
@@ -2291,7 +2291,7 @@ export default function AquariumGame({ audio, speak }) {
       const haze = () => {
         hazed = true;
         const hg = ctx.createLinearGradient(0, s.surface, 0, s.floor);
-        hg.addColorStop(0, 'rgba(56,189,248,0.07)'); hg.addColorStop(1, 'rgba(12,74,110,0.16)');
+        hg.addColorStop(0, 'rgba(56,189,248,0.04)'); hg.addColorStop(1, 'rgba(12,74,110,0.12)');
         ctx.fillStyle = hg; ctx.fillRect(0, s.surface, W, s.floor - s.surface);
       };
       order.forEach(f => {
@@ -2325,6 +2325,15 @@ export default function AquariumGame({ audio, speak }) {
       });
 
       if (!hazed) haze();
+      // 조명 빛: 흰빛을 덧칠하면 뿌옇게 들뜨므로 소프트 라이트로 밝혀 대비와 색을 살린다
+      if (s.lampNow > 0.02) {
+        const lk = s.lampNow;
+        ctx.globalCompositeOperation = 'soft-light';
+        const lc = ctx.createRadialGradient(W / 2, s.surface - H * 0.1, 10, W / 2, s.surface + H * 0.3, H * 1.1);
+        lc.addColorStop(0, `rgba(255,244,214,${0.55 * lk})`); lc.addColorStop(0.55, `rgba(255,244,214,${0.25 * lk})`); lc.addColorStop(1, 'rgba(255,244,214,0)');
+        ctx.fillStyle = lc; ctx.fillRect(0, s.surface, W, H - s.surface);
+        ctx.globalCompositeOperation = 'source-over';
+      }
       badges.forEach(fn => fn());
       if (s.fx) drawMotes(true);
 
@@ -2465,20 +2474,15 @@ export default function AquariumGame({ audio, speak }) {
         });
         octx.globalAlpha = 1;
       };
-      // 조명: 위에서 내리쬐는 따뜻한 빛 원뿔 + 수면에 비친 눈부신 반사 + 반짝이는 물결
+      // 조명: 수면에 비친 눈부신 반사 + 반짝이는 물결 (어항을 밝히는 빛은 본 캔버스에서 소프트 라이트로)
       const drawLamp = () => {
         const lk = s.lampNow; if (lk < 0.02) return;
         octx.globalCompositeOperation = 'lighter';
         const cx = s.W / 2, top = s.surface;
-        const cone = octx.createRadialGradient(cx, top - s.H * 0.15, 10, cx, top + s.H * 0.35, s.H * 1.05);
-        cone.addColorStop(0, `rgba(255,247,225,${0.26 * lk})`);
-        cone.addColorStop(0.45, `rgba(255,247,225,${0.1 * lk})`);
-        cone.addColorStop(1, 'rgba(255,247,225,0)');
-        octx.fillStyle = cone; octx.fillRect(0, 0, s.W, s.H);
         // 수면에 비친 조명 (가로로 긴 눈부신 띠)
         octx.save(); octx.translate(cx, top + 3); octx.scale(1, 0.05);
         const glare = octx.createRadialGradient(0, 0, 0, 0, 0, s.W * 0.42);
-        glare.addColorStop(0, `rgba(255,255,255,${0.7 * lk})`); glare.addColorStop(0.5, `rgba(255,255,255,${0.25 * lk})`); glare.addColorStop(1, 'rgba(255,255,255,0)');
+        glare.addColorStop(0, `rgba(255,255,255,${0.5 * lk})`); glare.addColorStop(0.5, `rgba(255,255,255,${0.16 * lk})`); glare.addColorStop(1, 'rgba(255,255,255,0)');
         octx.fillStyle = glare; octx.beginPath(); octx.arc(0, 0, s.W * 0.42, 0, Math.PI * 2); octx.fill();
         octx.restore();
         // 수면 물결에 반짝이는 빛 조각
