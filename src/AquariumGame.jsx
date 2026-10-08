@@ -2443,7 +2443,24 @@ export default function AquariumGame({ audio, speak }) {
       octx.drawImage(s.algaeLayer, 0, 0, s.W, s.H);
 
       const dark = s.darkNow;
-      if (dark < 0.01) return;
+      // 자는 물고기 위로 z Z 가 피어오른다 (조명을 환하게 켜도 보이도록 테두리를 두른다)
+      const drawZz = () => {
+        octx.textAlign = 'center'; octx.textBaseline = 'middle'; octx.lineWidth = 2.5; octx.lineJoin = 'round';
+        game.fish.forEach(f => {
+          const r = s.rt[f.uid];
+          if (!r || !r.asleep || !r.drawL) return;
+          for (let j = 0; j < 2; j++) {
+            const zt = (s.t * 0.45 + r.phase * 0.05 + j * 0.5) % 1;
+            octx.globalAlpha = Math.sin(zt * Math.PI) * 0.9;
+            octx.font = `900 ${Math.round(Math.max(10, r.drawL * 0.28) * (0.7 + zt * 0.6))}px system-ui, sans-serif`;
+            const zx = r.x + r.dir * r.drawL * 0.25 + zt * 10, zy = r.y - r.drawL * 0.3 - zt * 26;
+            octx.strokeStyle = 'rgba(15,23,42,0.45)'; octx.strokeText(j ? 'Z' : 'z', zx, zy);
+            octx.fillStyle = '#e0f2fe'; octx.fillText(j ? 'Z' : 'z', zx, zy);
+          }
+        });
+        octx.globalAlpha = 1;
+      };
+      if (dark < 0.01) { drawZz(); return; }
       // 어둠 (조명 아래쪽은 덜 어둡게)
       const lampOn = s.light > 0;
       const g = octx.createRadialGradient(s.W / 2, 0, 10, s.W / 2, s.H * 0.3, Math.max(s.W, s.H) * 0.9);
@@ -2452,20 +2469,7 @@ export default function AquariumGame({ audio, speak }) {
       octx.fillStyle = g;
       octx.fillRect(0, 0, s.W, s.H);
 
-      // 자는 물고기 위로 z Z 가 피어오른다
-      octx.textAlign = 'center'; octx.textBaseline = 'middle';
-      game.fish.forEach(f => {
-        const r = s.rt[f.uid];
-        if (!r || !r.asleep || !r.drawL) return;
-        for (let j = 0; j < 2; j++) {
-          const zt = (s.t * 0.45 + r.phase * 0.05 + j * 0.5) % 1;
-          octx.globalAlpha = Math.sin(zt * Math.PI) * 0.9;
-          octx.fillStyle = '#e0f2fe';
-          octx.font = `900 ${Math.round(Math.max(10, r.drawL * 0.28) * (0.7 + zt * 0.6))}px system-ui, sans-serif`;
-          octx.fillText(j ? 'Z' : 'z', r.x + r.dir * r.drawL * 0.25 + zt * 10, r.y - r.drawL * 0.3 - zt * 26);
-        }
-      });
-      octx.globalAlpha = 1;
+      drawZz();
       // 야광: 어두울수록 더 밝게 빛난다
       const gk = clamp(dark / MAX_DARK, 0, 1);
       octx.globalCompositeOperation = 'lighter';
