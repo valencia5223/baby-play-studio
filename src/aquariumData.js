@@ -258,6 +258,7 @@ export const RATES = {
   offlineCapSec: 24 * 3600,
   sickPerSec: 1 / 3000,     // 놀 때 물고기 한 마리가 아플 확률 (평균 50분에 한 번, 배고프거나 물이 더러우면 3배)
   sickMax: 2,               // 한 번에 아픈 물고기는 최대 2마리
+  offlineSickMul: 0.15,     // 꺼둔 동안(화면이 잠기거나 다른 탭)에도 놀 때의 15% 확률로 가끔 아프다
   pregPerSec: 1 / 900,      // 짝이 있고 컨디션 좋은 다 큰 암컷이 아기를 가질 확률 (평균 15분)
   pregSoloMul: 0.35,        // 저장한 정자로 수컷 없이 가질 때는 훨씬 드물게
   pregCond: 70,             // 이 컨디션 이상일 때만
@@ -367,7 +368,7 @@ export function saveGame(game) {
 // 앱을 꺼둔 시간만큼 천천히 배고파지고, 물이 더러워지고, 조금씩 자란다 (1분 단위로 계산)
 export function catchUpOffline(game, now = Date.now()) {
   const gone = Math.min(RATES.offlineCapSec, Math.max(0, (now - (game.lastTick || now)) / 1000));
-  const grown = [];
+  const grown = [], sick = [];
   for (let t = 0; t < gone; t += 60) {
     const step = Math.min(60, gone - t);
     game.dirt = Math.min(100, game.dirt + RATES.offlineDirtPerSec * step);
@@ -380,9 +381,13 @@ export function catchUpOffline(game, now = Date.now()) {
       if (f.preg != null) f.preg = Math.max(f.preg, Math.min(0.98, f.preg + step / RATES.pregSec * RATES.offlinePregMul));
     });
     (game.eggs || []).forEach(e => { e.t = Math.max(1, e.t - step); });
+    game.fish.forEach(f => {
+      if (f.sick || game.fish.filter(o => o.sick).length >= RATES.sickMax) return;
+      if (Math.random() < RATES.sickPerSec * RATES.offlineSickMul * (f.full < 25 || game.dirt > 70 ? 3 : 1) * step) { f.sick = true; sick.push(f); }
+    });
   }
   game.lastTick = now;
-  return { goneSec: gone, grown };
+  return { goneSec: gone, grown, sick };
 }
 
 export const todayKey = () => {

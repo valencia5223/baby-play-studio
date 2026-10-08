@@ -297,7 +297,7 @@ class BabySoundEngine {
     if (!this.ctx || this.voicePlayToken !== token) return;
     try {
       if (this.ctx.state === 'suspended') {
-        this.ctx.resume().catch(() => {});
+        this.ctx.resume().catch(() => { });
       }
       const source = this.ctx.createBufferSource();
       const gainNode = this.ctx.createGain();
@@ -335,7 +335,7 @@ class BabySoundEngine {
     if (!this.ctx) return;
     try {
       if (this.ctx.state === 'suspended') {
-        this.ctx.resume().catch(() => {});
+        this.ctx.resume().catch(() => { });
       }
       const now = (this.ctx.currentTime || 0) + 0.005;
       const osc = this.ctx.createOscillator();
@@ -1081,7 +1081,7 @@ function pickFeedRound() {
   const threeAnimals = shuffledAnimals.slice(0, 3);
   const target = threeAnimals[Math.floor(Math.random() * threeAnimals.length)];
   const food = ALL_FOOD_ITEMS[Math.floor(Math.random() * ALL_FOOD_ITEMS.length)];
-const choices = pickBearChoices(food);
+  const choices = pickBearChoices(food);
   return { threeAnimals, target, food, choices };
 }
 
@@ -1967,13 +1967,13 @@ export function getKoreanVoiceInfo() {
 
     // ❌ 여성 목소리는 점수 감점 (남성 음성이 없을 때만 최종 선택되도록 함)
     const isFemale = name.includes('sunhi') || name.includes('선희') ||
-                     name.includes('yuna') || name.includes('유나') ||
-                     name.includes('heami') || name.includes('혜미') ||
-                     name.includes('seoyeon') || name.includes('서연') ||
-                     name.includes('gaeun') || name.includes('가은') ||
-                     name.includes('female') || uri.includes('female') ||
-                     name.includes('여성') || name.includes('여자') ||
-                     (name.includes('siri') && (name.includes('2') || name.includes('voice 2') || name.includes('음성 2')));
+      name.includes('yuna') || name.includes('유나') ||
+      name.includes('heami') || name.includes('혜미') ||
+      name.includes('seoyeon') || name.includes('서연') ||
+      name.includes('gaeun') || name.includes('가은') ||
+      name.includes('female') || uri.includes('female') ||
+      name.includes('여성') || name.includes('여자') ||
+      (name.includes('siri') && (name.includes('2') || name.includes('voice 2') || name.includes('음성 2')));
 
     if (isFemale) {
       score -= 500;
@@ -2081,32 +2081,32 @@ function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
         {/* 꼬리지느러미 */}
         <path d="M 28 48 L 4 22 Q 18 48 4 74 Z" fill="#f97316" stroke="#ea580c" strokeWidth="3" />
         <path d="M 22 48 L 8 30 Q 18 48 8 66 Z" fill="#fb923c" opacity="0.8" />
-        
+
         {/* 몸통 (주황색 유선형) */}
         <ellipse cx="68" cy="48" rx="42" ry="26" fill="#f97316" stroke="#ea580c" strokeWidth="3.5" />
         <ellipse cx="68" cy="44" rx="38" ry="20" fill="url(#fishGrad)" opacity="0.4" />
-        
+
         {/* 흰색/검은 줄무늬 1 */}
         <path d="M 52 23 Q 46 48 52 73" stroke="#1e293b" strokeWidth="9" strokeLinecap="round" fill="none" />
         <path d="M 52 23 Q 46 48 52 73" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" fill="none" />
-        
+
         {/* 흰색/검은 줄무늬 2 */}
         <path d="M 78 24 Q 72 48 78 72" stroke="#1e293b" strokeWidth="8" strokeLinecap="round" fill="none" />
         <path d="M 78 24 Q 72 48 78 72" stroke="#ffffff" strokeWidth="5.5" strokeLinecap="round" fill="none" />
-        
+
         {/* 가슴지느러미 */}
         <ellipse cx="62" cy="54" rx="12" ry="8" fill="#fbbf24" stroke="#d97706" strokeWidth="2" transform="rotate(-15 62 54)" />
-        
+
         {/* 초롱초롱 눈 */}
         <circle cx="94" cy="42" r="8.5" fill="#ffffff" stroke="#ea580c" strokeWidth="2" />
         <circle cx="96" cy="42" r="5" fill="#0f172a" />
         <circle cx="98" cy="40" r="2" fill="#ffffff" />
         <circle cx="94" cy="44" r="1" fill="#ffffff" />
-        
+
         {/* 볼터치 & 입술 */}
         <circle cx="88" cy="54" r="5" fill="#f43f5e" opacity="0.75" />
         <path d="M 106 48 Q 112 50 106 54" stroke="#ea580c" strokeWidth="3" strokeLinecap="round" fill="none" />
-        
+
         <defs>
           <linearGradient id="fishGrad" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#ffedd5" />
@@ -2151,7 +2151,7 @@ function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
         {/* 돔형 문어 머리 */}
         <ellipse cx="65" cy="50" rx="42" ry="38" fill="#ec4899" stroke="#db2777" strokeWidth="4" />
         <ellipse cx="65" cy="44" rx="36" ry="30" fill="url(#octoGrad)" opacity="0.5" />
-        
+
         {/* 머리 위 물방울 리본/하이라이트 */}
         <ellipse cx="50" cy="24" rx="8" ry="4" fill="#ffffff" opacity="0.6" transform="rotate(-20 50 24)" />
 
@@ -2191,7 +2191,7 @@ function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
           <path d="M 38 65 Q 18 70 12 88" />
           <path d="M 42 74 Q 24 85 20 100" />
           <path d="M 48 82 Q 34 96 32 106" />
-          
+
           <path d="M 97 65 Q 117 70 123 88" />
           <path d="M 93 74 Q 111 85 115 100" />
           <path d="M 87 82 Q 101 96 103 106" />
@@ -2200,7 +2200,7 @@ function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
           <path d="M 38 65 Q 18 70 12 88" />
           <path d="M 42 74 Q 24 85 20 100" />
           <path d="M 48 82 Q 34 96 32 106" />
-          
+
           <path d="M 97 65 Q 117 70 123 88" />
           <path d="M 93 74 Q 111 85 115 100" />
           <path d="M 87 82 Q 101 96 103 106" />
@@ -2267,7 +2267,7 @@ function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
         {/* 에메랄드 육각 등껍질 */}
         <ellipse cx="58" cy="55" rx="38" ry="28" fill="#059669" stroke="#047857" strokeWidth="4" />
         <ellipse cx="58" cy="52" rx="32" ry="22" fill="#10b981" />
-        
+
         {/* 등껍질 육각형 패턴 디테일 */}
         <polygon points="58,40 68,46 68,58 58,64 48,58 48,46" fill="#047857" opacity="0.75" />
         <line x1="58" y1="40" x2="58" y2="28" stroke="#047857" strokeWidth="2.5" />
@@ -2299,7 +2299,7 @@ function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
 
         {/* 둥글고 푸근한 고래 몸통 */}
         <path d="M 24 62 Q 24 32 75 32 Q 128 32 135 62 Q 135 88 80 88 Q 38 88 24 62 Z" fill="#0284c7" stroke="#0369a1" strokeWidth="4" />
-        
+
         {/* 고래 하얀 배 & 복부 스트라이프 */}
         <path d="M 45 74 Q 80 92 125 72 Q 120 86 80 86 Q 52 86 45 74 Z" fill="#e0f2fe" />
         <path d="M 60 76 Q 80 84 100 80" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" fill="none" />
@@ -2312,7 +2312,7 @@ function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
         <circle cx="110" cy="54" r="8" fill="#ffffff" />
         <circle cx="112" cy="54" r="5" fill="#0f172a" /><circle cx="114" cy="52" r="2" fill="#ffffff" />
         <circle cx="102" cy="64" r="6" fill="#f43f5e" opacity="0.75" />
-        
+
         {/* 미소 */}
         <path d="M 118 62 Q 128 68 132 60" stroke="#082f49" strokeWidth="3" strokeLinecap="round" fill="none" />
       </svg>
@@ -2325,13 +2325,13 @@ function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
       <svg viewBox="0 0 145 100" width="100%" height="100%" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.35))', overflow: 'visible' }}>
         {/* 상어 등지느러미 */}
         <path d="M 60 38 L 74 10 Q 78 30 92 36 Z" fill="#2563eb" stroke="#1d4ed8" strokeWidth="3" />
-        
+
         {/* 상어 꼬리지느러미 */}
         <path d="M 28 52 L 4 24 Q 20 52 4 80 Z" fill="#2563eb" stroke="#1d4ed8" strokeWidth="3.5" />
 
         {/* 상어 몸체 (유선형 날렵함) */}
         <path d="M 24 52 Q 35 32 80 32 Q 130 32 140 52 Q 125 78 75 76 Q 38 76 24 52 Z" fill="#3b82f6" stroke="#1d4ed8" strokeWidth="3.5" />
-        
+
         {/* 하얀 배 */}
         <path d="M 38 60 Q 75 80 128 60 Q 115 74 75 74 Q 48 74 38 60 Z" fill="#eff6ff" />
 
@@ -2367,7 +2367,7 @@ function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
 
         {/* 오징어 매끄러운 외투막 몸통 */}
         <ellipse cx="57" cy="56" rx="28" ry="32" fill="#fb7185" stroke="#be123c" strokeWidth="3.5" />
-        
+
         {/* 10개 촉수 다리 (가운데 긴 사냥 촉수 2개) */}
         <g stroke="#be123c" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none">
           <path d="M 38 84 Q 28 102 32 116" />
@@ -2572,18 +2572,18 @@ function OceanCreatureSVG({ id, isTarget, isFound, isActive }) {
       <circle cx="106" cy="52" r="18" fill="#94a3b8" stroke="#475569" strokeWidth="3.5" />
       <circle cx="108" cy="48" r="5" fill="#ffffff" />
       <circle cx="109" cy="48" r="3.2" fill="#0f172a" /><circle cx="110" cy="47" r="1.2" fill="#ffffff" />
-      
+
       {/* 앙증맞은 주둥이와 코 */}
       <ellipse cx="116" cy="56" rx="7" ry="5" fill="#e2e8f0" stroke="#475569" strokeWidth="1.5" />
       <ellipse cx="117" cy="54" rx="3" ry="2" fill="#0f172a" />
-      
+
       {/* 수염 3쌍 */}
       <g stroke="#334155" strokeWidth="1.5" strokeLinecap="round">
         <line x1="118" y1="54" x2="128" y2="50" />
         <line x1="119" y1="56" x2="129" y2="57" />
         <line x1="118" y1="58" x2="127" y2="64" />
       </g>
-      
+
       {/* 핑크 볼터치 */}
       <circle cx="104" cy="58" r="4.5" fill="#f43f5e" opacity="0.75" />
     </svg>
@@ -3500,7 +3500,7 @@ export default function App() {
           </div>
           <div>
             <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#dc2626', margin: 0, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              유나의 짱구 발달 놀이터 🖍️
+              유나의 두뇌 발달 놀이터 🖍️
             </h1>
             <span style={{ fontSize: '0.78rem', fontWeight: 900, color: '#047857', background: '#d1fae5', padding: '1px 8px', borderRadius: '10px', display: 'inline-block', marginTop: '1px' }}>
               ✨ 짱구와 함께하는 신나는 놀이 세상!
