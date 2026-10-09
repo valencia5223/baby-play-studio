@@ -131,7 +131,7 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
       lines.push(VOICE.aquaSadFish(baby), VOICE.aquaRelease(baby), VOICE.aquaShiny(baby), VOICE.aquaSick(baby), VOICE.aquaHeal(baby));
     }
     const bt = breedOf(sp.id).type;
-    lines.push(VOICE.aquaPregnant(sp, bt), ...(bt === 'live' ? [VOICE.aquaBirth(sp)] : [VOICE.aquaEggs(sp), VOICE.aquaHatch(sp)]));
+    if (!sp.noBreed) lines.push(VOICE.aquaPregnant(sp, bt), ...(bt === 'live' ? [VOICE.aquaBirth(sp)] : [VOICE.aquaEggs(sp), VOICE.aquaHatch(sp)]));
     Object.keys(STAGE_NAMES).forEach(stage => lines.push(VOICE.aquaFishInfo(sp, stage)));
   });
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));

@@ -212,11 +212,34 @@ export const FISH_SPECIES = [
     speed: 1.1, growMul: 0.8, school: false, zone: 'mid',
     top: '#7c4a2d', belly: '#e7cfa8', fin: '#5b3520', tail: {}
   },
+  // 상어 가족 (모두 shape 'shark', 동요 속 색: 아기 노랑·엄마 분홍·아빠 파랑·할머니 주황·할아버지 초록).
+  // sex 는 정해진 성별, mate 는 짝이 되는 종류, babySp 는 태어나는 아기 종류, noBreed 는 아기를 낳지 않음.
+  // 엄마상어 + 아빠상어 → 아기상어. 아기상어는 다 커도 아기상어 (예전 저장의 'shark' 가 아기상어)
   {
-    // 상어: 노랗고 통통한 귀여운 아기 상어 (큰 눈, 발그레한 볼, 웃는 입)
-    id: 'shark', name: '상어', price: 460, len: 96, hRatio: 0.4, shape: 'shark', desc: '귀여운 노란 아기 상어', sea: true,
+    id: 'shark', name: '아기상어', price: 460, len: 96, hRatio: 0.4, shape: 'shark', desc: '노랗고 귀여운 아기상어', sea: true, noBreed: true,
     speed: 0.9, growMul: 0.75, school: false, zone: 'mid',
     top: '#facc15', belly: '#fef9c3', fin: '#f59e0b', tail: {}
+  },
+  {
+    id: 'sharkMom', name: '엄마상어', price: 520, len: 116, hRatio: 0.4, shape: 'shark', desc: '분홍색 엄마상어 (아빠상어와 아기상어를 낳아요)', sea: true,
+    sex: 'f', mate: 'sharkDad', babySp: 'shark',
+    speed: 0.85, growMul: 0.7, school: false, zone: 'mid',
+    top: '#f472b6', belly: '#fce7f3', fin: '#db2777', tail: {}
+  },
+  {
+    id: 'sharkDad', name: '아빠상어', price: 540, len: 124, hRatio: 0.4, shape: 'shark', desc: '파란색 힘센 아빠상어', sea: true, sex: 'm', noBreed: true,
+    speed: 0.85, growMul: 0.7, school: false, zone: 'mid',
+    top: '#3b82f6', belly: '#dbeafe', fin: '#1d4ed8', tail: {}
+  },
+  {
+    id: 'sharkGrandma', name: '할머니상어', price: 580, len: 112, hRatio: 0.4, shape: 'shark', desc: '주황색 다정한 할머니상어', sea: true, sex: 'f', noBreed: true,
+    speed: 0.65, growMul: 0.7, school: false, zone: 'mid',
+    top: '#fb923c', belly: '#ffedd5', fin: '#ea580c', tail: {}
+  },
+  {
+    id: 'sharkGrandpa', name: '할아버지상어', price: 600, len: 118, hRatio: 0.4, shape: 'shark', desc: '초록색 멋쟁이 할아버지상어', sea: true, sex: 'm', noBreed: true,
+    speed: 0.65, growMul: 0.7, school: false, zone: 'mid',
+    top: '#4ade80', belly: '#dcfce7', fin: '#16a34a', tail: {}
   },
   {
     id: 'whale', name: '고래', price: 500, len: 136, hRatio: 0.42, shape: 'whale', desc: '바다에서 제일 커요', sea: true,
@@ -277,7 +300,7 @@ const BREED = {
   seal: { type: 'live', storesSperm: false, brood: [1, 1] },
   dolphin: { type: 'live', storesSperm: false, brood: [1, 1] },
   otter: { type: 'live', storesSperm: false, brood: [1, 2] },
-  shark: { type: 'live', storesSperm: false, brood: [1, 2] },
+  sharkMom: { type: 'live', storesSperm: false, brood: [1, 2] },
   penguin: { type: 'egg', storesSperm: false, brood: [1, 2] },
   turtle: { type: 'egg', storesSperm: false, brood: [2, 4] }
 };
@@ -343,18 +366,19 @@ export const newFish = (sp) => ({
   uid: newUid(), sp, growth: 0, full: 80, happy: 80, bornAt: Date.now(),
   variant: sp === 'guppy' ? GUPPY_VARIANTS[Math.floor(Math.random() * GUPPY_VARIANTS.length)].id : undefined,
   shiny: rollShiny(),
-  sex: randomSex()
+  sex: (FISH_BY_ID[sp] && FISH_BY_ID[sp].sex) || randomSex()
 });
 
 // 짝짓기 조건: 다 큰 암컷 + 컨디션 좋음 + 쉬는 중 아님 + 아기들이 들어갈 자리.
 // 같은 종류의 다 큰 수컷이 어항에 있어야 한다 (난태생은 예전에 짝짓기했으면 수컷 없이도 가끔)
 export function mateStatus(game, f, now = Date.now()) {
-  if (f.sex !== 'f' || f.preg != null || f.sick || stageOf(f.growth) !== 'adult') return null;
+  const sp = FISH_BY_ID[f.sp];
+  if (!sp || sp.noBreed || f.sex !== 'f' || f.preg != null || f.sick || stageOf(f.growth) !== 'adult') return null;
   if ((f.restUntil || 0) > now) return null;
   if (conditionOf(f, game.dirt) < RATES.pregCond || isSad(f, game.dirt)) return null;
   const pending = game.fish.reduce((a, o) => a + (o.preg != null ? breedOf(o.sp).brood[1] : 0), 0) + (game.eggs || []).reduce((a, e) => a + e.n, 0);
   if (game.fish.length + pending + 2 > LIMITS.breed) return null;
-  const male = game.fish.some(o => o.sp === f.sp && o.sex === 'm' && stageOf(o.growth) === 'adult' && !o.sick);
+  const male = game.fish.some(o => o.sp === (sp.mate || f.sp) && o.sex === 'm' && stageOf(o.growth) === 'adult' && !o.sick);
   if (male) return 'pair';
   if (breedOf(f.sp).storesSperm && f.mated) return 'solo';
   return null;

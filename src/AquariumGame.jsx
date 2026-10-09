@@ -745,7 +745,7 @@ function drawCreature(ctx, sp, L, o = {}) {
 
   switch (sp.shape) {
     case 'shark': {
-      // 노랗고 통통한 귀여운 아기 상어: 동글동글 큰 머리, 큰 눈, 발그레한 볼, 활짝 웃는 입
+      // 상어 가족 (동글동글 큰 머리, 큰 눈, 발그레한 볼, 활짝 웃는 입). 색은 종류마다, 얼굴 꾸밈은 아래 fam 분기
       const w = Math.sin(ph) * H * 0.16;
       ctx.fillStyle = fin;
       // 동글동글한 초승달 꼬리
@@ -783,8 +783,8 @@ function drawCreature(ctx, sp, L, o = {}) {
         ctx.beginPath(); ctx.ellipse(L * 0.14, H * 0.42, L * 0.36, H * 0.3, 0, 0, TAU); ctx.fill();
       });
       sharkBody();
-      ctx.strokeStyle = 'rgba(180,83,9,0.35)'; ctx.lineWidth = Math.max(0.8, L * 0.012);
-      ctx.stroke();
+      ctx.strokeStyle = mixColor(fin, '#000000', 0.25); ctx.globalAlpha *= 0.45; ctx.lineWidth = Math.max(0.8, L * 0.012);
+      ctx.stroke(); ctx.globalAlpha /= 0.45;
       // 가슴지느러미 (파닥파닥)
       ctx.fillStyle = fin;
       ctx.save(); ctx.translate(L * 0.06, H * 0.32); ctx.rotate(0.5 + Math.sin(ph * 1.4) * 0.25);
@@ -802,7 +802,32 @@ function drawCreature(ctx, sp, L, o = {}) {
       ctx.fillStyle = 'rgba(251,113,133,0.45)';
       ctx.beginPath(); ctx.ellipse(L * 0.22, H * 0.06, L * 0.05, H * 0.08, 0, 0, TAU); ctx.fill();
       // 큰 눈
-      creatureEye(ctx, L * 0.32, -H * 0.18, er * 1.15, o);
+      const ex = L * 0.32, ey = -H * 0.18, eR = er * 1.15;
+      creatureEye(ctx, ex, ey, eR, o);
+      const fam = sp.id;
+      ctx.lineCap = 'round';
+      if (fam === 'sharkMom' && !o.sleep) {
+        // 엄마: 긴 속눈썹 세 가닥
+        ctx.strokeStyle = '#0f172a'; ctx.lineWidth = Math.max(0.8, eR * 0.28);
+        [-0.5, -0.1, 0.3].forEach(a => { const ang = -Math.PI / 2 + a; ctx.beginPath(); ctx.moveTo(ex + Math.cos(ang) * eR * 1.3, ey + Math.sin(ang) * eR * 1.3); ctx.lineTo(ex + Math.cos(ang) * eR * 2, ey + Math.sin(ang) * eR * 2); ctx.stroke(); });
+      }
+      if (fam === 'sharkDad' || fam === 'sharkGrandpa') {
+        // 아빠: 굵은 눈썹, 할아버지: 흰 덥수룩 눈썹
+        ctx.strokeStyle = fam === 'sharkDad' ? '#1e3a8a' : '#f8fafc'; ctx.lineWidth = Math.max(1, eR * (fam === 'sharkDad' ? 0.55 : 0.75));
+        ctx.beginPath(); ctx.moveTo(ex - eR * 1.4, ey - eR * 1.5); ctx.quadraticCurveTo(ex, ey - eR * 2.3, ex + eR * 1.4, ey - eR * 1.8); ctx.stroke();
+      }
+      if (fam === 'sharkGrandma' || fam === 'sharkGrandpa') {
+        // 할머니·할아버지: 동그란 안경과 안경다리
+        ctx.strokeStyle = fam === 'sharkGrandma' ? '#7c2d12' : '#14532d'; ctx.lineWidth = Math.max(0.9, eR * 0.3);
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        ctx.beginPath(); ctx.arc(ex + eR * 0.1, ey, eR * 1.75, 0, TAU); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ex - eR * 1.62, ey - eR * 0.3); ctx.lineTo(ex - eR * 4.2, ey - eR * 0.9); ctx.stroke();
+        if (fam === 'sharkGrandma') {
+          // 할머니: 진주 목걸이
+          ctx.fillStyle = '#fffbeb';
+          for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(L * (0.08 - i * 0.05), H * (0.5 - i * 0.03), Math.max(1, L * 0.018), 0, TAU); ctx.fill(); }
+        }
+      }
       break;
     }
     case 'whale': {
@@ -2199,8 +2224,8 @@ export default function AquariumGame({ audio, speak }) {
         if (f.sp === 'puffer') { r.puffT = 2.5; audio.playFreq(260, 'sine', 0.25, 0.4); setTimeout(() => audio.playFreq(520, 'sine', 0.2, 0.35), 120); }
         if (f.name) s.pops.push({ x: r.x, y: r.y - fishLen(f) * 0.6 - 10, text: `${sp.name} ${f.name}`, life: 1.6, vy: -22, color: '#fef08a' });
         const status = f.sick ? VOICE.aquaSick(sp) : isSad(f, game.dirt) ? VOICE.aquaSadFish(sp) : null;
-        // 상어: 아프거나 슬프지 않으면 '아기상어' 노래 첫 소절을 짧게 (음성 안내 대신)
-        if (f.sp === 'shark' && !status && s.t - (s.lastSharkSong ?? -99) > 4) { s.lastSharkSong = s.t; playSharkTune(f); return; }
+        // 상어 가족: 아프거나 슬프지 않으면 '아기상어' 노래 한 소절 (음성 안내 대신)
+        if (FISH_BY_ID[f.sp].shape === 'shark' && !status && s.t - (s.lastSharkSong ?? -99) > 8) { s.lastSharkSong = s.t; playSharkTune(f); return; }
         if (f.name) {
           // 이름을 지어 준 물고기는 먼저 이름으로 인사하고(기기 음성), 아프거나 슬프면 이어서 알려 준다.
           // 기기 음성은 iOS 에서 손가락을 뗄 때(pointerup)만 허락되므로 onUp 에서 말한다
@@ -2295,7 +2320,7 @@ export default function AquariumGame({ audio, speak }) {
       f.restUntil = Date.now() + RATES.pregRestSec * 1000;
       const x = r ? r.x : s.W / 2, y = r ? r.y : s.H / 2;
       if (br.type === 'live') {
-        const got = spawnFry(f.sp, n, x, y, f.variant, family);
+        const got = spawnFry(sp.babySp || f.sp, n, x, y, f.variant, family);   // 엄마상어 → 아기상어
         if (got) { addPoints(REWARDS.birth, x, y - 30); audio.playFanfare(); say('birth', VOICE.aquaBirth(sp)); showToast(`🍼 ${f.name || sp.name} 아기 ${got}마리가 태어났어요!`); }
       } else {
         game.eggs.push({ uid: newUid(), sp: f.sp, x: clamp(x / s.W, 0.05, 0.95), n, t: RATES.eggHatchSec, variant: f.variant, family });
@@ -2350,7 +2375,7 @@ export default function AquariumGame({ audio, speak }) {
             f.preg = 0;
             if (ms === 'pair') {
               // 아빠: 어항에 있는 같은 종류의 다 큰 수컷 중 하나 (난태생은 기억해 두었다가 혼자일 때도 아빠로)
-              const males = game.fish.filter(o => o.sp === f.sp && o.sex === 'm' && stageOf(o.growth) === 'adult' && !o.sick);
+              const males = game.fish.filter(o => o.sp === (sp.mate || f.sp) && o.sex === 'm' && stageOf(o.growth) === 'adult' && !o.sick);
               f.lastMate = males[Math.floor(Math.random() * males.length)].uid;
               f.mated = true;
             }
@@ -2392,23 +2417,26 @@ export default function AquariumGame({ audio, speak }) {
       else if (game.dirt > 65) say('dirty', VOICE.aquaDirty(), 90);
     };
 
-    // ── 상어 노래 (약 3초) ──
-    // 저작권이 있는 음원·편곡은 쓰지 않고, 옛날부터 불러 온 전래 동요 'Baby Shark' 의 첫 소절 멜로디를
-    // 소리 엔진으로 직접 연주한다. 앞의 '둔둔 둔둔' 은 같은 낮은 음을 점점 빠르게 반복하는 것으로 만들었다
+    // ── 상어 노래 (약 7초) ──
+    // 저작권이 있는 음원·편곡은 쓰지 않고, 옛날부터 불러 온 전래 동요 'Baby Shark' 의 한 소절 멜로디를
+    // 소리 엔진으로 직접 연주한다: '아기 상어 뚜 루루 뚜루' 세 번 + '아기 상어!'.
+    // 아빠·할아버지상어는 한 옥타브 낮게, 할머니·할아버지상어는 조금 느리게
     const playSharkTune = (shark) => {
       if (audio.stopVoice) audio.stopVoice();
-      const E2 = 82.41, D4 = 293.66, E4 = 329.63, G4 = 392;
-      const tune = [
-        [0, E2, 0.2], [0.16, E2, 0.2], [0.62, E2, 0.2], [0.78, E2, 0.2], [1.1, E2, 0.15], [1.22, E2, 0.15],   // 둔둔 둔둔 두둔
-        [1.55, D4, 0.2, 1], [1.8, E4, 0.2, 1], [2.05, G4, 0.28, 1],                                             // 아기 상어
-        [2.38, G4, 0.12, 1], [2.56, G4, 0.12, 1], [2.74, G4, 0.1, 1], [2.86, G4, 0.12, 1], [3.04, G4, 0.1, 1], [3.16, G4, 0.2, 1]   // 뚜 루루 뚜루
-      ];
-      tune.forEach(([t, f, d, mel]) => audio.later(() => audio.playFreq(f, 'triangle', d, mel ? 0.32 : 0.55), t * 1000));
+      const D4 = 293.66, E4 = 329.63, Fs4 = 369.99, G4 = 392;
+      const low = shark.sp === 'sharkDad' || shark.sp === 'sharkGrandpa';
+      const slow = shark.sp === 'sharkGrandma' || shark.sp === 'sharkGrandpa' ? 1.18 : 1;
+      const pitch = low ? 0.5 : 1;
+      const phrase = [[0, D4, 0.2], [0.25, E4, 0.2], [0.5, G4, 0.28], [0.83, G4, 0.12], [1.01, G4, 0.12], [1.19, G4, 0.1], [1.31, G4, 0.12], [1.49, G4, 0.1], [1.61, G4, 0.2]];
+      const tune = [];
+      for (let k = 0; k < 3; k++) phrase.forEach(([t, f, d]) => tune.push([k * 1.95 + t, f, d]));
+      tune.push([5.85, G4, 0.2], [6.1, G4, 0.2], [6.35, Fs4, 0.5]);   // 아기 상어!
+      tune.forEach(([t, f, d]) => audio.later(() => audio.playFreq(f * pitch, 'triangle', d * slow, low ? 0.45 : 0.32), t * slow * 1000));
       // 노래하는 동안 상어 위로 음표가 퐁퐁
-      for (let i = 0; i < 6; i++) audio.later(() => {
+      for (let i = 0; i < 14; i++) audio.later(() => {
         const rr = s.rt[shark.uid];
-        if (rr) s.pops.push({ x: rr.x + (Math.random() - 0.5) * 40, y: rr.y - 30, text: '🎵', life: 1.2, vy: -40 });
-      }, 1550 + i * 300);
+        if (rr) s.pops.push({ x: rr.x + (Math.random() - 0.5) * 40, y: rr.y - 30, text: i % 3 ? '🎵' : '🎶', life: 1.2, vy: -40 });
+      }, i * 480 * slow);
     };
 
     // ── 물보라: 돌고래가 수면을 뚫고 나가거나 떨어질 때 ──
