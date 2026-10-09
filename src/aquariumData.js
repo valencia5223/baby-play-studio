@@ -140,6 +140,12 @@ export const FISH_SPECIES = [
     growLines: { juvenile: '소라게가 쑥쑥 자라서 더 큰 집을 찾아요!', adult: '소라게가 다 커서 제일 큰 집을 찾아요!' }
   },
   {
+    // 가재: 바닥을 기어 다니다 놀라면 꼬리를 배 밑으로 말아 뒤로 휙 튕겨 도망(tailFlip). 누르면 집게를 번쩍
+    id: 'crayfish', name: '가재', price: 175, len: 56, hRatio: 0.36, shape: 'crayfish', desc: '놀라면 뒤로 휙!', sea: true, crawl: true, swim: true, tailFlip: true,
+    speed: 0.4, growMul: 1, school: false, zone: 'bottom',
+    top: '#b91c1c', belly: '#f87171', fin: '#991b1b', accent: '#fecaca', tail: {}
+  },
+  {
     id: 'starfish', name: '불가사리', price: 125, len: 46, hRatio: 1, shape: 'starfish', desc: '바닥을 느릿느릿', sea: true, crawl: true, upright: true,
     speed: 0.2, growMul: 1, school: false, zone: 'bottom',
     top: '#f59e0b', belly: '#fcd34d', spots: '#fef3c7', tail: {}
@@ -199,6 +205,12 @@ export const FISH_SPECIES = [
     id: 'dolphin', name: '돌고래', price: 420, len: 110, hRatio: 0.3, shape: 'dolphin', desc: '수면 위로 점프!', sea: true, jumper: true,
     speed: 1.3, growMul: 0.75, school: false, zone: 'mid',
     top: '#64748b', belly: '#e2e8f0', fin: '#475569', tail: {}
+  },
+  {
+    // 수달: 물속을 쌩쌩 헤엄치다가, 수면에 배를 하늘로 하고 둥둥 떠서 가슴 위 조개를 톡톡 깨 먹는다(otter)
+    id: 'otter', name: '수달', price: 380, len: 88, hRatio: 0.3, shape: 'otter', desc: '누워서 조개를 톡톡', sea: true, otter: true,
+    speed: 1.1, growMul: 0.8, school: false, zone: 'mid',
+    top: '#7c4a2d', belly: '#e7cfa8', fin: '#5b3520', tail: {}
   },
   {
     // 상어: 노랗고 통통한 귀여운 아기 상어 (큰 눈, 발그레한 볼, 웃는 입)
@@ -264,6 +276,7 @@ const BREED = {
   whale: { type: 'live', storesSperm: false, brood: [1, 1] },
   seal: { type: 'live', storesSperm: false, brood: [1, 1] },
   dolphin: { type: 'live', storesSperm: false, brood: [1, 1] },
+  otter: { type: 'live', storesSperm: false, brood: [1, 2] },
   shark: { type: 'live', storesSperm: false, brood: [1, 2] },
   penguin: { type: 'egg', storesSperm: false, brood: [1, 2] },
   turtle: { type: 'egg', storesSperm: false, brood: [2, 4] }
