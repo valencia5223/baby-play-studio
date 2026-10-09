@@ -132,6 +132,14 @@ export const FISH_SPECIES = [
     top: '#dc2626', belly: '#f87171', fin: '#b91c1c', tail: {}
   },
   {
+    // 소라게: 소라 껍데기를 지고 바닥을 기어 다니며 자주 멈춘다. 놀라면 껍데기 속으로 쏙(hermit),
+    // 자라서 단계가 바뀌면 더 큰 빈 껍데기를 찾아가 이사한다
+    id: 'hermit', name: '소라게', price: 140, len: 44, hRatio: 0.8, shape: 'hermit', desc: '껍데기 집을 지고 다녀요', sea: true, crawl: true, hermit: true,
+    speed: 0.35, growMul: 1, school: false, zone: 'bottom',
+    top: '#ea580c', belly: '#fdba74', fin: '#c2410c', accent: '#f3e3cf', spots: '#b45309', tail: {},
+    growLines: { juvenile: '소라게가 쑥쑥 자라서 더 큰 집을 찾아요!', adult: '소라게가 다 커서 제일 큰 집을 찾아요!' }
+  },
+  {
     id: 'starfish', name: '불가사리', price: 125, len: 46, hRatio: 1, shape: 'starfish', desc: '바닥을 느릿느릿', sea: true, crawl: true, upright: true,
     speed: 0.2, growMul: 1, school: false, zone: 'bottom',
     top: '#f59e0b', belly: '#fcd34d', spots: '#fef3c7', tail: {}
@@ -140,6 +148,15 @@ export const FISH_SPECIES = [
     id: 'shrimp', name: '새우', price: 125, len: 44, hRatio: 0.5, shape: 'shrimp', desc: '톡톡 튀는 새우', sea: true,
     speed: 0.7, growMul: 1.1, school: false, zone: 'bottom',
     top: '#f97316', belly: '#fdba74', fin: 'rgba(251,146,60,0.75)', tail: {}
+  },
+  {
+    // 개구리: 알에서 올챙이로 태어나 뒷다리 → 앞다리가 나오고 꼬리가 줄어 개구리가 된다 (frog).
+    // 다 크면 뒷다리로 쭉쭉 밀며 헤엄치고, 가끔 수면에 둥둥 떠서 쉰다
+    id: 'frog', name: '개구리', babyName: '올챙이', price: 150, len: 46, hRatio: 0.6, shape: 'frog', desc: '올챙이가 개구리로 변신!', sea: true, frog: true,
+    speed: 0.6, growMul: 1.1, school: false, zone: 'mid',
+    top: '#4d7c0f', belly: '#ecfccb', fin: '#3f6212', spots: '#365314', accent: '#a3e635', tail: {},
+    stageNames: { fry: '올챙이', juvenile: '다리가 난 올챙이', adult: '개구리' },
+    growLines: { juvenile: '와아! 올챙이 뒷다리가 쏙 나왔어요!', adult: '와아! 올챙이가 개구리가 됐어요! 개굴개굴!' }
   },
   {
     id: 'seahorse', name: '해마', price: 165, len: 46, hRatio: 1.5, shape: 'seahorse', desc: '꼬리를 말고 둥실둥실', sea: true, upright: true,
@@ -175,6 +192,12 @@ export const FISH_SPECIES = [
     id: 'seal', name: '물개', price: 335, len: 86, hRatio: 0.36, shape: 'seal', desc: '장난꾸러기 물개', sea: true,
     speed: 1, growMul: 0.8, school: false, zone: 'mid',
     top: '#78716c', belly: '#d6d3d1', fin: '#57534e', spots: '#57534e', tail: {}
+  },
+  {
+    // 돌고래: 빠르게 헤엄치다 가끔 깊이 내려갔다가 수면 위로 점프해 물보라를 튀긴다(jumper). 누르면 끽끽
+    id: 'dolphin', name: '돌고래', price: 420, len: 110, hRatio: 0.3, shape: 'dolphin', desc: '수면 위로 점프!', sea: true, jumper: true,
+    speed: 1.3, growMul: 0.75, school: false, zone: 'mid',
+    top: '#64748b', belly: '#e2e8f0', fin: '#475569', tail: {}
   },
   {
     id: 'shark', name: '상어', price: 460, len: 104, hRatio: 0.28, shape: 'shark', desc: '씩씩한 바다 대장', sea: true,
@@ -234,6 +257,7 @@ const BREED = {
   // 바다 친구: 고래·물개·상어는 새끼를 적게 낳고, 펭귄·거북이는 알을 조금 낳는다
   whale: { type: 'live', storesSperm: false, brood: [1, 1] },
   seal: { type: 'live', storesSperm: false, brood: [1, 1] },
+  dolphin: { type: 'live', storesSperm: false, brood: [1, 1] },
   shark: { type: 'live', storesSperm: false, brood: [1, 2] },
   penguin: { type: 'egg', storesSperm: false, brood: [1, 2] },
   turtle: { type: 'egg', storesSperm: false, brood: [2, 4] }

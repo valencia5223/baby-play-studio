@@ -75,9 +75,11 @@ export const VOICE = {
   aquaClean: () => '반짝반짝 깨끗해졌어요!',
   aquaPearl: () => '반짝반짝 조개를 찾았어요!',
   aquaNeedMore: () => '조개가 조금 더 필요해요!',
-  aquaGrow: (species, stage) => `와아! ${attachJosa(species.name, '이/가')} ${stage === 'juvenile' ? '어린 물고기로' : '다 큰 물고기로'} 자랐어요!`,
-  aquaNewFish: (species) => `새 친구 ${attachJosa(species.name, '이/가')} 왔어요! 잘 키워 주세요!`,
-  aquaFishInfo: (species, stage) => `${attachJosa(species.name, '이에요/예요')} 지금은 ${attachJosa(STAGE_NAMES[stage], '이에요/예요')}`,
+  aquaGrow: (species, stage) => (species.growLines && species.growLines[stage]) || `와아! ${attachJosa(species.name, '이/가')} ${stage === 'juvenile' ? '어린 물고기로' : '다 큰 물고기로'} 자랐어요!`,
+  aquaNewFish: (species) => (species.babyName
+    ? `새 친구 ${attachJosa(species.babyName, '이/가')} 왔어요! 잘 키우면 ${attachJosa(species.name, '이/가')} 돼요!`
+    : `새 친구 ${attachJosa(species.name, '이/가')} 왔어요! 잘 키워 주세요!`),
+  aquaFishInfo: (species, stage) => `${attachJosa(species.name, '이에요/예요')} 지금은 ${attachJosa((species.stageNames || STAGE_NAMES)[stage], '이에요/예요')}`,
   aquaShiny: (thing) => `와아! 반짝반짝 특별한 색깔의 ${attachJosa(thing.name, '이/가')} 왔어요!`,
   // 직접 지은 이름은 미리 만든 음성이 없어 기기 음성(TTS)으로 읽는다
   aquaHello: (species, name) => `안녕! 나는 ${species.name} ${attachJosa(name, '이에요/예요')}`,
@@ -87,7 +89,9 @@ export const VOICE = {
   aquaPregnant: (species, type) => `${species.name} 배 속에 ${type === 'live' ? '아기가' : '알이'} 생겼어요! 배가 점점 불러질 거예요!`,
   aquaBirth: (species) => `와아! ${attachJosa(species.name, '이/가')} 아기를 낳았어요!`,
   aquaEggs: (species) => `${attachJosa(species.name, '이/가')} 알을 낳았어요! 곧 아기가 나와요!`,
-  aquaHatch: (species) => `알에서 아기 ${attachJosa(species.name, '이/가')} 태어났어요!`,
+  aquaHatch: (species) => (species.babyName ? `알에서 ${attachJosa(species.babyName, '이/가')} 태어났어요!` : `알에서 아기 ${attachJosa(species.name, '이/가')} 태어났어요!`),
+  aquaHermitMove: () => '소라게가 더 큰 집으로 이사했어요!',
+  aquaDolphinJump: () => '와아! 돌고래가 점프했어요!',
   aquaSick: (species) => `${attachJosa(species.name, '이/가')} 아파요! 밴드를 붙여 주세요!`,
   aquaHeal: (species) => `${attachJosa(species.name, '이/가')} 다 나았어요! 고마워요!`,
   aquaNotSick: () => '이 친구는 안 아파요! 아픈 친구를 찾아 주세요!',
@@ -118,7 +122,7 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   puzzles.forEach(t => lines.push(VOICE.puzzleStart(t), VOICE.puzzleDone(t)));
   oceanCreatures.forEach(c => lines.push(VOICE.itemSound(c)));
   lines.push(VOICE.aquaWelcome(), VOICE.aquaWelcomeBack(), VOICE.aquaHungry(), VOICE.aquaDirty(), VOICE.aquaFeed(),
-    VOICE.aquaWaterChange(), VOICE.aquaClean(), VOICE.aquaPearl(), VOICE.aquaNeedMore(), VOICE.aquaNotSick(), VOICE.aquaHealMode(), VOICE.aquaNight(), VOICE.aquaSleepTap());
+    VOICE.aquaWaterChange(), VOICE.aquaClean(), VOICE.aquaPearl(), VOICE.aquaNeedMore(), VOICE.aquaNotSick(), VOICE.aquaHealMode(), VOICE.aquaNight(), VOICE.aquaSleepTap(), VOICE.aquaHermitMove(), VOICE.aquaDolphinJump());
   FISH_SPECIES.forEach(sp => {
     lines.push(VOICE.aquaGrow(sp, 'juvenile'), VOICE.aquaGrow(sp, 'adult'), VOICE.aquaNewFish(sp), VOICE.aquaSadFish(sp), VOICE.aquaRelease(sp), VOICE.aquaShiny(sp), VOICE.aquaSick(sp), VOICE.aquaHeal(sp));
     const bt = breedOf(sp.id).type;
