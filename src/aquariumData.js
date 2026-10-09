@@ -119,7 +119,7 @@ export const FISH_SPECIES = [
   },
   // ── 바다 친구 ── 물고기와 똑같이 밥 먹고·아프고·이름 짓고·자란다 (sea: 상점에서 바다 친구로 묶어 보여줌)
   //  shape 가 바다 친구 이름이면 drawFish 가 drawCreature 로 따로 그린다
-  //  crawl: 바닥을 기어 다님(가라앉은 밥만 먹음) / upright: 몸을 기울이지 않음
+  //  crawl: 바닥을 기어 다님(가라앉은 밥만 먹음) / swim: 기다가도 배고프면 헤엄쳐 올라가 밥을 먹음(게) / upright: 몸을 기울이지 않음
   {
     id: 'clownfish', name: '흰동가리', price: 125, len: 44, hRatio: 0.48, shape: 'normal', desc: '주황 줄무늬 니모', sea: true,
     speed: 0.85, growMul: 1, school: false, zone: 'mid',
@@ -127,7 +127,7 @@ export const FISH_SPECIES = [
     tail: { color: 'rgba(234,88,12,0.85)', len: 0.3, spread: 0.4 }, fin: 'rgba(249,115,22,0.8)'
   },
   {
-    id: 'crab', name: '게', price: 125, len: 50, hRatio: 0.62, shape: 'crab', desc: '옆으로 엉금엉금', sea: true, crawl: true,
+    id: 'crab', name: '게', price: 125, len: 50, hRatio: 0.62, shape: 'crab', desc: '옆으로 엉금엉금', sea: true, crawl: true, swim: true,
     speed: 0.45, growMul: 1, school: false, zone: 'bottom',
     top: '#dc2626', belly: '#f87171', fin: '#b91c1c', tail: {}
   },

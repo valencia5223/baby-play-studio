@@ -971,7 +971,8 @@ function drawCreature(ctx, sp, L, o = {}) {
       [-1, 1].forEach(side => {
         for (let i = 0; i < 3; i++) {
           const bx = side * L * (0.16 + i * 0.07), byy = H * 0.12;
-          const lift = Math.sin(ph * 1.2 + i * 2 + (side > 0 ? 0 : 1.5)) * H * 0.06;
+          // 헤엄칠 때는 다리를 노처럼 빠르게 젓는다
+          const lift = Math.sin(ph * (o.swim ? 3.2 : 1.2) + i * 2 + (side > 0 ? 0 : 1.5)) * H * (o.swim ? 0.16 : 0.06);
           ctx.beginPath(); ctx.moveTo(bx * 0.8, byy); ctx.lineTo(bx + side * L * 0.12, byy + H * 0.04 - lift); ctx.lineTo(bx + side * L * 0.18, byy + H * 0.36 - lift * 0.5); ctx.stroke();
         }
       });
@@ -2094,18 +2095,21 @@ export default function AquariumGame({ audio, speak }) {
         const hunger = clamp((100 - f.full) / 100, 0, 1);
         const reach = 220 + hunger * 1000;
         let target = null, td = reach * reach;
+        // 게는 기어 다니다가도 배가 고프면 뒷다리를 노처럼 저어 헤엄쳐 올라가 밥을 먹는다
+        const walker = sp.crawl && !(sp.swim && (hunger > 0.25 || r.swimming));
         s.food.forEach(fd => {
           if (fd.state === 'float' && hunger < 0.12) return;   // 배고픈 물고기는 수면 밥도 찾아간다
-          if (sp.crawl && !(fd.state === 'ground' || fd.y > bottom - 50)) return;
+          if (walker && !(fd.state === 'ground' || fd.y > bottom - 50)) return;
           if (sp.bottomFeeder && hunger < 0.75 && fd.y < bottom - span * 0.45) return;   // 바닥 물고기는 가라앉는 밥을 기다린다
-          const dx = fd.x - r.x, dy = sp.crawl ? 0 : fd.y - r.y, d2 = dx * dx + dy * dy;
+          const dx = fd.x - r.x, dy = walker ? 0 : fd.y - r.y, d2 = dx * dx + dy * dy;
           if (d2 < td) { td = d2; target = fd; }
         });
         // 배고프면 슬퍼도 밥 앞에서는 힘을 낸다
         let maxSp = 70 * sp.speed * (1 + r.panic * 1.6) * (sad && !(target && hunger > 0.5) ? 0.5 : 1) * (0.7 + 0.3 * sizeScale(f.growth)) * s.k;
         const chasing = !!target && f.full < 98 && (hunger > 0.12 || td < 110 * 110);
         if (chasing) {
-          const dx = target.x - r.x, dy = sp.crawl ? 0 : target.y - r.y, d = Math.sqrt(td) || 1;
+          const dx = target.x - r.x, dy = walker ? 0 : target.y - r.y, d = Math.sqrt(td) || 1;
+          if (!walker && sp.crawl && target.y < r.y - 20 * s.k) r.swimming = true;
           const pull = 360 + hunger * 1100;
           fx += dx / d * pull; fy += dy / d * pull;
           maxSp *= 1.3 + hunger * 1.9;
@@ -2273,7 +2277,8 @@ export default function AquariumGame({ audio, speak }) {
         const resting = sp.lieDown && !target && !following;
         if (resting) { fx *= 0.2; fy = fy * 0.2 + (bottom - 2 - r.y) * 3; }   // 바닥으로는 확실히 내려앉게
 
-        if (sp.crawl) { fy = 0; r.vy = 0; }   // 기는 친구는 좌우로만 움직인다
+        if (sp.crawl && r.swimming && !chasing) { fx *= 0.3; fy = 600; maxSp = Math.max(maxSp, 70 * s.k); }   // 다 먹으면 스르르 가라앉아 다시 바닥으로
+        else if (sp.crawl && !r.swimming) { fy = 0; r.vy = 0; }   // 기는 친구는 좌우로만 움직인다
         r.vx += fx * dt; r.vy += fy * dt;
         if (resting || asleep) { r.vx *= 1 - Math.min(1, dt * 1.2); r.vy *= 1 - Math.min(1, dt * 1.2); }
         const spd = Math.hypot(r.vx, r.vy) || 1, minSp = resting || asleep || noMin ? 0 : 14 * s.k;
@@ -2286,7 +2291,11 @@ export default function AquariumGame({ audio, speak }) {
         // 밥을 쫓을 때는 수면·바닥 가까이까지 갈 수 있다
         const yLo = chasing ? Math.min(top, target.y + 2) : top, yHi = chasing ? Math.max(bottom, target.y - 3) : bottom;
         r.x = clamp(r.x + r.vx * dt, 6, s.W - 6); r.y = clamp(r.y + r.vy * dt, yLo, yHi);
-        if (sp.crawl) r.y = groundY(r.x) - L * sp.hRatio * 0.42;   // 모래 위에 발을 딛고
+        if (sp.crawl) {
+          const gy = groundY(r.x) - L * sp.hRatio * 0.42;   // 모래 위에 발을 딛고
+          if (r.swimming && !chasing && r.y >= Math.min(gy, yHi) - 1) r.swimming = false;
+          if (!r.swimming) r.y = gy; else r.y = Math.min(r.y, gy);
+        }
         if (r.anchor) {
           r.anchorEase = Math.hypot(r.anchor.x - r.x, r.anchor.y - r.y) > 4 * s.k;
           const ka = r.anchor.hard && !r.anchorEase ? 1 : Math.min(1, dt * 4);
@@ -2579,7 +2588,7 @@ export default function AquariumGame({ audio, speak }) {
           ctx.translate(r.x, r.y); ctx.scale(r.dir, 1); ctx.rotate(ang);
           ctx.globalAlpha = a0 * (1 - r.glassK);
         }
-        if (r.glassK < 0.98) drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0, belly, sleep: !!r.asleep, gloss: s.fx === 1, lit: s.lampNow, gravidSpot: breedOf(f.sp).type === 'live' });
+        if (r.glassK < 0.98) drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0, belly, sleep: !!r.asleep, swim: !!r.swimming, gloss: s.fx === 1, lit: s.lampNow, gravidSpot: breedOf(f.sp).type === 'live' });
         ctx.restore();
         // 아픈 물고기 위에는 상단 치료 버튼과 똑같은 모양(분홍 동그라미 + 반창고)을 띄운다 (다른 물고기에 가리지 않게 맨 나중에)
         if (f.sick) badges.push(() => {
