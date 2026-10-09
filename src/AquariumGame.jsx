@@ -2199,6 +2199,8 @@ export default function AquariumGame({ audio, speak }) {
         if (f.sp === 'puffer') { r.puffT = 2.5; audio.playFreq(260, 'sine', 0.25, 0.4); setTimeout(() => audio.playFreq(520, 'sine', 0.2, 0.35), 120); }
         if (f.name) s.pops.push({ x: r.x, y: r.y - fishLen(f) * 0.6 - 10, text: `${sp.name} ${f.name}`, life: 1.6, vy: -22, color: '#fef08a' });
         const status = f.sick ? VOICE.aquaSick(sp) : isSad(f, game.dirt) ? VOICE.aquaSadFish(sp) : null;
+        // 상어: 아프거나 슬프지 않으면 '아기상어' 노래 첫 소절을 짧게 (음성 안내 대신)
+        if (f.sp === 'shark' && !status && s.t - (s.lastSharkSong ?? -99) > 4) { s.lastSharkSong = s.t; playSharkTune(f); return; }
         if (f.name) {
           // 이름을 지어 준 물고기는 먼저 이름으로 인사하고(기기 음성), 아프거나 슬프면 이어서 알려 준다.
           // 기기 음성은 iOS 에서 손가락을 뗄 때(pointerup)만 허락되므로 onUp 에서 말한다
@@ -2388,6 +2390,25 @@ export default function AquariumGame({ audio, speak }) {
       const avgFull = game.fish.length ? game.fish.reduce((a, f) => a + f.full, 0) / game.fish.length : 100;
       if (avgFull < 30) say('hungry', VOICE.aquaHungry(), 90);
       else if (game.dirt > 65) say('dirty', VOICE.aquaDirty(), 90);
+    };
+
+    // ── 상어 노래 (약 3초) ──
+    // 저작권이 있는 음원·편곡은 쓰지 않고, 옛날부터 불러 온 전래 동요 'Baby Shark' 의 첫 소절 멜로디를
+    // 소리 엔진으로 직접 연주한다. 앞의 '둔둔 둔둔' 은 같은 낮은 음을 점점 빠르게 반복하는 것으로 만들었다
+    const playSharkTune = (shark) => {
+      if (audio.stopVoice) audio.stopVoice();
+      const E2 = 82.41, D4 = 293.66, E4 = 329.63, G4 = 392;
+      const tune = [
+        [0, E2, 0.2], [0.16, E2, 0.2], [0.62, E2, 0.2], [0.78, E2, 0.2], [1.1, E2, 0.15], [1.22, E2, 0.15],   // 둔둔 둔둔 두둔
+        [1.55, D4, 0.2, 1], [1.8, E4, 0.2, 1], [2.05, G4, 0.28, 1],                                             // 아기 상어
+        [2.38, G4, 0.12, 1], [2.56, G4, 0.12, 1], [2.74, G4, 0.1, 1], [2.86, G4, 0.12, 1], [3.04, G4, 0.1, 1], [3.16, G4, 0.2, 1]   // 뚜 루루 뚜루
+      ];
+      tune.forEach(([t, f, d, mel]) => audio.later(() => audio.playFreq(f, 'triangle', d, mel ? 0.32 : 0.55), t * 1000));
+      // 노래하는 동안 상어 위로 음표가 퐁퐁
+      for (let i = 0; i < 6; i++) audio.later(() => {
+        const rr = s.rt[shark.uid];
+        if (rr) s.pops.push({ x: rr.x + (Math.random() - 0.5) * 40, y: rr.y - 30, text: '🎵', life: 1.2, vy: -40 });
+      }, 1550 + i * 300);
     };
 
     // ── 물보라: 돌고래가 수면을 뚫고 나가거나 떨어질 때 ──
