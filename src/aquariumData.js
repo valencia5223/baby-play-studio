@@ -152,10 +152,11 @@ export const FISH_SPECIES = [
   {
     // 개구리: 알에서 올챙이로 태어나 뒷다리 → 앞다리가 나오고 꼬리가 줄어 개구리가 된다 (frog).
     // 다 크면 뒷다리로 쭉쭉 밀며 헤엄치고, 가끔 수면에 둥둥 떠서 쉰다
-    id: 'frog', name: '개구리', babyName: '올챙이', price: 150, len: 46, hRatio: 0.6, shape: 'frog', desc: '올챙이가 개구리로 변신!', sea: true, frog: true,
+    id: 'frog', name: '개구리', babyName: '올챙이', price: 150, len: 46, hRatio: 0.6, shape: 'frog', desc: '자라면 개구리로 변신!', sea: true, frog: true,
     speed: 0.6, growMul: 1.1, school: false, zone: 'mid',
     top: '#4d7c0f', belly: '#ecfccb', fin: '#3f6212', spots: '#365314', accent: '#a3e635', tail: {},
     stageNames: { fry: '올챙이', juvenile: '다리가 난 올챙이', adult: '개구리' },
+    infoLines: { fry: '올챙이예요! 쑥쑥 자라면 개구리가 돼요!', juvenile: '다리가 난 올챙이예요! 곧 개구리가 돼요!', adult: '개구리예요! 개굴개굴!' },
     growLines: { juvenile: '와아! 올챙이 뒷다리가 쏙 나왔어요!', adult: '와아! 올챙이가 개구리가 됐어요! 개굴개굴!' }
   },
   {
@@ -200,9 +201,10 @@ export const FISH_SPECIES = [
     top: '#64748b', belly: '#e2e8f0', fin: '#475569', tail: {}
   },
   {
-    id: 'shark', name: '상어', price: 460, len: 104, hRatio: 0.28, shape: 'shark', desc: '씩씩한 바다 대장', sea: true,
+    // 상어: 노랗고 통통한 귀여운 아기 상어 (큰 눈, 발그레한 볼, 웃는 입)
+    id: 'shark', name: '상어', price: 460, len: 96, hRatio: 0.4, shape: 'shark', desc: '귀여운 노란 아기 상어', sea: true,
     speed: 0.9, growMul: 0.75, school: false, zone: 'mid',
-    top: '#64748b', belly: '#f1f5f9', fin: '#475569', tail: {}
+    top: '#facc15', belly: '#fef9c3', fin: '#f59e0b', tail: {}
   },
   {
     id: 'whale', name: '고래', price: 500, len: 136, hRatio: 0.42, shape: 'whale', desc: '바다에서 제일 커요', sea: true,
@@ -211,6 +213,9 @@ export const FISH_SPECIES = [
   }
 ];
 export const FISH_BY_ID = Object.fromEntries(FISH_SPECIES.map(f => [f.id, f]));
+// 개체를 부를 때 쓰는 종류 정보: 올챙이처럼 어릴 때 이름이 따로 있으면(babyName) 다 크기 전까지는 그 이름으로 부른다
+const BABY_VIEW = Object.fromEntries(FISH_SPECIES.filter(f => f.babyName).map(f => [f.id, { ...f, name: f.babyName }]));
+export const speciesOf = (f) => (BABY_VIEW[f.sp] && f.growth < 0.8 ? BABY_VIEW[f.sp] : FISH_BY_ID[f.sp]);
 
 // 구피는 실제처럼 디자인이 다양하다: 들어올 때마다 무작위로 하나 (glowTail: 어두우면 꼬리가 빛남)
 export const GUPPY_VARIANTS = [
