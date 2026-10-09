@@ -134,9 +134,9 @@ export const FISH_SPECIES = [
   {
     // 소라게: 소라 껍데기를 지고 바닥을 기어 다니며 자주 멈춘다. 놀라면 껍데기 속으로 쏙(hermit),
     // 자라서 단계가 바뀌면 더 큰 빈 껍데기를 찾아가 이사한다
-    id: 'hermit', name: '소라게', price: 140, len: 44, hRatio: 0.8, shape: 'hermit', desc: '껍데기 집을 지고 다녀요', sea: true, crawl: true, hermit: true,
+    id: 'hermit', name: '소라게', price: 140, len: 58, hRatio: 0.8, shape: 'hermit', desc: '껍데기 집을 지고 다녀요', sea: true, crawl: true, hermit: true,
     speed: 0.35, growMul: 1, school: false, zone: 'bottom',
-    top: '#ea580c', belly: '#fdba74', fin: '#c2410c', accent: '#f3e3cf', spots: '#b45309', tail: {},
+    top: '#ea580c', belly: '#fdba74', fin: '#c2410c', accent: '#f4a259', spots: '#7c2d12', tail: {},
     growLines: { juvenile: '소라게가 쑥쑥 자라서 더 큰 집을 찾아요!', adult: '소라게가 다 커서 제일 큰 집을 찾아요!' }
   },
   {
@@ -246,7 +246,8 @@ export const DECOR_BY_ID = Object.fromEntries(DECOR_ITEMS.map(d => [d.id, d]));
 // 기본 물고기(처음 받는 치어 종류)를 상점에서 더 살 때 가격
 export const STARTER_FISH_PRICE = 50;
 
-export const LIMITS = { fish: 20, decor: 10 };
+// 사서 넣는 물고기·바다 친구는 제한 없음. 저절로 태어나는 아기만 breed 마리까지 (끝없이 불어나 느려지지 않게)
+export const LIMITS = { breed: 40, decor: 10 };
 
 // ── 번식 ──
 // 구피·플래티는 새끼를 낳는 난태생, 나머지는 알을 낳는다.
@@ -327,7 +328,7 @@ export function mateStatus(game, f, now = Date.now()) {
   if ((f.restUntil || 0) > now) return null;
   if (conditionOf(f, game.dirt) < RATES.pregCond || isSad(f, game.dirt)) return null;
   const pending = game.fish.reduce((a, o) => a + (o.preg != null ? breedOf(o.sp).brood[1] : 0), 0) + (game.eggs || []).reduce((a, e) => a + e.n, 0);
-  if (game.fish.length + pending + 2 > LIMITS.fish) return null;
+  if (game.fish.length + pending + 2 > LIMITS.breed) return null;
   const male = game.fish.some(o => o.sp === f.sp && o.sex === 'm' && stageOf(o.growth) === 'adult' && !o.sick);
   if (male) return 'pair';
   if (breedOf(f.sp).storesSperm && f.mated) return 'solo';

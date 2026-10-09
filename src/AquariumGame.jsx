@@ -1103,8 +1103,9 @@ function drawCreature(ctx, sp, L, o = {}) {
         ctx.quadraticCurveTo(-u * 0.12, u * 0.27, u * 0.22, u * 0.2);
         ctx.closePath();
         const g = ctx.createRadialGradient(-u * 0.05, -u * 0.12, u * 0.02, -u * 0.05, 0, u * 0.42);
-        g.addColorStop(0, '#fffaf0'); g.addColorStop(0.55, shellCol); g.addColorStop(1, mixColor(shellCol, '#78350f', 0.35));
+        g.addColorStop(0, '#fff7ed'); g.addColorStop(0.5, shellCol); g.addColorStop(1, mixColor(shellCol, '#78350f', 0.45));
         ctx.fillStyle = g; ctx.fill();
+        ctx.strokeStyle = 'rgba(67,20,7,0.55)'; ctx.lineWidth = Math.max(0.8, u * 0.02); ctx.stroke();   // 테두리 (모래와 구분)
         // 나선 무늬
         ctx.save(); ctx.clip();
         ctx.strokeStyle = bandCol; ctx.globalAlpha *= 0.55; ctx.lineWidth = Math.max(0.8, u * 0.03);
@@ -1891,6 +1892,8 @@ export default function AquariumGame({ audio, speak }) {
         z: 0.35 + Math.random() * 0.65, phase: Math.random() * 6, panic: 0, poopDue: 0, pearlT: 60 + Math.random() * 60,
         boing: 0, happyT: 0
       };
+      const spc = FISH_BY_ID[f.sp];
+      if (entering && spc && spc.crawl) r.swimming = true;   // 기는 친구도 수면에서 가라앉아 바닥에 내려앉는다
       s.rt[f.uid] = r;
       return r;
     };
@@ -2112,7 +2115,7 @@ export default function AquariumGame({ audio, speak }) {
     // ── 돌봄 규칙 (배고픔·물 더러움·기분·성장) ──
     // 아기 물고기들을 (x, y) 근처에 태어나게 한다. 자리가 모자라면 들어갈 만큼만
     const spawnFry = (spId, n, x, y, variant, family = {}) => {
-      const room = Math.max(0, LIMITS.fish - game.fish.length);
+      const room = Math.max(0, LIMITS.breed - game.fish.length);
       const count = Math.min(n, room);
       for (let i = 0; i < count; i++) {
         const baby = newFish(spId);
@@ -2596,6 +2599,7 @@ export default function AquariumGame({ audio, speak }) {
           const gy = groundY(r.x) - L * sp.hRatio * 0.42;   // 모래 위에 발을 딛고
           if (r.swimming && !chasing && r.y >= Math.min(gy, yHi) - 1) r.swimming = false;
           if (!r.swimming) r.y = gy; else r.y = Math.min(r.y, gy);
+          r.x = clamp(r.x, L * 0.6, s.W - L * 0.6);   // 벽에 붙어 반쯤 가려지지 않게
         }
         if (r.anchor) {
           r.anchorEase = Math.hypot(r.anchor.x - r.x, r.anchor.y - r.y) > 4 * s.k;
@@ -3279,7 +3283,7 @@ export default function AquariumGame({ audio, speak }) {
     const s = simRef.current; if (!s) return;
     const game = s.game;
     const price = kind === 'fish' ? FISH_BY_ID[id].price || STARTER_FISH_PRICE : DECOR_BY_ID[id].price;
-    const full = kind === 'fish' ? game.fish.length >= LIMITS.fish : game.decor.length >= LIMITS.decor;
+    const full = kind === 'decor' && game.decor.length >= LIMITS.decor;   // 물고기·바다 친구는 제한 없음
     if (full) { showToast('🙅 어항이 꽉 찼어요!'); return; }
     if (game.points < price) { showToast(`🐚 조개가 ${price - game.points}개 더 필요해요`); s.say('need', VOICE.aquaNeedMore(), 3); return; }
     game.points -= price;
@@ -3302,6 +3306,7 @@ export default function AquariumGame({ audio, speak }) {
     }
     audio.playFanfare();
     saveGame(game);
+    if (kind === 'fish') setInfo(game.fish[game.fish.length - 1].uid);   // 새 친구에게 노란 동그라미 + 정보 카드
     setPlaced({ decor: game.decor.slice() });
     setHud(h => ({ ...h, points: game.points }));
     setShopOpen(false);
@@ -3631,7 +3636,7 @@ export default function AquariumGame({ audio, speak }) {
                 ))}
               </div>
               <div style={{ padding: '0 16px 14px', fontSize: '0.8rem', fontWeight: 800, color: '#64748b' }}>
-                ✨ 아주 가끔 특별한 색깔의 이로치가 나와요 · 물고기·바다 친구 {sim ? sim.game.fish.length : 0}/{LIMITS.fish} · 장식 {placed.decor.length}/{LIMITS.decor}
+                ✨ 아주 가끔 특별한 색깔의 이로치가 나와요 · 물고기·바다 친구 {sim ? sim.game.fish.length : 0}마리 · 장식 {placed.decor.length}/{LIMITS.decor}
               </div>
             </div>
           </div>
