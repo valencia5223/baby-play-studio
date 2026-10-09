@@ -9,7 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { VOICE, attachJosa } from './voiceLines.js';
 import {
-  FISH_SPECIES, FISH_BY_ID, speciesOf, GUPPY_BY_ID, DECOR_ITEMS, DECOR_BY_ID, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
+  FISH_SPECIES, FISH_BY_ID, speciesOf, releaseReward, GUPPY_BY_ID, DECOR_ITEMS, DECOR_BY_ID, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
   stageOf, sizeScale, RATES, breedOf, mateStatus, SEX_NAMES, isNightTime, SLEEP_IDLE_SEC, isSad, conditionOf, growFactor, REWARDS,
   loadGame, saveGame, catchUpOffline, newFish, newUid, todayKey
 } from './aquariumData.js';
@@ -2949,6 +2949,11 @@ export default function AquariumGame({ audio, speak }) {
       const staying = game.fish.filter(it => s.rt[it.uid] && s.rt[it.uid].leaving == null);
       if (staying.length <= 1) { showToast('🐟 마지막 친구는 어항에 남겨 둬요!'); return false; }
       r.leaving = 0;
+      // 잘 키운 만큼 선물 조개
+      const gift = releaseReward(f);
+      addPoints(gift, r.x, r.y - 30);
+      showToast(`🎁 고마워요! 조개 ${gift}개를 선물로 받았어요`);
+      saveGame(game);
       // 아기들이 떠난 엄마·아빠의 지금 이름을 기억하게
       if (f.name) game.fish.forEach(k => { if (k.mom === f.uid) k.momName = f.name; if (k.dad === f.uid) k.dadName = f.name; });
       audio.playFanfare();
@@ -3756,24 +3761,40 @@ export default function AquariumGame({ audio, speak }) {
                   <button type="button" onClick={() => setNaming(false)} style={{ border: 'none', borderRadius: '12px', padding: '7px 10px', fontWeight: 900, background: '#e2e8f0', color: '#334155', cursor: 'pointer' }}>취소</button>
                 </form>
               )}
-              {/* 자연으로 보내기 (아기가 실수로 누르지 않게 한 번 더 확인) */}
+              {/* 자연으로 보내기 (아기가 실수로 누르지 않게 두 번 확인. 두 번째는 버튼 자리를 바꿔 같은 곳을 연달아 눌러도 취소된다) */}
               {!confirmRelease ? (
                 <button
-                  onClick={() => setConfirmRelease(true)}
+                  onClick={() => setConfirmRelease(1)}
                   style={{ marginTop: '6px', width: '100%', border: '2px solid #7dd3fc', borderRadius: '14px', padding: '7px', fontWeight: 900, fontSize: '0.88rem', background: '#f0f9ff', color: '#0369a1', cursor: 'pointer' }}
                 >🌊 자연으로 보내기</button>
-              ) : (
+              ) : confirmRelease === 1 ? (
                 <div style={{ marginTop: '6px', background: '#e0f2fe', borderRadius: '14px', padding: '8px', textAlign: 'center' }}>
                   <div style={{ fontWeight: 900, fontSize: '0.88rem', color: '#0c4a6e' }}>정말 {attachJosa(vsp.name, '을/를')} 넓은 자연으로 보낼까요?</div>
+                  <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#0369a1', marginTop: '2px' }}>🎁 잘 키운 선물로 조개 {releaseReward(infoFish)}개를 받아요{infoFish.shiny ? ' (이로치 두 배!)' : ''}</div>
                   <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
                     <button
-                      onClick={() => { if (sim.releaseFish(infoFish.uid)) setInfo(null); else setConfirmRelease(false); }}
+                      onClick={() => setConfirmRelease(2)}
                       style={{ flex: 1, border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, background: '#0284c7', color: '#ffffff', cursor: 'pointer' }}
                     >🌊 보내기</button>
                     <button
                       onClick={() => setConfirmRelease(false)}
                       style={{ flex: 1, border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, background: '#e2e8f0', color: '#334155', cursor: 'pointer' }}
                     >취소</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginTop: '6px', background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '14px', padding: '8px', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 900, fontSize: '0.9rem', color: '#92400e' }}>한 번 더 확인해요! 🙋</div>
+                  <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#78350f', marginTop: '2px' }}>{infoFish.name ? `${infoFish.name}(${vsp.name})${attachJosa(vsp.name, '은/는').slice(vsp.name.length)}` : attachJosa(vsp.name, '은/는')} 자연으로 가면 다시 돌아오지 않아요. 정말 보낼까요?</div>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                    <button
+                      onClick={() => setConfirmRelease(false)}
+                      style={{ flex: 1, border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, background: '#e2e8f0', color: '#334155', cursor: 'pointer' }}
+                    >아니요</button>
+                    <button
+                      onClick={() => { if (sim.releaseFish(infoFish.uid)) setInfo(null); else setConfirmRelease(false); }}
+                      style={{ flex: 1, border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, background: '#d97706', color: '#ffffff', cursor: 'pointer' }}
+                    >네, 보낼게요</button>
                   </div>
                 </div>
               )}

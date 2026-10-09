@@ -325,6 +325,13 @@ export const conditionOf = (fish, dirt) => Math.round(fish.full * 0.4 + (100 - d
 export const growFactor = (fish, dirt) => (isSad(fish, dirt) ? 0 : Math.max(0.15, Math.min(1, (conditionOf(fish, dirt) - 30) / 55)));
 
 // ── 포인트(조개) 보상 ──
+// 자연으로 보낼 때 받는 선물 조개: 종류 값 × (10% + 자란 만큼 최대 50%), 이로치는 두 배.
+// 다 커도 산 값보다는 적어서 사자마자 되파는 식으로 늘릴 수는 없고, 잘 키운 친구일수록 많이 받는다
+export const releaseReward = (f) => {
+  const sp = FISH_BY_ID[f.sp];
+  const price = (sp && sp.price) || STARTER_FISH_PRICE;
+  return Math.max(2, Math.round(price * (0.1 + 0.5 * Math.min(1, f.growth || 0)) * (f.shiny ? 2 : 1)));
+};
 export const REWARDS = { eat: 1, poop: 2, algae: 1, waterChange: 10, juvenile: 20, adult: 50, pearl: 5, daily: 20, pet: 1, heal: 5, birth: 10 };
 
 // ── 저장 ──
