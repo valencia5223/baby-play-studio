@@ -30,6 +30,7 @@ import plumImg from './assets/plum.jpg';
 import { VOICE, FEED_PRAISE_COUNT, attachJosa, formatSpokenKoreanText, voiceKey } from './voiceLines.js';
 import VOICE_INDEX from './voiceIndex.json';
 import AquariumGame from './AquariumGame.jsx';
+import FarmGame from './FarmGame.jsx';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
 const VOICE_KEYS = new Set(VOICE_INDEX);
@@ -2711,18 +2712,18 @@ const OCEAN_CREATURES = [
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════
-// 🧩 4조각 아기 퍼즐 데이터 (8종 퍼즐 테마)
+// 🧩 아기 퍼즐 데이터. cols × rows 가 조각 수 (사과 2조각 ~ 판다 12조각으로 테마마다 다르다)
 // ═════════════════════════════════════════════════════════════════════════════
 const BABY_PUZZLES = [
-  { id: 'dog', name: '강아지', icon: '🐶', label: '🐶 강아지 얼굴', color: '#f97316', bg: '#fff7ed', desc: '사랑스러운 멍멍이 강아지' },
-  { id: 'cat', name: '고양이', icon: '🐱', label: '🐱 고양이 얼굴', color: '#ec4899', bg: '#fdf2f8', desc: '초롱초롱 야옹이 고양이' },
-  { id: 'lion', name: '사자', icon: '🦁', label: '🦁 사자 얼굴', color: '#d97706', bg: '#fefce8', desc: '멋진 갈기털 밀림의 왕 사자' },
-  { id: 'rabbit', name: '토끼', icon: '🐰', label: '🐰 토끼 얼굴', color: '#f43f5e', bg: '#fff1f2', desc: '쫑긋한 분홍 귀 깡충 토끼' },
-  { id: 'pig', name: '돼지', icon: '🐷', label: '🐷 돼지 얼굴', color: '#f43f5e', bg: '#ffe4e6', desc: '동글동글 꿀꿀 분홍 돼지' },
-  { id: 'bear', name: '곰돌이', icon: '🐻', label: '🐻 곰돌이 얼굴', color: '#b45309', bg: '#fef3c7', desc: '포근한 꿀단지 아기 곰돌이' },
-  { id: 'panda', name: '판다', icon: '🐼', label: '🐼 판다 얼굴', color: '#0f172a', bg: '#f8fafc', desc: '귀여운 눈 패치 흑백 판다' },
-  { id: 'frog', name: '개구리', icon: '🐸', label: '🐸 개구리 얼굴', color: '#16a34a', bg: '#f0fdf4', desc: '초롱초롱 왕눈이 개구리' },
-  { id: 'apple', name: '빨간 사과', icon: '🍎', label: '🍎 빨간 사과', color: '#dc2626', bg: '#fee2e2', desc: '새콤달콤 싱싱한 빨간 사과' }
+  { id: 'dog', cols: 2, rows: 2, name: '강아지', icon: '🐶', label: '🐶 강아지 얼굴', color: '#f97316', bg: '#fff7ed', desc: '사랑스러운 멍멍이 강아지' },
+  { id: 'cat', cols: 2, rows: 2, name: '고양이', icon: '🐱', label: '🐱 고양이 얼굴', color: '#ec4899', bg: '#fdf2f8', desc: '초롱초롱 야옹이 고양이' },
+  { id: 'lion', cols: 3, rows: 3, name: '사자', icon: '🦁', label: '🦁 사자 얼굴', color: '#d97706', bg: '#fefce8', desc: '멋진 갈기털 밀림의 왕 사자' },
+  { id: 'rabbit', cols: 2, rows: 3, name: '토끼', icon: '🐰', label: '🐰 토끼 얼굴', color: '#f43f5e', bg: '#fff1f2', desc: '쫑긋한 분홍 귀 깡충 토끼' },
+  { id: 'pig', cols: 3, rows: 2, name: '돼지', icon: '🐷', label: '🐷 돼지 얼굴', color: '#f43f5e', bg: '#ffe4e6', desc: '동글동글 꿀꿀 분홍 돼지' },
+  { id: 'bear', cols: 3, rows: 3, name: '곰돌이', icon: '🐻', label: '🐻 곰돌이 얼굴', color: '#b45309', bg: '#fef3c7', desc: '포근한 꿀단지 아기 곰돌이' },
+  { id: 'panda', cols: 4, rows: 3, name: '판다', icon: '🐼', label: '🐼 판다 얼굴', color: '#0f172a', bg: '#f8fafc', desc: '귀여운 눈 패치 흑백 판다' },
+  { id: 'frog', cols: 3, rows: 2, name: '개구리', icon: '🐸', label: '🐸 개구리 얼굴', color: '#16a34a', bg: '#f0fdf4', desc: '초롱초롱 왕눈이 개구리' },
+  { id: 'apple', cols: 2, rows: 1, name: '빨간 사과', icon: '🍎', label: '🍎 빨간 사과', color: '#dc2626', bg: '#fee2e2', desc: '새콤달콤 싱싱한 빨간 사과' }
 ];
 
 // 🧩 퍼즐 300x300 고화질 벡터 아트워크 그룹 (단일 루트 SVG에서 1/4 조각으로 완벽 분할)
@@ -2903,18 +2904,77 @@ function PuzzleArtworkG({ id }) {
   );
 }
 
-// 4개 슬롯의 viewBox 설정 (0:좌상, 1:우상, 2:좌하, 3:우하)
-const PUZZLE_QUAD_VIEWBOX = [
-  '0 0 150 150',      // Quad 0: Top-Left
-  '150 0 150 150',    // Quad 1: Top-Right
-  '0 150 150 150',    // Quad 2: Bottom-Left
-  '150 150 150 150'   // Quad 3: Bottom-Right
+// ── 🧩 직소 퍼즐 조각 모양 ──
+// 그림(300×300)을 cols × rows 칸으로 나누고, 칸 사이 변마다 볼록/오목 돌기를 넣는다.
+// 돌기 방향은 테마 id 로 정해지는 고정 난수라 같은 퍼즐은 늘 같은 모양이다.
+const PUZZLE_BOARD_PX = 340;
+const puzzleGeoCache = new Map();
+function puzzleGeo(theme) {
+  if (puzzleGeoCache.has(theme.id)) return puzzleGeoCache.get(theme.id);
+  const cols = theme.cols || 2, rows = theme.rows || 2, w = 300 / cols, h = 300 / rows, s = Math.min(w, h), m = s * 0.3;
+  let seed = 7;
+  for (const ch of theme.id) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  // hT[r][c]: r-1 행과 r 행 사이 변 (+1 이면 아래로 볼록), vT[r][c]: c-1 열과 c 열 사이 변 (+1 이면 오른쪽으로 볼록)
+  const hT = Array.from({ length: rows + 1 }, () => Array.from({ length: cols }, () => (rnd() < 0.5 ? 1 : -1)));
+  const vT = Array.from({ length: rows }, () => Array.from({ length: cols + 1 }, () => (rnd() < 0.5 ? 1 : -1)));
+  const f = (v) => Math.round(v * 100) / 100;
+  // 한 변: dir 0 = 테두리(직선), +1 = 조각 바깥으로 볼록, -1 = 안으로 오목. 목이 잘록하고 머리가 둥근 돌기
+  const edge = (x0, y0, x1, y1, dir) => {
+    if (!dir) return `L${f(x1)} ${f(y1)}`;
+    const len = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / len, uy = (y1 - y0) / len, nx = uy, ny = -ux;
+    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    const P = (t, n) => `${f(mx + ux * (t - 0.5) * s + nx * n * s * dir)} ${f(my + uy * (t - 0.5) * s + ny * n * s * dir)}`;
+    return `L${P(0.36, 0)}C${P(0.42, 0)} ${P(0.4, 0.1)} ${P(0.38, 0.14)}C${P(0.3, 0.3)} ${P(0.7, 0.3)} ${P(0.62, 0.14)}C${P(0.6, 0.1)} ${P(0.58, 0)} ${P(0.64, 0)}L${f(x1)} ${f(y1)}`;
+  };
+  const pieces = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = c * w, y = r * h;
+      const d = `M${f(x)} ${f(y)}`
+        + edge(x, y, x + w, y, r > 0 ? -hT[r][c] : 0)
+        + edge(x + w, y, x + w, y + h, c < cols - 1 ? vT[r][c + 1] : 0)
+        + edge(x + w, y + h, x, y + h, r < rows - 1 ? hT[r + 1][c] : 0)
+        + edge(x, y + h, x, y, c > 0 ? -vT[r][c] : 0) + 'Z';
+      // vb: 돌기까지 들어가는 조각 상자 (그림 좌표)
+      pieces.push({ d, col: c, row: r, vb: [x - m, y - m, w + m * 2, h + m * 2] });
+    }
+  }
+  const geo = { cols, rows, w, h, pieces };
+  puzzleGeoCache.set(theme.id, geo);
+  return geo;
+}
+
+// 조각 하나: 조각 모양으로 그림을 오려 내고, 종이 질감·도톰한 테두리(왼쪽 위 밝게, 오른쪽 아래 어둡게)를 입힌다.
+// uid 는 한 화면에 같은 조각이 여러 번 그려질 때 clipPath id 가 겹치지 않게 하는 접두사
+function PuzzlePiece({ theme, idx, uid, style, className }) {
+  const piece = puzzleGeo(theme).pieces[idx];
+  const cid = `pzc-${uid}-${theme.id}-${idx}`;
+  return (
+    <svg viewBox={piece.vb.join(' ')} className={className} style={{ display: 'block', overflow: 'visible', ...style }}>
+      <defs><clipPath id={cid}><path d={piece.d} /></clipPath></defs>
+      <g clipPath={`url(#${cid})`}>
+        <rect width="300" height="300" fill={theme.bg} />
+        <PuzzleArtworkG id={theme.id} />
+        <rect width="300" height="300" filter="url(#pz-paper)" />
+        <path d={piece.d} fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="5" transform="translate(-1.6 -1.6)" />
+        <path d={piece.d} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="5" transform="translate(1.6 1.6)" />
+      </g>
+      <path d={piece.d} fill="none" stroke="rgba(70,45,20,0.6)" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// 📸 생생 카드 탭 안에서 고르는 세 가지 종류 (activeTab 값은 예전 탭 id 그대로)
+const CARD_CATEGORIES = [
+  { id: 'animal', icon: '🦁', label: '동물', sub: '진짜 울음소리가 들려요', color: '#ef4444', bg: '#fff1f2' },
+  { id: 'fruit', icon: '🍎', label: '과일·채소', sub: '싱싱한 사진과 먹이기 놀이', color: '#10b981', bg: '#ecfdf5' },
+  { id: 'vehicle', icon: '🚗', label: '탈것', sub: '부릉부릉 소리가 들려요', color: '#0284c7', bg: '#f0f9ff' }
 ];
 
-const PUZZLE_QUAD_LABELS = ['1. 왼쪽 위', '2. 오른쪽 위', '3. 왼쪽 아래', '4. 오른쪽 아래'];
-
 export default function App() {
-  const [activeTab, setActiveTab] = useState('animal');
+  // 'cards' = 생생 카드 고르기 화면 (그 안에서 animal·fruit·vehicle 로 들어간다)
+  const [activeTab, setActiveTab] = useState('cards');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isIpadFrame, setIsIpadFrame] = useState(true);
 
@@ -3044,17 +3104,38 @@ export default function App() {
 
   // 🌊 바다속 탐험 상태
 
-  // 🧩 4조각 아기 퍼즐 상태 (드래그 앤 드롭 지원)
+  // 🧩 아기 퍼즐 상태 (드래그 앤 드롭 지원). 조각 번호는 왼쪽 위부터 가로로 0, 1, 2 …
   const [puzzleTheme, setPuzzleTheme] = useState(() => BABY_PUZZLES[0]); // 기본: 강아지
   const [placedPieces, setPlacedPieces] = useState([false, false, false, false]);
   const [trayPieces, setTrayPieces] = useState(() => [2, 0, 3, 1]); // 셔플된 조각
   const [puzzleCompleted, setPuzzleCompleted] = useState(false);
 
-  const puzzleSlotRefs = useRef({});
+  const puzzleBoardRef = useRef(null);
   const draggingPieceRef = useRef(null);
   const [draggingPieceQuad, setDraggingPieceQuad] = useState(null);
   const [dragPiecePos, setDragPiecePos] = useState({ x: 0, y: 0 });
   const [hoverSlotIdx, setHoverSlotIdx] = useState(null);
+
+  // 퍼즐판 안쪽(테두리 제외) 화면 좌표
+  const puzzleBoardBox = () => {
+    const el = puzzleBoardRef.current;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { left: r.left + el.clientLeft, top: r.top + el.clientTop, size: el.clientWidth };
+  };
+  // 그 위치가 몇 번 조각 자리인지 (판 밖이면 null)
+  const puzzleSlotAt = (x, y) => {
+    const b = puzzleBoardBox(), geo = puzzleGeo(puzzleTheme);
+    if (!b || x < b.left || y < b.top || x >= b.left + b.size || y >= b.top + b.size) return null;
+    return Math.floor((y - b.top) / (b.size / geo.rows)) * geo.cols + Math.floor((x - b.left) / (b.size / geo.cols));
+  };
+  const puzzleNearSlot = (x, y, idx, pad) => {
+    const b = puzzleBoardBox(), geo = puzzleGeo(puzzleTheme);
+    if (!b) return false;
+    const cw = b.size / geo.cols, ch = b.size / geo.rows, piece = geo.pieces[idx];
+    const left = b.left + piece.col * cw, top = b.top + piece.row * ch;
+    return x >= left - pad && x <= left + cw + pad && y >= top - pad && y <= top + ch + pad;
+  };
 
   const handleStartDragPiece = (e, quadIdx) => {
     if (placedPieces[quadIdx] || puzzleCompleted) return;
@@ -3075,19 +3156,7 @@ export default function App() {
       const x = e.clientX;
       const y = e.clientY;
       setDragPiecePos({ x, y });
-
-      let currentOverSlot = null;
-      Object.entries(puzzleSlotRefs.current).forEach(([idxStr, el]) => {
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          // 아기 손가락 터치 오차 감안 25px 여유 패딩
-          const pad = 25;
-          if (x >= rect.left - pad && x <= rect.right + pad && y >= rect.top - pad && y <= rect.bottom + pad) {
-            currentOverSlot = parseInt(idxStr, 10);
-          }
-        }
-      });
-      setHoverSlotIdx(currentOverSlot);
+      setHoverSlotIdx(puzzleSlotAt(x, y));
     };
 
     const handlePointerUp = (e) => {
@@ -3096,23 +3165,12 @@ export default function App() {
       const x = e.clientX;
       const y = e.clientY;
 
-      let currentOverSlot = null;
-      Object.entries(puzzleSlotRefs.current).forEach(([idxStr, el]) => {
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          // 아기 손가락 터치 오차 감안 25px 여유 패딩
-          const pad = 25;
-          if (x >= rect.left - pad && x <= rect.right + pad && y >= rect.top - pad && y <= rect.bottom + pad) {
-            currentOverSlot = parseInt(idxStr, 10);
-          }
-        }
-      });
 
-      if (currentOverSlot === quadIdx) {
-        // 올바른 사각형 슬롯에 드롭 성공!
+      // 제자리 근처(손가락 오차 25px 여유)에 놓으면 쏙 들어간다
+      if (puzzleNearSlot(x, y, quadIdx, 25)) {
         handleSnapPiece(quadIdx);
-      } else if (currentOverSlot !== null) {
-        // 다른 사각형 슬롯에 잘못 놓음
+      } else if (puzzleSlotAt(x, y) !== null) {
+        // 다른 자리에 잘못 놓음
         audioEngine.playFreq(220, 'sawtooth', 0.2);
         speakNaturalKorean(VOICE.puzzleWrong());
       }
@@ -3142,7 +3200,7 @@ export default function App() {
     updated[quadIdx] = true;
     setPlacedPieces(updated);
 
-    // 4조각 모두 맞췄는지 확인
+    // 모두 맞췄는지 확인
     if (updated.every(Boolean)) {
       setPuzzleCompleted(true);
       audioEngine.later(() => {
@@ -3154,8 +3212,9 @@ export default function App() {
 
   const handleResetPuzzle = (theme) => {
     const t = theme || puzzleTheme;
-    setPlacedPieces([false, false, false, false]);
-    setTrayPieces([0, 1, 2, 3].sort(() => 0.5 - Math.random()));
+    const n = puzzleGeo(t).pieces.length;
+    setPlacedPieces(Array(n).fill(false));
+    setTrayPieces(shuffleArray(Array.from({ length: n }, (_, i) => i)));
     setPuzzleCompleted(false);
   };
 
@@ -3508,7 +3567,26 @@ export default function App() {
     currentStrokeRef.current = null;
   };
 
-  const isScrollableTab = ['animal', 'fruit', 'vehicle', 'song'].includes(activeTab);
+  // 🧩 지금 퍼즐의 조각 모양, 퍼즐판 배율(그림 300 → 화면 px), 트레이 한 줄 조각 수
+  const puzzlePieces = puzzleGeo(puzzleTheme).pieces;
+  const puzzleScale = PUZZLE_BOARD_PX / 300;
+  const puzzleTrayCols = puzzlePieces.length <= 4 ? 2 : puzzlePieces.length <= 9 ? 3 : 4;
+
+  const isCardTab = CARD_CATEGORIES.some(c => c.id === activeTab);
+  const isScrollableTab = ['cards', 'animal', 'fruit', 'vehicle', 'song'].includes(activeTab);
+  // 생생 카드 종류로 들어가기 (고르기 화면의 큰 카드와 위쪽 바로가기 줄이 함께 쓴다)
+  const enterCardTab = (id) => {
+    audioEngine.interruptVoice();
+    if (id === 'animal') setAnimalItems(shuffleArray(REAL_ANIMALS));
+    if (id === 'vehicle') setVehicleItems(shuffleArray(REAL_VEHICLES));
+    if (id === 'fruit') {
+      setFruitItems(shuffleArray(REAL_FRUITS));
+      // 🍎 과일 화면 진입 시 과일먹이기 첫 라운드 음성 사전 프리로드
+      preloadFeedRoundVoices(feedRound);
+    }
+    setActiveTab(id);
+    audioEngine.playFreq(520, 'sine', 0.15);
+  };
 
   return (
     <div style={{
@@ -3572,33 +3650,25 @@ export default function App() {
         boxShadow: '0 16px 36px -8px rgba(239, 68, 68, 0.22)',
         overflow: 'hidden', display: 'flex', flexDirection: 'column'
       }}>
-        {/* 탭 네비게이션 (9종 테마 컬러) */}
+        {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav style={{
-          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px',
+          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '5px',
           padding: '8px 8px', background: '#fff1f2', borderBottom: '3px solid #fca5a5',
           flexShrink: 0
         }}>
           {[
-            { id: 'animal', label: '📸 생생 동물', sub: '울음소리 탐험', color: '#ef4444' },
-            { id: 'fruit', label: '🍎 싱싱 과일', sub: '실사 채소 관찰', color: '#10b981' },
-            { id: 'vehicle', label: '🚗 씽씽 탈것', sub: '출동! 자동차', color: '#0284c7' },
+            { id: 'cards', label: '📸 생생 카드', sub: '동물·과일·탈것', color: '#ef4444' },
             { id: 'ocean', label: '🐠 내 어항', sub: '물고기 키우기', color: '#06b6d4' },
-            { id: 'puzzle', label: '🧩 아기 퍼즐', sub: '4조각 맞추기', color: '#8b5cf6' },
+            { id: 'farm', label: '🐮 내 목장', sub: '동물 키우기', color: '#16a34a' },
+            { id: 'puzzle', label: '🧩 아기 퍼즐', sub: '조각 맞추기', color: '#8b5cf6' },
             { id: 'paint', label: '🎨 무지개 물감', sub: '터치 감각 미술', color: '#3b82f6' },
             { id: 'song', label: '🎵 동요 재생', sub: `한국 동요 (${LOCAL_NURSERY_SONGS.length}곡)`, color: '#ec4899' }
           ].map(tab => {
-            const isActive = activeTab === tab.id;
+            const isActive = activeTab === tab.id || (tab.id === 'cards' && isCardTab);
             return (
               <button key={tab.id} onClick={() => {
                 // 이전 화면의 음성과 예약된 음성(다음 문제 안내 등)을 모두 끊는다
                 audioEngine.interruptVoice();
-                if (tab.id === 'animal') setAnimalItems(shuffleArray(REAL_ANIMALS));
-                if (tab.id === 'vehicle') setVehicleItems(shuffleArray(REAL_VEHICLES));
-                if (tab.id === 'fruit') {
-                  setFruitItems(shuffleArray(REAL_FRUITS));
-                  // 🍎 과일 탭 진입 시 과일먹이기 첫 라운드 음성 사전 프리로드
-                  preloadFeedRoundVoices(feedRound);
-                }
                 if (tab.id === 'puzzle' && !puzzleCompleted) {
                   speakNaturalKorean(VOICE.puzzleStart(puzzleTheme));
                 }
@@ -3634,6 +3704,47 @@ export default function App() {
           flexDirection: 'column',
           minHeight: 0
         }}>
+
+          {/* ===== 📸 생생 카드: 동물·과일·탈것 중에서 골라 들어간다 ===== */}
+          {activeTab === 'cards' && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1.4rem' }}>
+              <h2 style={{ fontSize: '1.7rem', fontWeight: 900, color: '#9a3412', margin: 0, textAlign: 'center' }}>
+                📸 무엇을 볼까요? 콕 눌러 보세요!
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.4rem' }}>
+                {CARD_CATEGORIES.map(cat => (
+                  <button key={cat.id} onClick={() => enterCardTab(cat.id)} style={{
+                    background: cat.bg, border: `5px solid ${cat.color}`, borderRadius: '32px', cursor: 'pointer',
+                    padding: '1.8rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
+                    boxShadow: '0 12px 26px rgba(0,0,0,0.12)', touchAction: 'manipulation'
+                  }}>
+                    <span style={{ fontSize: '6.5rem', lineHeight: 1 }}>{cat.icon}</span>
+                    <span style={{ fontSize: '1.9rem', fontWeight: 900, color: cat.color }}>{cat.label}</span>
+                    <span style={{ fontSize: '1rem', fontWeight: 800, color: '#475569' }}>{cat.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 생생 카드 안에서 종류 바꾸기 */}
+          {isCardTab && (
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexShrink: 0, flexWrap: 'wrap' }}>
+              <button onClick={() => { audioEngine.interruptVoice(); setActiveTab('cards'); audioEngine.playFreq(440, 'sine', 0.12); }} style={{
+                border: '3px solid #cbd5e1', background: '#ffffff', color: '#334155', borderRadius: '18px',
+                padding: '10px 18px', fontWeight: 900, fontSize: '1.05rem', cursor: 'pointer', touchAction: 'manipulation'
+              }}>⬅️ 처음으로</button>
+              {CARD_CATEGORIES.map(cat => {
+                const on = activeTab === cat.id;
+                return (
+                  <button key={cat.id} onClick={() => { if (!on) enterCardTab(cat.id); }} style={{
+                    border: `3px solid ${cat.color}`, background: on ? cat.color : '#ffffff', color: on ? '#ffffff' : cat.color,
+                    borderRadius: '18px', padding: '10px 18px', fontWeight: 900, fontSize: '1.05rem', cursor: 'pointer', touchAction: 'manipulation'
+                  }}>{cat.icon} {cat.label}</button>
+                );
+              })}
+            </div>
+          )}
 
           {/* ===== 모듈 1: 28종 동물 실사 ===== */}
           {activeTab === 'animal' && (
@@ -3840,7 +3951,14 @@ export default function App() {
             </div>
           )}
 
-          {/* ===== 모듈 4: 🧩 4조각 아기 퍼즐 맞추기 (2x2 직관적 보드 + 원터치/드래그 안착) ===== */}
+          {/* ===== 모듈 3.5: 🐮 내 목장 키우기 (내 어항의 육지판, FarmGame.jsx) ===== */}
+          {activeTab === 'farm' && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+              <FarmGame audio={audioEngine} speak={speakNaturalKorean} animals={REAL_ANIMALS} />
+            </div>
+          )}
+
+          {/* ===== 모듈 4: 🧩 아기 퍼즐 맞추기 (테마마다 조각 수가 다른 직소 조각 + 원터치/드래그 안착) ===== */}
           {activeTab === 'puzzle' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               {/* 테마 선택 바 (8종 동물 & 과일 퍼즐) */}
@@ -3868,19 +3986,29 @@ export default function App() {
                       }}
                     >
                       <span>{p.icon}</span>
-                      <span>{p.name} 퍼즐</span>
+                      <span>{p.name} {p.cols * p.rows}조각</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* 메인 퍼즐 컨테이너 (좌측 2x2 보드판 + 우측 셔플 조각 트레이) */}
+              {/* 종이 질감 필터 (모든 조각과 퍼즐판이 함께 쓴다) */}
+              <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+                <defs>
+                  <filter id="pz-paper" x="0" y="0" width="100%" height="100%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" />
+                    <feColorMatrix type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.24  0 0 0 0 0.1  0.6 0 0 0 -0.14" />
+                  </filter>
+                </defs>
+              </svg>
+
+              {/* 메인 퍼즐 컨테이너 (좌측 퍼즐판 + 우측 셔플 조각 트레이) */}
               <div style={{
                 flex: 1, minHeight: 0, display: 'flex', gap: '24px',
                 alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap',
                 padding: '0.5rem', overflowY: 'auto'
               }}>
-                {/* 2x2 퍼즐 맞춤 보드판 */}
+                {/* 퍼즐판 */}
                 <div style={{ textAlign: 'center' }}>
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -3889,64 +4017,52 @@ export default function App() {
                     padding: '6px 16px', borderRadius: '16px', marginBottom: '10px'
                   }}>
                     <span style={{ fontSize: '1.05rem', fontWeight: 900, color: puzzleCompleted ? '#15803d' : '#1d4ed8' }}>
-                      {puzzleCompleted ? '🎉 100% 완성!! 참 잘했어요!' : `🧩 맞춰진 조각: ${placedPieces.filter(Boolean).length} / 4개`}
+                      {puzzleCompleted ? '🎉 100% 완성!! 참 잘했어요!' : `🧩 맞춰진 조각: ${placedPieces.filter(Boolean).length} / ${placedPieces.length}개`}
                     </span>
                   </div>
 
-                  {/* 2x2 그리드 보드 (4조각 결합 시 완전체 완성) */}
+                  {/* 두꺼운 종이판: 빈 자리는 조각 모양 홈과 흐린 밑그림으로 보여 준다 */}
                   <div
+                    ref={puzzleBoardRef}
                     className={puzzleCompleted ? 'puzzle-completed-board' : ''}
+                    onClick={(e) => {
+                      const slot = puzzleSlotAt(e.clientX, e.clientY);
+                      if (slot !== null && !placedPieces[slot]) handleSnapPiece(slot);
+                    }}
                     style={{
-                      width: '320px', height: '320px', background: '#ffffff',
-                      borderRadius: '28px', border: puzzleCompleted ? '6px solid #eab308' : '4px dashed #94a3b8',
-                      boxShadow: '0 12px 30px rgba(0,0,0,0.1)', display: 'grid',
-                      gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr',
-                      gap: puzzleCompleted ? '0px' : '3px', padding: '6px',
-                      overflow: 'hidden', position: 'relative', transition: 'all 0.3s ease'
+                      width: `${PUZZLE_BOARD_PX}px`, height: `${PUZZLE_BOARD_PX}px`, boxSizing: 'content-box',
+                      background: '#ead9b8', borderRadius: '22px',
+                      border: puzzleCompleted ? '7px solid #eab308' : '7px solid #b08968',
+                      boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
+                      overflow: 'hidden', position: 'relative', cursor: 'pointer', transition: 'border-color 0.3s ease'
                     }}
                   >
-                    {[0, 1, 2, 3].map(quadIdx => {
-                      const isPlaced = placedPieces[quadIdx];
-                      const isHovered = hoverSlotIdx === quadIdx;
-
-                      return (
-                        <div
-                          key={quadIdx}
-                          ref={el => { puzzleSlotRefs.current[quadIdx] = el; }}
-                          onClick={() => {
-                            if (!isPlaced) handleSnapPiece(quadIdx);
-                          }}
-                          style={{
-                            background: isPlaced ? '#ffffff' : isHovered ? '#fef3c7' : '#f8fafc',
-                            border: isPlaced ? '1px solid #cbd5e1' : isHovered ? '3.5px dashed #f59e0b' : '2px dashed #cbd5e1',
-                            borderRadius: puzzleCompleted ? '0px' : '14px',
-                            overflow: 'hidden', position: 'relative',
-                            cursor: isPlaced ? 'default' : 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          {isPlaced ? (
-                            <div className="puzzle-snapped" style={{ width: '100%', height: '100%' }}>
-                              <svg viewBox={PUZZLE_QUAD_VIEWBOX[quadIdx]} width="100%" height="100%" preserveAspectRatio="none">
-                                <PuzzleArtworkG id={puzzleTheme.id} />
-                              </svg>
-                            </div>
-                          ) : (
-                            <div style={{ textAlign: 'center', color: '#94a3b8', padding: '6px' }}>
-                              <span style={{ fontSize: '1.5rem', opacity: 0.35 }}>{puzzleTheme.icon}</span>
-                              <p style={{ fontSize: '0.78rem', fontWeight: 900, margin: '2px 0 0 0', opacity: 0.7 }}>
-                                {PUZZLE_QUAD_LABELS[quadIdx]}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    <svg viewBox="0 0 300 300" width={PUZZLE_BOARD_PX} height={PUZZLE_BOARD_PX} style={{ position: 'absolute', left: 0, top: 0, display: 'block' }}>
+                      <rect width="300" height="300" fill="#ead9b8" />
+                      <rect width="300" height="300" filter="url(#pz-paper)" />
+                      <g opacity="0.16"><PuzzleArtworkG id={puzzleTheme.id} /></g>
+                      {puzzlePieces.map((piece, idx) => (placedPieces[idx] ? null : (
+                        <path
+                          key={idx} d={piece.d}
+                          fill={hoverSlotIdx === idx ? 'rgba(251,191,36,0.5)' : 'rgba(120,80,40,0.08)'}
+                          stroke="rgba(120,80,40,0.55)" strokeWidth="1.5" strokeDasharray="5 4"
+                        />
+                      )))}
+                    </svg>
+                    {puzzlePieces.map((piece, idx) => (placedPieces[idx] ? (
+                      <PuzzlePiece
+                        key={idx} theme={puzzleTheme} idx={idx} uid="board" className="puzzle-snapped"
+                        style={{
+                          position: 'absolute', pointerEvents: 'none',
+                          left: `${piece.vb[0] * puzzleScale}px`, top: `${piece.vb[1] * puzzleScale}px`,
+                          width: `${piece.vb[2] * puzzleScale}px`, height: `${piece.vb[3] * puzzleScale}px`
+                        }}
+                      />
+                    ) : null))}
                   </div>
                 </div>
 
-                {/* 셔플된 4조각 트레이 & 완성 컨트롤 (드래그 앤 드롭 지원) */}
+                {/* 셔플된 조각 트레이 & 완성 컨트롤 (드래그 앤 드롭 지원) */}
                 <div style={{
                   maxWidth: '380px', width: '100%', background: '#ffffff',
                   borderRadius: '28px', border: '3.5px solid #e2e8f0',
@@ -3954,50 +4070,42 @@ export default function App() {
                   display: 'flex', flexDirection: 'column', alignItems: 'center'
                 }}>
                   <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#1e293b', margin: '0 0 8px 0' }}>
-                    {puzzleCompleted ? '🌟 퍼즐 완성 축하해요!' : '👇 조각을 손가락으로 끌어다(Drag) 사각형에 쏙 맞춰보세요!'}
+                    {puzzleCompleted ? '🌟 퍼즐 완성 축하해요!' : '👇 조각을 끌어다 같은 모양 자리에 쏙 맞춰보세요!'}
                   </h3>
 
-                  {/* 4조각 목록 (1/4씩 정확히 쪼개진 조각) */}
+                  {/* 조각 목록 (조각이 많을수록 한 줄에 더 많이) */}
                   <div style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px',
+                    display: 'grid', gridTemplateColumns: `repeat(${puzzleTrayCols}, 1fr)`, gap: '8px',
                     width: '100%', marginBottom: '1rem'
                   }}>
-                    {trayPieces.map((quadIdx, i) => {
+                    {trayPieces.map((quadIdx) => {
                       const isPlaced = placedPieces[quadIdx];
                       const isDragging = draggingPieceQuad === quadIdx;
 
                       return (
                         <button
-                          key={i}
+                          key={quadIdx}
                           disabled={isPlaced}
                           onPointerDown={(e) => handleStartDragPiece(e, quadIdx)}
                           onClick={() => {
                             if (!isPlaced) handleSnapPiece(quadIdx);
                           }}
                           style={{
-                            height: '115px', borderRadius: '18px',
-                            border: isPlaced ? '2px solid #e2e8f0' : `3.5px solid ${puzzleTheme.color}`,
-                            background: isPlaced ? '#f1f5f9' : '#ffffff',
-                            opacity: isDragging ? 0.2 : isPlaced ? 0.25 : 1,
+                            height: puzzleTrayCols === 2 ? '118px' : puzzleTrayCols === 3 ? '100px' : '80px', borderRadius: '16px',
+                            border: '2px dashed #e2e8f0', background: isPlaced ? '#f1f5f9' : '#fffdf7',
                             cursor: isPlaced ? 'not-allowed' : 'grab',
-                            overflow: 'hidden', padding: 0, position: 'relative',
-                            boxShadow: isPlaced ? 'none' : '0 6px 16px rgba(0,0,0,0.08)',
-                            transform: isPlaced ? 'scale(0.96)' : 'scale(1)',
-                            touchAction: 'none', userSelect: 'none',
-                            transition: 'all 0.2s ease'
+                            padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            touchAction: 'none', userSelect: 'none'
                           }}
                         >
-                          <svg viewBox={PUZZLE_QUAD_VIEWBOX[quadIdx]} width="100%" height="100%" preserveAspectRatio="none">
-                            <PuzzleArtworkG id={puzzleTheme.id} />
-                          </svg>
-                          <span style={{
-                            position: 'absolute', bottom: '4px', right: '6px',
-                            background: 'rgba(0,0,0,0.65)', color: '#ffffff',
-                            fontSize: '0.72rem', fontWeight: 900, padding: '2px 6px',
-                            borderRadius: '8px'
-                          }}>
-                            {PUZZLE_QUAD_LABELS[quadIdx]}
-                          </span>
+                          {isPlaced ? (
+                            <span style={{ fontSize: '1.5rem', opacity: 0.35 }}>✅</span>
+                          ) : (
+                            <PuzzlePiece
+                              theme={puzzleTheme} idx={quadIdx} uid="tray"
+                              style={{ width: '100%', height: '100%', opacity: isDragging ? 0.2 : 1, filter: 'drop-shadow(0 3px 3px rgba(0,0,0,0.3))', pointerEvents: 'none' }}
+                            />
+                          )}
                         </button>
                       );
                     })}
@@ -4033,26 +4141,18 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 🧩 드래그 중인 퍼즐 조각 (커서 추적 오버레이) */}
-              {draggingPieceQuad !== null && (
-                <div style={{
-                  position: 'fixed',
-                  left: dragPiecePos.x,
-                  top: dragPiecePos.y,
-                  transform: 'translate(-50%, -50%) scale(1.15)',
-                  width: '130px', height: '130px',
-                  borderRadius: '20px',
-                  border: `4px solid ${puzzleTheme.color}`,
-                  background: '#ffffff',
-                  boxShadow: '0 16px 36px rgba(0,0,0,0.35)',
-                  pointerEvents: 'none',
-                  zIndex: 9999,
-                  overflow: 'hidden'
-                }}>
-                  <svg viewBox={PUZZLE_QUAD_VIEWBOX[draggingPieceQuad]} width="100%" height="100%" preserveAspectRatio="none">
-                    <PuzzleArtworkG id={puzzleTheme.id} />
-                  </svg>
-                </div>
+              {/* 🧩 드래그 중인 퍼즐 조각 (손가락을 따라다님, 퍼즐판에 놓일 크기보다 살짝 크게) */}
+              {draggingPieceQuad !== null && puzzlePieces[draggingPieceQuad] && (
+                <PuzzlePiece
+                  theme={puzzleTheme} idx={draggingPieceQuad} uid="drag"
+                  style={{
+                    position: 'fixed', left: dragPiecePos.x, top: dragPiecePos.y,
+                    width: `${puzzlePieces[draggingPieceQuad].vb[2] * puzzleScale}px`, height: `${puzzlePieces[draggingPieceQuad].vb[3] * puzzleScale}px`,
+                    transform: 'translate(-50%, -50%) scale(1.08)',
+                    filter: 'drop-shadow(0 12px 14px rgba(0,0,0,0.4))',
+                    pointerEvents: 'none', zIndex: 9999
+                  }}
+                />
               )}
             </div>
           )}

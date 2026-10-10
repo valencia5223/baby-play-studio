@@ -1,4 +1,5 @@
 import { FISH_SPECIES, STAGE_NAMES, breedOf } from './aquariumData.js';
+import { FARM_SPECIES } from './farmData.js';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 🎙️ 음성 안내 문장 모음
@@ -98,6 +99,33 @@ export const VOICE = {
   aquaHealMode: () => '아픈 물고기를 눌러서 밴드를 붙여 주세요!',
   aquaSadFish: (species) => `${attachJosa(species.name, '이/가')} 슬퍼요. 밥을 주고 물을 깨끗하게 해 주세요!`,
 
+  // 🐮 내 목장 (문장 수를 줄이려고 종류 이름이 들어가는 문장은 새 친구·성장·인사뿐)
+  farmWelcome: () => '우리 목장에 온 걸 환영해요! 아기 동물들을 잘 돌봐 주세요!',
+  farmWelcomeBack: () => '다시 왔네요! 동물 친구들이 기다리고 있었어요!',
+  farmHungry: () => '동물 친구들이 배고프대요! 밥을 주세요!',
+  farmDirty: () => '동물 친구가 지저분해졌어요! 깨끗하게 씻겨 주세요!',
+  farmPoop: () => '바닥에 똥이 있어요! 깨끗하게 치워 주세요!',
+  farmFeed: () => '맛있는 밥이에요! 많이 먹어요!',
+  farmWash: () => '뽀득뽀득! 깨끗해졌어요!',
+  farmWashMode: () => '동물 친구를 문질러서 씻겨 주세요! 똥도 치워 주세요!',
+  farmGift: () => '와아! 선물을 받았어요!',
+  farmNeedMore: () => '별이 조금 더 필요해요!',
+  farmSick: () => '동물 친구가 아파요! 밴드를 붙여 주세요!',
+  farmHeal: () => '다 나았어요! 고마워요!',
+  farmNotSick: () => '이 친구는 안 아파요! 아픈 친구를 찾아 주세요!',
+  farmHealMode: () => '아픈 친구를 눌러서 밴드를 붙여 주세요!',
+  farmNight: () => '밤이 됐어요. 동물 친구들이 코 자고 있어요.',
+  farmSleepTap: () => '쉿, 자고 있어요. 유나도 코 잘 시간이에요.',
+  farmRelease: () => '안녕! 넓은 들판에서 행복하게 지내!',
+  farmNew: (species) => (species.babyName
+    ? `새 친구 ${attachJosa(species.babyName, '이/가')} 왔어요! 잘 키우면 ${attachJosa(species.name, '이/가')} 돼요!`
+    : `새 친구 ${attachJosa(species.name, '이/가')} 왔어요! 잘 돌봐 주세요!`),
+  farmGrow: (species, stage) => (stage === 'adult'
+    ? `와아! ${attachJosa(species.name, '이/가')} 다 컸어요!`
+    : `와아! ${attachJosa(species.babyName || species.name, '이/가')} 쑥쑥 자랐어요!`),
+  // 직접 지은 이름은 미리 만든 음성이 없어 원격 음성이나 기기 음성으로 읽는다
+  farmHello: (species, name) => `안녕! 나는 ${species.name} ${attachJosa(name, '이에요/예요')}`,
+
   // 📸 동물 · 탈것 · 바다생물 소리 / 🍎 과일
   itemSound: (item) => `${item.name}! ${item.soundText}`,
   tasty: (item) => `맛있는 ${item.name}!`,
@@ -134,6 +162,9 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
     if (!sp.noBreed) lines.push(VOICE.aquaPregnant(sp, bt), ...(bt === 'live' ? [VOICE.aquaBirth(sp)] : [VOICE.aquaEggs(sp), VOICE.aquaHatch(sp)]));
     Object.keys(STAGE_NAMES).forEach(stage => lines.push(VOICE.aquaFishInfo(sp, stage)));
   });
+  lines.push(VOICE.farmWelcome(), VOICE.farmWelcomeBack(), VOICE.farmHungry(), VOICE.farmDirty(), VOICE.farmPoop(), VOICE.farmFeed(), VOICE.farmWash(), VOICE.farmWashMode(),
+    VOICE.farmGift(), VOICE.farmNeedMore(), VOICE.farmSick(), VOICE.farmHeal(), VOICE.farmNotSick(), VOICE.farmHealMode(), VOICE.farmNight(), VOICE.farmSleepTap(), VOICE.farmRelease());
+  FARM_SPECIES.forEach(sp => lines.push(VOICE.farmNew(sp), VOICE.farmGrow(sp, 'young'), VOICE.farmGrow(sp, 'adult')));
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
   fruits.forEach(i => lines.push(VOICE.tasty(i)));
   animals.forEach(i => lines.push(VOICE.quiz(i.name, false)));
