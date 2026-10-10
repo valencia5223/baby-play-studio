@@ -816,17 +816,26 @@ function drawCreature(ctx, sp, L, o = {}) {
         ctx.strokeStyle = fam === 'sharkDad' ? '#1e3a8a' : '#f8fafc'; ctx.lineWidth = Math.max(1, eR * (fam === 'sharkDad' ? 0.55 : 0.75));
         ctx.beginPath(); ctx.moveTo(ex - eR * 1.4, ey - eR * 1.5); ctx.quadraticCurveTo(ex, ey - eR * 2.3, ex + eR * 1.4, ey - eR * 1.8); ctx.stroke();
       }
-      if (fam === 'sharkGrandma' || fam === 'sharkGrandpa') {
-        // 할머니·할아버지: 동그란 안경과 안경다리
-        ctx.strokeStyle = fam === 'sharkGrandma' ? '#7c2d12' : '#14532d'; ctx.lineWidth = Math.max(0.9, eR * 0.3);
-        ctx.fillStyle = 'rgba(255,255,255,0.18)';
-        ctx.beginPath(); ctx.arc(ex + eR * 0.1, ey, eR * 1.75, 0, TAU); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(ex - eR * 1.62, ey - eR * 0.3); ctx.lineTo(ex - eR * 4.2, ey - eR * 0.9); ctx.stroke();
-        if (fam === 'sharkGrandma') {
-          // 할머니: 진주 목걸이
-          ctx.fillStyle = '#fffbeb';
-          for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(L * (0.08 - i * 0.05), H * (0.5 - i * 0.03), Math.max(1, L * 0.018), 0, TAU); ctx.fill(); }
-        }
+      if (fam === 'sharkGrandma') {
+        // 할머니: 코끝에 걸친 작고 동그란 흰 테 안경 (눈 아래 앞쪽)
+        const gx = ex + eR * 0.75, gy = ey + eR * 1.45, gR = eR * 0.78;
+        ctx.strokeStyle = '#fffbeb'; ctx.lineWidth = Math.max(0.9, eR * 0.24);
+        ctx.fillStyle = 'rgba(255,255,255,0.22)';
+        ctx.beginPath(); ctx.arc(gx, gy, gR, 0, TAU); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(gx + gR, gy - gR * 0.2); ctx.quadraticCurveTo(gx + gR * 1.5, gy - gR * 0.8, gx + gR * 2, gy - gR * 0.1); ctx.stroke();   // 코걸이
+        ctx.beginPath(); ctx.moveTo(gx - gR, gy - gR * 0.2); ctx.lineTo(gx - gR * 3.2, gy - gR * 1.1); ctx.stroke();   // 안경다리
+      }
+      if (fam === 'sharkGrandpa') {
+        // 할아버지: 입 위로 늘어진 덥수룩한 흰 콧수염
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.moveTo(L * 0.495, H * 0.03);
+        ctx.quadraticCurveTo(L * 0.38, -H * 0.02, L * 0.25, H * 0.2);
+        ctx.quadraticCurveTo(L * 0.21, H * 0.3, L * 0.25, H * 0.34);
+        ctx.quadraticCurveTo(L * 0.38, H * 0.2, L * 0.49, H * 0.17);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = 'rgba(100,116,139,0.45)'; ctx.lineWidth = Math.max(0.6, L * 0.008);
+        ctx.beginPath(); ctx.moveTo(L * 0.44, H * 0.07); ctx.quadraticCurveTo(L * 0.35, H * 0.09, L * 0.28, H * 0.22); ctx.stroke();   // 수염 결
       }
       break;
     }
@@ -2079,13 +2088,16 @@ export default function AquariumGame({ audio, speak }) {
     ro.observe(wrap);
 
     // ── 먹이 ──
+    const FOOD_MAX = 320;   // 한 번에 떠 있을 수 있는 밥알 수 (100마리 분량)
     const spawnFood = (x, n) => {
+      // 양이 많으면 한곳에 뭉치지 않게 더 넓게 뿌린다
+      const spread = Math.min(s.W * 0.7, 50 + n * 2.5);
       for (let i = 0; i < n; i++) {
-        if (s.food.length > 90) break;
+        if (s.food.length >= FOOD_MAX) break;
         const flake = Math.random() < 0.6, corners = 6 + Math.floor(Math.random() * 3);
         const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
         s.food.push({
-          x: clamp(x + (Math.random() - 0.5) * 50, 10, s.W - 10), y: s.surface + 2 + Math.random() * 4,
+          x: clamp(x + (Math.random() - 0.5) * spread, 10, s.W - 10), y: s.surface + 2 + Math.random() * 4,
           vx: (Math.random() - 0.5) * 10, vy: 0, state: 'float', t: (flake ? 0.25 : 0.1) + Math.random() * 0.45,
           rot: Math.random() * 6, life: 25, kind: flake ? 'flake' : 'pellet',
           color: flake ? pick(FLAKE_COLORS) : pick(PELLET_COLORS),
@@ -2858,7 +2870,8 @@ export default function AquariumGame({ audio, speak }) {
         sh.t += dt;
         if (!sh.dropped && sh.t > 0.2) {
           sh.dropped = true;
-          spawnFood(sh.x, clamp(Math.round(game.fish.length * 1.5), 4, 16));
+          // 한 마리에 3알쯤(5마리 = 16알). 개체 수에 비례해 늘어난다.
+          spawnFood(sh.x, clamp(Math.round(game.fish.length * 3.2), 4, FOOD_MAX));
           for (let i = 0; i < 3; i++) audio.playFreq(2200 + Math.random() * 900, 'triangle', 0.03, 0.07);
         }
         if (sh.t > sh.dur) s.shaker = null;

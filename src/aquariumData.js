@@ -234,12 +234,12 @@ export const FISH_SPECIES = [
   {
     id: 'sharkGrandma', name: '할머니상어', price: 580, len: 112, hRatio: 0.4, shape: 'shark', desc: '주황색 다정한 할머니상어', sea: true, sex: 'f', noBreed: true,
     speed: 0.65, growMul: 0.7, school: false, zone: 'mid',
-    top: '#fb923c', belly: '#ffedd5', fin: '#ea580c', tail: {}
+    top: '#fb9a4b', belly: '#fff7ed', fin: '#f97316', tail: {}
   },
   {
     id: 'sharkGrandpa', name: '할아버지상어', price: 600, len: 118, hRatio: 0.4, shape: 'shark', desc: '초록색 멋쟁이 할아버지상어', sea: true, sex: 'm', noBreed: true,
     speed: 0.65, growMul: 0.7, school: false, zone: 'mid',
-    top: '#4ade80', belly: '#dcfce7', fin: '#16a34a', tail: {}
+    top: '#84cc16', belly: '#f7fee7', fin: '#65a30d', tail: {}
   },
   {
     id: 'whale', name: '고래', price: 500, len: 136, hRatio: 0.42, shape: 'whale', desc: '바다에서 제일 커요', sea: true,
