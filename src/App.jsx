@@ -2911,33 +2911,48 @@ const PUZZLE_BOARD_PX = 340;
 const puzzleGeoCache = new Map();
 function puzzleGeo(theme) {
   if (puzzleGeoCache.has(theme.id)) return puzzleGeoCache.get(theme.id);
-  const cols = theme.cols || 2, rows = theme.rows || 2, w = 300 / cols, h = 300 / rows, s = Math.min(w, h), m = s * 0.3;
+  const cols = theme.cols || 2, rows = theme.rows || 2, w = 300 / cols, h = 300 / rows, base = Math.min(w, h);
   let seed = 7;
   for (const ch of theme.id) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-  // hT[r][c]: r-1 행과 r 행 사이 변 (+1 이면 아래로 볼록), vT[r][c]: c-1 열과 c 열 사이 변 (+1 이면 오른쪽으로 볼록)
-  const hT = Array.from({ length: rows + 1 }, () => Array.from({ length: cols }, () => (rnd() < 0.5 ? 1 : -1)));
-  const vT = Array.from({ length: rows }, () => Array.from({ length: cols + 1 }, () => (rnd() < 0.5 ? 1 : -1)));
+  const jit = (amt) => (rnd() * 2 - 1) * amt;
+  // 꼭짓점: 바둑판 칸을 비틀어 조각마다 크기·기울기가 다르게 (테두리 위의 점은 테두리를 따라서만 움직인다)
+  const P = Array.from({ length: rows + 1 }, (_, r) => Array.from({ length: cols + 1 }, (_, c) => {
+    const inX = c > 0 && c < cols, inY = r > 0 && r < rows;
+    return [c * w + (inX ? jit(w * 0.2) : 0), r * h + (inY ? jit(h * 0.2) : 0)];
+  }));
+  // 변마다: 돌기 방향(+1/-1), 돌기 위치(변의 40~60%), 돌기 크기(0.8~1.15배)
+  const edgeInfo = () => ({ dir: rnd() < 0.5 ? 1 : -1, tc: 0.4 + rnd() * 0.2, ks: 0.8 + rnd() * 0.35 });
+  const hT = Array.from({ length: rows + 1 }, () => Array.from({ length: cols }, edgeInfo));
+  const vT = Array.from({ length: rows }, () => Array.from({ length: cols + 1 }, edgeInfo));
   const f = (v) => Math.round(v * 100) / 100;
-  // 한 변: dir 0 = 테두리(직선), +1 = 조각 바깥으로 볼록, -1 = 안으로 오목. 목이 잘록하고 머리가 둥근 돌기
-  const edge = (x0, y0, x1, y1, dir) => {
-    if (!dir) return `L${f(x1)} ${f(y1)}`;
+  // 한 변: e 가 없으면 테두리(직선). sign +1 = 조각 바깥으로 볼록, -1 = 안으로 오목. rev 면 반대 방향으로 지나가므로 돌기 위치를 뒤집는다
+  const edge = (p0, p1, e, sign, rev) => {
+    const [x0, y0] = p0, [x1, y1] = p1;
+    if (!e) return `L${f(x1)} ${f(y1)}`;
+    const dir = e.dir * sign, tc = rev ? 1 - e.tc : e.tc, s = base * e.ks;
     const len = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / len, uy = (y1 - y0) / len, nx = uy, ny = -ux;
-    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-    const P = (t, n) => `${f(mx + ux * (t - 0.5) * s + nx * n * s * dir)} ${f(my + uy * (t - 0.5) * s + ny * n * s * dir)}`;
-    return `L${P(0.36, 0)}C${P(0.42, 0)} ${P(0.4, 0.1)} ${P(0.38, 0.14)}C${P(0.3, 0.3)} ${P(0.7, 0.3)} ${P(0.62, 0.14)}C${P(0.6, 0.1)} ${P(0.58, 0)} ${P(0.64, 0)}L${f(x1)} ${f(y1)}`;
+    const cx = x0 + ux * len * tc, cy = y0 + uy * len * tc;
+    const Q = (t, n) => `${f(cx + ux * (t - 0.5) * s + nx * n * s * dir)} ${f(cy + uy * (t - 0.5) * s + ny * n * s * dir)}`;
+    return `L${Q(0.36, 0)}C${Q(0.42, 0)} ${Q(0.4, 0.1)} ${Q(0.38, 0.14)}C${Q(0.3, 0.3)} ${Q(0.7, 0.3)} ${Q(0.62, 0.14)}C${Q(0.6, 0.1)} ${Q(0.58, 0)} ${Q(0.64, 0)}L${f(x1)} ${f(y1)}`;
   };
   const pieces = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const x = c * w, y = r * h;
-      const d = `M${f(x)} ${f(y)}`
-        + edge(x, y, x + w, y, r > 0 ? -hT[r][c] : 0)
-        + edge(x + w, y, x + w, y + h, c < cols - 1 ? vT[r][c + 1] : 0)
-        + edge(x + w, y + h, x, y + h, r < rows - 1 ? hT[r + 1][c] : 0)
-        + edge(x, y + h, x, y, c > 0 ? -vT[r][c] : 0) + 'Z';
-      // vb: 돌기까지 들어가는 조각 상자 (그림 좌표)
-      pieces.push({ d, col: c, row: r, vb: [x - m, y - m, w + m * 2, h + m * 2] });
+      const tl = P[r][c], tr = P[r][c + 1], br = P[r + 1][c + 1], bl = P[r + 1][c];
+      const d = `M${f(tl[0])} ${f(tl[1])}`
+        + edge(tl, tr, r > 0 ? hT[r][c] : null, -1, false)
+        + edge(tr, br, c < cols - 1 ? vT[r][c + 1] : null, 1, false)
+        + edge(br, bl, r < rows - 1 ? hT[r + 1][c] : null, 1, true)
+        + edge(bl, tl, c > 0 ? vT[r][c] : null, -1, true) + 'Z';
+      const xs = [tl[0], tr[0], br[0], bl[0]], ys = [tl[1], tr[1], br[1], bl[1]];
+      const m = base * 0.36;   // 돌기가 튀어나오는 여유
+      const x0 = Math.min(...xs) - m, y0 = Math.min(...ys) - m;
+      pieces.push({
+        d, col: c, row: r,
+        cx: xs.reduce((a2, b2) => a2 + b2) / 4, cy: ys.reduce((a2, b2) => a2 + b2) / 4,   // 조각 가운데 (그림 좌표)
+        vb: [x0, y0, Math.max(...xs) + m - x0, Math.max(...ys) + m - y0]
+      });
     }
   }
   const geo = { cols, rows, w, h, pieces };
@@ -3127,14 +3142,17 @@ export default function App() {
   const puzzleSlotAt = (x, y) => {
     const b = puzzleBoardBox(), geo = puzzleGeo(puzzleTheme);
     if (!b || x < b.left || y < b.top || x >= b.left + b.size || y >= b.top + b.size) return null;
-    return Math.floor((y - b.top) / (b.size / geo.rows)) * geo.cols + Math.floor((x - b.left) / (b.size / geo.cols));
+    const k = b.size / 300;
+    let best = null, bd = Infinity;
+    geo.pieces.forEach((p, i) => { const d = Math.hypot(b.left + p.cx * k - x, b.top + p.cy * k - y); if (d < bd) { bd = d; best = i; } });
+    return best;
   };
+  // 제자리 근처인지: 조각 가운데에서 칸 크기의 반쯤 + 손가락 여유(pad) 안
   const puzzleNearSlot = (x, y, idx, pad) => {
     const b = puzzleBoardBox(), geo = puzzleGeo(puzzleTheme);
     if (!b) return false;
-    const cw = b.size / geo.cols, ch = b.size / geo.rows, piece = geo.pieces[idx];
-    const left = b.left + piece.col * cw, top = b.top + piece.row * ch;
-    return x >= left - pad && x <= left + cw + pad && y >= top - pad && y <= top + ch + pad;
+    const k = b.size / 300, p = geo.pieces[idx];
+    return Math.hypot(b.left + p.cx * k - x, b.top + p.cy * k - y) <= Math.max(geo.w, geo.h) * k * 0.55 + pad;
   };
 
   const handleStartDragPiece = (e, quadIdx) => {
@@ -3262,25 +3280,34 @@ export default function App() {
     };
   }, []);
 
-  // 동요 탭 변경 시 오디오 정지 및 재생 처리
-  useEffect(() => {
-    if (activeTab !== 'song' && songAudioRef.current) {
-      songAudioRef.current.pause();
-      setIsSongPlaying(false);
-    }
-  }, [activeTab]);
+  // 동요는 탭을 바꿔도 계속 나온다 (상단 미니 플레이어로 어디서든 멈추고 넘길 수 있다)
+  const [songPlayerOn, setSongPlayerOn] = useState(false);   // 한 번 틀면 상단에 플레이어가 생긴다
+  const songIdxRef = useRef(0);
+  const autoNextRef = useRef(true), shuffleRef = useRef(false);
+  useEffect(() => { autoNextRef.current = isAutoPlayNext; shuffleRef.current = isShuffle; }, [isAutoPlayNext, isShuffle]);
+  // 음소거 버튼은 동요도 끈다
+  useEffect(() => { if (songAudioRef.current) songAudioRef.current.muted = !soundEnabled; }, [soundEnabled]);
+
+  const nextSongIdx = (idx) => {
+    const n = LOCAL_NURSERY_SONGS.length;
+    if (shuffleRef.current && n > 1) { let j = idx; while (j === idx) j = Math.floor(Math.random() * n); return j; }
+    return (idx + 1) % n;
+  };
 
   const playSelectedSong = (idx) => {
     setCurrentSongIdx(idx);
+    songIdxRef.current = idx;
     const song = LOCAL_NURSERY_SONGS[idx];
     if (!song) return;
 
     if (songAudioRef.current) {
+      songAudioRef.current.onended = null;
       songAudioRef.current.pause();
     }
 
     const audio = new Audio(song.url);
     audio.volume = 0.85;
+    audio.muted = !soundEnabled;
     audio.play().then(() => {
       setIsSongPlaying(true);
     }).catch(() => {
@@ -3288,25 +3315,35 @@ export default function App() {
     });
 
     audio.onended = () => {
-      const nextIdx = (idx + 1) % LOCAL_NURSERY_SONGS.length;
-      playSelectedSong(nextIdx);
+      if (autoNextRef.current) playSelectedSong(nextSongIdx(songIdxRef.current));
+      else setIsSongPlaying(false);
     };
 
     songAudioRef.current = audio;
+    setSongPlayerOn(true);
   };
 
   const togglePlaySong = () => {
-    if (isSongPlaying && songAudioRef.current) {
-      songAudioRef.current.pause();
+    const a = songAudioRef.current;
+    if (isSongPlaying && a) {
+      a.pause();
       setIsSongPlaying(false);
+    } else if (a && songIdxRef.current === currentSongIdx && !a.ended) {
+      // 멈춘 곳부터 이어서
+      a.play().then(() => setIsSongPlaying(true)).catch(() => setIsSongPlaying(false));
     } else {
       playSelectedSong(currentSongIdx);
     }
   };
 
+  const stopSongPlayer = () => {
+    if (songAudioRef.current) { songAudioRef.current.onended = null; songAudioRef.current.pause(); songAudioRef.current = null; }
+    setIsSongPlaying(false);
+    setSongPlayerOn(false);
+  };
+
   const handleNextSong = () => {
-    const nextIdx = (currentSongIdx + 1) % LOCAL_NURSERY_SONGS.length;
-    playSelectedSong(nextIdx);
+    playSelectedSong(nextSongIdx(currentSongIdx));
   };
 
   const handlePrevSong = () => {
@@ -3621,6 +3658,31 @@ export default function App() {
             </span>
           </div>
         </div>
+        {/* 🎵 동요 미니 플레이어: 탭을 바꿔도 노래가 계속 나오고 여기서 멈추고 넘긴다 */}
+        {songPlayerOn && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px', background: isSongPlaying ? '#dcfce7' : '#f1f5f9',
+            border: `2.5px solid ${isSongPlaying ? '#16a34a' : '#cbd5e1'}`, borderRadius: '18px', padding: '4px 6px 4px 12px',
+            minWidth: 0, maxWidth: '420px', flex: '0 1 420px', margin: '0 12px'
+          }}>
+            <span style={{ fontSize: '1.3rem', lineHeight: 1 }}>{isSongPlaying ? '🎶' : '🎵'}</span>
+            <button onClick={() => setActiveTab('song')} title="동요 재생 탭으로" style={{
+              flex: 1, minWidth: 0, border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', padding: 0,
+              fontWeight: 900, fontSize: '0.92rem', color: '#14532d', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+            }}>{LOCAL_NURSERY_SONGS[currentSongIdx]?.title || '동요'}</button>
+            {[
+              ['이전 곡', <SkipBack size={18} />, handlePrevSong, '#ffffff', '#166534'],
+              [isSongPlaying ? '일시정지' : '재생', isSongPlaying ? <Pause size={20} /> : <Play size={20} />, togglePlaySong, isSongPlaying ? '#ef4444' : '#16a34a', '#ffffff'],
+              ['다음 곡', <SkipForward size={18} />, handleNextSong, '#ffffff', '#166534'],
+              ['동요 끄기', <X size={18} />, stopSongPlayer, '#ffffff', '#64748b']
+            ].map(([label, icon, fn, bg, col]) => (
+              <button key={label} onClick={fn} aria-label={label} title={label} style={{
+                width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #bbf7d0', background: bg, color: col,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0
+              }}>{icon}</button>
+            ))}
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button onClick={() => setIsIpadFrame(!isIpadFrame)} style={{
             display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '14px',
@@ -4025,16 +4087,12 @@ export default function App() {
                   <div
                     ref={puzzleBoardRef}
                     className={puzzleCompleted ? 'puzzle-completed-board' : ''}
-                    onClick={(e) => {
-                      const slot = puzzleSlotAt(e.clientX, e.clientY);
-                      if (slot !== null && !placedPieces[slot]) handleSnapPiece(slot);
-                    }}
                     style={{
                       width: `${PUZZLE_BOARD_PX}px`, height: `${PUZZLE_BOARD_PX}px`, boxSizing: 'content-box',
                       background: '#ead9b8', borderRadius: '22px',
                       border: puzzleCompleted ? '7px solid #eab308' : '7px solid #b08968',
                       boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
-                      overflow: 'hidden', position: 'relative', cursor: 'pointer', transition: 'border-color 0.3s ease'
+                      overflow: 'hidden', position: 'relative', transition: 'border-color 0.3s ease'
                     }}
                   >
                     <svg viewBox="0 0 300 300" width={PUZZLE_BOARD_PX} height={PUZZLE_BOARD_PX} style={{ position: 'absolute', left: 0, top: 0, display: 'block' }}>
@@ -4087,9 +4145,6 @@ export default function App() {
                           key={quadIdx}
                           disabled={isPlaced}
                           onPointerDown={(e) => handleStartDragPiece(e, quadIdx)}
-                          onClick={() => {
-                            if (!isPlaced) handleSnapPiece(quadIdx);
-                          }}
                           style={{
                             height: puzzleTrayCols === 2 ? '118px' : puzzleTrayCols === 3 ? '100px' : '80px', borderRadius: '16px',
                             border: '2px dashed #e2e8f0', background: isPlaced ? '#f1f5f9' : '#fffdf7',
