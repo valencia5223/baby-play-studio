@@ -186,8 +186,11 @@ export const isFarmSad = (a, dirt) => a.full < 25 || a.mud > 75 || dirt > 70 || 
 export const farmCondition = (a, dirt) => Math.round(a.full * 0.4 + (100 - a.mud) * 0.3 + a.happy * 0.2 + (100 - dirt) * 0.1);
 export const farmGrowFactor = (a, dirt) => (isFarmSad(a, dirt) ? 0 : Math.max(0.15, Math.min(1, (farmCondition(a, dirt) - 30) / 55)));
 
-// ── 별(⭐) 보상 ──
-export const FARM_REWARDS = { eat: 1, poop: 2, wash: 5, young: 20, adult: 50, daily: 20, pet: 1, heal: 5, birth: 10 };
+// ── 별(⭐) 보상 ── 배고플 때(배부름 70% 미만) 먹으면 eatHungry, 아니면 eat.
+// 다 크기 전에도 가끔 작은 선물(별 YOUNG_GIFT_STARS)을 떨어뜨리고, 간격은 YOUNG_GIFT_MUL 배로 길다.
+export const YOUNG_GIFT_STARS = [2, 3];
+export const YOUNG_GIFT_MUL = 1.3;
+export const FARM_REWARDS = { eat: 1, eatHungry: 3, poop: 2, wash: 5, young: 20, adult: 50, daily: 20, pet: 1, heal: 5, birth: 10 };
 // 넓은 들판으로 보낼 때: 종류 값 × (40% + 자란 만큼 최대 160%)
 export const farmReleaseReward = (a) => {
   const sp = FARM_BY_ID[a.sp];

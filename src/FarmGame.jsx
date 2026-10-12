@@ -4,7 +4,7 @@ import {
   FARM_SPECIES, FARM_BY_ID, farmSpeciesOf, FARM_STAGE_NAMES, farmStageOf, farmSizeScale,
   FARM_RATES, FARM_SLEEP_IDLE_SEC, isFarmNight, farmDirt, isFarmSad, farmCondition, farmGrowFactor,
   FARM_REWARDS, farmReleaseReward, newAnimal, loadFarm, saveFarm, catchUpFarm, farmTodayKey,
-  farmBreedOf, farmMateStatus, FARM_SEX_NAMES, newFarmUid, FARM_LIMITS, FARM_VARIANTS, farmVariantOf, farmLookOf
+  YOUNG_GIFT_STARS, YOUNG_GIFT_MUL, farmBreedOf, farmMateStatus, FARM_SEX_NAMES, newFarmUid, FARM_LIMITS, FARM_VARIANTS, farmVariantOf, farmLookOf
 } from './farmData.js';
 const FARM_LIMITS_BREED = FARM_LIMITS.breed;
 
@@ -778,12 +778,14 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           say('preg', VOICE.farmPregnant(sp, farmBreedOf(a.sp).type), 5);
           saveFarm(game);
         }
-        // 다 큰 친구는 컨디션이 좋으면 가끔 선물을 떨어뜨린다
-        if (now === 'adult' && !sad && sp.gift) {
+        // 컨디션이 좋으면 가끔 선물을 떨어뜨린다 (다 크기 전에는 작은 선물을 조금 더 드물게)
+        if (!sad && sp.gift) {
+          const grown = now === 'adult';
           a.giftT = (a.giftT || 0) + dt;
-          if (a.giftT >= sp.gift.everySec && s.gifts.length < 8) {
+          if (a.giftT >= sp.gift.everySec * (grown ? 1 : YOUNG_GIFT_MUL) && s.gifts.length < 8) {
             a.giftT = 0;
-            s.gifts.push({ x: clamp(r.x - r.face * 30 * s.k, 20, s.W - 20), d: r.d, icon: sp.gift.icon, stars: sp.gift.stars, life: 120, bob: 0 });
+            const stars = grown ? sp.gift.stars : YOUNG_GIFT_STARS[Math.floor(Math.random() * YOUNG_GIFT_STARS.length)];
+            s.gifts.push({ x: clamp(r.x - r.face * 30 * s.k, 20, s.W - 20), d: r.d, icon: sp.gift.icon, stars, small: !grown, life: 120, bob: 0 });
           }
         }
         if (r.poopDue > 0) {
@@ -803,8 +805,9 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         else if (r.eatT > 0) {
           r.eatT -= dt;
           if (r.eatT <= 0) {
+            const wasHungry = a.full < 70;   // 배고플 때 먹으면 별을 더 준다
             a.full = Math.min(100, a.full + 40); a.happy = Math.min(100, a.happy + 6);
-            addPoints(FARM_REWARDS.eat, r.x, yOf(r.d) - sizeOf(a, r) - 10);
+            addPoints(wasHungry ? FARM_REWARDS.eatHungry : FARM_REWARDS.eat, r.x, yOf(r.d) - sizeOf(a, r) - 10);
             r.poopDue = rand(FARM_RATES.poopEverySec[0], FARM_RATES.poopEverySec[1]);
             if (s.t - s.lastYum > 0.9) { s.lastYum = s.t; audio.playYum(); }
           }
@@ -959,7 +962,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           const g = it.g, sc = scaleOf(g.d), y = yOf(g.d);
           ctx.fillStyle = 'rgba(0,0,0,0.15)'; ell(ctx, g.x, y, 12 * sc, 4 * sc); ctx.fill();
           ctx.fillStyle = `rgba(254,240,138,${0.35 + 0.2 * Math.sin(g.bob * 4)})`; ell(ctx, g.x, y - 16 * sc, 20 * sc, 20 * sc); ctx.fill();
-          emoji(g.icon, g.x, y - 16 * sc - Math.abs(Math.sin(g.bob * 3)) * 5 * sc, 26 * sc, g.life < 8 ? 0.4 + 0.6 * Math.abs(Math.sin(g.bob * 6)) : 1);
+          emoji(g.icon, g.x, y - 16 * sc - Math.abs(Math.sin(g.bob * 3)) * 5 * sc, (g.small ? 19 : 26) * sc, g.life < 8 ? 0.4 + 0.6 * Math.abs(Math.sin(g.bob * 6)) : 1);
         } else {
           const a = it.a, r = s.rt[a.uid], sp = FARM_BY_ID[a.sp], S = sizeOf(a, r), y = yOf(r.d);
           const hop = r.hopT > 0 ? -Math.sin(clamp(r.hopT / 0.6, 0, 1) * Math.PI) * S * 0.28 : 0;
@@ -1222,7 +1225,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
                   : infoAnimal.sick ? '🩹 아파서 자라지 않아요. 치료 버튼을 누르고 이 친구를 눌러 주세요'
                   : sad ? '배고프거나 지저분해서 자라지 않아요'
                     : stage === 'adult' ? `🎉 다 컸어요! 가끔 ${vsp.gift.icon} ${attachJosa(vsp.gift.name, '을/를')} 선물해요`
-                      : `자라는 속도 ${Math.round(speed * 100)}% · 컨디션 ${cond}% (좋을수록 빨라요)`}
+                      : `자라는 속도 ${Math.round(speed * 100)}% · 컨디션 ${cond}% · 가끔 작은 ${vsp.gift.icon} 선물도 줘요`}
               </div>
               {/* 가족: 이름이 없으면 '엄마 토끼 ♀' 처럼 종류로 부르고, 누르면 그 친구 카드로 */}
               {(() => {
