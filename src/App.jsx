@@ -2715,15 +2715,15 @@ const OCEAN_CREATURES = [
 // 🧩 아기 퍼즐 데이터. cols × rows 가 조각 수 (사과 2조각 ~ 판다 12조각으로 테마마다 다르다)
 // ═════════════════════════════════════════════════════════════════════════════
 const BABY_PUZZLES = [
-  { id: 'dog', cols: 2, rows: 2, name: '강아지', icon: '🐶', label: '🐶 강아지 얼굴', color: '#f97316', bg: '#fff7ed', desc: '사랑스러운 멍멍이 강아지' },
-  { id: 'cat', cols: 2, rows: 2, name: '고양이', icon: '🐱', label: '🐱 고양이 얼굴', color: '#ec4899', bg: '#fdf2f8', desc: '초롱초롱 야옹이 고양이' },
-  { id: 'lion', cols: 3, rows: 3, name: '사자', icon: '🦁', label: '🦁 사자 얼굴', color: '#d97706', bg: '#fefce8', desc: '멋진 갈기털 밀림의 왕 사자' },
-  { id: 'rabbit', cols: 2, rows: 3, name: '토끼', icon: '🐰', label: '🐰 토끼 얼굴', color: '#f43f5e', bg: '#fff1f2', desc: '쫑긋한 분홍 귀 깡충 토끼' },
-  { id: 'pig', cols: 3, rows: 2, name: '돼지', icon: '🐷', label: '🐷 돼지 얼굴', color: '#f43f5e', bg: '#ffe4e6', desc: '동글동글 꿀꿀 분홍 돼지' },
-  { id: 'bear', cols: 3, rows: 3, name: '곰돌이', icon: '🐻', label: '🐻 곰돌이 얼굴', color: '#b45309', bg: '#fef3c7', desc: '포근한 꿀단지 아기 곰돌이' },
-  { id: 'panda', cols: 4, rows: 3, name: '판다', icon: '🐼', label: '🐼 판다 얼굴', color: '#0f172a', bg: '#f8fafc', desc: '귀여운 눈 패치 흑백 판다' },
-  { id: 'frog', cols: 3, rows: 2, name: '개구리', icon: '🐸', label: '🐸 개구리 얼굴', color: '#16a34a', bg: '#f0fdf4', desc: '초롱초롱 왕눈이 개구리' },
-  { id: 'apple', cols: 2, rows: 1, name: '빨간 사과', icon: '🍎', label: '🍎 빨간 사과', color: '#dc2626', bg: '#fee2e2', desc: '새콤달콤 싱싱한 빨간 사과' }
+  { id: 'dog', cut: { type: 'jigsaw', cols: 2, rows: 2 }, name: '강아지', icon: '🐶', label: '🐶 강아지 얼굴', color: '#f97316', bg: '#fff7ed', desc: '들판에서 공놀이하는 강아지' },
+  { id: 'cat', cut: { type: 'pie', n: 4 }, name: '고양이', icon: '🐱', label: '🐱 고양이 얼굴', color: '#ec4899', bg: '#fdf2f8', desc: '꽃밭 울타리에 앉은 고양이' },
+  { id: 'lion', cut: { type: 'bricks', rows: [2, 3, 2] }, name: '사자', icon: '🦁', label: '🦁 사자 얼굴', color: '#d97706', bg: '#fefce8', desc: '노을 진 초원의 사자' },
+  { id: 'rabbit', cut: { type: 'waves', n: 4, dir: 'v' }, name: '토끼', icon: '🐰', label: '🐰 토끼 얼굴', color: '#f43f5e', bg: '#fff1f2', desc: '당근밭의 깡충 토끼' },
+  { id: 'pig', cut: { type: 'curvy', cols: 3, rows: 2 }, name: '돼지', icon: '🐷', label: '🐷 돼지 얼굴', color: '#f43f5e', bg: '#ffe4e6', desc: '진흙탕에서 노는 돼지' },
+  { id: 'bear', cut: { type: 'jigsaw', cols: 3, rows: 3 }, name: '곰돌이', icon: '🐻', label: '🐻 곰돌이 얼굴', color: '#b45309', bg: '#fef3c7', desc: '숲속에서 꿀단지를 찾은 곰돌이' },
+  { id: 'panda', cut: { type: 'bricks', rows: [3, 4, 3] }, name: '판다', icon: '🐼', label: '🐼 판다 얼굴', color: '#0f172a', bg: '#f8fafc', desc: '대나무 숲의 판다' },
+  { id: 'frog', cut: { type: 'pie', n: 6 }, name: '개구리', icon: '🐸', label: '🐸 개구리 얼굴', color: '#16a34a', bg: '#f0fdf4', desc: '연잎 위의 개구리' },
+  { id: 'apple', cut: { type: 'waves', n: 2, dir: 'v' }, name: '빨간 사과', icon: '🍎', label: '🍎 빨간 사과', color: '#dc2626', bg: '#fee2e2', desc: '과수원 언덕의 빨간 사과' }
 ];
 
 // 🧩 퍼즐 300x300 고화질 벡터 아트워크 그룹 (단일 루트 SVG에서 1/4 조각으로 완벽 분할)
@@ -2904,58 +2904,353 @@ function PuzzleArtworkG({ id }) {
   );
 }
 
-// ── 🧩 직소 퍼즐 조각 모양 ──
-// 그림(300×300)을 cols × rows 칸으로 나누고, 칸 사이 변마다 볼록/오목 돌기를 넣는다.
-// 돌기 방향은 테마 id 로 정해지는 고정 난수라 같은 퍼즐은 늘 같은 모양이다.
+// 🧩 퍼즐 장면 (300×300): 주인공 동물이 자연 속에서 노는 모습. 머리는 PuzzleArtworkG 얼굴 그림을 줄여 쓴다.
+// (x, y) = 머리 가운데, s = 크기 배율 (얼굴 그림은 가운데가 약 (150, 160))
+function PzHead({ id, x, y, s, cy = 160 }) {
+  return <g transform={`translate(${x - 150 * s} ${y - cy * s}) scale(${s})`}><PuzzleArtworkG id={id} /></g>;
+}
+const PzCloud = ({ x, y, s = 1 }) => (
+  <g fill="#ffffff" opacity="0.95">
+    <ellipse cx={x} cy={y} rx={26 * s} ry={14 * s} /><ellipse cx={x - 20 * s} cy={y + 5 * s} rx={16 * s} ry={10 * s} /><ellipse cx={x + 22 * s} cy={y + 4 * s} rx={18 * s} ry={11 * s} />
+  </g>
+);
+const PzFlower = ({ x, y, c, r = 5 }) => (
+  <g>
+    <line x1={x} y1={y + r} x2={x} y2={y + r * 3.4} stroke="#16a34a" strokeWidth={r * 0.45} strokeLinecap="round" />
+    {[0, 72, 144, 216, 288].map(a => <circle key={a} cx={x + Math.cos(a * Math.PI / 180) * r} cy={y + Math.sin(a * Math.PI / 180) * r} r={r * 0.75} fill={c} />)}
+    <circle cx={x} cy={y} r={r * 0.6} fill="#fde047" />
+  </g>
+);
+const PzTuft = ({ x, y, c = '#15803d', s = 1 }) => (
+  <path d={`M${x - 6 * s} ${y} L${x - 3 * s} ${y - 9 * s} L${x} ${y} L${x + 3 * s} ${y - 11 * s} L${x + 6 * s} ${y}`} fill="none" stroke={c} strokeWidth={2 * s} strokeLinejoin="round" strokeLinecap="round" />
+);
+const PzLegs = ({ xs, y, h, w = 15, c, stroke }) => xs.map((x, i) => <rect key={i} x={x - w / 2} y={y} width={w} height={h} rx={w / 2} fill={c} stroke={stroke} strokeWidth="3" />);
+
+function PuzzleSceneG({ id }) {
+  if (id === 'dog') {
+    return (
+      <g>
+        <rect width="300" height="300" fill="#bae6fd" />
+        <circle cx="258" cy="44" r="24" fill="#fde047" /><circle cx="258" cy="44" r="32" fill="#fde047" opacity="0.3" />
+        <PzCloud x={70} y={48} /><PzCloud x={170} y={30} s={0.8} />
+        <path d="M0 165 Q75 120 150 160 T300 150 L300 300 L0 300 Z" fill="#86efac" />
+        <path d="M0 200 Q90 175 170 198 T300 192 L300 300 L0 300 Z" fill="#4ade80" />
+        {[[30, 230, '#f472b6'], [60, 268, '#facc15'], [250, 215, '#ffffff'], [275, 270, '#f472b6'], [215, 285, '#fb923c']].map(([x, y, c], i) => <PzFlower key={i} x={x} y={y} c={c} />)}
+        {[[110, 290], [20, 290], [190, 215], [285, 235]].map(([x, y], i) => <PzTuft key={i} x={x} y={y} />)}
+        <circle cx="248" cy="250" r="17" fill="#ef4444" stroke="#991b1b" strokeWidth="3" /><path d="M233 245 Q248 256 263 245" stroke="#ffffff" strokeWidth="4" fill="none" />
+        <path d="M86 222 Q62 200 70 176" stroke="#c2410c" strokeWidth="11" strokeLinecap="round" fill="none" />
+        <PzLegs xs={[100, 124, 156, 178]} y={232} h={40} c="#fb923c" stroke="#ea580c" />
+        <ellipse cx="138" cy="232" rx="56" ry="30" fill="#fdba74" stroke="#ea580c" strokeWidth="4" />
+        <ellipse cx="128" cy="244" rx="30" ry="14" fill="#ffedd5" />
+        <PzHead id="dog" x={188} y={182} s={0.42} />
+      </g>
+    );
+  }
+  if (id === 'cat') {
+    return (
+      <g>
+        <rect width="300" height="300" fill="#e0f2fe" />
+        <PzCloud x={60} y={40} s={0.9} /><PzCloud x={235} y={55} s={0.7} />
+        <rect y="185" width="300" height="115" fill="#bbf7d0" />
+        {[0, 1, 2, 3, 4, 5, 6, 7].map(i => <path key={i} d={`M${8 + i * 40} 200 L${8 + i * 40} 130 L${20 + i * 40} 118 L${32 + i * 40} 130 L${32 + i * 40} 200 Z`} fill="#fef3c7" stroke="#d97706" strokeWidth="2.5" />)}
+        <rect y="142" width="300" height="10" fill="#fde68a" stroke="#d97706" strokeWidth="2" />
+        <rect y="172" width="300" height="10" fill="#fde68a" stroke="#d97706" strokeWidth="2" />
+        {[[22, 222, '#f43f5e'], [50, 250, '#a855f7'], [80, 228, '#facc15'], [222, 228, '#fb7185'], [250, 252, '#60a5fa'], [278, 226, '#f97316'], [35, 282, '#facc15'], [265, 285, '#f43f5e']].map(([x, y, c], i) => <PzFlower key={i} x={x} y={y} c={c} r={6} />)}
+        <g transform="translate(62 82)"><ellipse cx="-7" cy="0" rx="9" ry="12" fill="#f9a8d4" transform="rotate(-25)" /><ellipse cx="7" cy="0" rx="9" ry="12" fill="#c4b5fd" transform="rotate(25)" /><rect x="-1.5" y="-8" width="3" height="16" rx="1.5" fill="#334155" /></g>
+        <path d="M196 268 Q246 262 236 214 Q232 200 244 196" stroke="#f472b6" strokeWidth="13" strokeLinecap="round" fill="none" />
+        <ellipse cx="150" cy="248" rx="50" ry="44" fill="#fdf2f8" stroke="#db2777" strokeWidth="4" />
+        <ellipse cx="128" cy="288" rx="15" ry="9" fill="#ffffff" stroke="#db2777" strokeWidth="3" />
+        <ellipse cx="172" cy="288" rx="15" ry="9" fill="#ffffff" stroke="#db2777" strokeWidth="3" />
+        <PzHead id="cat" x={150} y={176} s={0.46} />
+      </g>
+    );
+  }
+  if (id === 'lion') {
+    return (
+      <g>
+        <rect width="300" height="300" fill="#fed7aa" />
+        <rect y="120" width="300" height="70" fill="#fdba74" />
+        <circle cx="232" cy="118" r="42" fill="#fb923c" opacity="0.85" />
+        <rect y="172" width="300" height="128" fill="#fcd34d" />
+        <path d="M0 172 Q150 160 300 174 L300 190 L0 190 Z" fill="#fbbf24" />
+        {Array.from({ length: 14 }, (_, i) => <PzTuft key={i} x={12 + i * 21} y={205 + (i % 3) * 32} c="#d97706" s={1.2} />)}
+        <path d="M52 205 L58 120" stroke="#78350f" strokeWidth="9" strokeLinecap="round" />
+        <path d="M57 140 L35 118 M58 130 L82 112" stroke="#78350f" strokeWidth="5" strokeLinecap="round" />
+        <ellipse cx="58" cy="108" rx="54" ry="15" fill="#65a30d" /><ellipse cx="48" cy="100" rx="30" ry="9" fill="#84cc16" />
+        <path d="M232 238 Q268 230 268 196" stroke="#f59e0b" strokeWidth="9" strokeLinecap="round" fill="none" /><circle cx="268" cy="192" r="10" fill="#b45309" />
+        <PzLegs xs={[140, 162, 200, 222]} y={242} h={38} c="#f59e0b" stroke="#b45309" />
+        <ellipse cx="182" cy="240" rx="58" ry="30" fill="#fbbf24" stroke="#b45309" strokeWidth="4" />
+        <PzHead id="lion" x={122} y={200} s={0.4} cy={150} />
+      </g>
+    );
+  }
+  if (id === 'rabbit') {
+    return (
+      <g>
+        <rect width="300" height="300" fill="#dbeafe" />
+        <circle cx="45" cy="45" r="22" fill="#fde047" />
+        <PzCloud x={210} y={42} s={0.9} />
+        <rect y="160" width="300" height="140" fill="#86efac" />
+        {[0, 1, 2].map(r => <rect key={r} y={178 + r * 40} width="300" height="18" fill="#b45309" opacity="0.75" />)}
+        {[0, 1, 2].map(r => Array.from({ length: 6 }, (_, i) => {
+          const x = 22 + i * 52 + (r % 2) * 24, y = 182 + r * 40;
+          if (x > 95 && x < 205 && r > 0) return null;
+          return (
+            <g key={`${r}-${i}`}>
+              <path d={`M${x - 6} ${y} L${x + 6} ${y} L${x} ${y + 20} Z`} fill="#f97316" />
+              <path d={`M${x} ${y} L${x - 7} ${y - 12} M${x} ${y} L${x} ${y - 14} M${x} ${y} L${x + 7} ${y - 12}`} stroke="#16a34a" strokeWidth="3.5" strokeLinecap="round" />
+            </g>
+          );
+        }))}
+        <circle cx="194" cy="262" r="12" fill="#ffffff" stroke="#f43f5e" strokeWidth="3" />
+        <ellipse cx="150" cy="252" rx="46" ry="38" fill="#ffffff" stroke="#f43f5e" strokeWidth="4" />
+        <ellipse cx="126" cy="287" rx="17" ry="9" fill="#ffffff" stroke="#f43f5e" strokeWidth="3" />
+        <ellipse cx="174" cy="287" rx="17" ry="9" fill="#ffffff" stroke="#f43f5e" strokeWidth="3" />
+        <g transform="translate(118 252) rotate(-30)"><path d="M-6 0 L6 0 L0 26 Z" fill="#f97316" /><path d="M0 0 L-6 -10 M0 0 L6 -10" stroke="#16a34a" strokeWidth="3.5" strokeLinecap="round" /></g>
+        <PzHead id="rabbit" x={150} y={172} s={0.42} cy={175} />
+      </g>
+    );
+  }
+  if (id === 'pig') {
+    return (
+      <g>
+        <rect width="300" height="300" fill="#e0f2fe" />
+        <PzCloud x={160} y={38} />
+        <rect x="18" y="92" width="88" height="86" fill="#dc2626" stroke="#7f1d1d" strokeWidth="3" />
+        <path d="M10 96 L62 52 L114 96 Z" fill="#7f1d1d" />
+        <rect x="46" y="128" width="32" height="50" fill="#991b1b" stroke="#ffffff" strokeWidth="2.5" />
+        <path d="M46 128 L78 178 M78 128 L46 178" stroke="#ffffff" strokeWidth="2.5" />
+        <rect x="54" y="98" width="16" height="16" fill="#fef3c7" stroke="#ffffff" strokeWidth="2" />
+        <rect y="172" width="300" height="128" fill="#86efac" />
+        {[0, 1, 2, 3].map(i => <rect key={i} x={150 + i * 40} y="148" width="9" height="40" fill="#fde68a" stroke="#d97706" strokeWidth="2" />)}
+        <rect x="140" y="156" width="160" height="8" fill="#fde68a" stroke="#d97706" strokeWidth="2" />
+        <ellipse cx="158" cy="258" rx="128" ry="36" fill="#92400e" />
+        <ellipse cx="120" cy="252" rx="60" ry="14" fill="#a16207" opacity="0.6" />
+        {[[50, 238], [262, 248], [210, 280]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={6} fill="#78350f" />)}
+        <path d="M220 236 q14 -4 10 -14 q-4 -8 -12 -2" stroke="#e11d48" strokeWidth="4" fill="none" strokeLinecap="round" />
+        <PzLegs xs={[128, 150, 190, 212]} y={242} h={22} c="#fda4af" stroke="#e11d48" />
+        <ellipse cx="170" cy="238" rx="56" ry="32" fill="#ffe4e6" stroke="#e11d48" strokeWidth="4" />
+        {[[150, 262], [196, 266]].map(([x, y], i) => <ellipse key={i} cx={x} cy={y} rx={14} ry={6} fill="#78350f" opacity="0.8" />)}
+        <PzHead id="pig" x={118} y={200} s={0.4} cy={165} />
+      </g>
+    );
+  }
+  if (id === 'bear') {
+    return (
+      <g>
+        <rect width="300" height="300" fill="#dcfce7" />
+        {[[30, 40, 150], [95, 55, 170], [210, 50, 160], [270, 35, 150]].map(([x, w, h], i) => (
+          <g key={i}>
+            <rect x={x - 6} y={h - 10} width="12" height="70" fill="#78350f" />
+            <path d={`M${x} ${h - 120} L${x + w / 2 + 14} ${h} L${x - w / 2 - 14} ${h} Z`} fill={i % 2 ? '#15803d' : '#166534'} />
+            <path d={`M${x} ${h - 145} L${x + w / 2} ${h - 50} L${x - w / 2} ${h - 50} Z`} fill={i % 2 ? '#16a34a' : '#15803d'} />
+          </g>
+        ))}
+        <rect y="205" width="300" height="95" fill="#65a30d" />
+        <path d="M0 210 Q150 196 300 212 L300 222 L0 222 Z" fill="#4d7c0f" />
+        <ellipse cx="258" cy="140" rx="17" ry="22" fill="#facc15" stroke="#a16207" strokeWidth="3" />
+        {[-8, 0, 8].map(dy => <line key={dy} x1="243" y1={140 + dy} x2="273" y2={140 + dy} stroke="#a16207" strokeWidth="2.5" />)}
+        <circle cx="258" cy="148" r="4" fill="#422006" />
+        {[[232, 118], [282, 112], [240, 172]].map(([x, y], i) => <g key={i}><ellipse cx={x} cy={y} rx="5" ry="4" fill="#facc15" stroke="#111827" strokeWidth="1.5" /><ellipse cx={x - 2} cy={y - 4} rx="3" ry="2" fill="#ffffff" opacity="0.8" /></g>)}
+        <path d="M60 236 Q60 212 88 212 Q116 212 116 236 L112 278 Q88 288 64 278 Z" fill="#f59e0b" stroke="#b45309" strokeWidth="3" />
+        <ellipse cx="88" cy="214" rx="28" ry="7" fill="#b45309" />
+        <path d="M70 216 Q72 232 76 226 Q80 238 84 224" fill="#fbbf24" />
+        <ellipse cx="160" cy="252" rx="54" ry="44" fill="#ca8a04" stroke="#713f12" strokeWidth="4" />
+        <ellipse cx="160" cy="258" rx="32" ry="28" fill="#fef08a" />
+        <ellipse cx="118" cy="240" rx="16" ry="22" fill="#a16207" stroke="#713f12" strokeWidth="3" transform="rotate(30 118 240)" />
+        <ellipse cx="136" cy="290" rx="18" ry="10" fill="#a16207" stroke="#713f12" strokeWidth="3" />
+        <ellipse cx="186" cy="290" rx="18" ry="10" fill="#a16207" stroke="#713f12" strokeWidth="3" />
+        <PzHead id="bear" x={162} y={176} s={0.42} cy={150} />
+      </g>
+    );
+  }
+  if (id === 'panda') {
+    return (
+      <g>
+        <rect width="300" height="300" fill="#ecfccb" />
+        {[18, 52, 236, 274].map((x, i) => (
+          <g key={i}>
+            <rect x={x - 7} y="0" width="14" height="300" fill={i % 2 ? '#65a30d' : '#4d7c0f'} />
+            {[40, 100, 160, 220].map(y => <rect key={y} x={x - 8} y={y + i * 9} width="16" height="4" fill="#365314" />)}
+            {[60, 130, 190].map((y, j) => <ellipse key={j} cx={x + (j % 2 ? 18 : -18)} cy={y + i * 7} rx="16" ry="5" fill="#84cc16" transform={`rotate(${j % 2 ? -25 : 25} ${x + (j % 2 ? 18 : -18)} ${y + i * 7})`} />)}
+          </g>
+        ))}
+        <rect y="222" width="300" height="78" fill="#a3e635" />
+        {[[100, 236], [205, 240], [140, 292]].map(([x, y], i) => <PzTuft key={i} x={x} y={y} c="#4d7c0f" />)}
+        <ellipse cx="150" cy="250" rx="52" ry="44" fill="#ffffff" stroke="#0f172a" strokeWidth="4" />
+        <ellipse cx="126" cy="290" rx="20" ry="11" fill="#0f172a" />
+        <ellipse cx="174" cy="290" rx="20" ry="11" fill="#0f172a" />
+        <path d="M188 280 L222 200" stroke="#65a30d" strokeWidth="8" strokeLinecap="round" />
+        <ellipse cx="226" cy="198" rx="14" ry="5" fill="#84cc16" transform="rotate(-50 226 198)" />
+        <ellipse cx="110" cy="244" rx="15" ry="24" fill="#0f172a" transform="rotate(25 110 244)" />
+        <ellipse cx="192" cy="248" rx="15" ry="22" fill="#0f172a" transform="rotate(-35 192 248)" />
+        <PzHead id="panda" x={150} y={176} s={0.42} cy={150} />
+      </g>
+    );
+  }
+  if (id === 'frog') {
+    return (
+      <g>
+        <rect width="300" height="300" fill="#bae6fd" />
+        <PzCloud x={70} y={36} s={0.8} /><PzCloud x={230} y={50} />
+        <rect y="112" width="300" height="188" fill="#38bdf8" />
+        <path d="M0 112 Q150 100 300 114 L300 124 L0 124 Z" fill="#7dd3fc" />
+        {[[60, 160, 40], [235, 150, 34], [90, 290, 50], [250, 282, 40]].map(([x, y, r], i) => <ellipse key={i} cx={x} cy={y} rx={r} ry={r * 0.22} fill="none" stroke="#e0f2fe" strokeWidth="2.5" opacity="0.8" />)}
+        {[[16, 150], [30, 140], [282, 160]].map(([x, y], i) => <g key={i}><line x1={x} y1={y + 70} x2={x} y2={y - 20} stroke="#15803d" strokeWidth="4" /><rect x={x - 4} y={y - 30} width="8" height="24" rx="4" fill="#78350f" /></g>)}
+        {/* 연잎: 둥근 잎에 쐐기 모양 홈 */}
+        {[[62, 202, 30], [246, 226, 24]].map(([x, y, r], i) => (
+          <g key={i}>
+            <ellipse cx={x} cy={y} rx={r} ry={r * 0.36} fill="#22c55e" stroke="#15803d" strokeWidth="2" />
+            <path d={`M${x} ${y} L${x + r * 1.02} ${y - r * 0.12} L${x + r * 1.02} ${y + r * 0.14} Z`} fill="#38bdf8" />
+          </g>
+        ))}
+        <g transform="translate(246 212)">{[0, 60, 120, 180, 240, 300].map(a => <ellipse key={a} cx="0" cy="-8" rx="5" ry="10" fill="#f9a8d4" transform={`rotate(${a})`} />)}<circle r="5" fill="#fde047" /></g>
+        <ellipse cx="150" cy="264" rx="96" ry="28" fill="#16a34a" stroke="#14532d" strokeWidth="3" />
+        <path d="M150 264 L248 254 L248 276 Z" fill="#38bdf8" />
+        <ellipse cx="108" cy="262" rx="22" ry="10" fill="#22c55e" stroke="#15803d" strokeWidth="3" />
+        <ellipse cx="192" cy="262" rx="22" ry="10" fill="#22c55e" stroke="#15803d" strokeWidth="3" />
+        <ellipse cx="150" cy="246" rx="46" ry="28" fill="#22c55e" stroke="#15803d" strokeWidth="4" />
+        <PzHead id="frog" x={150} y={196} s={0.42} cy={150} />
+      </g>
+    );
+  }
+  // 사과: 과수원 언덕
+  return (
+    <g>
+      <rect width="300" height="300" fill="#e0f2fe" />
+      <circle cx="262" cy="40" r="20" fill="#fde047" />
+      <PzCloud x={120} y={36} s={0.8} />
+      <path d="M0 200 Q150 170 300 198 L300 300 L0 300 Z" fill="#86efac" />
+      {[[42, 150], [250, 158]].map(([x, y], i) => (
+        <g key={i}>
+          <rect x={x - 6} y={y} width="12" height="50" fill="#92400e" />
+          <circle cx={x} cy={y - 18} r="36" fill="#22c55e" /><circle cx={x - 22} cy={y - 2} r="22" fill="#16a34a" /><circle cx={x + 22} cy={y - 2} r="22" fill="#16a34a" />
+          {[[-16, -30], [10, -26], [-4, -6], [20, -2], [-24, 0]].map(([dx, dy], j) => <circle key={j} cx={x + dx} cy={y + dy} r="5" fill="#ef4444" />)}
+        </g>
+      ))}
+      <path d="M40 262 L92 262 L84 292 L48 292 Z" fill="#d97706" stroke="#92400e" strokeWidth="3" />
+      {[[52, 256], [66, 252], [80, 256]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="8" fill="#ef4444" />)}
+      {[[230, 270, '#f472b6'], [270, 250, '#facc15'], [20, 230, '#ffffff']].map(([x, y, c], i) => <PzFlower key={i} x={x} y={y} c={c} />)}
+      <PzHead id="apple" x={160} y={206} s={0.5} cy={170} />
+    </g>
+  );
+}
+
+// ── 🧩 퍼즐 조각 모양 ──
+// 그림(300×300)을 테마의 cut 방식으로 나눈다: jigsaw(비튼 격자 + 돌기) · curvy(돌기 없는 S자 격자) ·
+// waves(구불구불한 띠) · pie(가운데에서 부채꼴) · bricks(줄마다 조각 수가 다른 엇갈림).
+// 모양은 테마 id 로 정해지는 고정 난수라 같은 퍼즐은 늘 같은 모양이다. 이웃 조각은 같은 경계 점 목록을 거꾸로 쓴다.
 const PUZZLE_BOARD_PX = 340;
 const puzzleGeoCache = new Map();
 function puzzleGeo(theme) {
   if (puzzleGeoCache.has(theme.id)) return puzzleGeoCache.get(theme.id);
-  const cols = theme.cols || 2, rows = theme.rows || 2, w = 300 / cols, h = 300 / rows, base = Math.min(w, h);
+  const cut = theme.cut || { type: 'jigsaw', cols: 2, rows: 2 };
   let seed = 7;
   for (const ch of theme.id) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   const jit = (amt) => (rnd() * 2 - 1) * amt;
-  // 꼭짓점: 바둑판 칸을 비틀어 조각마다 크기·기울기가 다르게 (테두리 위의 점은 테두리를 따라서만 움직인다)
-  const P = Array.from({ length: rows + 1 }, (_, r) => Array.from({ length: cols + 1 }, (_, c) => {
-    const inX = c > 0 && c < cols, inY = r > 0 && r < rows;
-    return [c * w + (inX ? jit(w * 0.2) : 0), r * h + (inY ? jit(h * 0.2) : 0)];
-  }));
-  // 변마다: 돌기 방향(+1/-1), 돌기 위치(변의 40~60%), 돌기 크기(0.8~1.15배)
-  const edgeInfo = () => ({ dir: rnd() < 0.5 ? 1 : -1, tc: 0.4 + rnd() * 0.2, ks: 0.8 + rnd() * 0.35 });
-  const hT = Array.from({ length: rows + 1 }, () => Array.from({ length: cols }, edgeInfo));
-  const vT = Array.from({ length: rows }, () => Array.from({ length: cols + 1 }, edgeInfo));
-  const f = (v) => Math.round(v * 100) / 100;
-  // 한 변: e 가 없으면 테두리(직선). sign +1 = 조각 바깥으로 볼록, -1 = 안으로 오목. rev 면 반대 방향으로 지나가므로 돌기 위치를 뒤집는다
-  const edge = (p0, p1, e, sign, rev) => {
+  const f = (v) => Math.round(v * 10) / 10;
+  const rev = (pts) => pts.slice().reverse();
+
+  // 곧은 선 위에 둥근 돌기 하나 (dir +1/-1 = 진행 방향의 왼쪽/오른쪽으로 볼록). 점 목록으로 돌려준다
+  const knobEdge = (p0, p1, dir, tc = 0.5, ks = 1, size = 60) => {
     const [x0, y0] = p0, [x1, y1] = p1;
-    if (!e) return `L${f(x1)} ${f(y1)}`;
-    const dir = e.dir * sign, tc = rev ? 1 - e.tc : e.tc, s = base * e.ks;
-    const len = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / len, uy = (y1 - y0) / len, nx = uy, ny = -ux;
+    const len = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / len, uy = (y1 - y0) / len, nx = uy, ny = -ux, s = size * ks;
     const cx = x0 + ux * len * tc, cy = y0 + uy * len * tc;
-    const Q = (t, n) => `${f(cx + ux * (t - 0.5) * s + nx * n * s * dir)} ${f(cy + uy * (t - 0.5) * s + ny * n * s * dir)}`;
-    return `L${Q(0.36, 0)}C${Q(0.42, 0)} ${Q(0.4, 0.1)} ${Q(0.38, 0.14)}C${Q(0.3, 0.3)} ${Q(0.7, 0.3)} ${Q(0.62, 0.14)}C${Q(0.6, 0.1)} ${Q(0.58, 0)} ${Q(0.64, 0)}L${f(x1)} ${f(y1)}`;
+    const Q = (t, n) => [cx + ux * (t - 0.5) * s + nx * n * s * dir, cy + uy * (t - 0.5) * s + ny * n * s * dir];
+    const bez = (a, b, c, d) => { const out = []; for (let i = 1; i <= 8; i++) { const t = i / 8, m = 1 - t; out.push([m * m * m * a[0] + 3 * m * m * t * b[0] + 3 * m * t * t * c[0] + t * t * t * d[0], m * m * m * a[1] + 3 * m * m * t * b[1] + 3 * m * t * t * c[1] + t * t * t * d[1]]); } return out; };
+    const a0 = Q(0.36, 0);
+    return [p0, a0, ...bez(a0, Q(0.42, 0), Q(0.4, 0.1), Q(0.38, 0.14)), ...bez(Q(0.38, 0.14), Q(0.3, 0.3), Q(0.7, 0.3), Q(0.62, 0.14)), ...bez(Q(0.62, 0.14), Q(0.6, 0.1), Q(0.58, 0), Q(0.64, 0)), p1];
+  };
+  // 돌기 없이 S자로 구불구불한 선
+  const curvyEdge = (p0, p1, amp) => {
+    const [x0, y0] = p0, [x1, y1] = p1, len = Math.hypot(x1 - x0, y1 - y0), nx = (y1 - y0) / len, ny = -(x1 - x0) / len, out = [];
+    for (let i = 0; i <= 16; i++) { const t = i / 16, o = Math.sin(t * Math.PI * 2) * amp * len; out.push([x0 + (x1 - x0) * t + nx * o, y0 + (y1 - y0) * t + ny * o]); }
+    return out;
+  };
+  // 여러 변의 점 목록을 이어 한 조각으로 (이어지는 점이 겹치면 하나만)
+  const makePiece = (edges, extra = {}) => {
+    const pts = [];
+    edges.forEach(e => e.forEach(p => { const q = pts[pts.length - 1]; if (!q || Math.abs(q[0] - p[0]) > 0.01 || Math.abs(q[1] - p[1]) > 0.01) pts.push(p); }));
+    let A = 0, cx = 0, cy = 0;
+    for (let i = 0; i < pts.length; i++) { const [xa, ya] = pts[i], [xb, yb] = pts[(i + 1) % pts.length], k = xa * yb - xb * ya; A += k; cx += (xa + xb) * k; cy += (ya + yb) * k; }
+    A /= 2;
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), m = 4;
+    const x0 = Math.min(...xs) - m, y0 = Math.min(...ys) - m;
+    return {
+      d: 'M' + pts.map(p => `${f(p[0])} ${f(p[1])}`).join('L') + 'Z',
+      cx: Math.abs(A) > 1 ? cx / (6 * A) : xs.reduce((a, b) => a + b) / xs.length,
+      cy: Math.abs(A) > 1 ? cy / (6 * A) : ys.reduce((a, b) => a + b) / ys.length,
+      vb: [x0, y0, Math.max(...xs) + m - x0, Math.max(...ys) + m - y0], ...extra
+    };
   };
   const pieces = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const tl = P[r][c], tr = P[r][c + 1], br = P[r + 1][c + 1], bl = P[r + 1][c];
-      const d = `M${f(tl[0])} ${f(tl[1])}`
-        + edge(tl, tr, r > 0 ? hT[r][c] : null, -1, false)
-        + edge(tr, br, c < cols - 1 ? vT[r][c + 1] : null, 1, false)
-        + edge(br, bl, r < rows - 1 ? hT[r + 1][c] : null, 1, true)
-        + edge(bl, tl, c > 0 ? vT[r][c] : null, -1, true) + 'Z';
-      const xs = [tl[0], tr[0], br[0], bl[0]], ys = [tl[1], tr[1], br[1], bl[1]];
-      const m = base * 0.36;   // 돌기가 튀어나오는 여유
-      const x0 = Math.min(...xs) - m, y0 = Math.min(...ys) - m;
-      pieces.push({
-        d, col: c, row: r,
-        cx: xs.reduce((a2, b2) => a2 + b2) / 4, cy: ys.reduce((a2, b2) => a2 + b2) / 4,   // 조각 가운데 (그림 좌표)
-        vb: [x0, y0, Math.max(...xs) + m - x0, Math.max(...ys) + m - y0]
-      });
+
+  if (cut.type === 'jigsaw' || cut.type === 'curvy') {
+    // 비튼 격자. jigsaw = 돌기, curvy = 돌기 없이 S자 곡선
+    const { cols, rows } = cut, w = 300 / cols, h = 300 / rows, base = Math.min(w, h);
+    const P = Array.from({ length: rows + 1 }, (_, r) => Array.from({ length: cols + 1 }, (_, c) => [
+      c * w + (c > 0 && c < cols ? jit(w * 0.2) : 0), r * h + (r > 0 && r < rows ? jit(h * 0.2) : 0)
+    ]));
+    const inner = (p0, p1) => (cut.type === 'jigsaw' ? knobEdge(p0, p1, rnd() < 0.5 ? 1 : -1, 0.4 + rnd() * 0.2, 0.8 + rnd() * 0.35, base) : curvyEdge(p0, p1, (rnd() < 0.5 ? 1 : -1) * (0.08 + rnd() * 0.06)));
+    const H = Array.from({ length: rows + 1 }, (_, r) => Array.from({ length: cols }, (_, c) => (r > 0 && r < rows ? inner(P[r][c], P[r][c + 1]) : [P[r][c], P[r][c + 1]])));
+    const V = Array.from({ length: rows }, (_, r) => Array.from({ length: cols + 1 }, (_, c) => (c > 0 && c < cols ? inner(P[r][c], P[r + 1][c]) : [P[r][c], P[r + 1][c]])));
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) pieces.push(makePiece([H[r][c], V[r][c + 1], rev(H[r + 1][c]), rev(V[r][c])]));
+  } else if (cut.type === 'waves') {
+    // 구불구불한 띠: 경계선을 sin 곡선으로. dir 'v' 면 세로 띠
+    const n = cut.n, curves = [];
+    for (let k = 1; k < n; k++) {
+      const a1 = 8 + rnd() * 10, a2 = 3 + rnd() * 6, f1 = 0.018 + rnd() * 0.014, f2 = 0.05 + rnd() * 0.03, ph = rnd() * 6;
+      curves.push((t) => (300 * k) / n + Math.sin(t * f1 + ph) * a1 + Math.sin(t * f2 + ph * 2) * a2);
     }
+    const line = (fn) => Array.from({ length: 41 }, (_, i) => { const t = i * 7.5; return [t, fn ? fn(t) : 0]; });
+    const flip = (pts) => (cut.dir === 'v' ? pts.map(([a, b]) => [b, a]) : pts);
+    for (let i = 0; i < n; i++) {
+      const top = i === 0 ? [[0, 0], [300, 0]] : line(curves[i - 1]);
+      const bot = i === n - 1 ? [[0, 300], [300, 300]] : line(curves[i]);
+      // 한쪽 경계를 따라가고 다른 쪽 경계로 되돌아오면 한 조각 (세로 띠는 x·y 를 바꾼다)
+      pieces.push(makePiece([flip(top), rev(flip(bot))]));
+    }
+  } else if (cut.type === 'pie') {
+    // 피자처럼 가운데에서 부채꼴로. 자르는 선마다 둥근 돌기 하나
+    const n = cut.n, C = [150 + jit(18), 150 + jit(18)], a0 = rnd() * Math.PI * 2;
+    const per = (s) => { s = ((s % 1200) + 1200) % 1200; return s < 300 ? [s, 0] : s < 600 ? [300, s - 300] : s < 900 ? [900 - s, 300] : [0, 1200 - s]; };
+    const sOf = ([x, y]) => (y <= 0.001 ? x : x >= 299.999 ? 300 + y : y >= 299.999 ? 900 - x : 1200 - y);
+    const rays = [];
+    for (let i = 0; i < n; i++) {
+      const a = a0 + (i / n) * Math.PI * 2 + jit(0.18), dx = Math.cos(a), dy = Math.sin(a);
+      const tt = Math.min(...[dx > 0 ? (300 - C[0]) / dx : Infinity, dx < 0 ? -C[0] / dx : Infinity, dy > 0 ? (300 - C[1]) / dy : Infinity, dy < 0 ? -C[1] / dy : Infinity]);
+      const B = [C[0] + dx * tt, C[1] + dy * tt];
+      rays.push({ B, s: sOf(B), pts: knobEdge(C, B, rnd() < 0.5 ? 1 : -1, 0.5 + jit(0.08), 0.85 + rnd() * 0.3, Math.min(70, tt * 0.55)) });
+    }
+    rays.sort((p, q) => p.s - q.s);
+    for (let i = 0; i < n; i++) {
+      const r0 = rays[i], r1 = rays[(i + 1) % n];
+      let s1 = r1.s; if (s1 <= r0.s) s1 += 1200;
+      const rim = [r0.B];
+      [0, 300, 600, 900, 1200, 1500, 1800].forEach(cs => { if (cs > r0.s && cs < s1) rim.push(per(cs)); });
+      rim.push(r1.B);
+      pieces.push(makePiece([r0.pts, rim, rev(r1.pts)]));
+    }
+  } else if (cut.type === 'bricks') {
+    // 벽돌: 줄마다 조각 수가 다르고(엇갈림), 줄 경계는 물결, 줄 안의 세로 선에는 돌기
+    const rows = cut.rows, nR = rows.length, curves = [];
+    for (let k = 1; k < nR; k++) {
+      const a1 = 6 + rnd() * 8, f1 = 0.02 + rnd() * 0.015, ph = rnd() * 6;
+      curves.push((t) => (300 * k) / nR + Math.sin(t * f1 + ph) * a1);
+    }
+    const yAt = (r, x) => (r === 0 ? 0 : r === nR ? 300 : curves[r - 1](x));
+    const run = (r, xa, xb) => { const out = [[xa, yAt(r, xa)]]; for (let x = Math.ceil(xa / 6) * 6; x < xb; x += 6) if (x > xa) out.push([x, yAt(r, x)]); out.push([xb, yAt(r, xb)]); return out; };
+    rows.forEach((k, r) => {
+      const xs = [0];
+      for (let i = 1; i < k; i++) xs.push((300 * i) / k + jit(300 / k * 0.18));
+      xs.push(300);
+      const cuts = xs.map((x, i) => (i === 0 || i === k ? [[x, yAt(r, x)], [x, yAt(r + 1, x)]]
+        : knobEdge([x, yAt(r, x)], [x, yAt(r + 1, x)], rnd() < 0.5 ? 1 : -1, 0.42 + rnd() * 0.16, 0.85 + rnd() * 0.3, Math.min(300 / k, 300 / nR) * 0.95)));
+      for (let i = 0; i < k; i++) pieces.push(makePiece([run(r, xs[i], xs[i + 1]), cuts[i + 1], rev(run(r + 1, xs[i], xs[i + 1])), rev(cuts[i])]));
+    });
   }
-  const geo = { cols, rows, w, h, pieces };
+  const geo = { pieces, w: 300 / Math.sqrt(pieces.length), h: 300 / Math.sqrt(pieces.length) };
   puzzleGeoCache.set(theme.id, geo);
   return geo;
 }
@@ -2969,8 +3264,7 @@ function PuzzlePiece({ theme, idx, uid, style, className }) {
     <svg viewBox={piece.vb.join(' ')} className={className} style={{ display: 'block', overflow: 'visible', ...style }}>
       <defs><clipPath id={cid}><path d={piece.d} /></clipPath></defs>
       <g clipPath={`url(#${cid})`}>
-        <rect width="300" height="300" fill={theme.bg} />
-        <PuzzleArtworkG id={theme.id} />
+        <PuzzleSceneG id={theme.id} />
         <rect width="300" height="300" filter="url(#pz-paper)" />
         <path d={piece.d} fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="5" transform="translate(-1.6 -1.6)" />
         <path d={piece.d} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="5" transform="translate(1.6 1.6)" />
@@ -4048,7 +4342,7 @@ export default function App() {
                       }}
                     >
                       <span>{p.icon}</span>
-                      <span>{p.name} {p.cols * p.rows}조각</span>
+                      <span>{p.name} {puzzleGeo(p).pieces.length}조각</span>
                     </button>
                   );
                 })}
@@ -4098,7 +4392,7 @@ export default function App() {
                     <svg viewBox="0 0 300 300" width={PUZZLE_BOARD_PX} height={PUZZLE_BOARD_PX} style={{ position: 'absolute', left: 0, top: 0, display: 'block' }}>
                       <rect width="300" height="300" fill="#ead9b8" />
                       <rect width="300" height="300" filter="url(#pz-paper)" />
-                      <g opacity="0.16"><PuzzleArtworkG id={puzzleTheme.id} /></g>
+                      <g opacity="0.22"><PuzzleSceneG id={puzzleTheme.id} /></g>
                       {puzzlePieces.map((piece, idx) => (placedPieces[idx] ? null : (
                         <path
                           key={idx} d={piece.d}
