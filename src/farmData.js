@@ -72,6 +72,67 @@ export const FARM_SPECIES = [
     ear: 'point', tail: 'puff', legLen: 0.44, bodyLen: 0.92, headSize: 0.4, snout: 'horse', wool: true,
     gift: { icon: '🧣', name: '목도리', stars: 16, everySec: 205 }
   },
+  // ── 목장 밖 친구들 (숲·초원·정글) ── 육식 동물도 목장에서는 사이좋게 지낸다
+  {
+    id: 'fox', name: '여우', price: 180, size: 58, shape: 'quad', desc: '복슬복슬 꼬리가 멋져요',
+    speed: 1.25, growMul: 1.1, body: '#f97316', belly: '#fff7ed', accent: '#9a3412', legColor: '#7c2d12',
+    ear: 'point', tail: 'bushy', tipColor: '#ffffff', legLen: 0.3, bodyLen: 0.95, headSize: 0.46, snout: 'dog',
+    gift: { icon: '🍇', name: '포도', stars: 8, everySec: 180 }
+  },
+  {
+    id: 'deer', name: '사슴', price: 200, size: 74, shape: 'quad', desc: '멋진 뿔이 자라요',
+    speed: 1.3, growMul: 0.95, runner: true, body: '#c08552', belly: '#f5e1c8', accent: '#7c4a2b',
+    ear: 'side', tail: 'puff', legLen: 0.48, bodyLen: 0.95, headSize: 0.4, snout: 'horse', antlers: true, whiteSpots: true,
+    gift: { icon: '🌰', name: '도토리', stars: 10, everySec: 190 }
+  },
+  {
+    id: 'wolf', name: '늑대', price: 260, size: 68, shape: 'quad', desc: '아우~ 달님을 좋아해요',
+    speed: 1.35, growMul: 0.95, runner: true, body: '#94a3b8', belly: '#e2e8f0', accent: '#475569', legColor: '#64748b',
+    ear: 'point', tail: 'bushy', tipColor: '#334155', legLen: 0.36, bodyLen: 1.0, headSize: 0.46, snout: 'dog',
+    gift: { icon: '🌕', name: '달님', stars: 13, everySec: 195 }
+  },
+  {
+    id: 'zebra', name: '얼룩말', price: 300, size: 86, shape: 'quad', desc: '줄무늬 옷을 입었어요',
+    speed: 1.4, growMul: 0.85, runner: true, body: '#ffffff', belly: '#ffffff', accent: '#111827',
+    ear: 'point', tail: 'horse', legLen: 0.46, bodyLen: 1.05, headSize: 0.42, snout: 'horse', mane: true, stripes: true, stripeN: 7,
+    gift: { icon: '🌈', name: '무지개', stars: 15, everySec: 200 }
+  },
+  {
+    id: 'bear', name: '곰', price: 320, size: 86, shape: 'quad', desc: '꿀을 제일 좋아해요',
+    speed: 0.8, growMul: 0.85, body: '#92400e', belly: '#d6a15c', accent: '#78350f',
+    ear: 'round', tail: 'puff', legLen: 0.28, bodyLen: 1.05, headSize: 0.5, snout: 'dog', fat: 1.15,
+    gift: { icon: '🍯', name: '꿀', stars: 16, everySec: 200 }
+  },
+  {
+    id: 'panda', name: '판다', price: 350, size: 82, shape: 'quad', desc: '대나무를 냠냠 먹어요',
+    speed: 0.7, growMul: 0.85, napper: true, body: '#ffffff', belly: '#ffffff', accent: '#111827', legColor: '#111827',
+    ear: 'round', earColor: '#111827', tail: 'puff', legLen: 0.27, bodyLen: 1.0, headSize: 0.52, snout: 'dog', fat: 1.15, eyePatch: true,
+    gift: { icon: '🎋', name: '대나무', stars: 17, everySec: 200 }
+  },
+  {
+    id: 'giraffe', name: '기린', price: 380, size: 92, shape: 'quad', desc: '목이 길어서 높은 나뭇잎을 먹어요',
+    speed: 1.0, growMul: 0.8, body: '#facc15', belly: '#fef3c7', accent: '#b45309',
+    ear: 'side', tail: 'tuft', legLen: 0.56, bodyLen: 0.9, headSize: 0.38, snout: 'horse', neckLift: 0.85, horns: true, mane: true, patches: true,
+    gift: { icon: '🍃', name: '나뭇잎', stars: 18, everySec: 205 }
+  },
+  {
+    id: 'lion', name: '사자', price: 420, size: 84, shape: 'quad', desc: '어흥! 갈기가 멋진 동물의 왕',
+    speed: 1.1, growMul: 0.8, body: '#f59e0b', belly: '#fde68a', accent: '#b45309',
+    ear: 'round', tail: 'tuft', legLen: 0.34, bodyLen: 1.0, headSize: 0.5, snout: 'cat', lionMane: true,
+    gift: { icon: '👑', name: '왕관', stars: 20, everySec: 210 }
+  },
+  {
+    id: 'tiger', name: '호랑이', price: 420, size: 84, shape: 'quad', desc: '어흥! 줄무늬 정글 친구',
+    speed: 1.15, growMul: 0.8, body: '#fb923c', belly: '#fff7ed', accent: '#1f2937',
+    ear: 'round', tail: 'long', legLen: 0.32, bodyLen: 1.05, headSize: 0.5, snout: 'cat', stripes: true, stripeN: 6,
+    gift: { icon: '🎀', name: '리본', stars: 20, everySec: 210 }
+  },
+  {
+    id: 'elephant', name: '코끼리', price: 480, size: 104, shape: 'quad', desc: '긴 코로 물을 뿌려요',
+    speed: 0.65, growMul: 0.75, body: '#94a3b8', belly: '#cbd5e1', accent: '#64748b',
+    ear: 'big', tail: 'tuft', legLen: 0.36, bodyLen: 1.08, headSize: 0.5, snout: 'trunk', fat: 1.2,
+    gift: { icon: '🥜', name: '땅콩', stars: 22, everySec: 215 }
+  },
   {
     id: 'horse', name: '말', price: 280, size: 90, shape: 'quad', sound: 'horse', desc: '다그닥다그닥 달려요',
     speed: 1.5, growMul: 0.8, runner: true, body: '#a0623a', belly: '#c98a5e', accent: '#3b2314',
@@ -158,6 +219,10 @@ const FARM_BREED = {
   rabbit: { type: 'live', brood: [3, 5] }, dog: { type: 'live', brood: [2, 4] }, cat: { type: 'live', brood: [2, 4] },
   pig: { type: 'live', brood: [3, 5] }, sheep: { type: 'live', brood: [1, 2] }, goat: { type: 'live', brood: [1, 2] },
   cow: { type: 'live', brood: [1, 1] }, donkey: { type: 'live', brood: [1, 1] }, alpaca: { type: 'live', brood: [1, 1] },
+  fox: { type: 'live', brood: [3, 5] }, wolf: { type: 'live', brood: [3, 5] }, deer: { type: 'live', brood: [1, 1] },
+  zebra: { type: 'live', brood: [1, 1] }, bear: { type: 'live', brood: [1, 2] }, panda: { type: 'live', brood: [1, 1] },
+  giraffe: { type: 'live', brood: [1, 1] }, lion: { type: 'live', brood: [2, 3] }, tiger: { type: 'live', brood: [2, 3] },
+  elephant: { type: 'live', brood: [1, 1] },
   horse: { type: 'live', brood: [1, 1] }
 };
 export const farmBreedOf = (spId) => FARM_BREED[spId] || { type: 'live', brood: [1, 2] };

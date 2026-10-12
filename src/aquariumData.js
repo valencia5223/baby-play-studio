@@ -216,28 +216,28 @@ export const FISH_SPECIES = [
   // sex 는 정해진 성별, mate 는 짝이 되는 종류, babySp 는 태어나는 아기 종류, noBreed 는 아기를 낳지 않음.
   // 엄마상어 + 아빠상어 → 아기상어. 아기상어는 다 커도 아기상어 (예전 저장의 'shark' 가 아기상어)
   {
-    id: 'shark', name: '아기상어', price: 460, len: 96, hRatio: 0.4, shape: 'shark', desc: '노랗고 귀여운 아기상어', sea: true, noBreed: true,
+    id: 'shark', unique: true, name: '아기상어', price: 460, len: 96, hRatio: 0.4, shape: 'shark', desc: '노랗고 귀여운 아기상어', sea: true, noBreed: true,
     speed: 0.9, growMul: 0.75, school: false, zone: 'mid',
     top: '#facc15', belly: '#fef9c3', fin: '#f59e0b', tail: {}
   },
   {
-    id: 'sharkMom', name: '엄마상어', price: 520, len: 116, hRatio: 0.4, shape: 'shark', desc: '분홍색 엄마상어 (아빠상어와 아기상어를 낳아요)', sea: true,
+    id: 'sharkMom', unique: true, name: '엄마상어', price: 520, len: 116, hRatio: 0.4, shape: 'shark', desc: '분홍색 엄마상어 (아빠상어와 아기상어를 낳아요)', sea: true,
     sex: 'f', mate: 'sharkDad', babySp: 'shark',
     speed: 0.85, growMul: 0.7, school: false, zone: 'mid',
     top: '#f472b6', belly: '#fce7f3', fin: '#db2777', tail: {}
   },
   {
-    id: 'sharkDad', name: '아빠상어', price: 540, len: 124, hRatio: 0.4, shape: 'shark', desc: '파란색 힘센 아빠상어', sea: true, sex: 'm', noBreed: true,
+    id: 'sharkDad', unique: true, name: '아빠상어', price: 540, len: 124, hRatio: 0.4, shape: 'shark', desc: '파란색 힘센 아빠상어', sea: true, sex: 'm', noBreed: true,
     speed: 0.85, growMul: 0.7, school: false, zone: 'mid',
     top: '#3b82f6', belly: '#dbeafe', fin: '#1d4ed8', tail: {}
   },
   {
-    id: 'sharkGrandma', name: '할머니상어', price: 580, len: 112, hRatio: 0.4, shape: 'shark', desc: '주황색 다정한 할머니상어', sea: true, sex: 'f', noBreed: true,
+    id: 'sharkGrandma', unique: true, name: '할머니상어', price: 580, len: 112, hRatio: 0.4, shape: 'shark', desc: '주황색 다정한 할머니상어', sea: true, sex: 'f', noBreed: true,
     speed: 0.65, growMul: 0.7, school: false, zone: 'mid',
     top: '#fb9a4b', belly: '#fff7ed', fin: '#f97316', tail: {}
   },
   {
-    id: 'sharkGrandpa', name: '할아버지상어', price: 600, len: 118, hRatio: 0.4, shape: 'shark', desc: '초록색 멋쟁이 할아버지상어', sea: true, sex: 'm', noBreed: true,
+    id: 'sharkGrandpa', unique: true, name: '할아버지상어', price: 600, len: 118, hRatio: 0.4, shape: 'shark', desc: '초록색 멋쟁이 할아버지상어', sea: true, sex: 'm', noBreed: true,
     speed: 0.65, growMul: 0.7, school: false, zone: 'mid',
     top: '#84cc16', belly: '#f7fee7', fin: '#65a30d', tail: {}
   },

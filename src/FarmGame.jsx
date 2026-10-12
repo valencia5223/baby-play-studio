@@ -70,7 +70,7 @@ function drawQuad(ctx, sp, S, o) {
   const by = -(legL + bh * 0.82) + hopY;
   const outline = 'rgba(60,40,20,0.28)';
   const hoofed = sp.snout === 'cow' || sp.snout === 'horse' || sp.darkFace;
-  const legCol = sp.darkFace ? sp.accent : mixColor(sp.body, '#000000', 0.07);
+  const legCol = sp.legColor || (sp.darkFace ? sp.accent : mixColor(sp.body, '#000000', 0.07));
   const hoofCol = hoofed ? mixColor(sp.accent, '#000000', 0.25) : sp.snout === 'pig' ? sp.accent : sp.belly;
   const lw = S * 0.115, legLen = legL + bh * 0.34;
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -79,7 +79,7 @@ function drawQuad(ctx, sp, S, o) {
   const leg = (x, ph, far) => {
     const a = !o.moving ? 0 : sp.hop ? Math.sin(o.phase) * 0.55 * (x > 0 ? 1 : -1) : Math.sin(o.phase + ph) * 0.5;
     ctx.save(); ctx.translate(x, by + bh * 0.48); ctx.rotate(a);
-    ctx.fillStyle = far ? mixColor(sp.darkFace ? sp.accent : sp.body, '#000000', sp.darkFace ? 0.25 : 0.2) : legCol;
+    ctx.fillStyle = far ? mixColor(sp.legColor || (sp.darkFace ? sp.accent : sp.body), '#000000', sp.darkFace || sp.legColor ? 0.25 : 0.2) : legCol;
     rr(ctx, -lw / 2, 0, lw, legLen, lw * 0.45); ctx.fill();
     if (legLen > S * 0.08) { ctx.fillStyle = hoofCol; rr(ctx, -lw / 2, legLen * 0.78, lw, legLen * 0.22, lw * 0.35); ctx.fill(); }
     ctx.restore();
@@ -109,6 +109,13 @@ function drawQuad(ctx, sp, S, o) {
     ctx.strokeStyle = mixColor(sp.body, '#000000', 0.15); ctx.lineWidth = S * 0.03;
     ctx.beginPath(); ctx.moveTo(tx + S * 0.03, ty); ctx.quadraticCurveTo(tx - S * 0.12, ty + bh * 0.3, ex, ey); ctx.stroke();
     ctx.fillStyle = sp.accent; ell(ctx, ex, ey + S * 0.04, S * 0.04, S * 0.07); ctx.fill();
+  } else if (sp.tail === 'bushy') {
+    // 여우·늑대: 굵고 복슬한 꼬리 (끝은 다른 색)
+    ctx.save(); ctx.translate(tx + S * 0.04, ty); ctx.rotate(-0.45 + wagA * 0.5);
+    ctx.fillStyle = sp.body; ell(ctx, -S * 0.2, 0, S * 0.24, S * 0.1, 0.15); ctx.fill();
+    ctx.strokeStyle = outline; ctx.lineWidth = 1; ctx.stroke();
+    if (sp.tipColor) { ctx.fillStyle = sp.tipColor; ell(ctx, -S * 0.38, S * 0.03, S * 0.08, S * 0.07, 0.15); ctx.fill(); }
+    ctx.restore();
   } else if (sp.tail === 'horse') {
     ctx.strokeStyle = sp.accent; ctx.lineWidth = S * 0.13;
     ctx.beginPath(); ctx.moveTo(tx + S * 0.04, ty);
@@ -134,15 +141,25 @@ function drawQuad(ctx, sp, S, o) {
     ell(ctx, bw * 0.55, by - bh * 0.7, bw * 0.22, bh * 0.35, 0.2); ctx.fill();
   }
   if (sp.stripes) {
-    ctx.strokeStyle = sp.accent; ctx.lineWidth = S * 0.045;
-    [-0.45, -0.1, 0.25].forEach(q => { ctx.beginPath(); ctx.moveTo(bw * q, by - bh); ctx.lineTo(bw * (q - 0.06), by - bh * 0.35); ctx.stroke(); });
+    ctx.strokeStyle = sp.accent; ctx.lineWidth = S * (sp.stripeN ? 0.05 : 0.045);
+    const qs = sp.stripeN ? Array.from({ length: sp.stripeN }, (_, i) => -0.85 + i * (1.6 / (sp.stripeN - 1))) : [-0.45, -0.1, 0.25];
+    qs.forEach((q, i) => { ctx.beginPath(); ctx.moveTo(bw * q, by - bh); ctx.lineTo(bw * (q - 0.08), by - bh * (sp.stripeN ? (i % 2 ? 0.1 : -0.25) : 0.35)); ctx.stroke(); });
+  }
+  if (sp.patches) {
+    // 기린: 네모난 얼룩 여러 개
+    ctx.fillStyle = sp.accent;
+    [[-0.6, -0.45], [-0.15, -0.55], [0.3, -0.45], [-0.4, 0.05], [0.05, -0.05], [0.5, 0.05], [-0.75, 0.15]].forEach(([qx, qy], i) => { rr(ctx, bw * qx - bw * 0.13, by + bh * qy - bh * 0.18, bw * 0.26, bh * 0.36, bw * 0.06); ctx.fill(); });
+  }
+  if (sp.whiteSpots) {
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    [[-0.5, -0.55], [-0.2, -0.65], [0.1, -0.6], [0.4, -0.5], [-0.35, -0.3], [0.25, -0.3]].forEach(([qx, qy]) => { ell(ctx, bw * qx, by + bh * qy, S * 0.025, S * 0.025); ctx.fill(); });
   }
   drawMud(ctx, o.mud || 0, S, by, bw, bh);
   ctx.restore();
 
   // 목과 머리
   const hs = S * sp.headSize * 0.5, e = o.eat || 0, horse = sp.snout === 'horse';
-  const lift = horse ? S * 0.34 : sp.snout === 'cow' ? S * 0.03 : S * 0.1;
+  const lift = sp.neckLift ? S * sp.neckLift : horse ? S * 0.34 : sp.snout === 'cow' ? S * 0.03 : S * 0.1;
   let hx = bw * 0.78 + (horse ? S * 0.16 : hs * 0.55) + e * S * 0.08;
   let hy = by - bh * 0.45 - lift + e * (lift + bh * 0.95 + legL * 0.55);
   if (lie > 0) { hx = lerp(hx, bw * 0.85 + hs * 0.3, lie); hy = lerp(hy, by + bh * 0.15, lie); }
@@ -159,6 +176,36 @@ function drawQuad(ctx, sp, S, o) {
     ctx.fillStyle = '#fef3c7';
     ell(ctx, hx - hs * 0.35, hy - hs * 0.95, hs * 0.13, hs * 0.36, -0.3); ctx.fill();
     ell(ctx, hx + hs * 0.25, hy - hs * 0.98, hs * 0.13, hs * 0.36, 0.3); ctx.fill();
+  }
+  if (sp.lionMane) {
+    // 사자: 머리 둘레의 풍성한 갈기 (다 크면 더 크게)
+    const mk = 0.6 + 0.4 * Math.min(1, (o.growth || 0) / 0.8);
+    ctx.fillStyle = sp.accent;
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * TAU; ell(ctx, hx + Math.cos(a) * hs * 1.0 * mk, hy + Math.sin(a) * hs * 0.95 * mk, hs * 0.42 * mk, hs * 0.42 * mk); ctx.fill(); }
+    ell(ctx, hx, hy, hs * 1.25 * mk, hs * 1.18 * mk); ctx.fill();
+  }
+  if (sp.ear === 'big') {
+    // 코끼리: 머리 뒤의 커다란 귀
+    ctx.fillStyle = mixColor(sp.body, '#000000', 0.08); ell(ctx, hx - hs * 0.55, hy + hs * 0.05, hs * 0.8, hs * 1.0, 0.15); ctx.fill();
+    ctx.strokeStyle = outline; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.fillStyle = '#fbcfe8'; ell(ctx, hx - hs * 0.55, hy + hs * 0.05, hs * 0.5, hs * 0.7, 0.15); ctx.fill();
+  }
+  if (sp.ear === 'round') {
+    [[-0.55, 0], [0.35, 0]].forEach(([q]) => {
+      ctx.fillStyle = sp.earColor || (sp.lionMane ? sp.body : sp.body); ell(ctx, hx + hs * q, hy - hs * 0.82, hs * 0.32, hs * 0.32); ctx.fill();
+      ctx.strokeStyle = outline; ctx.lineWidth = 1; ctx.stroke();
+      if (!sp.earColor) { ctx.fillStyle = 'rgba(251,113,133,0.45)'; ell(ctx, hx + hs * q, hy - hs * 0.8, hs * 0.16, hs * 0.16); ctx.fill(); }
+    });
+  }
+  if (sp.antlers && (o.growth || 0) > 0.34) {
+    // 사슴뿔: 자라면서 생긴다
+    ctx.strokeStyle = '#78350f'; ctx.lineWidth = Math.max(1.5, hs * 0.13); ctx.lineCap = 'round';
+    [[-0.25, -1], [0.2, 1]].forEach(([q, side]) => {
+      const bx = hx + hs * q, byy = hy - hs * 0.8;
+      ctx.beginPath(); ctx.moveTo(bx, byy); ctx.lineTo(bx + side * hs * 0.2, byy - hs * 0.9);
+      ctx.moveTo(bx + side * hs * 0.08, byy - hs * 0.4); ctx.lineTo(bx + side * hs * 0.45, byy - hs * 0.6);
+      ctx.moveTo(bx + side * hs * 0.15, byy - hs * 0.7); ctx.lineTo(bx - side * hs * 0.15, byy - hs * 1.05); ctx.stroke();
+    });
   }
   if (sp.ear === 'long') {
     [[-0.3, -0.22], [0.12, 0.06]].forEach(([q, rot]) => {
@@ -201,6 +248,13 @@ function drawQuad(ctx, sp, S, o) {
   } else if (sp.snout === 'cow') {
     ctx.fillStyle = '#fbcfe8'; ell(ctx, hx + hs * 0.55, hy + hs * 0.45, hs * 0.68, hs * 0.48); ctx.fill();
     ctx.fillStyle = 'rgba(131,24,67,0.5)'; ell(ctx, hx + hs * 0.6, hy + hs * 0.4, hs * 0.08, hs * 0.11); ctx.fill(); ell(ctx, hx + hs * 0.98, hy + hs * 0.38, hs * 0.08, hs * 0.11); ctx.fill();
+  } else if (sp.snout === 'trunk') {
+    // 코끼리: 아래로 늘어졌다 끝이 살짝 말린 긴 코 + 상아
+    ctx.strokeStyle = sp.body; ctx.lineWidth = hs * 0.42; ctx.lineCap = 'round';
+    const sw = Math.sin((o.t || 0) * 1.6) * hs * 0.12;
+    ctx.beginPath(); ctx.moveTo(hx + hs * 0.6, hy + hs * 0.15); ctx.quadraticCurveTo(hx + hs * 1.25, hy + hs * 0.4, hx + hs * 1.1 + sw, hy + hs * 1.3); ctx.stroke();
+    ctx.strokeStyle = outline; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#fffbeb'; ctx.beginPath(); ctx.moveTo(hx + hs * 0.55, hy + hs * 0.55); ctx.quadraticCurveTo(hx + hs * 0.9, hy + hs * 0.9, hx + hs * 1.0, hy + hs * 0.7); ctx.lineTo(hx + hs * 0.7, hy + hs * 0.5); ctx.closePath(); ctx.fill();
   } else if (horse) {
     ctx.fillStyle = sp.body; ell(ctx, hx + hs * 0.72, hy + hs * 0.45, hs * 0.8, hs * 0.5, 0.5); ctx.fill();
     ctx.fillStyle = sp.belly; ell(ctx, hx + hs * 1.15, hy + hs * 0.78, hs * 0.36, hs * 0.32, 0.5); ctx.fill();
@@ -215,7 +269,8 @@ function drawQuad(ctx, sp, S, o) {
     ctx.beginPath(); ctx.moveTo(hx + hs * 0.55, hy + hs * 0.7); ctx.lineTo(hx + hs * 0.95, hy + hs * 0.7); ctx.lineTo(hx + hs * 0.7, hy + hs * 1.35); ctx.closePath(); ctx.fill();
   }
   // 눈·볼
-  drawEye(ctx, hx + hs * 0.32, hy - hs * 0.15, hs * 0.2, o.sleep || o.blink, sp.darkFace || sp.eyeRing);
+  if (sp.eyePatch) { ctx.fillStyle = sp.accent; ell(ctx, hx + hs * 0.3, hy - hs * 0.12, hs * 0.32, hs * 0.26, -0.4); ctx.fill(); }
+  drawEye(ctx, hx + hs * 0.32, hy - hs * 0.15, hs * 0.2, o.sleep || o.blink, sp.darkFace || sp.eyeRing || sp.eyePatch);
   if (!sp.darkFace && sp.snout !== 'pig') { ctx.fillStyle = 'rgba(251,113,133,0.4)'; ell(ctx, hx + hs * 0.08, hy + hs * 0.38, hs * 0.22, hs * 0.14); ctx.fill(); }
 
   // 앞쪽 귀 (머리 위에 덮이는 귀)
@@ -345,8 +400,8 @@ function AnimalPreview({ species }) {
     const c = ref.current, ctx = c.getContext('2d'), d = window.devicePixelRatio || 1;
     c.width = 120 * d; c.height = 92 * d;
     ctx.scale(d, d);
-    const tall = species.shape === 'bird' ? 1.15 : species.legLen + 0.6 * (species.fat || 1) + (species.snout === 'horse' ? 0.6 : species.ear === 'long' ? 0.75 : 0.32);
-    const long = species.shape === 'bird' ? 1 : species.bodyLen + species.headSize * 0.9;
+    const tall = species.shape === 'bird' ? 1.15 : species.legLen + 0.6 * (species.fat || 1) + (species.neckLift ? species.neckLift + 0.45 : species.snout === 'horse' ? 0.6 : species.ear === 'long' ? 0.75 : species.antlers ? 0.7 : 0.32);
+    const long = species.shape === 'bird' ? 1 : species.bodyLen + species.headSize * (species.snout === 'trunk' ? 1.4 : 0.9);
     const S = Math.min(78 / tall, 104 / long);
     ctx.translate(60 - S * (species.shape === 'bird' ? 0.05 : 0.16), 86);
     drawAnimal(ctx, species, S, { phase: 0.6, moving: 0, growth: species.babyName ? 0.1 : 1, t: 0 });
@@ -984,7 +1039,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           });
           ctx.restore();
           // 머리 위 상태 표시
-          const top = y - S * (sp.shape === 'bird' ? 1.05 : sp.legLen + 0.62 * (sp.fat || 1) + (sp.snout === 'horse' ? 0.6 : 0.3)) * (1 - r.lie * 0.4) - 14 * k;
+          const top = y - S * (sp.shape === 'bird' ? 1.05 : sp.legLen + 0.62 * (sp.fat || 1) + (sp.neckLift ? sp.neckLift + 0.4 : sp.snout === 'horse' ? 0.6 : 0.3)) * (1 - r.lie * 0.4) - 14 * k;
           if (r.asleep) emoji('💤', r.x + S * 0.3, top - Math.sin(s.t * 1.5 + r.phase) * 4, 20 * k, 0.9);
           else if (a.sick) {
             // 밴드 표시는 다른 동물에 가리지 않게 맨 나중에 그린다

@@ -3574,6 +3574,8 @@ export default function AquariumGame({ audio, speak }) {
     const price = kind === 'fish' ? FISH_BY_ID[id].price || STARTER_FISH_PRICE : DECOR_BY_ID[id].price;
     const full = kind === 'decor' && game.decor.length >= LIMITS.decor;   // 물고기·바다 친구는 제한 없음
     if (full) { showToast('🙅 어항이 꽉 찼어요!'); return; }
+    // 상어 가족(unique)은 종류마다 한 마리만 살 수 있다
+    if (kind === 'fish' && FISH_BY_ID[id].unique && game.fish.some(f => f.sp === id)) { showToast(`🦈 ${FISH_BY_ID[id].name}는 우리 어항에 벌써 있어요!`); return; }
     if (game.points < price) { showToast(`🐚 조개가 ${price - game.points}개 더 필요해요`); s.say('need', VOICE.aquaNeedMore(), 3); return; }
     game.points -= price;
     if (kind === 'fish') {
@@ -3928,7 +3930,10 @@ export default function AquariumGame({ audio, speak }) {
                       <FishPreview species={sp} growth={sp.babyName ? 0.15 : 1} />
                       <div style={{ fontWeight: 900, color: '#0f172a' }}>{sp.babyName || sp.name}</div>
                       <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>{sp.desc}</div>
-                      <button onClick={() => buy('fish', sp.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= price ? (sp.sea ? '#0ea5e9' : '#8b5cf6') : '#cbd5e1', color: '#ffffff' }}>🐚 {price}</button>
+                      {sp.unique && sim && sim.game.fish.some(f => f.sp === sp.id)
+                        ? <div style={{ marginTop: '6px', width: '100%', borderRadius: '12px', padding: '8px', fontWeight: 900, textAlign: 'center', background: '#dcfce7', color: '#15803d', fontSize: '0.85rem' }}>✅ 우리 어항에 있어요</div>
+                        : <button onClick={() => buy('fish', sp.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= price ? (sp.sea ? '#0ea5e9' : '#8b5cf6') : '#cbd5e1', color: '#ffffff' }}>🐚 {price}</button>}
+                      {sp.unique && <div style={{ fontSize: '0.7rem', fontWeight: 900, color: '#0369a1' }}>한 마리만 데려올 수 있어요</div>}
                     </div>
                   );
                 })}
