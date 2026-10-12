@@ -14,6 +14,11 @@ export const FARM_SPECIES = [
     gift: { icon: '🥚', name: '달걀', stars: 6, everySec: 150 }
   },
   {
+    id: 'duck', name: '오리', babyName: '아기 오리', price: 40, size: 48, shape: 'bird', duck: true, desc: '꽥꽥! 뒤뚱뒤뚱 걸어요',
+    speed: 0.95, growMul: 1.25, body: '#ffffff', belly: '#f8fafc', accent: '#f59e0b', babyBody: '#fde68a',
+    gift: { icon: '🪶', name: '깃털', stars: 5, everySec: 160 }
+  },
+  {
     id: 'rabbit', name: '토끼', price: 60, size: 50, shape: 'quad', sound: 'rabbit', desc: '깡충깡충 뛰어다녀요',
     speed: 1.2, growMul: 1.2, hop: true, body: '#f8fafc', belly: '#ffffff', accent: '#fda4af',
     ear: 'long', tail: 'puff', legLen: 0.2, bodyLen: 0.78, headSize: 0.5,
@@ -44,10 +49,28 @@ export const FARM_SPECIES = [
     gift: { icon: '☁️', name: '양털', stars: 10, everySec: 190 }
   },
   {
+    id: 'goat', name: '염소', price: 150, size: 66, shape: 'quad', desc: '음메~ 수염이 멋져요',
+    speed: 1.0, growMul: 1, body: '#f5f5f4', belly: '#ffffff', accent: '#78716c',
+    ear: 'side', tail: 'puff', legLen: 0.36, bodyLen: 0.95, headSize: 0.44, horns: true, beard: true,
+    gift: { icon: '🧀', name: '치즈', stars: 9, everySec: 185 }
+  },
+  {
     id: 'cow', name: '젖소', price: 220, size: 84, shape: 'quad', sound: 'cow', desc: '음머! 고소한 우유를 줘요',
     speed: 0.7, growMul: 0.85, body: '#ffffff', belly: '#fff1f2', accent: '#1f2937',
     ear: 'side', tail: 'tuft', legLen: 0.36, bodyLen: 1.12, headSize: 0.44, snout: 'cow', spots: true, horns: true,
     gift: { icon: '🥛', name: '우유', stars: 14, everySec: 200 }
+  },
+  {
+    id: 'donkey', name: '당나귀', price: 240, size: 82, shape: 'quad', desc: '귀가 쫑긋 길어요',
+    speed: 1.0, growMul: 0.85, body: '#9ca3af', belly: '#e5e7eb', accent: '#4b5563',
+    ear: 'long', tail: 'tuft', legLen: 0.42, bodyLen: 1.02, headSize: 0.44, snout: 'horse', mane: true,
+    gift: { icon: '🍎', name: '사과', stars: 15, everySec: 205 }
+  },
+  {
+    id: 'alpaca', name: '알파카', price: 260, size: 84, shape: 'quad', desc: '복슬복슬 긴 목이 귀여워요',
+    speed: 0.9, growMul: 0.85, body: '#f3e3c3', belly: '#fbf3e4', accent: '#a47148',
+    ear: 'point', tail: 'puff', legLen: 0.44, bodyLen: 0.92, headSize: 0.4, snout: 'horse', wool: true,
+    gift: { icon: '🧣', name: '목도리', stars: 16, everySec: 205 }
   },
   {
     id: 'horse', name: '말', price: 280, size: 90, shape: 'quad', sound: 'horse', desc: '다그닥다그닥 달려요',
@@ -61,6 +84,8 @@ export const FARM_BY_ID = Object.fromEntries(FARM_SPECIES.map(a => [a.id, a]));
 // 다 크기 전에는 어릴 때 이름(병아리)으로 부른다
 const BABY_VIEW = Object.fromEntries(FARM_SPECIES.filter(a => a.babyName).map(a => [a.id, { ...a, name: a.babyName }]));
 export const farmSpeciesOf = (a) => (BABY_VIEW[a.sp] && a.growth < 0.8 ? BABY_VIEW[a.sp] : FARM_BY_ID[a.sp]);
+// 단계(baby·young·adult)에서 부르는 종류 (음성 문장 목록용)
+export const farmSpeciesAt = (spId, stage) => (BABY_VIEW[spId] && stage !== 'adult' ? BABY_VIEW[spId] : FARM_BY_ID[spId]);
 
 // ── 성장 단계 ──
 export const FARM_STAGE_NAMES = { baby: '아기', young: '어린이', adult: '다 큰 어른' };
@@ -82,8 +107,40 @@ export const FARM_RATES = {
   offlineCapSec: 24 * 3600,
   sickPerSec: 1 / 3000,
   sickMax: 2,
-  offlineSickMul: 0.15
+  offlineSickMul: 0.15,
+  pregPerSec: 1 / 900,      // 짝(같은 종류의 다 큰 수컷)이 있고 컨디션 좋은 다 큰 암컷이 아기를 가질 확률 (평균 15분)
+  pregCond: 70,             // 이 컨디션 이상일 때만
+  pregSec: 480,             // 배가 불러서 낳기까지 놀이 시간 8분
+  offlinePregMul: 0.3,      // 꺼둔 동안은 천천히 (낳는 건 보고 있을 때 하도록 98% 에서 멈춤)
+  pregRestSec: 1200,        // 낳은 뒤 20분은 쉰다
+  eggHatchSec: 90           // 둥지의 알이 깨어나기까지 1분 30초
 };
+// 저절로 태어나는 아기는 목장 동물이 이 수가 될 때까지만 (산 동물은 제한 없음)
+export const FARM_LIMITS = { breed: 30 };
+
+// ── 번식 ── 닭·오리는 둥지에 알을 낳고, 나머지는 새끼를 낳는다
+const FARM_BREED = {
+  chicken: { type: 'egg', brood: [2, 4] }, duck: { type: 'egg', brood: [2, 4] },
+  rabbit: { type: 'live', brood: [3, 5] }, dog: { type: 'live', brood: [2, 4] }, cat: { type: 'live', brood: [2, 4] },
+  pig: { type: 'live', brood: [3, 5] }, sheep: { type: 'live', brood: [1, 2] }, goat: { type: 'live', brood: [1, 2] },
+  cow: { type: 'live', brood: [1, 1] }, donkey: { type: 'live', brood: [1, 1] }, alpaca: { type: 'live', brood: [1, 1] },
+  horse: { type: 'live', brood: [1, 1] }
+};
+export const farmBreedOf = (spId) => FARM_BREED[spId] || { type: 'live', brood: [1, 2] };
+export const FARM_SEX_NAMES = { m: '수컷', f: '암컷' };
+const randomSex = () => (Math.random() < 0.5 ? 'm' : 'f');
+
+// 짝짓기 조건: 다 큰 암컷 + 컨디션 좋음 + 쉬는 중 아님 + 아기들이 들어갈 자리 + 같은 종류의 다 큰 수컷
+export function farmMateStatus(game, a, now = Date.now()) {
+  if (a.sex !== 'f' || a.preg != null || a.sick || farmStageOf(a.growth) !== 'adult') return null;
+  if ((a.restUntil || 0) > now) return null;
+  const dirt = farmDirt(game);
+  if (farmCondition(a, dirt) < FARM_RATES.pregCond || isFarmSad(a, dirt)) return null;
+  const pending = game.animals.reduce((n, o) => n + (o.preg != null ? farmBreedOf(o.sp).brood[1] : 0), 0) + (game.eggs || []).reduce((n, e) => n + e.n, 0);
+  if (game.animals.length + pending + 1 > FARM_LIMITS.breed) return null;
+  const male = game.animals.some(o => o.sp === a.sp && o.sex === 'm' && farmStageOf(o.growth) === 'adult' && !o.sick);
+  return male ? 'pair' : null;
+}
 export const FARM_NIGHT = { from: 20, to: 7 };
 export const FARM_SLEEP_IDLE_SEC = 30;
 export const isFarmNight = (d = new Date()) => { const h = d.getHours(); return h >= FARM_NIGHT.from || h < FARM_NIGHT.to; };
@@ -96,7 +153,7 @@ export const farmCondition = (a, dirt) => Math.round(a.full * 0.4 + (100 - a.mud
 export const farmGrowFactor = (a, dirt) => (isFarmSad(a, dirt) ? 0 : Math.max(0.15, Math.min(1, (farmCondition(a, dirt) - 30) / 55)));
 
 // ── 별(⭐) 보상 ──
-export const FARM_REWARDS = { eat: 1, poop: 2, wash: 5, young: 20, adult: 50, daily: 20, pet: 1, heal: 5 };
+export const FARM_REWARDS = { eat: 1, poop: 2, wash: 5, young: 20, adult: 50, daily: 20, pet: 1, heal: 5, birth: 10 };
 // 넓은 들판으로 보낼 때: 종류 값 × (40% + 자란 만큼 최대 160%)
 export const farmReleaseReward = (a) => {
   const sp = FARM_BY_ID[a.sp];
@@ -109,7 +166,7 @@ let uidSeq = 0;
 export const newFarmUid = () => `${Date.now().toString(36)}${(uidSeq++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
 export const newAnimal = (sp) => ({
-  uid: newFarmUid(), sp, growth: 0, full: 80, happy: 80, mud: 0, bornAt: Date.now(), giftT: 0
+  uid: newFarmUid(), sp, growth: 0, full: 80, happy: 80, mud: 0, bornAt: Date.now(), giftT: 0, sex: randomSex()
 });
 
 export function createNewFarm() {
@@ -117,7 +174,9 @@ export function createNewFarm() {
     version: 1,
     points: 40,
     poop: [],     // { x, y } 는 밭 안의 0~1 비율 좌표
-    animals: ['chicken', 'chicken', 'rabbit'].map(newAnimal),
+    eggs: [],     // 둥지 { uid, sp, x, d, n, t, family }
+    // 처음 받는 닭 두 마리는 암수 한 쌍
+    animals: ['chicken', 'chicken', 'rabbit'].map((sp, i) => ({ ...newAnimal(sp), ...(i < 2 ? { sex: i ? 'f' : 'm' } : {}) })),
     lastTick: Date.now(),
     lastDaily: '',
     welcomed: false
@@ -132,6 +191,9 @@ export function loadFarm() {
       if (g && g.version === 1 && Array.isArray(g.animals)) {
         g.animals = g.animals.filter(a => FARM_BY_ID[a.sp]);
         if (!Array.isArray(g.poop)) g.poop = [];
+        if (!Array.isArray(g.eggs)) g.eggs = [];
+        // 암수가 생기기 전의 동물에게 성별을 정해 준다
+        g.animals.forEach(a => { if (!a.sex) a.sex = randomSex(); });
         return g;
       }
     }
@@ -156,10 +218,12 @@ export function catchUpFarm(game, now = Date.now()) {
       const before = farmStageOf(a.growth);
       a.growth = Math.min(1, a.growth + FARM_RATES.growPerSec * FARM_RATES.offlineGrowMul * FARM_BY_ID[a.sp].growMul * farmGrowFactor(a, dirt) * step);
       if (farmStageOf(a.growth) !== before) grown.push(a);
+      if (a.preg != null) a.preg = Math.max(a.preg, Math.min(0.98, a.preg + step / FARM_RATES.pregSec * FARM_RATES.offlinePregMul));
       if (a.sick || game.animals.filter(o => o.sick).length >= FARM_RATES.sickMax) return;
       if (Math.random() < FARM_RATES.sickPerSec * FARM_RATES.offlineSickMul * (a.full < 25 || a.mud > 75 ? 3 : 1) * step) { a.sick = true; sick.push(a); }
     });
   }
+  (game.eggs || []).forEach(e => { e.t = Math.max(1, e.t - gone); });
   game.lastTick = now;
   return { goneSec: gone, grown, sick };
 }

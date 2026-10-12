@@ -1,5 +1,5 @@
 import { FISH_SPECIES, STAGE_NAMES, breedOf } from './aquariumData.js';
-import { FARM_SPECIES } from './farmData.js';
+import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf } from './farmData.js';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 🎙️ 음성 안내 문장 모음
@@ -123,6 +123,12 @@ export const VOICE = {
   farmGrow: (species, stage) => (stage === 'adult'
     ? `와아! ${attachJosa(species.name, '이/가')} 다 컸어요!`
     : `와아! ${attachJosa(species.babyName || species.name, '이/가')} 쑥쑥 자랐어요!`),
+  // 누르면 종류와 자란 단계를 불러 준다 (이름을 지었으면 farmHello)
+  farmInfo: (species, stage) => `${attachJosa(species.name, '이에요/예요')} 지금은 ${attachJosa(FARM_STAGE_NAMES[stage], '이에요/예요')}`,
+  farmPregnant: (species, type) => `${species.name} 배 속에 ${type === 'egg' ? '알이' : '아기가'} 생겼어요! 배가 점점 불러질 거예요!`,
+  farmBirth: (species) => `와아! ${attachJosa(species.name, '이/가')} 아기를 낳았어요!`,
+  farmEggs: (species) => `${attachJosa(species.name, '이/가')} 둥지에 알을 낳았어요! 곧 아기가 나와요!`,
+  farmHatch: (species) => `알에서 ${attachJosa(species.babyName || `아기 ${species.name}`, '이/가')} 태어났어요!`,
   // 직접 지은 이름은 미리 만든 음성이 없어 원격 음성이나 기기 음성으로 읽는다
   farmHello: (species, name) => `안녕! 나는 ${species.name} ${attachJosa(name, '이에요/예요')}`,
 
@@ -164,7 +170,12 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   });
   lines.push(VOICE.farmWelcome(), VOICE.farmWelcomeBack(), VOICE.farmHungry(), VOICE.farmDirty(), VOICE.farmPoop(), VOICE.farmFeed(), VOICE.farmWash(), VOICE.farmWashMode(),
     VOICE.farmGift(), VOICE.farmNeedMore(), VOICE.farmSick(), VOICE.farmHeal(), VOICE.farmNotSick(), VOICE.farmHealMode(), VOICE.farmNight(), VOICE.farmSleepTap(), VOICE.farmRelease());
-  FARM_SPECIES.forEach(sp => lines.push(VOICE.farmNew(sp), VOICE.farmGrow(sp, 'young'), VOICE.farmGrow(sp, 'adult')));
+  FARM_SPECIES.forEach(sp => {
+    lines.push(VOICE.farmNew(sp), VOICE.farmGrow(sp, 'young'), VOICE.farmGrow(sp, 'adult'));
+    Object.keys(FARM_STAGE_NAMES).forEach(stage => lines.push(VOICE.farmInfo(farmSpeciesAt(sp.id, stage), stage)));
+    const bt = farmBreedOf(sp.id).type;
+    lines.push(VOICE.farmPregnant(sp, bt), ...(bt === 'egg' ? [VOICE.farmEggs(sp), VOICE.farmHatch(sp)] : [VOICE.farmBirth(sp)]));
+  });
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
   fruits.forEach(i => lines.push(VOICE.tasty(i)));
   animals.forEach(i => lines.push(VOICE.quiz(i.name, false)));

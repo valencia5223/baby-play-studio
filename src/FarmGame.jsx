@@ -3,8 +3,10 @@ import { VOICE, attachJosa } from './voiceLines.js';
 import {
   FARM_SPECIES, FARM_BY_ID, farmSpeciesOf, FARM_STAGE_NAMES, farmStageOf, farmSizeScale,
   FARM_RATES, FARM_SLEEP_IDLE_SEC, isFarmNight, farmDirt, isFarmSad, farmCondition, farmGrowFactor,
-  FARM_REWARDS, farmReleaseReward, newAnimal, loadFarm, saveFarm, catchUpFarm, farmTodayKey
+  FARM_REWARDS, farmReleaseReward, newAnimal, loadFarm, saveFarm, catchUpFarm, farmTodayKey,
+  farmBreedOf, farmMateStatus, FARM_SEX_NAMES, newFarmUid, FARM_LIMITS
 } from './farmData.js';
+const FARM_LIMITS_BREED = FARM_LIMITS.breed;
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 🐮 내 목장 — 다마고치형 동물 키우기 (내 어항의 육지판)
@@ -62,7 +64,7 @@ function drawMud(ctx, mud, S, cy, w, h) {
 
 function drawQuad(ctx, sp, S, o) {
   const lie = o.sleep ? 1 : (o.lie || 0);
-  const bw = S * 0.5 * sp.bodyLen, bh = S * 0.29 * (sp.fat || 1);
+  const bw = S * 0.5 * sp.bodyLen, bh = S * 0.29 * (sp.fat || 1) * (1 + 0.28 * (o.belly || 0));   // 아기를 가지면 배가 불룩
   const legL = S * sp.legLen * (1 - lie * 0.88);
   const hopY = sp.hop && o.moving ? -Math.abs(Math.sin(o.phase)) * S * 0.22 : 0;
   const by = -(legL + bh * 0.82) + hopY;
@@ -207,6 +209,11 @@ function drawQuad(ctx, sp, S, o) {
     ctx.fillStyle = sp.darkFace ? '#111827' : sp.accent; ell(ctx, hx + hs * 0.98, hy + hs * 0.15, hs * 0.11, hs * 0.09); ctx.fill();
   }
 
+  // 염소 수염
+  if (sp.beard) {
+    ctx.fillStyle = mixColor(sp.body, '#000000', 0.25);
+    ctx.beginPath(); ctx.moveTo(hx + hs * 0.55, hy + hs * 0.7); ctx.lineTo(hx + hs * 0.95, hy + hs * 0.7); ctx.lineTo(hx + hs * 0.7, hy + hs * 1.35); ctx.closePath(); ctx.fill();
+  }
   // 눈·볼
   drawEye(ctx, hx + hs * 0.32, hy - hs * 0.15, hs * 0.2, o.sleep || o.blink, sp.darkFace);
   if (!sp.darkFace && sp.snout !== 'pig') { ctx.fillStyle = 'rgba(251,113,133,0.4)'; ell(ctx, hx + hs * 0.08, hy + hs * 0.38, hs * 0.22, hs * 0.14); ctx.fill(); }
@@ -224,17 +231,20 @@ function drawBird(ctx, sp, S, o) {
   const body = chick ? sp.babyBody : sp.body;
   const outline = 'rgba(60,40,20,0.3)';
   const lie = o.sleep ? 1 : (o.lie || 0);
-  const bw = S * 0.36, bh = S * 0.31, legL = S * 0.2 * (1 - lie * 0.9);
+  const bw = S * 0.36 * (sp.duck ? 1.12 : 1), bh = S * 0.31 * (1 + 0.15 * (o.belly || 0)), legL = S * (sp.duck ? 0.14 : 0.2) * (1 - lie * 0.9);
   const by = -(legL + bh * 0.9);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   // 다리
-  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = S * 0.05;
+  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = S * (sp.duck ? 0.06 : 0.05);
   [[-S * 0.07, 0], [S * 0.09, Math.PI]].forEach(([x, ph]) => {
     const sw = o.moving ? Math.sin(o.phase + ph) * S * 0.09 : 0;
     ctx.beginPath(); ctx.moveTo(x, by + bh * 0.7); ctx.lineTo(x + sw, 0); ctx.lineTo(x + sw + S * 0.09, 0); ctx.stroke();
   });
-  // 꼬리깃 (다 큰 닭)
-  if (!chick) {
+  // 꼬리깃 (다 큰 닭. 오리는 짧게 위로 치켜든 꼬리)
+  if (!chick && sp.duck) {
+    ctx.fillStyle = body; ctx.strokeStyle = outline; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-bw * 0.7, by - bh * 0.1); ctx.lineTo(-bw * 1.22, by - bh * 0.75); ctx.lineTo(-bw * 0.8, by - bh * 0.55); ctx.closePath(); ctx.fill(); ctx.stroke();
+  } else if (!chick) {
     ctx.fillStyle = body; ctx.strokeStyle = outline; ctx.lineWidth = 1;
     [-0.9, -0.55, -0.2].forEach(a => { ell(ctx, -bw * 0.85 + Math.cos(a - 1.2) * S * 0.12, by - bh * 0.45 + Math.sin(a - 1.2) * S * 0.12, S * 0.07, S * 0.19, a); ctx.fill(); ctx.stroke(); });
   }
@@ -253,7 +263,10 @@ function drawBird(ctx, sp, S, o) {
   const e = o.eat || 0, hr = S * (chick ? 0.21 : 0.17);
   let hx = bw * (chick ? 0.5 : 0.62) + e * S * 0.12, hy = by - bh * (chick ? 0.6 : 0.95) + e * S * 0.5;
   if (lie > 0) hy = lerp(hy, by - bh * 0.2, lie * 0.8);
-  if (!chick) {
+  if (!chick && sp.duck) {
+    ctx.strokeStyle = body; ctx.lineWidth = hr * 1.3;
+    ctx.beginPath(); ctx.moveTo(bw * 0.45, by - bh * 0.3); ctx.lineTo(hx, hy); ctx.stroke();
+  } else if (!chick) {
     ctx.strokeStyle = body; ctx.lineWidth = hr * 1.4;
     ctx.beginPath(); ctx.moveTo(bw * 0.45, by - bh * 0.3); ctx.lineTo(hx, hy); ctx.stroke();
     ctx.fillStyle = sp.accent;
@@ -262,13 +275,47 @@ function drawBird(ctx, sp, S, o) {
   }
   ell(ctx, hx, hy, hr, hr); ctx.fillStyle = body; ctx.fill(); ctx.strokeStyle = outline; ctx.lineWidth = Math.max(1, S * 0.015); ctx.stroke();
   ctx.fillStyle = '#f59e0b';
-  ctx.beginPath(); ctx.moveTo(hx + hr * 0.82, hy - hr * 0.2); ctx.lineTo(hx + hr * 1.55, hy + hr * 0.12); ctx.lineTo(hx + hr * 0.82, hy + hr * 0.42); ctx.closePath(); ctx.fill();
+  if (sp.duck) { ell(ctx, hx + hr * 1.15, hy + hr * 0.2, hr * 0.62, hr * 0.24, 0.05); ctx.fill(); }   // 오리는 납작하고 넓적한 부리
+  else { ctx.beginPath(); ctx.moveTo(hx + hr * 0.82, hy - hr * 0.2); ctx.lineTo(hx + hr * 1.55, hy + hr * 0.12); ctx.lineTo(hx + hr * 0.82, hy + hr * 0.42); ctx.closePath(); ctx.fill(); }
   drawEye(ctx, hx + hr * 0.3, hy - hr * 0.15, hr * 0.2, o.sleep || o.blink, false);
   ctx.fillStyle = 'rgba(251,113,133,0.4)'; ell(ctx, hx + hr * 0.15, hy + hr * 0.4, hr * 0.24, hr * 0.15); ctx.fill();
 }
 
 export function drawAnimal(ctx, sp, S, o) {
   if (sp.shape === 'bird') drawBird(ctx, sp, S, o); else drawQuad(ctx, sp, S, o);
+}
+
+// 아픈 친구 머리 위: 치료 버튼과 같은 모양(분홍 동그라미 + 비스듬한 반창고). size = 지름
+function drawBandageBadge(ctx, x, y, size) {
+  const k = size / 68;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = '#f43f5e';
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3 * k;
+  ctx.beginPath(); ctx.arc(0, 0, size / 2, 0, TAU); ctx.fill(); ctx.stroke();
+  const u = 40 / 44 * k;
+  ctx.scale(u, u);
+  ctx.rotate(-35 * Math.PI / 180);
+  rr(ctx, -21, -8, 42, 16, 8); ctx.fillStyle = '#fbbf8a'; ctx.fill(); ctx.strokeStyle = '#c2410c'; ctx.lineWidth = 1.4; ctx.stroke();
+  rr(ctx, -7, -6.5, 14, 13, 2.5); ctx.fillStyle = '#fde7d3'; ctx.fill(); ctx.strokeStyle = '#ea9a63'; ctx.lineWidth = 0.8; ctx.stroke();
+  ctx.fillStyle = '#ea9a63';
+  [-3.5, 0, 3.5].forEach(px => [-3, 0, 3].forEach(py => { ctx.beginPath(); ctx.arc(px, py, 0.7, 0, TAU); ctx.fill(); }));
+  ctx.fillStyle = 'rgba(194,65,12,0.6)';
+  [[-16, -3], [-13, 2], [-16, 3], [13, -3], [16, 2], [13, 3], [16, -3]].forEach(([px, py]) => { ctx.beginPath(); ctx.arc(px, py, 0.9, 0, TAU); ctx.fill(); });
+  ctx.restore();
+}
+// 치료 버튼 그림 (비스듬한 반창고)
+function BandageIcon() {
+  return (
+    <svg width="40" height="36" viewBox="0 0 44 40" aria-hidden="true">
+      <g transform="rotate(-35 22 20)">
+        <rect x="1" y="12" width="42" height="16" rx="8" fill="#fbbf8a" stroke="#c2410c" strokeWidth="1.4" />
+        <rect x="15" y="13.5" width="14" height="13" rx="2.5" fill="#fde7d3" stroke="#ea9a63" strokeWidth="0.8" />
+        {[[6, 17], [9, 22], [6, 23], [35, 17], [38, 22], [35, 23], [38, 17]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="0.9" fill="#c2410c" opacity="0.6" />)}
+        {[[18.5, 17], [22, 17], [25.5, 17], [18.5, 20], [22, 20], [25.5, 20], [18.5, 23], [22, 23], [25.5, 23]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="0.7" fill="#ea9a63" />)}
+      </g>
+    </svg>
+  );
 }
 
 // ═══════════════════════════════ 상점 미리보기·버튼 ═══════════════════════════════
@@ -359,7 +406,6 @@ export default function FarmGame({ audio, speak, animals = [] }) {
   useEffect(() => {
     const wrap = wrapRef.current, canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    const soundById = Object.fromEntries(animals.map(a => [a.id, a]));
 
     const game = loadFarm();
     const offline = catchUpFarm(game);
@@ -509,8 +555,46 @@ export default function FarmGame({ audio, speak, animals = [] }) {
     };
     const hearts = (x, y, text = '💗', n = 4) => { for (let i = 0; i < n; i++) s.fx.push({ x: x + rand(-22, 22), y: y + rand(-10, 10), text, life: rand(0.8, 1.3), vy: rand(-48, -26) }); };
 
+    // 아기 동물들을 (x, d) 근처에 태어나게 한다. 자리가 모자라면 들어갈 만큼만
+    const spawnBabies = (spId, n, x, d, family = {}) => {
+      const room = Math.max(0, FARM_LIMITS_BREED - game.animals.length);
+      const count = Math.min(n, room);
+      for (let i = 0; i < count; i++) {
+        const baby = newAnimal(spId);
+        if (family.mom) { baby.mom = family.mom; if (family.momName) baby.momName = family.momName; }
+        if (family.dad) { baby.dad = family.dad; if (family.dadName) baby.dadName = family.dadName; }
+        game.animals.push(baby);
+        const r = ensureRt(baby, true);
+        r.x = clamp(x + rand(-40, 40) * s.k, 10, s.W - 10); r.d = clamp(d + rand(-0.06, 0.06), 0, 1); r.tx = r.x; r.td = r.d; r.wait = rand(1, 3);
+        hearts(r.x, yOf(r.d) - 20, i % 2 ? '✨' : '💗', 2);
+      }
+      return count;
+    };
+    // 배 속 아기가 다 자라면: 새끼를 낳거나, 둥지에 알을 낳는다
+    const deliver = (a) => {
+      const sp = FARM_BY_ID[a.sp], br = farmBreedOf(a.sp), r = s.rt[a.uid];
+      const n = br.brood[0] + Math.floor(Math.random() * (br.brood[1] - br.brood[0] + 1));
+      const dadA = a.pregDad && game.animals.find(o => o.uid === a.pregDad);
+      const family = { mom: a.uid, momName: a.name, dad: a.pregDad, dadName: dadA ? dadA.name : undefined };
+      delete a.preg; delete a.pregDad;
+      a.restUntil = Date.now() + FARM_RATES.pregRestSec * 1000;
+      const x = r ? r.x : s.W / 2, d = r ? r.d : 0.5;
+      if (br.type === 'egg') {
+        game.eggs.push({ uid: newFarmUid(), sp: a.sp, x: clamp((x - (r ? r.face : 1) * 34 * s.k) / s.W, 0.05, 0.95), d, n, t: FARM_RATES.eggHatchSec, family });
+        audio.playPopSound(); say('eggs', VOICE.farmEggs(sp));
+        showToast(`🥚 ${a.name || sp.name} 이(가) 둥지에 알 ${n}개를 낳았어요!`);
+      } else {
+        const got = spawnBabies(a.sp, n, x, d, family);
+        if (got) {
+          addPoints(FARM_REWARDS.birth, x, yOf(d) - 60); audio.playFanfare(); say('birth', VOICE.farmBirth(sp));
+          showToast(`🍼 ${a.name || sp.name} 아기 ${got}마리가 태어났어요!`);
+        }
+      }
+      saveFarm(game);
+    };
+
     const pet = (a) => {
-      const r = s.rt[a.uid], sp = FARM_BY_ID[a.sp], S = sizeOf(a, r), y = yOf(r.d) - S;
+      const r = s.rt[a.uid], S = sizeOf(a, r), y = yOf(r.d) - S;
       a.happy = Math.min(100, a.happy + 15);
       r.hopT = 0.6;
       hearts(r.x, y);
@@ -518,8 +602,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       if (s.t - s.lastSound > 1.2) {
         s.lastSound = s.t;
         if (a.name) speak(VOICE.farmHello(farmSpeciesOf(a), a.name));
-        else if (soundById[sp.sound]) audio.playItemSound(soundById[sp.sound]);
-        else audio.playPopSound();
+        else speak(VOICE.farmInfo(farmSpeciesOf(a), farmStageOf(a.growth)));
       }
       setInfo(a.uid); setInfoTick(n => n + 1);
     };
@@ -572,6 +655,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       const a = game.animals.find(o => o.uid === uid);
       if (!a) return false;
       const r = s.rt[uid], reward = farmReleaseReward(a);
+      if (a.name) game.animals.forEach(kd => { if (kd.mom === a.uid) kd.momName = a.name; if (kd.dad === a.uid) kd.dadName = a.name; });
       game.animals = game.animals.filter(o => o.uid !== uid);
       delete s.rt[uid];
       if (r) { hearts(r.x, yOf(r.d) - 30, '🌼', 6); addPoints(reward, r.x, yOf(r.d) - 50); } else game.points += reward;
@@ -626,6 +710,19 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         }
       }
 
+      if (game.eggs.length) {
+        const hatched = [];
+        game.eggs.forEach(e => { e.t -= dt; if (e.t <= 0) hatched.push(e); });
+        if (hatched.length) {
+          game.eggs = game.eggs.filter(e => !hatched.includes(e));
+          hatched.forEach(e => {
+            const x = e.x * s.W, n = spawnBabies(e.sp, e.n, x, e.d, e.family);
+            if (n) { addPoints(FARM_REWARDS.birth, x, yOf(e.d) - 50); audio.playFanfare(); say('hatch', VOICE.farmHatch(FARM_BY_ID[e.sp])); }
+          });
+          saveFarm(game);
+        }
+      }
+
       game.animals.forEach(a => {
         const sp = FARM_BY_ID[a.sp], r = ensureRt(a, false);
         // 수치
@@ -643,6 +740,17 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         const sad = isFarmSad(a, dirt);
         if (!a.sick && sickCount < FARM_RATES.sickMax && Math.random() < FARM_RATES.sickPerSec * (a.full < 25 || a.mud > 75 ? 3 : 1) * dt) {
           a.sick = true; say('sick', VOICE.farmSick(), 20);
+        }
+        // 번식: 짝이 있고 컨디션이 좋으면 가끔 아기(알)를 갖고, 배가 점점 불러서 낳는다
+        if (a.preg != null) {
+          a.preg += dt / FARM_RATES.pregSec;
+          if (a.preg >= 1) deliver(a);
+        } else if (farmMateStatus(game, a) && Math.random() < FARM_RATES.pregPerSec * dt) {
+          const males = game.animals.filter(o => o.sp === a.sp && o.sex === 'm' && farmStageOf(o.growth) === 'adult' && !o.sick);
+          a.preg = 0; a.pregDad = males[Math.floor(Math.random() * males.length)].uid;
+          hearts(r.x, yOf(r.d) - sizeOf(a, r), '💕', 6);
+          say('preg', VOICE.farmPregnant(sp, farmBreedOf(a.sp).type), 5);
+          saveFarm(game);
         }
         // 다 큰 친구는 컨디션이 좋으면 가끔 선물을 떨어뜨린다
         if (now === 'adult' && !sad && sp.gift) {
@@ -693,6 +801,9 @@ export default function FarmGame({ audio, speak, animals = [] }) {
             if (sp.napper && r.wait > 3) lieTarget = 1;   // 고양이는 쉴 때 엎드려 낮잠
             if (r.wait <= 0) {
               r.tx = rand(0.06, 0.94) * s.W; r.td = rand(0.02, 0.98);
+              // 아직 다 크지 않은 아기는 엄마 곁으로 졸졸 따라간다
+              const mr = a.mom && a.growth < 0.8 ? s.rt[a.mom] : null;
+              if (mr && Math.random() < 0.85) { r.tx = clamp(mr.x - mr.face * rand(30, 70) * s.k, 10, s.W - 10); r.td = clamp(mr.d + rand(-0.06, 0.06), 0, 1); r.wait = 0; }
               r.run = !!sp.runner && Math.random() < 0.4;
             }
           }
@@ -708,7 +819,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
             r.face = seeking.x >= r.x ? 1 : -1;
             seeking.bites -= 1; r.eatT = 1.3;
           } else if (r.wait <= 0) {
-            r.wait = rand(1.5, 5) * (sp.napper ? 2.6 : 1);
+            r.wait = rand(1.5, 5) * (sp.napper ? 2.6 : 1) * (a.mom && a.growth < 0.8 && s.rt[a.mom] ? 0.4 : 1);
           }
         }
         r.lie += (lieTarget - r.lie) * Math.min(1, dt * 5);
@@ -783,11 +894,28 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       game.poop.forEach(p => items.push({ d: p.y - 0.001, kind: 'poop', p }));
       s.food.forEach(f => items.push({ d: f.d, kind: 'food', f }));
       s.gifts.forEach(g => items.push({ d: g.d, kind: 'gift', g }));
+      game.eggs.forEach(e => items.push({ d: e.d - 0.0005, kind: 'nest', e }));
       game.animals.forEach(a => items.push({ d: s.rt[a.uid].d, kind: 'animal', a }));
       items.sort((p, q) => p.d - q.d);
       const dirt = farmDirt(game);
+      const badges = [];
       items.forEach(it => {
-        if (it.kind === 'poop') {
+        if (it.kind === 'nest') {
+          // 둥지와 알: 깨어날 때가 되면 꼼지락거린다
+          const e = it.e, sc = scaleOf(e.d), x = e.x * W, y = yOf(e.d), ready = 1 - clamp(e.t / FARM_RATES.eggHatchSec, 0, 1);
+          ctx.fillStyle = '#a16207'; ell(ctx, x, y - 4 * sc, 30 * sc, 11 * sc); ctx.fill();
+          ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = 2 * sc;
+          for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(x + (i - 3) * 8 * sc, y - 2 * sc, 9 * sc, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+          for (let i = 0; i < e.n; i++) {
+            const jig = ready > 0.8 ? Math.sin(s.t * 18 + i) * 0.25 : 0;
+            const ex = x + (i - (e.n - 1) / 2) * 13 * sc, ey = y - 12 * sc;
+            ctx.save(); ctx.translate(ex, ey); ctx.rotate(jig);
+            ctx.fillStyle = e.sp === 'duck' ? '#ecfdf5' : '#fef3c7'; ell(ctx, 0, 0, 7 * sc, 9 * sc); ctx.fill();
+            ctx.strokeStyle = 'rgba(120,80,30,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+            if (ready > 0.6) { ctx.strokeStyle = 'rgba(120,80,30,0.7)'; ctx.beginPath(); ctx.moveTo(-4 * sc, -1 * sc); ctx.lineTo(-1 * sc, 2 * sc); ctx.lineTo(2 * sc, -2 * sc); ctx.lineTo(5 * sc, 1 * sc); ctx.stroke(); }
+            ctx.restore();
+          }
+        } else if (it.kind === 'poop') {
           const x = it.p.x * W, y = yOf(it.p.y), z = 9 * scaleOf(it.p.y);
           ctx.fillStyle = '#7c4a21';
           [[0, 0, 1], [0, -0.7, 0.72], [0, -1.25, 0.45]].forEach(([qx, qy, qr]) => { ell(ctx, x + qx * z, y + qy * z - z * 0.4, z * qr, z * qr * 0.62); ctx.fill(); });
@@ -814,14 +942,21 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           const eatDip = r.eatT > 0 ? clamp(Math.min(r.eatT, 1.3 - r.eatT) * 5, 0, 1) * (0.85 + 0.15 * Math.sin(s.t * 18)) : 0;
           ctx.save(); ctx.translate(r.x, y + hop); ctx.scale(r.face, 1);
           drawAnimal(ctx, sp, S, {
-            phase: r.phase, moving: r.moving, growth: a.growth, sleep: r.asleep, lie: r.lie, eat: eatDip,
+            phase: r.phase, moving: r.moving, growth: a.growth, sleep: r.asleep, lie: r.lie, eat: eatDip, belly: a.preg != null ? Math.pow(a.preg, 0.8) : 0,
             wag: !r.asleep && (r.hopT > 0 || r.washT > 0 || (sp.wag && a.happy > 50)), mud: a.mud, t: s.t, blink: r.blinkT < 0
           });
           ctx.restore();
           // 머리 위 상태 표시
           const top = y - S * (sp.shape === 'bird' ? 1.05 : sp.legLen + 0.62 * (sp.fat || 1) + (sp.snout === 'horse' ? 0.6 : 0.3)) * (1 - r.lie * 0.4) - 14 * k;
           if (r.asleep) emoji('💤', r.x + S * 0.3, top - Math.sin(s.t * 1.5 + r.phase) * 4, 20 * k, 0.9);
-          else if (a.sick) emoji('🤒', r.x, top, 24 * k);
+          else if (a.sick) {
+            // 밴드 표시는 다른 동물에 가리지 않게 맨 나중에 그린다
+            const bsz = 34 * k * (modeRef.current === 'heal' ? 1 + Math.sin(s.t * 6) * 0.08 : 1);
+            badges.push(() => {
+              drawBandageBadge(ctx, r.x, top - 4 * k + Math.sin(s.t * 3 + r.phase) * 3, bsz);
+              if (modeRef.current === 'heal') { ctx.strokeStyle = `rgba(239,68,68,${0.6 + Math.sin(s.t * 6) * 0.3})`; ctx.lineWidth = 3; ell(ctx, r.x, y - S * 0.35, S * 0.7, S * 0.55); ctx.stroke(); }
+            });
+          }
           else if (a.full < 25) emoji('🍽️', r.x, top, 22 * k, 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3)));
           else if (a.mud > 75) emoji('💦', r.x, top, 22 * k, 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3)));
           else if (isFarmSad(a, dirt)) emoji('😢', r.x, top, 20 * k);
@@ -832,6 +967,8 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           }
         }
       });
+
+      badges.forEach(fn => fn());
 
       // 어둠 (밤에는 헛간 창문에 불이 켜진다)
       if (dark > 0.02) {
@@ -971,7 +1108,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         {hud.night && <div title="밤 (저녁 8시 ~ 아침 7시)" style={{ fontSize: '1.9rem', lineHeight: 1, filter: 'drop-shadow(0 0 6px #fde68a)' }}>🌙</div>}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>
           <FarmButton icon="🥕" label="밥" color="#f97316" onClick={() => { setMode('play'); if (simRef.current) simRef.current.feed(); }} />
-          <FarmButton icon="🩹" label="치료" color="#f43f5e" badge={hud.sick} active={mode === 'heal'} onClick={() => { const m = mode === 'heal' ? 'play' : 'heal'; setMode(m); if (m === 'heal' && simRef.current) simRef.current.say('healmode', VOICE.farmHealMode(), 3); }} />
+          <FarmButton icon={<BandageIcon />} label="치료" color="#f43f5e" badge={hud.sick} active={mode === 'heal'} onClick={() => { const m = mode === 'heal' ? 'play' : 'heal'; setMode(m); if (m === 'heal' && simRef.current) simRef.current.say('healmode', VOICE.farmHealMode(), 3); }} />
           <FarmButton icon="🧼" label="씻기·청소" color="#0ea5e9" active={mode === 'wash'} onClick={() => { const m = mode === 'wash' ? 'play' : 'wash'; setMode(m); if (m === 'wash' && simRef.current) simRef.current.say('washmode', VOICE.farmWashMode(), 20); }} />
           <FarmButton icon="🛒" label="상점" color="#8b5cf6" onClick={() => setShopOpen(true)} />
         </div>
@@ -995,7 +1132,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
             position: 'absolute', left: '50%', top: '12px', transform: 'translateX(-50%)', zIndex: 6, pointerEvents: 'none',
             background: 'rgba(15,23,42,0.75)', color: '#ffffff', fontWeight: 900, padding: '8px 16px', borderRadius: '16px', fontSize: '0.95rem', whiteSpace: 'nowrap'
           }}>
-            {mode === 'wash' ? '🧼 친구를 문질러 씻기고, 똥도 문질러 치워요' : hud.sick ? '🩹 🤒 표시가 있는 친구를 눌러 줘요' : '🩹 지금은 아픈 친구가 없어요'}
+            {mode === 'wash' ? '🧼 친구를 문질러 씻기고, 똥도 문질러 치워요' : hud.sick ? '🩹 밴드 그림이 떠 있는 친구를 눌러 줘요' : '🩹 지금은 아픈 친구가 없어요'}
           </div>
         )}
 
@@ -1031,6 +1168,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ fontWeight: 900, fontSize: '1.15rem', color: '#0f172a' }}>
                   {asleep ? '😴' : infoAnimal.sick ? '🤒' : sad ? '😢' : '😊'} {infoAnimal.name ? <>{infoAnimal.name} <span style={{ fontSize: '0.8rem', color: '#475569' }}>({vsp.name})</span></> : vsp.name}
+                  {infoAnimal.sex && <span style={{ marginLeft: '4px', fontSize: '0.8rem', color: '#ffffff', background: infoAnimal.sex === 'm' ? '#2563eb' : '#db2777', borderRadius: '10px', padding: '1px 7px' }}>{infoAnimal.sex === 'm' ? '♂' : '♀'} {FARM_SEX_NAMES[infoAnimal.sex]}</span>}
                   {' '}<span style={{ fontSize: '0.85rem', color: '#15803d' }}>· {FARM_STAGE_NAMES[stage]}</span>
                 </div>
                 <button onClick={() => setInfo(null)} style={{ border: 'none', background: '#e2e8f0', borderRadius: '12px', padding: '4px 10px', fontWeight: 900, cursor: 'pointer' }}>✕</button>
@@ -1046,11 +1184,42 @@ export default function FarmGame({ audio, speak, animals = [] }) {
                 ))}
               </div>
               <div style={{ marginTop: '8px', fontSize: '0.82rem', fontWeight: 800, color: sad ? '#be123c' : '#0f766e' }}>
-                {infoAnimal.sick ? '🤒 아파서 자라지 않아요. 🩹 치료 버튼을 누르고 이 친구를 눌러 주세요'
+                {infoAnimal.preg != null ? `${farmBreedOf(infoAnimal.sp).type === 'egg' ? '🥚 배 속에 알이 있어요' : '🤰 배 속에 아기가 있어요'} (${Math.round(infoAnimal.preg * 100)}%)`
+                  : infoAnimal.sick ? '🩹 아파서 자라지 않아요. 치료 버튼을 누르고 이 친구를 눌러 주세요'
                   : sad ? '배고프거나 지저분해서 자라지 않아요'
                     : stage === 'adult' ? `🎉 다 컸어요! 가끔 ${vsp.gift.icon} ${attachJosa(vsp.gift.name, '을/를')} 선물해요`
                       : `자라는 속도 ${Math.round(speed * 100)}% · 컨디션 ${cond}% (좋을수록 빨라요)`}
               </div>
+              {/* 가족: 이름이 없으면 '엄마 토끼 ♀' 처럼 종류로 부르고, 누르면 그 친구 카드로 */}
+              {(() => {
+                const all = sim.game.animals;
+                const chip = (uid, savedName, role) => {
+                  const p = all.find(o => o.uid === uid);
+                  const icon = role === 'mom' ? '♀' : '♂', label = role === 'mom' ? '엄마' : '아빠';
+                  if (!p) return <span key={role} style={{ background: '#f1f5f9', color: '#64748b', borderRadius: '10px', padding: '2px 8px' }}>{label} {savedName || FARM_BY_ID[infoAnimal.sp].name} {icon} · 들판으로 갔어요</span>;
+                  return (
+                    <button key={role} onClick={() => setInfo(p.uid)} style={{ border: 'none', cursor: 'pointer', background: role === 'mom' ? '#fce7f3' : '#dbeafe', color: role === 'mom' ? '#9d174d' : '#1e40af', borderRadius: '10px', padding: '2px 8px', fontWeight: 900, fontSize: '0.8rem' }}>
+                      {label} {p.name || farmSpeciesOf(p).name} {icon}
+                    </button>
+                  );
+                };
+                const kids = all.filter(o => o.mom === infoAnimal.uid || o.dad === infoAnimal.uid);
+                if (!infoAnimal.mom && !infoAnimal.dad && !kids.length) return null;
+                const momP = infoAnimal.mom && all.find(o => o.uid === infoAnimal.mom);
+                const momLabel = momP ? (momP.name || `엄마 ${farmSpeciesOf(momP).name}`) : infoAnimal.momName || `엄마 ${FARM_BY_ID[infoAnimal.sp].name}`;
+                return (
+                  <div style={{ marginTop: '8px', background: '#fff7ed', borderRadius: '14px', padding: '7px 10px', fontSize: '0.8rem', fontWeight: 800, color: '#7c2d12', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
+                    {infoAnimal.mom && <span>👪 {momLabel}의 아기예요</span>}
+                    {infoAnimal.mom && chip(infoAnimal.mom, infoAnimal.momName, 'mom')}
+                    {infoAnimal.dad && chip(infoAnimal.dad, infoAnimal.dadName, 'dad')}
+                    {kids.length > 0 && (
+                      <button onClick={() => setInfo(kids[Math.floor(Math.random() * kids.length)].uid)} style={{ border: 'none', cursor: 'pointer', background: '#dcfce7', color: '#166534', borderRadius: '10px', padding: '2px 8px', fontWeight: 900, fontSize: '0.8rem' }}>
+                        👶 아기 {kids.length}마리
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
               {!naming ? (
                 <button
                   onClick={() => { setNameDraft(infoAnimal.name || ''); setNaming(true); }}
