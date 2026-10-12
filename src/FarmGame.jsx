@@ -695,7 +695,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
     const update = (dt) => {
       const dirt = farmDirt(game);
       const fieldH = s.fieldBot - s.fieldTop;
-      const sickCount = game.animals.filter(o => o.sick).length;
+      let sickCount = game.animals.filter(o => o.sick).length;
 
       // 밥
       s.food.forEach(f => {
@@ -765,7 +765,11 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         }
         const sad = isFarmSad(a, dirt);
         if (!a.sick && sickCount < FARM_RATES.sickMax && Math.random() < FARM_RATES.sickPerSec * (a.full < 25 || a.mud > 75 ? 3 : 1) * dt) {
-          a.sick = true; say('sick', VOICE.farmSick(), 20);
+          a.sick = true; sickCount++;
+          say('sick', VOICE.farmSick(), 20);
+          audio.playFreq(330, 'sine', 0.25, 0.3);
+          showToast(`🩹 ${a.name || farmSpeciesOf(a).name} 이(가) 아파요! 밴드를 붙여 주세요`);
+          saveFarm(game);
         }
         // 번식: 짝이 있고 컨디션이 좋으면 가끔 아기(알)를 갖고, 배가 점점 불러서 낳는다
         if (a.preg != null) {
@@ -790,7 +794,11 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         }
         if (r.poopDue > 0) {
           r.poopDue -= dt;
-          if (r.poopDue <= 0 && game.poop.length < FARM_RATES.poopMax) game.poop.push({ x: clamp((r.x - r.face * 24 * s.k) / s.W, 0.03, 0.97), y: r.d });
+          if (r.poopDue <= 0 && game.poop.length < FARM_RATES.poopMax) {
+            game.poop.push({ x: clamp((r.x - r.face * 24 * s.k) / s.W, 0.03, 0.97), y: r.d });
+            audio.playFreq(180, 'sine', 0.12, 0.25);   // 뿡!
+            saveFarm(game);
+          }
         }
         r.blinkT -= dt; if (r.blinkT < -0.14) r.blinkT = rand(2, 6);
         if (r.hopT > 0) r.hopT = Math.max(0, r.hopT - dt);
@@ -808,7 +816,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
             const wasHungry = a.full < 70;   // 배고플 때 먹으면 별을 더 준다
             a.full = Math.min(100, a.full + 40); a.happy = Math.min(100, a.happy + 6);
             addPoints(wasHungry ? FARM_REWARDS.eatHungry : FARM_REWARDS.eat, r.x, yOf(r.d) - sizeOf(a, r) - 10);
-            r.poopDue = rand(FARM_RATES.poopEverySec[0], FARM_RATES.poopEverySec[1]);
+            if (!(r.poopDue > 0)) r.poopDue = rand(FARM_RATES.poopEverySec[0], FARM_RATES.poopEverySec[1]);   // 이미 기다리는 중이면 미루지 않는다
             if (s.t - s.lastYum > 0.9) { s.lastYum = s.t; audio.playYum(); }
           }
         } else {

@@ -136,10 +136,10 @@ export const FARM_RATES = {
   mudPerSec: 100 / 1200,       // 놀 때 흙먼지 0 → 100 약 20분
   offlineMudPerSec: 100 / (24 * 3600),
   happyDropPerSec: 100 / 900,
-  poopEverySec: [70, 130],     // 밥을 먹은 동물이 똥을 누는 간격
+  poopEverySec: [15, 30],      // 밥을 먹은 동물이 똥을 누기까지 (더 먹어도 미뤄지지 않는다)
   poopMax: 14,
   offlineCapSec: 24 * 3600,
-  sickPerSec: 1 / 3000,
+  sickPerSec: 1 / 1800,     // 놀 때 한 마리가 아플 확률 (평균 30분에 한 번, 배고프거나 지저분하면 3배)
   sickMax: 2,
   offlineSickMul: 0.15,
   pregPerSec: 1 / 900,      // 짝(같은 종류의 다 큰 수컷)이 있고 컨디션 좋은 다 큰 암컷이 아기를 가질 확률 (평균 15분)
