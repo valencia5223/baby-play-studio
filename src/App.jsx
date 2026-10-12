@@ -3420,6 +3420,34 @@ export default function App() {
   const [puzzleCompleted, setPuzzleCompleted] = useState(false);
 
   const puzzleBoardRef = useRef(null);
+  // 퍼즐 화면 크기에 맞춰 퍼즐판·조각 상자를 키운다 (빈 공간 없이)
+  const puzzleAreaRef = useRef(null);
+  const [puzzleBoardPx, setPuzzleBoardPx] = useState(PUZZLE_BOARD_PX);
+  const [puzzleTrayPx, setPuzzleTrayPx] = useState(380);
+  useEffect(() => {
+    if (activeTab !== 'puzzle') return undefined;
+    const el = puzzleAreaRef.current;
+    if (!el) return undefined;
+    const fit = () => {
+      const w = el.clientWidth, h = el.clientHeight;
+      if (h > w * 1.1) {
+        // 세로 화면: 판을 위에 크게, 조각 상자를 아래에 넓게 쌓는다
+        setPuzzleBoardPx(Math.round(Math.max(280, Math.min(760, w - 60, h - 460))));   // 아래 조각 상자(두 줄)가 스크롤 없이 들어가게
+        setPuzzleTrayPx(Math.round(Math.min(w - 40, 900)));
+        return;
+      }
+      // 가로 화면: 나란히. 판 = 남은 너비와 높이(조각 수 표시·여백 빼고) 중 작은 쪽
+      const tray = Math.round(Math.max(340, Math.min(560, w * 0.38)));
+      const side = Math.min(h - 90, w - tray - 70);
+      const board = side >= 300 ? side : Math.min(w - 40, h - 90);
+      setPuzzleBoardPx(Math.round(Math.max(280, Math.min(720, board))));
+      setPuzzleTrayPx(side >= 300 ? tray : Math.min(w - 20, 560));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [activeTab]);
   const draggingPieceRef = useRef(null);
   const [draggingPieceQuad, setDraggingPieceQuad] = useState(null);
   const [dragPiecePos, setDragPiecePos] = useState({ x: 0, y: 0 });
@@ -3900,8 +3928,8 @@ export default function App() {
 
   // 🧩 지금 퍼즐의 조각 모양, 퍼즐판 배율(그림 300 → 화면 px), 트레이 한 줄 조각 수
   const puzzlePieces = puzzleGeo(puzzleTheme).pieces;
-  const puzzleScale = PUZZLE_BOARD_PX / 300;
-  const puzzleTrayCols = puzzlePieces.length <= 4 ? 2 : puzzlePieces.length <= 9 ? 3 : 4;
+  const puzzleScale = puzzleBoardPx / 300;
+  const puzzleTrayCols = puzzleTrayPx > 640 ? Math.min(puzzlePieces.length, puzzlePieces.length <= 4 ? 4 : puzzlePieces.length <= 6 ? 6 : 5) : puzzlePieces.length <= 4 ? 2 : puzzlePieces.length <= 9 ? 3 : 4;
 
   const isCardTab = CARD_CATEGORIES.some(c => c.id === activeTab);
   const isScrollableTab = ['cards', 'animal', 'fruit', 'vehicle', 'song'].includes(activeTab);
@@ -4359,7 +4387,7 @@ export default function App() {
               </svg>
 
               {/* 메인 퍼즐 컨테이너 (좌측 퍼즐판 + 우측 셔플 조각 트레이) */}
-              <div style={{
+              <div ref={puzzleAreaRef} style={{
                 flex: 1, minHeight: 0, display: 'flex', gap: '24px',
                 alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap',
                 padding: '0.5rem', overflowY: 'auto'
@@ -4382,14 +4410,14 @@ export default function App() {
                     ref={puzzleBoardRef}
                     className={puzzleCompleted ? 'puzzle-completed-board' : ''}
                     style={{
-                      width: `${PUZZLE_BOARD_PX}px`, height: `${PUZZLE_BOARD_PX}px`, boxSizing: 'content-box',
+                      width: `${puzzleBoardPx}px`, height: `${puzzleBoardPx}px`, boxSizing: 'content-box',
                       background: '#ead9b8', borderRadius: '22px',
                       border: puzzleCompleted ? '7px solid #eab308' : '7px solid #b08968',
                       boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
                       overflow: 'hidden', position: 'relative', transition: 'border-color 0.3s ease'
                     }}
                   >
-                    <svg viewBox="0 0 300 300" width={PUZZLE_BOARD_PX} height={PUZZLE_BOARD_PX} style={{ position: 'absolute', left: 0, top: 0, display: 'block' }}>
+                    <svg viewBox="0 0 300 300" width={puzzleBoardPx} height={puzzleBoardPx} style={{ position: 'absolute', left: 0, top: 0, display: 'block' }}>
                       <rect width="300" height="300" fill="#ead9b8" />
                       <rect width="300" height="300" filter="url(#pz-paper)" />
                       <g opacity="0.22"><PuzzleSceneG id={puzzleTheme.id} /></g>
@@ -4416,7 +4444,7 @@ export default function App() {
 
                 {/* 셔플된 조각 트레이 & 완성 컨트롤 (드래그 앤 드롭 지원) */}
                 <div style={{
-                  maxWidth: '380px', width: '100%', background: '#ffffff',
+                  maxWidth: `${puzzleTrayPx}px`, width: '100%', background: '#ffffff',
                   borderRadius: '28px', border: '3.5px solid #e2e8f0',
                   padding: '1.2rem', boxShadow: '0 10px 24px rgba(0,0,0,0.06)',
                   display: 'flex', flexDirection: 'column', alignItems: 'center'
@@ -4440,7 +4468,7 @@ export default function App() {
                           disabled={isPlaced}
                           onPointerDown={(e) => handleStartDragPiece(e, quadIdx)}
                           style={{
-                            height: puzzleTrayCols === 2 ? '118px' : puzzleTrayCols === 3 ? '100px' : '80px', borderRadius: '16px',
+                            height: `${Math.round(Math.min(puzzleTrayPx > 640 ? 112 : 150, puzzleTrayPx * (puzzleTrayCols === 2 ? 0.34 : puzzleTrayCols === 3 ? 0.26 : 0.2)))}px`, borderRadius: '16px',
                             border: '2px dashed #e2e8f0', background: isPlaced ? '#f1f5f9' : '#fffdf7',
                             cursor: isPlaced ? 'not-allowed' : 'grab',
                             padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center',
