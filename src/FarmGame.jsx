@@ -4,7 +4,7 @@ import {
   FARM_SPECIES, FARM_BY_ID, farmSpeciesOf, FARM_STAGE_NAMES, farmStageOf, farmSizeScale,
   FARM_RATES, FARM_SLEEP_IDLE_SEC, isFarmNight, farmDirt, isFarmSad, farmCondition, farmGrowFactor,
   FARM_REWARDS, farmReleaseReward, newAnimal, loadFarm, saveFarm, catchUpFarm, farmTodayKey,
-  farmBreedOf, farmMateStatus, FARM_SEX_NAMES, newFarmUid, FARM_LIMITS
+  farmBreedOf, farmMateStatus, FARM_SEX_NAMES, newFarmUid, FARM_LIMITS, FARM_VARIANTS, farmVariantOf, farmLookOf
 } from './farmData.js';
 const FARM_LIMITS_BREED = FARM_LIMITS.breed;
 
@@ -215,7 +215,7 @@ function drawQuad(ctx, sp, S, o) {
     ctx.beginPath(); ctx.moveTo(hx + hs * 0.55, hy + hs * 0.7); ctx.lineTo(hx + hs * 0.95, hy + hs * 0.7); ctx.lineTo(hx + hs * 0.7, hy + hs * 1.35); ctx.closePath(); ctx.fill();
   }
   // 눈·볼
-  drawEye(ctx, hx + hs * 0.32, hy - hs * 0.15, hs * 0.2, o.sleep || o.blink, sp.darkFace);
+  drawEye(ctx, hx + hs * 0.32, hy - hs * 0.15, hs * 0.2, o.sleep || o.blink, sp.darkFace || sp.eyeRing);
   if (!sp.darkFace && sp.snout !== 'pig') { ctx.fillStyle = 'rgba(251,113,133,0.4)'; ell(ctx, hx + hs * 0.08, hy + hs * 0.38, hs * 0.22, hs * 0.14); ctx.fill(); }
 
   // 앞쪽 귀 (머리 위에 덮이는 귀)
@@ -283,6 +283,26 @@ function drawBird(ctx, sp, S, o) {
 
 export function drawAnimal(ctx, sp, S, o) {
   if (sp.shape === 'bird') drawBird(ctx, sp, S, o); else drawQuad(ctx, sp, S, o);
+}
+
+// 해상도 단계(기기 픽셀 배율 상한)와, 동물 수에 따라 처음부터 낮춰 둘 단계
+const FARM_DPR_STEPS = [2, 1.6, 1.3, 1];
+const farmCrowdLevel = (n) => (n > 40 ? 3 : n > 30 ? 2 : n > 20 ? 1 : 0);
+
+// 씻기·청소 모드의 마우스 커서: 노란 수세미 (가운데가 문지르는 곳)
+const SPONGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
+<g transform="rotate(-20 22 22)"><rect x="6" y="12" width="32" height="20" rx="6" fill="#facc15" stroke="#a16207" stroke-width="2"/>
+<rect x="6" y="12" width="32" height="7" rx="3" fill="#22c55e" stroke="#15803d" stroke-width="2"/>
+<circle cx="14" cy="25" r="1.8" fill="#ca8a04"/><circle cx="21" cy="27" r="1.5" fill="#ca8a04"/><circle cx="28" cy="24" r="1.8" fill="#ca8a04"/><circle cx="33" cy="28" r="1.3" fill="#ca8a04"/></g>
+<circle cx="36" cy="8" r="4" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.5"/><circle cx="40" cy="15" r="2.5" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/></svg>`;
+const SPONGE_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(SPONGE_SVG)}") 22 22, crosshair`;
+// 캔버스에 수세미 그리기 (터치 기기는 커서가 없으므로 문지르는 손가락 밑에 보여 준다)
+function drawSponge(ctx, x, y, k, t) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-0.35 + Math.sin(t * 14) * 0.12); ctx.scale(k, k);
+  rr(ctx, -20, -12, 40, 24, 7); ctx.fillStyle = '#facc15'; ctx.fill(); ctx.strokeStyle = '#a16207'; ctx.lineWidth = 2; ctx.stroke();
+  rr(ctx, -20, -12, 40, 9, 4); ctx.fillStyle = '#22c55e'; ctx.fill(); ctx.strokeStyle = '#15803d'; ctx.stroke();
+  ctx.fillStyle = '#ca8a04'; [[-10, 3], [-2, 6], [7, 2], [14, 7]].forEach(([px, py]) => { ctx.beginPath(); ctx.arc(px, py, 2, 0, TAU); ctx.fill(); });
+  ctx.restore();
 }
 
 // 아픈 친구 머리 위: 치료 버튼과 같은 모양(분홍 동그라미 + 비스듬한 반창고). size = 지름
@@ -410,7 +430,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
     const game = loadFarm();
     const offline = catchUpFarm(game);
     const s = {
-      game, W: 0, H: 0, dpr: 1, t: 0, k: 1, hz: 0, fieldTop: 0, fieldBot: 0,
+      game, W: 0, H: 0, dpr: 1, t: 0, k: 1, hz: 0, fieldTop: 0, fieldBot: 0, qLevel: farmCrowdLevel(game.animals.length), slow: 0,
       rt: {}, food: [], gifts: [], fx: [], layer: null, barnWin: null,
       pointer: { down: false, x: 0, y: 0 },
       dark: farmDark(), night: isFarmNight(), sleeping: false, lastActive: 0,
@@ -447,7 +467,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
 
     const yOf = (d) => lerp(s.fieldTop, s.fieldBot, d);
     const scaleOf = (d) => (0.52 + 0.42 * d) * s.k;
-    const sizeOf = (a, r) => FARM_BY_ID[a.sp].size * farmSizeScale(a.growth) * scaleOf(r.d);
+    const sizeOf = (a, r) => FARM_BY_ID[a.sp].size * ((farmVariantOf(a) || {}).sizeMul || 1) * farmSizeScale(a.growth) * scaleOf(r.d);
 
     // ── 고정 배경(언덕·헛간·나무·울타리·풀밭)은 크기가 바뀔 때만 다시 그린다 ──
     const buildLayer = () => {
@@ -509,7 +529,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       const r = wrap.getBoundingClientRect();
       const oldW = s.W;
       s.W = Math.max(240, r.width); s.H = Math.max(240, r.height);
-      s.dpr = Math.min(window.devicePixelRatio || 1, 2);
+      s.dpr = Math.min(window.devicePixelRatio || 1, FARM_DPR_STEPS[s.qLevel]);
       s.k = clamp(Math.min(s.W, s.H * 1.5) / 620, 0.75, 1.6);
       s.hz = s.H * 0.42; s.fieldTop = s.H * 0.56; s.fieldBot = s.H * 0.95;
       canvas.width = Math.round(s.W * s.dpr); canvas.height = Math.round(s.H * s.dpr);
@@ -561,6 +581,12 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       const count = Math.min(n, room);
       for (let i = 0; i < count; i++) {
         const baby = newAnimal(spId);
+        if (FARM_VARIANTS[spId]) {
+          const mom = game.animals.find(o => o.uid === family.mom), dad = game.animals.find(o => o.uid === family.dad);
+          const q = Math.random();
+          if (mom && mom.variant && q < 0.6) baby.variant = mom.variant;
+          else if (dad && dad.variant && q < 0.9) baby.variant = dad.variant;
+        }
         if (family.mom) { baby.mom = family.mom; if (family.momName) baby.momName = family.momName; }
         if (family.dad) { baby.dad = family.dad; if (family.dadName) baby.dadName = family.dadName; }
         game.animals.push(baby);
@@ -941,7 +967,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           ctx.fillStyle = 'rgba(0,0,0,0.16)'; ell(ctx, r.x, y, S * 0.5, S * 0.11); ctx.fill();
           const eatDip = r.eatT > 0 ? clamp(Math.min(r.eatT, 1.3 - r.eatT) * 5, 0, 1) * (0.85 + 0.15 * Math.sin(s.t * 18)) : 0;
           ctx.save(); ctx.translate(r.x, y + hop); ctx.scale(r.face, 1);
-          drawAnimal(ctx, sp, S, {
+          drawAnimal(ctx, farmLookOf(a), S, {
             phase: r.phase, moving: r.moving, growth: a.growth, sleep: r.asleep, lie: r.lie, eat: eatDip, belly: a.preg != null ? Math.pow(a.preg, 0.8) : 0,
             wag: !r.asleep && (r.hopT > 0 || r.washT > 0 || (sp.wag && a.happy > 50)), mud: a.mud, t: s.t, blink: r.blinkT < 0
           });
@@ -969,6 +995,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       });
 
       badges.forEach(fn => fn());
+      if (modeRef.current === 'wash' && s.pointer.down) drawSponge(ctx, s.pointer.x, s.pointer.y, 1.25 * k, s.t);
 
       // 어둠 (밤에는 헛간 창문에 불이 켜진다)
       if (dark > 0.02) {
@@ -998,6 +1025,10 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
       s.t += dt;
+      // 프레임이 계속 늦거나 동물이 많아지면 해상도를 한 단계씩 낮춘다 (2 → 1.6 → 1.3 → 1배)
+      s.slow = dt > 0.026 ? s.slow + 1 : Math.max(0, s.slow - 2);
+      const crowd = farmCrowdLevel(game.animals.length);
+      if ((s.slow > 90 || crowd > s.qLevel) && s.qLevel < FARM_DPR_STEPS.length - 1) { s.qLevel = Math.max(s.qLevel + (s.slow > 90 ? 1 : 0), crowd); s.slow = 0; resize(); }
       update(dt);
       draw();
       if (s.t - s.lastHud > 0.4) {
@@ -1054,6 +1085,8 @@ export default function FarmGame({ audio, speak, animals = [] }) {
     s.ensureRt(a, true);
     audio.playFanfare();
     s.say('buy', VOICE.farmNew(sp));
+    const v = farmVariantOf(a);
+    if (v) showToast(`🎲 ${attachJosa(v.name, '이/가')} 왔어요!`);
     saveFarm(game);
     setInfo(a.uid);
     setHud(h => ({ ...h, points: game.points }));
@@ -1122,7 +1155,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           border: '7px solid #92400e', background: '#7ccf63',
           boxShadow: '0 14px 30px rgba(20,83,45,0.3)',
           touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none',
-          cursor: mode === 'play' ? 'pointer' : 'crosshair'
+          cursor: mode === 'wash' ? SPONGE_CURSOR : mode === 'play' ? 'pointer' : 'crosshair'
         }}
       >
         <canvas ref={canvasRef} style={{ position: 'absolute', left: 0, top: 0, display: 'block' }} />
@@ -1168,6 +1201,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                 <div style={{ fontWeight: 900, fontSize: '1.15rem', color: '#0f172a' }}>
                   {asleep ? '😴' : infoAnimal.sick ? '🤒' : sad ? '😢' : '😊'} {infoAnimal.name ? <>{infoAnimal.name} <span style={{ fontSize: '0.8rem', color: '#475569' }}>({vsp.name})</span></> : vsp.name}
+                  {farmVariantOf(infoAnimal) && <span style={{ fontSize: '0.8rem', color: '#be185d' }}> ({farmVariantOf(infoAnimal).name})</span>}
                   {infoAnimal.sex && <span style={{ marginLeft: '4px', fontSize: '0.8rem', color: '#ffffff', background: infoAnimal.sex === 'm' ? '#2563eb' : '#db2777', borderRadius: '10px', padding: '1px 7px' }}>{infoAnimal.sex === 'm' ? '♂' : '♀'} {FARM_SEX_NAMES[infoAnimal.sex]}</span>}
                   {' '}<span style={{ fontSize: '0.85rem', color: '#15803d' }}>· {FARM_STAGE_NAMES[stage]}</span>
                 </div>
@@ -1292,6 +1326,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
                     <AnimalPreview species={sp} />
                     <div style={{ fontWeight: 900, color: '#0f172a' }}>{sp.babyName || sp.name}</div>
                     <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textAlign: 'center' }}>{sp.desc}</div>
+                    {FARM_VARIANTS[sp.id] && <div style={{ fontSize: '0.72rem', fontWeight: 900, color: '#be185d' }}>🎲 품종은 랜덤! ({FARM_VARIANTS[sp.id].length}가지)</div>}
                     <button onClick={() => buy(sp.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= sp.price ? '#16a34a' : '#cbd5e1', color: '#ffffff' }}>⭐ {sp.price}</button>
                   </div>
                 ))}

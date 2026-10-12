@@ -1835,6 +1835,18 @@ function drawBandageBadge(ctx, x, y, size) {
   ctx.restore();
 }
 
+// 해상도 단계(기기 픽셀 배율 상한)와, 개체 수에 따라 처음부터 낮춰 둘 단계
+const DPR_STEPS = [2, 1.6, 1.3, 1];
+const crowdLevel = (n) => (n > 44 ? 3 : n > 34 ? 2 : n > 24 ? 1 : 0);
+
+// 청소 모드의 마우스 커서: 노란 수세미 (가운데가 문지르는 곳)
+const SPONGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
+<g transform="rotate(-20 22 22)"><rect x="6" y="12" width="32" height="20" rx="6" fill="#facc15" stroke="#a16207" stroke-width="2"/>
+<rect x="6" y="12" width="32" height="7" rx="3" fill="#22c55e" stroke="#15803d" stroke-width="2"/>
+<circle cx="14" cy="25" r="1.8" fill="#ca8a04"/><circle cx="21" cy="27" r="1.5" fill="#ca8a04"/><circle cx="28" cy="24" r="1.8" fill="#ca8a04"/><circle cx="33" cy="28" r="1.3" fill="#ca8a04"/></g>
+<circle cx="36" cy="8" r="4" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.5"/><circle cx="40" cy="15" r="2.5" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/></svg>`;
+const SPONGE_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(SPONGE_SVG)}") 22 22, crosshair`;
+
 // 치료 버튼 그림: 비스듬한 반창고(데일밴드)
 function BandageIcon() {
   return (
@@ -1912,7 +1924,7 @@ export default function AquariumGame({ audio, speak }) {
     const offline = catchUpOffline(game);
     saveGame(game);   // 꺼둔 동안 생긴 변화(아픔·성장)를 바로 저장
     const s = {
-      game, W: 0, H: 0, dpr: 1, t: 0, k: 1, quality: 1, slow: 0,
+      game, W: 0, H: 0, dpr: 1, t: 0, k: 1, quality: 1, slow: 0, qLevel: crowdLevel(game.fish.length),
       surface: 0, surfaceBase: 0, floor: 0, gravelH: 60,
       rt: {}, decorRt: {},
       food: [], bubbles: [], sand: [], splash: [], shells: [], ripples: [], pops: [], pearls: [], drops: [], algae: [],
@@ -1965,10 +1977,36 @@ export default function AquariumGame({ audio, speak }) {
       const x = c.getContext('2d'); x.scale(s.dpr, s.dpr);
       return [c, x];
     };
+    // ── 물고기 그림 캐시 (스프라이트) ── 물고기가 많을 때 같은 종류·크기의 모습을 헤엄 8장면으로 미리 그려 두고 복사만 한다.
+    // 무늬·그라데이션·잘라내기를 매 프레임 다시 계산하지 않아 아이패드에서 훨씬 가볍다. 메모리 때문에 최대 240장.
+    const spriteCache = new Map();
+    const SPRITE_FRAMES = 8, SPRITE_MAX = 240;
+    const drawFishSprite = (look, key, L, opts) => {
+      const Lq = Math.max(6, Math.round(L / 3) * 3);
+      const fr = Math.round((((opts.phase % TAU) + TAU) % TAU) / TAU * SPRITE_FRAMES) % SPRITE_FRAMES;
+      const ck = `${key}|${Lq}|${fr}|${opts.sad ? 1 : 0}${opts.happy ? 1 : 0}${opts.sleep ? 1 : 0}${opts.detail ? 1 : 0}|${Math.round((opts.lit || 0) * 2)}|${opts.growth >= 0.6 ? 10 : Math.round(opts.growth * 10)}`;
+      let c = spriteCache.get(ck);
+      if (c) { spriteCache.delete(ck); spriteCache.set(ck, c); }   // 최근에 쓴 것을 뒤로 (오래 안 쓴 것부터 지운다)
+      else {
+        const H = Lq * look.hRatio, w = Lq * 2.4, h = 2 * (H * 1.8 + Lq * 0.25);
+        c = document.createElement('canvas');
+        c.width = Math.ceil(w * s.dpr); c.height = Math.ceil(h * s.dpr);
+        const g = c.getContext('2d');
+        g.scale(s.dpr, s.dpr); g.translate(Lq * 1.55, h / 2);
+        drawFish(g, look, Lq, { ...opts, phase: fr / SPRITE_FRAMES * TAU, gloss: false });
+        c.ow = w; c.oh = h; c.ox = Lq * 1.55;
+        if (spriteCache.size >= SPRITE_MAX) { let i = 0; for (const old of spriteCache.keys()) { spriteCache.delete(old); if (++i >= 40) break; } }
+        spriteCache.set(ck, c);
+      }
+      const sc = L / Lq;
+      ctx.drawImage(c, -c.ox * sc, -c.oh / 2 * sc, c.ow * sc, c.oh * sc);
+    };
+
     const resize = () => {
       const r = wrap.getBoundingClientRect();
       s.W = Math.max(240, r.width); s.H = Math.max(240, r.height);
-      s.dpr = Math.min(window.devicePixelRatio || 1, s.quality < 1 ? 1 : 2);
+      s.dpr = Math.min(window.devicePixelRatio || 1, DPR_STEPS[s.qLevel]);
+      spriteCache.clear();   // 해상도가 바뀌면 미리 그려 둔 물고기 그림도 새로
       s.k = clamp(Math.min(s.W, s.H * 1.5) / 620, 0.8, 1.5);
       s.surfaceBase = Math.round(s.H * 0.075);
       if (!s.waterChange) s.surface = s.surfaceBase;
@@ -1979,7 +2017,7 @@ export default function AquariumGame({ audio, speak }) {
         c.style.width = `${s.W}px`; c.style.height = `${s.H}px`;
       });
       if (light) {
-        const ls = s.quality < 1 ? 0.35 : 0.5;
+        const ls = [0.5, 0.45, 0.4, 0.35][s.qLevel];
         lightRef.current.width = Math.max(64, Math.round(s.W * s.dpr * ls));
         lightRef.current.height = Math.max(64, Math.round(s.H * s.dpr * ls));
         lightRef.current.style.width = `${s.W}px`; lightRef.current.style.height = `${s.H}px`;
@@ -3154,7 +3192,9 @@ export default function AquariumGame({ audio, speak }) {
           ctx.translate(r.x, r.y); ctx.scale(r.dir, 1); ctx.rotate(ang);
           ctx.globalAlpha = a0 * (1 - r.glassK);
         }
-        if (r.glassK < 0.98) drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26, puff: r.puffNow || 0, belly, sleep: !!r.asleep, swim: !!r.swimming, lie: sp.lieDown ? 0.42 : 0, flip: r.flipNow || 0, clawUp: r.clawNow || 0, backFloat: r.backNow || 0, kick: r.kick || 0, hide: r.hideNow || 0, naked: !!r.naked, gloss: s.fx === 1, lit: s.lampNow, gravidSpot: breedOf(f.sp).type === 'live' });
+        const useSprite = order.length > 16 && r.glassK < 0.02 && !CREATURE_SHAPES.has(sp.shape) && !belly && (r.puffNow || 0) < 0.02 && !sp.lieDown;
+        if (useSprite) drawFishSprite(lookOf(sp, f), `${f.sp}|${f.variant || ''}|${f.shiny ? 1 : 0}`, L, { growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26 && (order.length < 28 || L > 44), sleep: !!r.asleep, lit: s.lampNow, phase: r.phase });
+        else if (r.glassK < 0.98) drawFish(ctx, lookOf(sp, f), L, { phase: r.phase, growth: f.growth, sad: isSad(f, game.dirt), happy: r.happyT > 0, detail: L > 26 && (order.length < 28 || L > 44), puff: r.puffNow || 0, belly, sleep: !!r.asleep, swim: !!r.swimming, lie: sp.lieDown ? 0.42 : 0, flip: r.flipNow || 0, clawUp: r.clawNow || 0, backFloat: r.backNow || 0, kick: r.kick || 0, hide: r.hideNow || 0, naked: !!r.naked, gloss: s.fx === 1 && order.length <= 24, lit: s.lampNow, gravidSpot: breedOf(f.sp).type === 'live' });
         ctx.restore();
         // 아픈 물고기 위에는 상단 치료 버튼과 똑같은 모양(분홍 동그라미 + 반창고)을 띄운다 (다른 물고기에 가리지 않게 맨 나중에)
         if (f.sick) badges.push(() => {
@@ -3174,7 +3214,7 @@ export default function AquariumGame({ audio, speak }) {
 
       if (!hazed) haze();
       // 조명 빛: 흰빛을 덧칠하면 뿌옇게 들뜨므로 소프트 라이트로 밝혀 대비와 색을 살린다
-      if (s.lampNow > 0.02) {
+      if (s.lampNow > 0.02 && s.fx) {   // 화면 전체 합성은 비싸서 가벼운 모드에서는 생략
         const lk = s.lampNow;
         ctx.globalCompositeOperation = 'soft-light';
         const lc = ctx.createRadialGradient(W / 2, s.surface - H * 0.1, 10, W / 2, s.surface + H * 0.3, H * 1.1);
@@ -3448,9 +3488,11 @@ export default function AquariumGame({ audio, speak }) {
         s.slowFx = s.emaDt > 1 / 50 ? (s.slowFx || 0) + dt : 0;
         if (s.slowFx > 3) s.fx = 0;
       }
-      if (s.quality === 1) {
-        s.slow = dt > 0.03 ? s.slow + 1 : Math.max(0, s.slow - 1);
-        if (s.slow > 120) { s.quality = 0.6; resize(); }
+      // 해상도는 단계적으로: 프레임이 계속 늦으면 한 단계씩 낮추고(2 → 1.6 → 1.3 → 1배), 개체가 많아지면 미리 낮춘다
+      s.slow = dt > 0.026 ? s.slow + 1 : Math.max(0, s.slow - 2);
+      const crowd = crowdLevel(game.fish.length);
+      if ((s.slow > 90 || crowd > s.qLevel) && s.qLevel < DPR_STEPS.length - 1) {
+        s.qLevel = Math.max(s.qLevel + (s.slow > 90 ? 1 : 0), crowd); s.slow = 0; s.quality = s.qLevel ? 0.6 : 1; resize();
       }
       s.tilt.x += (s.tiltRaw.x - s.tilt.x) * Math.min(1, dt * 4);
       s.tilt.y += (s.tiltRaw.y - s.tilt.y) * Math.min(1, dt * 4);
@@ -3670,7 +3712,7 @@ export default function AquariumGame({ audio, speak }) {
           border: '7px solid #1e293b', borderTopWidth: '14px', background: '#0e6f8f',
           boxShadow: '0 14px 30px rgba(15,23,42,0.35), inset 0 0 0 2px rgba(255,255,255,0.15)',
           touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none',
-          cursor: mode === 'clean' || mode === 'heal' ? 'crosshair' : mode === 'decorate' ? 'grab' : 'pointer'
+          cursor: mode === 'clean' ? SPONGE_CURSOR : mode === 'heal' ? 'crosshair' : mode === 'decorate' ? 'grab' : 'pointer'
         }}
       >
         <canvas ref={canvasRef} style={{ position: 'absolute', left: 0, top: 0, display: 'block', zIndex: 0 }} />

@@ -81,6 +81,40 @@ export const FARM_SPECIES = [
 ];
 export const FARM_BY_ID = Object.fromEntries(FARM_SPECIES.map(a => [a.id, a]));
 
+// ── 품종 ── 강아지·고양이는 살 때 여러 품종 중 하나가 무작위로 나온다. 값은 그림 파라미터를 덮어쓴다.
+// (첫 품종은 덮어쓰기 없음 = 예전 모습. sizeMul: 몸 크기 배율, eyeRing: 몸이 어두울 때 눈 테두리)
+export const FARM_VARIANTS = {
+  dog: [
+    { id: 'mixed', name: '누렁이' },
+    { id: 'jindo', name: '진돗개', body: '#f5efe2', belly: '#ffffff', accent: '#d9c9a6', ear: 'point', tail: 'curl' },
+    { id: 'shiba', name: '시바견', body: '#d98a3d', belly: '#fff7ed', accent: '#9a5b22', ear: 'point', tail: 'curl' },
+    { id: 'poodle', name: '푸들', body: '#b07a4f', belly: '#c99a72', accent: '#7c4a2b', wool: true },
+    { id: 'beagle', name: '비글', body: '#ffffff', belly: '#ffffff', accent: '#8b5a2b', spots: true },
+    { id: 'dachshund', name: '닥스훈트', body: '#8b4513', belly: '#c47a45', accent: '#5c2e0e', legLen: 0.18, bodyLen: 1.25, eyeRing: true },
+    { id: 'golden', name: '골든 리트리버', body: '#e6b450', belly: '#f8dfa0', accent: '#b9852f', legLen: 0.38, sizeMul: 1.12 },
+    { id: 'maltese', name: '말티즈', body: '#ffffff', belly: '#ffffff', accent: '#e2e8f0', wool: true, legLen: 0.26, sizeMul: 0.82 }
+  ],
+  cat: [
+    { id: 'cheese', name: '치즈 고양이' },
+    { id: 'mackerel', name: '고등어 고양이', body: '#9ca3af', belly: '#f3f4f6', accent: '#374151' },
+    { id: 'tuxedo', name: '턱시도 고양이', body: '#1f2937', belly: '#ffffff', accent: '#111827', stripes: false, eyeRing: true },
+    { id: 'calico', name: '삼색 고양이', body: '#ffffff', belly: '#ffffff', accent: '#f59e0b', stripes: false, spots: true },
+    { id: 'russian', name: '러시안 블루', body: '#8796ab', belly: '#c3cdda', accent: '#5b6b80', stripes: false, eyeRing: true },
+    { id: 'siamese', name: '샴 고양이', body: '#f5ead8', belly: '#fffbf2', accent: '#5b4636', stripes: false, darkFace: true },
+    { id: 'white', name: '하얀 고양이', body: '#ffffff', belly: '#ffffff', accent: '#fda4af', stripes: false }
+  ]
+};
+const VARIANT_BY = Object.fromEntries(Object.entries(FARM_VARIANTS).map(([sp, list]) => [sp, Object.fromEntries(list.map(v => [v.id, v]))]));
+export const farmVariantOf = (a) => (a.variant && VARIANT_BY[a.sp] ? VARIANT_BY[a.sp][a.variant] : null);
+const randomVariant = (sp) => (FARM_VARIANTS[sp] ? FARM_VARIANTS[sp][Math.floor(Math.random() * FARM_VARIANTS[sp].length)].id : undefined);
+// 그림용 모습: 종류 파라미터 + 품종 덮어쓰기 (이름·id 는 종류 그대로)
+export const farmLookOf = (a) => {
+  const sp = FARM_BY_ID[a.sp], v = farmVariantOf(a);
+  if (!v) return sp;
+  const { id, name, sizeMul, ...over } = v;
+  return { ...sp, ...over };
+};
+
 // 다 크기 전에는 어릴 때 이름(병아리)으로 부른다
 const BABY_VIEW = Object.fromEntries(FARM_SPECIES.filter(a => a.babyName).map(a => [a.id, { ...a, name: a.babyName }]));
 export const farmSpeciesOf = (a) => (BABY_VIEW[a.sp] && a.growth < 0.8 ? BABY_VIEW[a.sp] : FARM_BY_ID[a.sp]);
@@ -166,7 +200,7 @@ let uidSeq = 0;
 export const newFarmUid = () => `${Date.now().toString(36)}${(uidSeq++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
 export const newAnimal = (sp) => ({
-  uid: newFarmUid(), sp, growth: 0, full: 80, happy: 80, mud: 0, bornAt: Date.now(), giftT: 0, sex: randomSex()
+  uid: newFarmUid(), sp, growth: 0, full: 80, happy: 80, mud: 0, bornAt: Date.now(), giftT: 0, sex: randomSex(), variant: randomVariant(sp)
 });
 
 export function createNewFarm() {
@@ -194,6 +228,8 @@ export function loadFarm() {
         if (!Array.isArray(g.eggs)) g.eggs = [];
         // 암수가 생기기 전의 동물에게 성별을 정해 준다
         g.animals.forEach(a => { if (!a.sex) a.sex = randomSex(); });
+        // 품종이 생기기 전의 강아지·고양이는 예전 모습(첫 품종)
+        g.animals.forEach(a => { if (FARM_VARIANTS[a.sp] && !a.variant) a.variant = FARM_VARIANTS[a.sp][0].id; });
         return g;
       }
     }
