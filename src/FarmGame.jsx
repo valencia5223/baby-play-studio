@@ -620,11 +620,11 @@ export default function FarmGame({ audio, speak, animals = [] }) {
 
     // ── 입력 ──
     const local = (e) => { const r = wrap.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-    const hitAnimal = (x, y) => {
+    const hitAnimal = (x, y, pad = 1) => {   // pad: 터치 범위 배율 (씻기는 넓게)
       const list = game.animals.slice().sort((a, b) => s.rt[b.uid].d - s.rt[a.uid].d);
       for (const a of list) {
         const r = s.rt[a.uid], S = sizeOf(a, r);
-        if (Math.hypot(r.x - x, yOf(r.d) - S * 0.5 - y) < Math.max(30, S * 0.65)) return a;
+        if (Math.hypot(r.x - x, yOf(r.d) - S * 0.5 - y) < Math.max(30, S * 0.65) * pad) return a;
       }
       return null;
     };
@@ -766,10 +766,10 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       let washing = null;
       if (s.pointer.down && modeRef.current === 'wash') {
         const { x, y } = s.pointer;
-        washing = hitAnimal(x, y);
+        washing = hitAnimal(x, y, 1.45);   // 몸 주변을 대충 문질러도 닦인다
         const before = game.poop.length;
         game.poop = game.poop.filter(p => {
-          const hit = Math.hypot(p.x * s.W - x, yOf(p.y) - y) < 34 * s.k;
+          const hit = Math.hypot(p.x * s.W - x, yOf(p.y) - y) < 50 * s.k;
           if (hit) addPoints(FARM_REWARDS.poop, p.x * s.W, yOf(p.y) - 20);
           return !hit;
         });
@@ -778,7 +778,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           const r = s.rt[washing.uid];
           r.washT = 0.5;
           if (washing.mud >= 25) r.wasDirty = true;
-          washing.mud = Math.max(0, washing.mud - 75 * dt);
+          washing.mud = Math.max(0, washing.mud - 260 * dt);   // 아주 지저분해도 0.4초 정도면 깨끗
           washing.happy = Math.min(100, washing.happy + 4 * dt);
           if (Math.random() < dt * 22) s.fx.push({ x: x + rand(-26, 26), y: y + rand(-22, 22), bubble: rand(4, 11) * s.k, life: rand(0.5, 1), vy: rand(-40, -14) });
           if (s.t - s.lastBubble > 0.22) { s.lastBubble = s.t; audio.playBubble(); }
