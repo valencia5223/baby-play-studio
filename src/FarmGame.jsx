@@ -282,8 +282,9 @@ function drawQuad(ctx, sp, S, o) {
 }
 
 function drawBird(ctx, sp, S, o) {
-  const chick = o.growth < 0.8;
-  const body = chick ? sp.babyBody : sp.body;
+  // t: 0 = 갓 태어난 병아리 → 1 = 다 큰 닭 (성장 34%~80% 동안 몸 색·볏·꼬리깃·목·머리 크기가 조금씩 바뀐다)
+  const g = o.growth ?? 1, t0 = clamp((g - 0.34) / 0.46, 0, 1), t = t0 * t0 * (3 - 2 * t0);
+  const body = mixColor(sp.babyBody || sp.body, sp.body, t);
   const outline = 'rgba(60,40,20,0.3)';
   const lie = o.sleep ? 1 : (o.lie || 0);
   const bw = S * 0.36 * (sp.duck ? 1.12 : 1), bh = S * 0.31 * (1 + 0.15 * (o.belly || 0)), legL = S * (sp.duck ? 0.14 : 0.2) * (1 - lie * 0.9);
@@ -295,38 +296,39 @@ function drawBird(ctx, sp, S, o) {
     const sw = o.moving ? Math.sin(o.phase + ph) * S * 0.09 : 0;
     ctx.beginPath(); ctx.moveTo(x, by + bh * 0.7); ctx.lineTo(x + sw, 0); ctx.lineTo(x + sw + S * 0.09, 0); ctx.stroke();
   });
-  // 꼬리깃 (다 큰 닭. 오리는 짧게 위로 치켜든 꼬리)
-  if (!chick && sp.duck) {
+  // 꼬리깃: 자라면서 점점 길어진다 (오리는 짧게 위로 치켜든 꼬리)
+  if (t > 0.05) {
     ctx.fillStyle = body; ctx.strokeStyle = outline; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(-bw * 0.7, by - bh * 0.1); ctx.lineTo(-bw * 1.22, by - bh * 0.75); ctx.lineTo(-bw * 0.8, by - bh * 0.55); ctx.closePath(); ctx.fill(); ctx.stroke();
-  } else if (!chick) {
-    ctx.fillStyle = body; ctx.strokeStyle = outline; ctx.lineWidth = 1;
-    [-0.9, -0.55, -0.2].forEach(a => { ell(ctx, -bw * 0.85 + Math.cos(a - 1.2) * S * 0.12, by - bh * 0.45 + Math.sin(a - 1.2) * S * 0.12, S * 0.07, S * 0.19, a); ctx.fill(); ctx.stroke(); });
+    if (sp.duck) {
+      ctx.beginPath(); ctx.moveTo(-bw * 0.7, by - bh * 0.1); ctx.lineTo(-bw * (0.8 + 0.42 * t), by - bh * (0.2 + 0.55 * t)); ctx.lineTo(-bw * 0.8, by - bh * 0.55 * t); ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else {
+      [-0.9, -0.55, -0.2].forEach(a => { ell(ctx, -bw * 0.85 + Math.cos(a - 1.2) * S * 0.12 * t, by - bh * 0.45 + Math.sin(a - 1.2) * S * 0.12 * t, S * 0.07 * t, S * 0.19 * t, a); ctx.fill(); ctx.stroke(); });
+    }
   }
   // 몸
   ell(ctx, 0, by, bw, bh); ctx.fillStyle = body; ctx.fill(); ctx.strokeStyle = outline; ctx.lineWidth = Math.max(1, S * 0.015); ctx.stroke();
   ctx.save(); ell(ctx, 0, by, bw, bh); ctx.clip();
-  ctx.fillStyle = chick ? mixColor(body, '#ffffff', 0.35) : sp.belly; ell(ctx, bw * 0.15, by + bh * 0.6, bw * 0.75, bh * 0.5); ctx.fill();
+  ctx.fillStyle = mixColor(mixColor(sp.babyBody || sp.body, '#ffffff', 0.35), sp.belly, t); ell(ctx, bw * 0.15, by + bh * 0.6, bw * 0.75, bh * 0.5); ctx.fill();
   drawMud(ctx, o.mud || 0, S, by, bw, bh);
   ctx.restore();
-  // 날개 (기분 좋으면 파닥파닥)
+  // 날개 (기분 좋으면 파닥파닥, 자라면서 커진다)
   ctx.save(); ctx.translate(-bw * 0.05, by - bh * 0.05); ctx.rotate(o.wag ? Math.sin(o.t * 16) * 0.35 : 0);
-  ctx.fillStyle = mixColor(body, '#000000', 0.08); ell(ctx, -bw * 0.12, bh * 0.12, bw * (chick ? 0.36 : 0.5), bh * (chick ? 0.32 : 0.44), 0.25); ctx.fill();
+  ctx.fillStyle = mixColor(body, '#000000', 0.08); ell(ctx, -bw * 0.12, bh * 0.12, bw * lerp(0.36, 0.5, t), bh * lerp(0.32, 0.44, t), 0.25); ctx.fill();
   ctx.strokeStyle = outline; ctx.lineWidth = 1; ctx.stroke();
   ctx.restore();
-  // 머리
-  const e = o.eat || 0, hr = S * (chick ? 0.21 : 0.17);
-  let hx = bw * (chick ? 0.5 : 0.62) + e * S * 0.12, hy = by - bh * (chick ? 0.6 : 0.95) + e * S * 0.5;
+  // 머리: 병아리는 몸에 붙은 큰 머리, 자라면서 목이 길어지고 머리는 작아진다
+  const e = o.eat || 0, hr = S * lerp(0.21, 0.17, t);
+  let hx = bw * lerp(0.5, 0.62, t) + e * S * 0.12, hy = by - bh * lerp(0.6, 0.95, t) + e * S * 0.5;
   if (lie > 0) hy = lerp(hy, by - bh * 0.2, lie * 0.8);
-  if (!chick && sp.duck) {
-    ctx.strokeStyle = body; ctx.lineWidth = hr * 1.3;
+  if (t > 0.02) {
+    ctx.strokeStyle = body; ctx.lineWidth = hr * (sp.duck ? 1.3 : 1.4);
     ctx.beginPath(); ctx.moveTo(bw * 0.45, by - bh * 0.3); ctx.lineTo(hx, hy); ctx.stroke();
-  } else if (!chick) {
-    ctx.strokeStyle = body; ctx.lineWidth = hr * 1.4;
-    ctx.beginPath(); ctx.moveTo(bw * 0.45, by - bh * 0.3); ctx.lineTo(hx, hy); ctx.stroke();
+  }
+  if (!sp.duck && t > 0.05) {
+    // 닭 볏과 턱볏: 자라면서 점점 커진다
     ctx.fillStyle = sp.accent;
-    [-0.5, 0, 0.5].forEach((q, i) => { ell(ctx, hx + hr * q, hy - hr * (0.95 + (i === 1 ? 0.18 : 0)), hr * 0.34, hr * 0.38); ctx.fill(); });
-    ell(ctx, hx + hr * 0.75, hy + hr * 0.75, hr * 0.22, hr * 0.38); ctx.fill();
+    [-0.5, 0, 0.5].forEach((q, i) => { ell(ctx, hx + hr * q, hy - hr * (0.75 + (0.2 + (i === 1 ? 0.18 : 0)) * t), hr * 0.34 * t, hr * 0.38 * t); ctx.fill(); });
+    ell(ctx, hx + hr * 0.75, hy + hr * (0.55 + 0.2 * t), hr * 0.22 * t, hr * 0.38 * t); ctx.fill();
   }
   ell(ctx, hx, hy, hr, hr); ctx.fillStyle = body; ctx.fill(); ctx.strokeStyle = outline; ctx.lineWidth = Math.max(1, S * 0.015); ctx.stroke();
   ctx.fillStyle = '#f59e0b';

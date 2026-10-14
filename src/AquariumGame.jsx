@@ -1075,8 +1075,9 @@ function drawCreature(ctx, sp, L, o = {}) {
     case 'frog': {
       // 개구리: 자라면서 올챙이(검은 동그라미 + 긴 꼬리) → 뒷다리 → 앞다리 → 꼬리가 줄고 초록 개구리
       const u = L;
-      const backK = smooth01(0.22, 0.5, growth), frontK = smooth01(0.45, 0.72, growth);
-      const tailK = 1 - smooth01(0.7, 0.95, growth), frogK = smooth01(0.72, 1, growth);
+      // 성장 80%('개구리'라고 부르는 때)에 변신이 끝나도록: 뒷다리(15~40%) → 앞다리(35~60%) → 꼬리가 줄고 개구리 몸(55~80%)
+      const backK = smooth01(0.15, 0.4, growth), frontK = smooth01(0.35, 0.6, growth);
+      const tailK = 1 - smooth01(0.55, 0.8, growth), frogK = smooth01(0.55, 0.8, growth);
       const bodyCol = mixColor(col('#3f3a2a'), top, frogK), bellyCol = mixColor(col('#6b6250'), belly, frogK);
       const darkCol = mixColor(bodyCol, '#0f172a', 0.25);
       const kick = o.kick ?? 0;   // 0 접음 ~ 1 쭉 뻗음
