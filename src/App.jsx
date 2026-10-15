@@ -31,6 +31,7 @@ import { VOICE, FEED_PRAISE_COUNT, attachJosa, formatSpokenKoreanText, voiceKey 
 import VOICE_INDEX from './voiceIndex.json';
 import AquariumGame from './AquariumGame.jsx';
 import FarmGame from './FarmGame.jsx';
+import TrainGame from './TrainGame.jsx';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
 const VOICE_KEYS = new Set(VOICE_INDEX);
@@ -4036,7 +4037,7 @@ export default function App() {
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav style={{
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '5px',
+          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px',
           padding: '8px 8px', background: '#fff1f2', borderBottom: '3px solid #fca5a5',
           flexShrink: 0
         }}>
@@ -4044,6 +4045,7 @@ export default function App() {
             { id: 'cards', label: '📸 생생 카드', sub: '동물·과일·탈것', color: '#ef4444' },
             { id: 'ocean', label: '🐠 내 어항', sub: '물고기 키우기', color: '#06b6d4' },
             { id: 'farm', label: '🐮 내 목장', sub: '동물 키우기', color: '#16a34a' },
+            { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
             { id: 'puzzle', label: '🧩 아기 퍼즐', sub: '조각 맞추기', color: '#8b5cf6' },
             { id: 'paint', label: '🎨 무지개 물감', sub: '터치 감각 미술', color: '#3b82f6' },
             { id: 'song', label: '🎵 동요 재생', sub: `한국 동요 (${LOCAL_NURSERY_SONGS.length}곡)`, color: '#ec4899' }
@@ -4339,6 +4341,13 @@ export default function App() {
           {activeTab === 'farm' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               <FarmGame audio={audioEngine} speak={speakNaturalKorean} animals={REAL_ANIMALS} />
+            </div>
+          )}
+
+          {/* ===== 모듈 3.6: 🚂 기차 마을 (TrainGame.jsx) ===== */}
+          {activeTab === 'train' && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+              <TrainGame audio={audioEngine} speak={speakNaturalKorean} />
             </div>
           )}
 

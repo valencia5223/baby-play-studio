@@ -1,5 +1,7 @@
 import { FISH_SPECIES, STAGE_NAMES, breedOf } from './aquariumData.js';
-import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf } from './farmData.js';
+import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID } from './farmData.js';
+import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
+const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 🎙️ 음성 안내 문장 모음
@@ -132,6 +134,27 @@ export const VOICE = {
   // 직접 지은 이름은 미리 만든 음성이 없어 원격 음성이나 기기 음성으로 읽는다
   farmHello: (species, name) => `안녕! 나는 ${species.name} ${attachJosa(name, '이에요/예요')}`,
 
+  // 🚂 기차 마을
+  trainWelcome: () => '칙칙폭폭 기차 마을에 온 걸 환영해요! 출발 버튼을 눌러 봐요!',
+  trainGo: () => '칙칙폭폭! 출발!',
+  trainStop: () => '끼익! 멈춰요!',
+  trainArrive: (st) => `${st.name}에 도착했어요!`,
+  trainBoard: (sp, st) => `${attachJosa(sp.name, '이/가')} 탔어요! ${st.name}에 가고 싶대요!`,
+  trainAlight: (sp) => `${attachJosa(sp.name, '이/가')} 내렸어요! 고마워요!`,
+  trainCount: (n) => `친구가 ${KOR_COUNT[n] || n} 명 탔어요!`,
+  trainFull: () => '자리가 꽉 찼어요! 친구를 먼저 내려 줘요!',
+  trainWaitTrain: () => '기차가 역에 오면 태워 줄 수 있어요!',
+  trainBox: (c) => `${c.name} 상자예요! 같은 색 칸에 실어 줘요!`,
+  trainBoxOk: (c) => `${c.name} 상자는 ${c.name} 칸에 쏙!`,
+  trainBoxWrong: () => '어? 색깔이 달라요! 같은 색 칸을 찾아 봐요!',
+  trainBoxNoCar: (c) => `${c.name} 화물칸이 없어요! 상점에서 사 볼까요?`,
+  trainUnload: () => '짐을 내렸어요! 고마워요!',
+  trainRed: () => '빨간불이에요! 신호등을 눌러 볼까요?',
+  trainGreen: () => '초록불! 출발해요!',
+  trainNewStation: () => '와아! 새 역이 생겼어요! 눈꽃역이에요!',
+  trainNeedMore: () => '별이 조금 더 필요해요!',
+  trainBuy: () => '와아! 멋지게 바뀌었어요!',
+
   // 📸 동물 · 탈것 · 바다생물 소리 / 🍎 과일
   itemSound: (item) => `${item.name}! ${item.soundText}`,
   tasty: (item) => `맛있는 ${item.name}!`,
@@ -176,6 +199,15 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
     const bt = farmBreedOf(sp.id).type;
     lines.push(VOICE.farmPregnant(sp, bt), ...(bt === 'egg' ? [VOICE.farmEggs(sp), VOICE.farmHatch(sp)] : [VOICE.farmBirth(sp)]));
   });
+  lines.push(VOICE.trainWelcome(), VOICE.trainGo(), VOICE.trainStop(), VOICE.trainFull(), VOICE.trainWaitTrain(), VOICE.trainBoxWrong(), VOICE.trainUnload(),
+    VOICE.trainRed(), VOICE.trainGreen(), VOICE.trainNewStation(), VOICE.trainNeedMore(), VOICE.trainBuy());
+  TRAIN_STATIONS.forEach(st => {
+    lines.push(VOICE.trainArrive(st));
+    PASSENGERS.forEach(id => lines.push(VOICE.trainBoard(FARM_BY_ID[id], st)));
+  });
+  PASSENGERS.forEach(id => lines.push(VOICE.trainAlight(FARM_BY_ID[id])));
+  for (let n = 1; n <= 12; n++) lines.push(VOICE.trainCount(n));
+  Object.values(CARGO_COLORS).forEach(c => lines.push(VOICE.trainBox(c), VOICE.trainBoxOk(c), VOICE.trainBoxNoCar(c)));
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
   fruits.forEach(i => lines.push(VOICE.tasty(i)));
   animals.forEach(i => lines.push(VOICE.quiz(i.name, false)));
