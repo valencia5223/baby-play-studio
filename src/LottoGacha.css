@@ -197,6 +197,29 @@
 .lg-recent-meta { display: flex; align-items: baseline; gap: 8px; }
 .lg-recent-meta small { color: var(--lg-sub); font-size: 0.75rem; }
 
+/* 지난 회차 당첨 번호 */
+.lg-last { display: flex; flex-direction: column; gap: 10px; width: 100%; text-align: left; }
+.lg-last:hover { border-color: #c7d2fe; }
+.lg-last-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.lg-last-head small { color: var(--lg-sub); font-size: 0.75rem; }
+.lg-last-more { margin-left: auto; color: var(--lg-primary); font-size: 0.8rem; font-weight: 700; }
+.lg-draw-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lg-draw-title { display: flex; flex-direction: column; align-items: center; }
+.lg-draw-title b { font-size: 1.3rem; }
+.lg-draw-title small { color: var(--lg-sub); font-size: 0.78rem; }
+.lg-draw-balls { margin-top: 16px; }
+.lg-draw-bonus { margin: 8px 0 0; text-align: center; color: var(--lg-sub); font-size: 0.75rem; }
+.lg-prize { width: 100%; margin-top: 14px; border-collapse: collapse; font-size: 0.85rem; }
+.lg-prize th, .lg-prize td { padding: 7px 4px; border-top: 1px solid #f4f4f5; text-align: left; }
+.lg-prize th { width: 44px; font-weight: 800; }
+.lg-prize td { color: var(--lg-sub); }
+.lg-prize .lg-num { text-align: right; color: var(--lg-text); font-weight: 700; }
+.lg-draw-jump { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+.lg-draw-jump input {
+  flex: 1; min-width: 140px; height: 38px; padding: 0 12px; border: 1px solid var(--lg-border); border-radius: 10px;
+  font: inherit; font-size: 0.88rem; background: #fff; color: var(--lg-text);
+}
+
 .lg-toast {
   position: fixed; left: 0; right: 0; bottom: 28px; margin: 0 auto; width: fit-content; max-width: 90vw;
   background: rgba(24, 24, 27, 0.92); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 0.85rem; z-index: 50;

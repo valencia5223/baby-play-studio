@@ -118,6 +118,95 @@ function GachaMachine({ spinning, dropping, current, onSpin, disabled, label }) 
   );
 }
 
+// 회차별 실제 당첨 번호 (‹ › 로 넘기거나 회차를 입력)
+function ResultsView({ draws, startRound, saved }) {
+  const first = draws[0][FIELDS.round];
+  const latest = draws[draws.length - 1][FIELDS.round];
+  const byRound = useMemo(() => new Map(draws.map(r => [r[FIELDS.round], r])), [draws]);
+  const [round, setRound] = useState(startRound || latest);
+  const [input, setInput] = useState('');
+  const row = byRound.get(round);
+  const go = (r) => setRound(Math.min(latest, Math.max(first, r)));
+  const mine = saved.filter(s => s.round === round);
+  const won = (n) => `${Number(n).toLocaleString('ko-KR')}`;
+
+  return (
+    <div className="lg-stack">
+      <section className="lg-card lg-draw">
+        <div className="lg-draw-nav">
+          <button type="button" className="lg-btn" onClick={() => go(round - 1)} disabled={round <= first} aria-label="이전 회차">‹ 이전</button>
+          <div className="lg-draw-title">
+            <b>{round}회</b>
+            <small>{row ? `${fmtDate(row[FIELDS.date])} 추첨` : ''}{round === latest ? ' · 최신' : ''}</small>
+          </div>
+          <button type="button" className="lg-btn" onClick={() => go(round + 1)} disabled={round >= latest} aria-label="다음 회차">다음 ›</button>
+        </div>
+        {row && (
+          <>
+            <div className="lg-balls is-big lg-draw-balls">
+              {numsOf(row).map(n => <Ball key={n} n={n} className="lg-pop" />)}
+              <span className="lg-plus">+</span>
+              <Ball n={row[FIELDS.bonus]} className="lg-pop" />
+            </div>
+            <p className="lg-draw-bonus">당첨 번호 6개 + 보너스</p>
+            <table className="lg-prize">
+              <tbody>
+                {[['1등', '6개 일치', FIELDS.w1], ['2등', '5개 + 보너스', FIELDS.w1 + 1], ['3등', '5개 일치', FIELDS.w3], ['4등', '4개 일치', FIELDS.w4], ['5등', '3개 일치', FIELDS.w5]].map(([rank, rule, idx]) => (
+                  <tr key={rank}>
+                    <th>{rank}</th>
+                    <td>{rule}</td>
+                    <td className="lg-num">{won(row[idx])}명</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {row[FIELDS.sales] > 0 && <p className="lg-hint">총 판매액 {won(Math.round(row[FIELDS.sales] / 100000000))}억 원</p>}
+          </>
+        )}
+        <form
+          className="lg-draw-jump"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const r = parseInt(input, 10);
+            if (r) go(r);
+            setInput('');
+          }}
+        >
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder={`회차 입력 (${first}~${latest})`}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <button type="submit" className="lg-btn">이동</button>
+          {round !== latest && <button type="button" className="lg-btn is-ghost" onClick={() => setRound(latest)}>최신 회차</button>}
+        </form>
+      </section>
+
+      {mine.length > 0 && (
+        <section className="lg-card">
+          <h2>이 회차에 저장한 내 번호</h2>
+          <div className="lg-stack">
+            {mine.map(s => {
+              const rank = rankOf(s.nums, row);
+              const win = numsOf(row);
+              return (
+                <div key={s.at} className="lg-saved-head">
+                  <div className="lg-balls">
+                    {s.nums.map(n => <Ball key={n} n={n} size="sm" className={win.includes(n) ? '' : 'is-dim'} />)}
+                  </div>
+                  <span className={`lg-badge ${rank ? 'is-win' : 'is-lose'}`}>{rank ? `${rank}등!` : '낙첨'}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 function StatsView({ draws, model, stats }) {
   const [metric, setMetric] = useState('popularity');
   const values = useMemo(() => {
@@ -311,6 +400,7 @@ export default function LottoGacha({ audio }) {
         </div>
         <nav className="lg-seg">
           <button type="button" className={tab === 'gacha' ? 'is-on' : ''} onClick={() => setTab('gacha')}>뽑기</button>
+          <button type="button" className={tab === 'results' ? 'is-on' : ''} onClick={() => setTab('results')}>당첨 번호</button>
           <button type="button" className={tab === 'saved' ? 'is-on' : ''} onClick={() => setTab('saved')}>저장 {saved.length > 0 ? saved.length : ''}</button>
           <button type="button" className={tab === 'stats' ? 'is-on' : ''} onClick={() => setTab('stats')}>분석</button>
         </nav>
@@ -318,6 +408,19 @@ export default function LottoGacha({ audio }) {
 
       {tab === 'gacha' && (
         <div className="lg-stack">
+          <button type="button" className="lg-card lg-last" onClick={() => setTab('results')}>
+            <div className="lg-last-head">
+              <b>지난 {last[0]}회 당첨 번호</b>
+              <small>{fmtDate(last[FIELDS.date])} · 1등 {last[FIELDS.w1]}명</small>
+              <span className="lg-last-more">지난 회차 보기 ›</span>
+            </div>
+            <div className="lg-balls">
+              {numsOf(last).map(n => <Ball key={n} n={n} size="sm" />)}
+              <span className="lg-plus">+</span>
+              <Ball n={last[FIELDS.bonus]} size="sm" />
+            </div>
+          </button>
+
           <section className="lg-card">
             <div className="lg-modes">
               {Object.entries(MODES).map(([key, m]) => (
@@ -425,6 +528,8 @@ export default function LottoGacha({ audio }) {
           })}
         </div>
       )}
+
+      {tab === 'results' && <ResultsView draws={draws} saved={saved} />}
 
       {tab === 'stats' && <StatsView draws={draws} model={model} stats={stats} />}
 
