@@ -150,16 +150,24 @@ function ResultsView({ draws, startRound, saved }) {
             </div>
             <p className="lg-draw-bonus">당첨 번호 6개 + 보너스</p>
             <table className="lg-prize">
+              <thead>
+                <tr><th>순위</th><td>조건</td><td className="lg-num">당첨자</td><td className="lg-num">1인당 당첨금</td></tr>
+              </thead>
               <tbody>
-                {[['1등', '6개 일치', FIELDS.w1], ['2등', '5개 + 보너스', FIELDS.w1 + 1], ['3등', '5개 일치', FIELDS.w3], ['4등', '4개 일치', FIELDS.w4], ['5등', '3개 일치', FIELDS.w5]].map(([rank, rule, idx]) => (
-                  <tr key={rank}>
-                    <th>{rank}</th>
-                    <td>{rule}</td>
-                    <td className="lg-num">{won(row[idx])}명</td>
-                  </tr>
-                ))}
+                {[['1등', '6개 일치'], ['2등', '5개 + 보너스'], ['3등', '5개 일치'], ['4등', '4개 일치'], ['5등', '3개 일치']].map(([rank, rule], i) => {
+                  const amount = row[FIELDS.a1 + i];
+                  return (
+                    <tr key={rank}>
+                      <th>{rank}</th>
+                      <td>{rule}</td>
+                      <td className="lg-num">{won(row[FIELDS.w1 + i])}명</td>
+                      <td className="lg-num lg-amt">{amount ? `${won(amount)}원` : row[FIELDS.w1 + i] === 0 ? '당첨자 없음' : '-'}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+            {row[FIELDS.a1] >= 100000000 && <p className="lg-hint">1등 1인당 약 {(row[FIELDS.a1] / 100000000).toFixed(1)}억 원 (세금 떼기 전)</p>}
             {row[FIELDS.sales] > 0 && <p className="lg-hint">총 판매액 {won(Math.round(row[FIELDS.sales] / 100000000))}억 원</p>}
           </>
         )}
@@ -389,7 +397,7 @@ export default function LottoGacha({ audio }) {
   const last = draws[draws.length - 1];
 
   return (
-    <div className="lg-root">
+    <div className={`lg-root ${tab === 'gacha' ? 'is-gacha' : ''}`}>
       <header className="lg-top">
         <div>
           <h1>🎰 로또 캡슐 뽑기</h1>
@@ -407,38 +415,7 @@ export default function LottoGacha({ audio }) {
       </header>
 
       {tab === 'gacha' && (
-        <div className="lg-stack">
-          <button type="button" className="lg-card lg-last" onClick={() => setTab('results')}>
-            <div className="lg-last-head">
-              <b>지난 {last[0]}회 당첨 번호</b>
-              <small>{fmtDate(last[FIELDS.date])} · 1등 {last[FIELDS.w1]}명</small>
-              <span className="lg-last-more">지난 회차 보기 ›</span>
-            </div>
-            <div className="lg-balls">
-              {numsOf(last).map(n => <Ball key={n} n={n} size="sm" />)}
-              <span className="lg-plus">+</span>
-              <Ball n={last[FIELDS.bonus]} size="sm" />
-            </div>
-          </button>
-
-          <section className="lg-card">
-            <div className="lg-modes">
-              {Object.entries(MODES).map(([key, m]) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`lg-mode ${mode === key ? 'is-on' : ''}`}
-                  onClick={() => !busy && picks.length === 0 && setMode(key)}
-                  disabled={busy || (picks.length > 0 && mode !== key)}
-                >
-                  <span className="lg-mode-emoji">{m.emoji}</span>
-                  <span>{m.label}</span>
-                </button>
-              ))}
-            </div>
-            <p className="lg-hint">{MODES[mode].desc}{picks.length > 0 && picks.length < 6 ? ' (뽑는 중에는 모드를 바꿀 수 없어요)' : ''}</p>
-          </section>
-
+        <div className="lg-gacha-layout">
           <section className="lg-card lg-gacha-card">
             <GachaMachine
               spinning={spinning}
@@ -467,8 +444,36 @@ export default function LottoGacha({ audio }) {
               {picks.length > 0 && <button type="button" className="lg-btn is-ghost" onClick={reset} disabled={busy}>처음부터</button>}
             </div>
           </section>
-
-          {done && (
+          <button type="button" className="lg-card lg-last" onClick={() => setTab('results')}>
+            <div className="lg-last-head">
+              <b>지난 {last[0]}회 당첨 번호</b>
+              <small>{fmtDate(last[FIELDS.date])} · 1등 {last[FIELDS.w1]}명</small>
+              <span className="lg-last-more">지난 회차 보기 ›</span>
+            </div>
+            <div className="lg-balls">
+              {numsOf(last).map(n => <Ball key={n} n={n} size="sm" />)}
+              <span className="lg-plus">+</span>
+              <Ball n={last[FIELDS.bonus]} size="sm" />
+            </div>
+          </button>
+          <section className="lg-card">
+            <div className="lg-modes">
+              {Object.entries(MODES).map(([key, m]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`lg-mode ${mode === key ? 'is-on' : ''}`}
+                  onClick={() => !busy && picks.length === 0 && setMode(key)}
+                  disabled={busy || (picks.length > 0 && mode !== key)}
+                >
+                  <span className="lg-mode-emoji">{m.emoji}</span>
+                  <span>{m.label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="lg-hint">{MODES[mode].desc}{picks.length > 0 && picks.length < 6 ? ' (뽑는 중에는 모드를 바꿀 수 없어요)' : ''}</p>
+          </section>
+          {done ? (
             <section className="lg-card lg-result">
               <h2>이번 조합</h2>
               <div className="lg-balls is-big">{sortedNums.map(n => <Ball key={n} n={n} />)}</div>
@@ -488,18 +493,20 @@ export default function LottoGacha({ audio }) {
                 <button type="button" className="lg-btn" onClick={reset}>다시 뽑기</button>
               </div>
             </section>
+          ) : (
+            <section className="lg-card lg-result is-waiting">
+              <p>레버를 돌려 번호 6개를 다 뽑으면<br />여기에 이번 조합 분석이 나와요</p>
+            </section>
           )}
-
           <p className="lg-notice">
-            모든 번호 조합의 1등 확률은 똑같이 8,145,060분의 1이에요. 이 기능은 당첨 확률을 높이지 못하고,
-            &apos;덜 겹치는 번호&apos; 모드는 당첨됐을 때 같은 번호를 산 사람이 적을 조합을 고를 뿐이에요.
-            로또는 재미로, 정해 둔 금액 안에서만 즐기세요.
+            모든 조합의 1등 확률은 똑같이 8,145,060분의 1이에요. 이 기능은 확률을 높이지 못하고, &apos;덜 겹치는 번호&apos;는
+            당첨됐을 때 같은 번호를 산 사람이 적을 조합을 고를 뿐이에요. 정해 둔 금액 안에서 재미로만 즐기세요.
           </p>
         </div>
       )}
 
       {tab === 'saved' && (
-        <div className="lg-stack">
+        <div className="lg-stack lg-narrow">
           {saved.length === 0 && <p className="lg-empty">저장한 번호가 없어요. 뽑기에서 6개를 뽑고 저장해 보세요.</p>}
           {saved.map(s => {
             const row = drawByRound.get(s.round);
@@ -529,9 +536,9 @@ export default function LottoGacha({ audio }) {
         </div>
       )}
 
-      {tab === 'results' && <ResultsView draws={draws} saved={saved} />}
+      {tab === 'results' && <div className="lg-narrow"><ResultsView draws={draws} saved={saved} /></div>}
 
-      {tab === 'stats' && <StatsView draws={draws} model={model} stats={stats} />}
+      {tab === 'stats' && <div className="lg-narrow"><StatsView draws={draws} model={model} stats={stats} /></div>}
 
       <footer className="lg-foot">
         데이터: 동행복권 당첨 결과 ({updatedAt ? `${fmtDate(new Date(updatedAt))} 갱신` : ''}) · 비공식 조회 주소를 써서 바뀌면 갱신이 멈출 수 있어요

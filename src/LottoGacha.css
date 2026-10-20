@@ -9,9 +9,9 @@
   --lg-radius: 14px;
   --lg-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.05);
   width: 100%;
-  max-width: 600px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding-bottom: 32px;
+  padding-bottom: 16px;
   color: var(--lg-text);
   font-family: Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
@@ -166,6 +166,11 @@
 /* 결과 */
 .lg-result h2 { text-align: center; }
 .lg-facts { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 8px; }
+.lg-result.is-waiting {
+  display: flex; align-items: center; justify-content: center; min-height: 120px;
+  border-style: dashed; box-shadow: none; background: #fafafa;
+}
+.lg-result.is-waiting p { margin: 0; color: #a1a1aa; font-size: 0.85rem; text-align: center; line-height: 1.6; }
 .lg-facts li { display: flex; align-items: baseline; gap: 10px; font-size: 0.88rem; }
 .lg-facts span { width: 52px; color: var(--lg-sub); flex-shrink: 0; }
 .lg-facts small { color: var(--lg-sub); font-size: 0.75rem; }
@@ -214,10 +219,59 @@
 .lg-prize th { width: 44px; font-weight: 800; }
 .lg-prize td { color: var(--lg-sub); }
 .lg-prize .lg-num { text-align: right; color: var(--lg-text); font-weight: 700; }
+.lg-prize thead th, .lg-prize thead td { font-size: 0.72rem; color: var(--lg-sub); font-weight: 600; border-top: 0; }
+.lg-prize .lg-amt { color: var(--lg-primary); white-space: nowrap; }
 .lg-draw-jump { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
 .lg-draw-jump input {
   flex: 1; min-width: 140px; height: 38px; padding: 0 12px; border: 1px solid var(--lg-border); border-radius: 10px;
   font: inherit; font-size: 0.88rem; background: #fff; color: var(--lg-text);
+}
+
+/* 뽑기 탭 배치: 좁은 화면은 한 줄로, 넓은 화면(아이패드 가로)은 왼쪽 기계 + 오른쪽 정보로 스크롤 없이 */
+.lg-narrow { max-width: 640px; margin: 0 auto; width: 100%; }
+.lg-gacha-layout {
+  display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'last' 'modes' 'machine' 'result' 'notice';
+  max-width: 640px; margin: 0 auto;
+}
+.lg-gacha-layout > .lg-last { grid-area: last; }
+.lg-gacha-layout > .lg-card:not(.lg-last):not(.lg-gacha-card):not(.lg-result) { grid-area: modes; }
+.lg-gacha-layout > .lg-gacha-card { grid-area: machine; }
+.lg-gacha-layout > .lg-result { grid-area: result; }
+.lg-gacha-layout > .lg-notice { grid-area: notice; }
+@media (min-width: 900px) {
+  .lg-top { flex-direction: row; align-items: center; justify-content: space-between; }
+  .lg-top .lg-seg { width: 440px; flex-shrink: 0; }
+  .lg-gacha-layout {
+    max-width: none;
+    grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas: 'machine last' 'machine modes' 'machine result' 'machine notice';
+    align-items: start;
+  }
+  .lg-gacha-layout > .lg-gacha-card { align-self: stretch; justify-content: center; }
+  .lg-gacha-layout .lg-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
+  .lg-gacha-layout .lg-result h2 { margin-bottom: 10px; }
+}
+/* 키가 낮은 가로 화면(11인치 등): 기계·여백을 줄여 스크롤 없이 */
+@media (min-width: 900px) and (max-height: 900px) {
+  .lg-top { margin-bottom: 10px; }
+  .lg-top h1 { font-size: 1.25rem; }
+  .lg-gacha-layout { gap: 10px; }
+  .lg-gacha-layout .lg-card { padding: 12px 14px; }
+  .lg-gacha-layout .lg-machine { zoom: 0.78; }
+  .lg-gacha-layout .lg-tray { margin-top: 12px; }
+  .lg-gacha-layout .lg-slot { min-height: 80px; padding: 6px 2px; }
+  .lg-gacha-layout .lg-row-btns { margin-top: 8px; }
+  .lg-gacha-layout .lg-mode { padding: 8px 10px; }
+  .lg-gacha-layout .lg-hint { margin-top: 6px; }
+  .lg-gacha-layout .lg-facts { margin-top: 10px; }
+  .lg-gacha-layout .lg-result.is-waiting { min-height: 90px; }
+  .lg-root.is-gacha .lg-foot { display: none; }
+  .lg-gacha-layout .lg-result h2 { margin-bottom: 6px; }
+  .lg-gacha-layout .lg-result .lg-ball { --size: 34px; }
+  .lg-gacha-layout .lg-result .lg-row-btns { margin-top: 10px; }
+  .lg-gacha-layout .lg-notice { margin-top: 0; font-size: 0.7rem; line-height: 1.5; }
 }
 
 .lg-toast {

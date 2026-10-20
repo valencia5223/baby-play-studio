@@ -5,7 +5,7 @@
 // 판매량에 비해 많으면 그 회차 번호를 고른 사람이 많았다는 뜻이므로, 번호·무늬별 인기도를 추정해
 // 인기 없는 번호를 고르면 당첨됐을 때 나눠 갖는 사람이 줄어 받는 돈의 기대값이 올라간다.
 
-export const FIELDS = { round: 0, date: 1, nums: 2, bonus: 8, w1: 9, w3: 11, w4: 12, w5: 13, sales: 14 };
+export const FIELDS = { round: 0, date: 1, nums: 2, bonus: 8, w1: 9, w2: 10, w3: 11, w4: 12, w5: 13, sales: 14, a1: 15 }; // a1~a5: 1~5등 1인당 당첨금
 export const numsOf = (row) => row.slice(2, 8);
 
 // 공 색 (동행복권과 같은 구간)

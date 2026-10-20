@@ -7,7 +7,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { toRow, ROUND_URL } from '../src/lottoRows.js';
+import { toRow, ROUND_URL, ROW_LENGTH } from '../src/lottoRows.js';
 
 const BASE = 'https://www.dhlottery.co.kr';
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'lotto', 'draws.json');
@@ -45,7 +45,8 @@ const main = async () => {
   try {
     rows = JSON.parse(await readFile(OUT, 'utf8')).draws || [];
   } catch { /* 처음 */ }
-  const have = new Map(rows.map(r => [r[0], r]));
+  // 칸이 모자란 예전 형식(당첨금 없음) 회차는 다시 받음
+  const have = new Map(rows.filter(r => r.length >= ROW_LENGTH).map(r => [r[0], r]));
 
   let latest;
   try {
@@ -85,7 +86,7 @@ const main = async () => {
   await mkdir(dirname(OUT), { recursive: true });
   await writeFile(OUT, JSON.stringify({
     updatedAt: new Date().toISOString(),
-    fields: ['round', 'date', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'bonus', 'w1', 'w2', 'w3', 'w4', 'w5', 'sales'],
+    fields: ['round', 'date', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'bonus', 'w1', 'w2', 'w3', 'w4', 'w5', 'sales', 'a1', 'a2', 'a3', 'a4', 'a5'],
     draws
   }));
   console.log(`[update-draws] 저장: ${draws.length}회차 → public/lotto/draws.json`);
