@@ -32,6 +32,7 @@ import VOICE_INDEX from './voiceIndex.json';
 import AquariumGame from './AquariumGame.jsx';
 import FarmGame from './FarmGame.jsx';
 import TrainGame from './TrainGame.jsx';
+import LottoGacha from './LottoGacha.jsx';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
 const VOICE_KEYS = new Set(VOICE_INDEX);
@@ -3933,7 +3934,7 @@ export default function App() {
   const puzzleTrayCols = puzzleTrayPx > 640 ? Math.min(puzzlePieces.length, puzzlePieces.length <= 4 ? 4 : puzzlePieces.length <= 6 ? 6 : 5) : puzzlePieces.length <= 4 ? 2 : puzzlePieces.length <= 9 ? 3 : 4;
 
   const isCardTab = CARD_CATEGORIES.some(c => c.id === activeTab);
-  const isScrollableTab = ['cards', 'animal', 'fruit', 'vehicle', 'song'].includes(activeTab);
+  const isScrollableTab = ['cards', 'animal', 'fruit', 'vehicle', 'song', 'lotto'].includes(activeTab);
   // 생생 카드 종류로 들어가기 (고르기 화면의 큰 카드와 위쪽 바로가기 줄이 함께 쓴다)
   const enterCardTab = (id) => {
     audioEngine.interruptVoice();
@@ -4037,7 +4038,7 @@ export default function App() {
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav style={{
-          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px',
+          display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '5px',
           padding: '8px 8px', background: '#fff1f2', borderBottom: '3px solid #fca5a5',
           flexShrink: 0
         }}>
@@ -4048,7 +4049,8 @@ export default function App() {
             { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
             { id: 'puzzle', label: '🧩 아기 퍼즐', sub: '조각 맞추기', color: '#8b5cf6' },
             { id: 'paint', label: '🎨 무지개 물감', sub: '터치 감각 미술', color: '#3b82f6' },
-            { id: 'song', label: '🎵 동요 재생', sub: `한국 동요 (${LOCAL_NURSERY_SONGS.length}곡)`, color: '#ec4899' }
+            { id: 'song', label: '🎵 동요 재생', sub: `한국 동요 (${LOCAL_NURSERY_SONGS.length}곡)`, color: '#ec4899' },
+            { id: 'lotto', label: '🎰 로또 뽑기', sub: '번호 캡슐 뽑기', color: '#4f46e5' }
           ].map(tab => {
             const isActive = activeTab === tab.id || (tab.id === 'cards' && isCardTab);
             return (
@@ -4343,6 +4345,9 @@ export default function App() {
               <FarmGame audio={audioEngine} speak={speakNaturalKorean} animals={REAL_ANIMALS} />
             </div>
           )}
+
+          {/* ===== 🎰 로또 캡슐 뽑기 (LottoGacha.jsx, 어른용) ===== */}
+          {activeTab === 'lotto' && <LottoGacha audio={audioEngine} />}
 
           {/* ===== 모듈 3.6: 🚂 기차 마을 (TrainGame.jsx) ===== */}
           {activeTab === 'train' && (

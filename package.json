@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/update-lotto.mjs",
     "build": "vite build",
+    "update-lotto": "node scripts/update-lotto.mjs",
     "preview": "vite preview",
     "voices": "node scripts/generate-voices.mjs"
   },
