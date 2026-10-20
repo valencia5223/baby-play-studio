@@ -7,6 +7,7 @@ import {
   makeSetRanker, describeSet, rankOf, nextDrawInfo, fmtDate
 } from './lottoLogic';
 import { toRow, ROUND_URL } from './lottoRows';
+import LottoMachine from './LottoMachine';
 import './LottoGacha.css';
 
 const SAVE_KEY = 'bps_lotto_saved_v1';
@@ -72,51 +73,6 @@ const useDraws = () => {
 const Ball = ({ n, size = 'md', className = '' }) => (
   <span className={`lg-ball ${ballClass(n)} lg-ball-${size} ${className}`}>{n}</span>
 );
-
-// 돔 아래쪽에 쌓여 있는 장식용 공 (줄마다 조금씩 엇갈리게)
-const DOME_ROWS = [[84, 7], [70, 6], [56, 5], [43, 3]]; // [위치 %, 개수]
-const DOME_BALLS = DOME_ROWS.flatMap(([top, count], row) =>
-  Array.from({ length: count }, (_, i) => ({
-    n: ((row * 11 + i * 7) % 45) + 1,
-    left: 50 + (i - (count - 1) / 2) * 13 + (row % 2 ? 3 : -2) + ((i * 5 + row * 3) % 5) - 2,
-    top: top + ((i * 7 + row) % 4) - 2,
-    delay: ((row + i) % 5) * 0.08
-  }))
-);
-
-function GachaMachine({ spinning, dropping, current, onSpin, disabled, label }) {
-  return (
-    <div className={`lg-machine ${spinning ? 'is-spinning' : ''}`}>
-      <div className="lg-dome">
-        <div className="lg-dome-shine" />
-        {DOME_BALLS.map((b, i) => (
-          <span
-            key={i}
-            className={`lg-dome-ball ${ballClass(b.n)}`}
-            style={{ left: `calc(${b.left}% - 15px)`, top: `calc(${b.top}% - 15px)`, animationDelay: `${b.delay}s` }}
-          />
-        ))}
-      </div>
-      <div className="lg-machine-body">
-        <button type="button" className="lg-handle" onClick={onSpin} disabled={disabled} aria-label={label}>
-          <span className="lg-handle-bar" />
-        </button>
-        <div className="lg-chute">
-          {current && (
-            <div className={`lg-capsule ${dropping ? 'is-dropping' : 'is-open'}`}>
-              <span className="lg-capsule-top" />
-              <span className="lg-capsule-bottom" />
-              {!dropping && <Ball n={current} size="lg" className="lg-pop" />}
-            </div>
-          )}
-        </div>
-      </div>
-      <button type="button" className="lg-spin-btn" onClick={onSpin} disabled={disabled}>
-        {label}
-      </button>
-    </div>
-  );
-}
 
 // 회차별 실제 당첨 번호 (‹ › 로 넘기거나 회차를 입력)
 function ResultsView({ draws, startRound, saved }) {
@@ -417,13 +373,14 @@ export default function LottoGacha({ audio }) {
       {tab === 'gacha' && (
         <div className="lg-gacha-layout">
           <section className="lg-card lg-gacha-card">
-            <GachaMachine
+            <LottoMachine
               spinning={spinning}
               dropping={dropping}
               current={current}
               onSpin={spin}
               disabled={busy || done}
               label={done ? '6개 다 뽑았어요' : busy ? '뽑는 중…' : `레버 돌리기 (${picks.length + 1}/6)`}
+              removed={[...new Set([...picks.map(p => p.n), ...(current ? [current] : [])])]}
             />
             <div className="lg-tray">
               {[0, 1, 2, 3, 4, 5].map(i => (

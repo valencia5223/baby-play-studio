@@ -85,65 +85,13 @@
 .lg-pop { animation: lg-pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1); }
 @keyframes lg-pop { from { transform: scale(0.2); } to { transform: scale(1); } }
 
-/* 뽑기 기계 */
+/* 뽑기 카드 + 버튼 */
 .lg-gacha-card { display: flex; flex-direction: column; align-items: center; }
-.lg-machine { display: flex; flex-direction: column; align-items: center; width: 230px; }
-.lg-dome {
-  position: relative; width: 210px; height: 190px; border-radius: 50% 50% 18px 18px / 60% 60% 18px 18px;
-  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95), rgba(224, 231, 255, 0.55) 60%, rgba(199, 210, 254, 0.6));
-  border: 3px solid #c7d2fe; overflow: hidden;
-}
-.lg-dome-shine {
-  position: absolute; left: 22px; top: 18px; width: 40px; height: 70px; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.7); transform: rotate(25deg); z-index: 2;
-}
-.lg-dome-ball {
-  position: absolute; width: 30px; height: 30px; border-radius: 50%;
-  box-shadow: inset -3px -4px 6px rgba(0, 0, 0, 0.18), inset 3px 3px 6px rgba(255, 255, 255, 0.4);
-}
-.lg-machine.is-spinning .lg-dome-ball { animation: lg-tumble 0.35s ease-in-out infinite alternate; }
-.lg-machine.is-spinning .lg-dome { animation: lg-shake 0.18s linear infinite; }
-@keyframes lg-tumble {
-  0% { transform: translate(0, 0) rotate(0); }
-  50% { transform: translate(14px, -38px) rotate(140deg); }
-  100% { transform: translate(-12px, -14px) rotate(260deg); }
-}
 @keyframes lg-shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-2px) rotate(-0.6deg); }
   75% { transform: translateX(2px) rotate(0.6deg); }
 }
-.lg-machine-body {
-  position: relative; width: 230px; height: 128px; margin-top: -6px; border-radius: 16px 16px 22px 22px;
-  background: linear-gradient(180deg, #6366f1, #4338ca); box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.15);
-}
-.lg-handle {
-  position: absolute; left: 22px; top: 26px; width: 62px; height: 62px; border-radius: 50%;
-  border: 4px solid #e0e7ff; background: #818cf8; padding: 0;
-  transition: transform 0.9s cubic-bezier(0.3, 0.9, 0.3, 1);
-}
-.lg-handle-bar { position: absolute; left: 50%; top: 6px; bottom: 6px; width: 12px; margin-left: -6px; border-radius: 6px; background: #eef2ff; }
-.lg-machine.is-spinning .lg-handle { transform: rotate(360deg); }
-.lg-handle:disabled { filter: saturate(0.6); }
-.lg-chute {
-  position: absolute; right: 22px; top: 24px; width: 92px; height: 82px; border-radius: 14px;
-  background: #1e1b4b; box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
-  display: flex; align-items: center; justify-content: center; overflow: hidden;
-}
-.lg-capsule { position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; }
-.lg-capsule-top, .lg-capsule-bottom {
-  position: absolute; left: 0; width: 64px; height: 32px; transition: transform 0.35s ease-out, opacity 0.35s;
-}
-.lg-capsule-top { top: 0; border-radius: 32px 32px 0 0; background: rgba(244, 114, 182, 0.9); }
-.lg-capsule-bottom { bottom: 0; border-radius: 0 0 32px 32px; background: rgba(255, 255, 255, 0.92); }
-.lg-capsule.is-dropping { animation: lg-drop 0.65s cubic-bezier(0.5, 0, 0.6, 1.4); }
-@keyframes lg-drop {
-  from { transform: translateY(-90px) rotate(-120deg); }
-  to { transform: translateY(0) rotate(0); }
-}
-.lg-capsule.is-open .lg-capsule-top { transform: translateY(-40px) rotate(-30deg); opacity: 0; }
-.lg-capsule.is-open .lg-capsule-bottom { transform: translateY(40px) rotate(20deg); opacity: 0; }
-.lg-capsule .lg-ball { position: relative; z-index: 1; }
 .lg-spin-btn {
   margin-top: 14px; width: 100%; height: 46px; border: 0; border-radius: 12px;
   background: var(--lg-primary); color: #fff !important; font-size: 0.98rem; font-weight: 800;
@@ -240,6 +188,9 @@
 .lg-gacha-layout > .lg-result { grid-area: result; }
 .lg-gacha-layout > .lg-notice { grid-area: notice; }
 @media (min-width: 900px) {
+  .lg-gacha-layout .lg-gm { zoom: 0.86; }
+  .lg-gacha-layout .lg-tray { margin-top: 12px; }
+  .lg-gacha-layout .lg-slot { min-height: 84px; }
   .lg-top { flex-direction: row; align-items: center; justify-content: space-between; }
   .lg-top .lg-seg { width: 440px; flex-shrink: 0; }
   .lg-gacha-layout {
@@ -259,7 +210,9 @@
   .lg-top h1 { font-size: 1.25rem; }
   .lg-gacha-layout { gap: 10px; }
   .lg-gacha-layout .lg-card { padding: 12px 14px; }
-  .lg-gacha-layout .lg-machine { zoom: 0.78; }
+  .lg-gacha-layout .lg-gm { zoom: 0.62; }
+  .lg-gacha-layout .lg-gm .lg-spin-btn { margin-top: 12px; }
+  .lg-gacha-layout .lg-slot { min-height: 74px; }
   .lg-gacha-layout .lg-tray { margin-top: 12px; }
   .lg-gacha-layout .lg-slot { min-height: 80px; padding: 6px 2px; }
   .lg-gacha-layout .lg-row-btns { margin-top: 8px; }
@@ -286,3 +239,100 @@
   .lg-slot-empty { width: 34px; height: 34px; }
   .lg-heat { gap: 3px; }
 }
+
+/* ===== 캡슐 뽑기 기계 (LottoMachine.jsx) ===== */
+.lg-gm { display: flex; flex-direction: column; align-items: center; width: 290px; }
+.lg-gm-top { position: relative; width: 264px; height: 264px; z-index: 1; }
+.lg-gm-globe { display: block; filter: drop-shadow(0 6px 10px rgba(30, 41, 59, 0.18)); }
+.lg-gm.is-spinning .lg-gm-top { animation: lg-shake 0.16s linear infinite; }
+.lg-gm-collar {
+  position: absolute; left: 50%; bottom: -12px; width: 156px; height: 24px; margin-left: -78px;
+  border-radius: 8px 8px 14px 14px;
+  background: linear-gradient(180deg, #fafafa 0%, #d4d4d8 35%, #9ca3af 55%, #e5e7eb 75%, #71717a 100%);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25), inset 0 1px 0 #fff;
+}
+.lg-gm-body {
+  position: relative; width: 272px; height: 196px; margin-top: 6px; border-radius: 26px 26px 18px 18px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 18%, rgba(0, 0, 0, 0) 78%, rgba(0, 0, 0, 0.22) 100%),
+    linear-gradient(180deg, #f87171 0%, #dc2626 30%, #b91c1c 72%, #7f1d1d 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -6px 0 rgba(0, 0, 0, 0.18),
+    0 14px 22px -8px rgba(0, 0, 0, 0.45);
+}
+.lg-gm-plate {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%);
+  padding: 3px 14px; border-radius: 6px; white-space: nowrap;
+  background: linear-gradient(180deg, #fefce8, #fde68a 55%, #eab308);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 2px 3px rgba(0, 0, 0, 0.3);
+  color: #78350f; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.14em;
+}
+.lg-gm-plate b { color: #b91c1c; }
+.lg-gm-coin {
+  position: absolute; right: 34px; top: 46px; width: 30px; height: 44px; border-radius: 6px;
+  background: linear-gradient(180deg, #f4f4f5, #a1a1aa);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35), inset 0 1px 0 #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.lg-gm-coin span { width: 5px; height: 26px; border-radius: 3px; background: #18181b; box-shadow: inset 1px 0 2px rgba(255, 255, 255, 0.3); }
+.lg-gm-knob {
+  position: absolute; left: 24px; top: 50px; width: 92px; height: 92px; padding: 0; border-radius: 50%;
+  border: 0; cursor: pointer;
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #e4e4e7 35%, #9ca3af 75%, #52525b 100%);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4), inset 0 -3px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.9s cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+.lg-gm-knob-grip {
+  position: absolute; inset: 9px; border-radius: 50%;
+  background:
+    radial-gradient(circle, transparent 55%, rgba(0, 0, 0, 0.18) 56%, transparent 62%),
+    repeating-conic-gradient(from 0deg, #f4f4f5 0deg 9deg, #9ca3af 9deg 18deg);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+.lg-gm-knob-bar {
+  position: absolute; left: 6px; right: 6px; top: 50%; height: 20px; margin-top: -10px; border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #e4e4e7 40%, #a1a1aa 100%);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.35), inset 0 1px 0 #fff;
+}
+.lg-gm.is-spinning .lg-gm-knob { transform: rotate(360deg); }
+.lg-gm-knob:disabled { cursor: default; filter: saturate(0.7) brightness(0.95); }
+.lg-gm-outlet {
+  position: absolute; right: 18px; bottom: 26px; width: 104px; height: 84px; border-radius: 16px; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 35%, #3f3f46 0%, #18181b 70%);
+  box-shadow: 0 0 0 4px #d4d4d8, 0 0 0 5px #71717a, inset 0 6px 12px rgba(0, 0, 0, 0.7);
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px;
+}
+.lg-gm-flap {
+  position: absolute; left: 0; right: 0; top: 0; height: 26px; z-index: 3; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+}
+.lg-gm-feet { position: absolute; left: 22px; right: 22px; bottom: -9px; display: flex; justify-content: space-between; }
+.lg-gm-feet span { width: 40px; height: 10px; border-radius: 0 0 8px 8px; background: linear-gradient(180deg, #3f3f46, #18181b); }
+.lg-gm-capsule { position: relative; width: 62px; height: 62px; display: flex; align-items: center; justify-content: center; }
+.lg-gm-cap-top, .lg-gm-cap-bottom {
+  position: absolute; left: 0; width: 62px; height: 31px; transition: transform 0.4s ease-out, opacity 0.4s;
+}
+.lg-gm-cap-top {
+  top: 0; border-radius: 31px 31px 0 0;
+  background: radial-gradient(ellipse at 35% 30%, rgba(255, 255, 255, 0.9) 0%, rgba(251, 113, 133, 0.85) 25%, rgba(225, 29, 72, 0.9) 100%);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.15);
+}
+.lg-gm-cap-bottom {
+  bottom: 0; border-radius: 0 0 31px 31px;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f4f5 50%, #d4d4d8 100%);
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.08);
+}
+.lg-gm-capsule.is-dropping { animation: lg-gm-drop 0.65s cubic-bezier(0.45, 0, 0.6, 1.35); }
+@keyframes lg-gm-drop {
+  0% { transform: translateY(-110px) rotate(-200deg); }
+  70% { transform: translateY(0) rotate(0); }
+  85% { transform: translateY(-10px) rotate(8deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+.lg-gm-capsule.is-open .lg-gm-cap-top { transform: translate(-26px, -22px) rotate(-50deg); opacity: 0; }
+.lg-gm-capsule.is-open .lg-gm-cap-bottom { transform: translate(26px, 18px) rotate(35deg); opacity: 0; }
+.lg-gm-bigball { position: relative; z-index: 2; display: block; }
+.lg-gm-capsule.is-open { z-index: 4; }
+.lg-gm .lg-spin-btn { margin-top: 20px; }
