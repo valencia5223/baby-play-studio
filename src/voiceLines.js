@@ -1,5 +1,5 @@
 import { FISH_SPECIES, STAGE_NAMES, breedOf } from './aquariumData.js';
-import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID } from './farmData.js';
+import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID, CROPS } from './farmData.js';
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
@@ -119,6 +119,16 @@ export const VOICE = {
   farmNight: () => '밤이 됐어요. 동물 친구들이 코 자고 있어요.',
   farmSleepTap: () => '쉿, 자고 있어요. 유나도 코 잘 시간이에요.',
   farmRelease: () => '안녕! 넓은 들판에서 행복하게 지내!',
+  farmRain: () => '비가 와요! 동물 친구들이 쉼터로 쏙 들어갔어요!',
+  farmSnow: () => '하얀 눈이 펑펑 내려요!',
+  farmRainbow: () => '비가 그치고 무지개가 떴어요!',
+  farmPlant: (crop) => `${attachJosa(crop.name, '을/를')} 심었어요! 물을 주세요!`,
+  farmWater: () => '물을 줬어요! 쑥쑥 자라라!',
+  farmThirsty: () => '텃밭이 목말라요! 물을 주세요!',
+  farmRipe: () => '텃밭 채소가 다 자랐어요! 눌러서 수확해요!',
+  farmHarvest: (crop) => `와아! ${attachJosa(crop.name, '을/를')} 수확했어요! 동물 친구들에게 줄게요!`,
+  farmFavorite: () => '제일 좋아하는 음식이에요! 냠냠 신나요!',
+  farmMeat: () => '육식동물 친구들은 고기를 먹어요!',
   farmNew: (species) => (species.babyName
     ? `새 친구 ${attachJosa(species.babyName, '이/가')} 왔어요! 잘 키우면 ${attachJosa(species.name, '이/가')} 돼요!`
     : `새 친구 ${attachJosa(species.name, '이/가')} 왔어요! 잘 돌봐 주세요!`),
@@ -192,7 +202,9 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
     Object.keys(STAGE_NAMES).forEach(stage => lines.push(VOICE.aquaFishInfo(sp, stage)));
   });
   lines.push(VOICE.farmWelcome(), VOICE.farmWelcomeBack(), VOICE.farmHungry(), VOICE.farmDirty(), VOICE.farmPoop(), VOICE.farmFeed(), VOICE.farmWash(), VOICE.farmWashMode(),
-    VOICE.farmGift(), VOICE.farmNeedMore(), VOICE.farmSick(), VOICE.farmHeal(), VOICE.farmNotSick(), VOICE.farmHealMode(), VOICE.farmNight(), VOICE.farmSleepTap(), VOICE.farmRelease());
+    VOICE.farmGift(), VOICE.farmNeedMore(), VOICE.farmSick(), VOICE.farmHeal(), VOICE.farmNotSick(), VOICE.farmHealMode(), VOICE.farmNight(), VOICE.farmSleepTap(), VOICE.farmRelease(),
+    VOICE.farmRain(), VOICE.farmSnow(), VOICE.farmRainbow(), VOICE.farmWater(), VOICE.farmThirsty(), VOICE.farmRipe(), VOICE.farmFavorite(), VOICE.farmMeat());
+  CROPS.forEach(c => lines.push(VOICE.farmPlant(c), VOICE.farmHarvest(c)));
   FARM_SPECIES.forEach(sp => {
     lines.push(VOICE.farmNew(sp), VOICE.farmGrow(sp, 'young'), VOICE.farmGrow(sp, 'adult'));
     Object.keys(FARM_STAGE_NAMES).forEach(stage => lines.push(VOICE.farmInfo(farmSpeciesAt(sp.id, stage), stage)));

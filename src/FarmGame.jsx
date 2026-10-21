@@ -4,9 +4,24 @@ import {
   FARM_SPECIES, FARM_BY_ID, farmSpeciesOf, FARM_STAGE_NAMES, farmStageOf, farmSizeScale,
   FARM_RATES, FARM_SLEEP_IDLE_SEC, isFarmNight, farmDirt, isFarmSad, farmCondition, farmGrowFactor,
   FARM_REWARDS, farmReleaseReward, newAnimal, loadFarm, saveFarm, catchUpFarm, farmTodayKey,
-  YOUNG_GIFT_STARS, YOUNG_GIFT_MUL, farmBreedOf, farmMateStatus, FARM_SEX_NAMES, newFarmUid, FARM_LIMITS, FARM_VARIANTS, farmVariantOf, farmLookOf
+  YOUNG_GIFT_STARS, YOUNG_GIFT_MUL, farmBreedOf, farmMateStatus, FARM_SEX_NAMES, newFarmUid, FARM_LIMITS, FARM_VARIANTS, farmVariantOf, farmLookOf,
+  farmPenOf, FARM_PENS, CROP_BY_ID, FAVORITE_CROP, GARDEN_RATES, GARDEN_REWARDS, nextSeed, farmSeasonOf, FARM_SEASONS, FARM_WEATHER
 } from './farmData.js';
 const FARM_LIMITS_BREED = FARM_LIMITS.breed;
+
+// 들판 구역 (가로 비율): 왼쪽 텃밭 | 가운데 초식동물 우리 | 오른쪽 육식동물 우리
+const PEN_X = { garden: [0.012, 0.235], herb: [0.255, 0.665], meat: [0.685, 0.988] };
+const FENCE_X = [0.245, 0.675];
+// 날씨가 이어지는 시간(초)
+const WEATHER_SEC = { sunny: [90, 180], cloudy: [45, 90], rain: [45, 80], snow: [60, 100] };
+// 계절 색: [먼 언덕, 가까운 언덕, 풀밭 위, 풀밭 아래, 나뭇잎]
+const SEASON_COLORS = {
+  spring: ['#b5e59a', '#93d477', '#9be07c', '#5cba4f', '#4caf50'],
+  summer: ['#a7d98b', '#86c96a', '#8fd672', '#4fae4a', '#3f9d4b'],
+  autumn: ['#dccb84', '#c8ad5e', '#c9cf72', '#97a647', '#ea8a1a'],
+  winter: ['#e5e7eb', '#d1d5db', '#eef2f6', '#cdd6e1', '#94a3b8']
+};
+const fract = (v) => v - Math.floor(v);
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 🐮 내 목장 — 다마고치형 동물 키우기 (내 어항의 육지판)
@@ -460,7 +475,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
   const simRef = useRef(null);
   const modeRef = useRef('play');
 
-  const [hud, setHud] = useState({ points: 0, clean: 100, sick: 0, night: isFarmNight() });
+  const [hud, setHud] = useState({ points: 0, clean: 100, sick: 0, night: isFarmNight(), weather: 'sunny', season: farmSeasonOf() });
   const [mode, setModeState] = useState('play');
   const [shopOpen, setShopOpen] = useState(false);
   const [info, setInfo] = useState(null);
@@ -491,9 +506,13 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       rt: {}, food: [], gifts: [], fx: [], layer: null, barnWin: null,
       pointer: { down: false, x: 0, y: 0 },
       dark: farmDark(), night: isFarmNight(), sleeping: false, lastActive: 0,
-      lastSave: 0, lastHud: 0, lastVoice: {}, lastYum: -9, lastBubble: -9, lastSound: -9, nagT: 8, clockT: 0
+      lastSave: 0, lastHud: 0, lastVoice: {}, lastYum: -9, lastBubble: -9, lastSound: -9, nagT: 8, clockT: 0,
+      // 날씨·계절 (날씨는 저장하지 않고 들어올 때마다 새로)
+      season: farmSeasonOf(), weather: null, gloom: 0, rainAmt: 0, snowAmt: 0, wet: 0, snowCover: 0, rainbow: 0,
+      shelter: null, puddles: []
     };
     simRef.current = s;
+    if (import.meta.env.DEV) window.__farm = s;   // 개발 중 확인용
 
     offline.grown.forEach(a => { game.points += farmStageOf(a.growth) === 'adult' ? FARM_REWARDS.adult : FARM_REWARDS.young; });
     const timers = [];
@@ -532,21 +551,23 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       c.width = Math.round(s.W * s.dpr); c.height = Math.round(s.H * s.dpr);
       const g = c.getContext('2d'); g.scale(s.dpr, s.dpr);
       const { W, H, hz, k } = s, rnd = seeded(20240611);
+      const SC = SEASON_COLORS[s.season] || SEASON_COLORS.summer;
       // 먼 언덕
-      [['#a7d98b', 0.1, 0.006, 0], ['#86c96a', 0.065, 0.011, 2]].forEach(([col, amp, fq, off]) => {
+      [[SC[0], 0.1, 0.006, 0], [SC[1], 0.065, 0.011, 2]].forEach(([col, amp, fq, off]) => {
         g.fillStyle = col; g.beginPath(); g.moveTo(0, H);
         for (let x = 0; x <= W; x += 8) g.lineTo(x, hz - H * amp * (0.55 + 0.45 * Math.sin(x * fq + off)) + H * 0.03);
         g.lineTo(W, H); g.closePath(); g.fill();
       });
       // 풀밭
       const fg = g.createLinearGradient(0, hz, 0, H);
-      fg.addColorStop(0, '#8fd672'); fg.addColorStop(1, '#4fae4a');
+      fg.addColorStop(0, SC[2]); fg.addColorStop(1, SC[3]);
       g.fillStyle = fg; g.fillRect(0, hz, W, H - hz);
       // 헛간
       const bx = W * 0.14, bbase = hz + H * 0.035, bwid = clamp(W * 0.2, 100, 230), bhei = bwid * 0.62;
       g.fillStyle = '#dc2626'; g.fillRect(bx - bwid / 2, bbase - bhei, bwid, bhei);
       g.fillStyle = '#7f1d1d';
       g.beginPath(); g.moveTo(bx - bwid * 0.58, bbase - bhei); g.lineTo(bx - bwid * 0.32, bbase - bhei * 1.5); g.lineTo(bx + bwid * 0.32, bbase - bhei * 1.5); g.lineTo(bx + bwid * 0.58, bbase - bhei); g.closePath(); g.fill();
+      if (s.season === 'winter') { g.fillStyle = '#f8fafc'; g.beginPath(); g.moveTo(bx - bwid * 0.6, bbase - bhei - 2); g.lineTo(bx - bwid * 0.32, bbase - bhei * 1.52); g.lineTo(bx + bwid * 0.32, bbase - bhei * 1.52); g.lineTo(bx + bwid * 0.6, bbase - bhei - 2); g.lineTo(bx + bwid * 0.5, bbase - bhei * 1.12); g.lineTo(bx - bwid * 0.5, bbase - bhei * 1.12); g.closePath(); g.fill(); }
       g.strokeStyle = '#ffffff'; g.lineWidth = Math.max(2, bwid * 0.025);
       g.strokeRect(bx - bwid / 2, bbase - bhei, bwid, bhei);
       const dw = bwid * 0.34, dh = bhei * 0.62;
@@ -555,32 +576,92 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       const ww = bwid * 0.16;
       s.barnWin = { x: bx - ww / 2, y: bbase - bhei * 1.28, w: ww, h: ww };
       g.fillStyle = '#fef3c7'; g.fillRect(s.barnWin.x, s.barnWin.y, ww, ww); g.strokeRect(s.barnWin.x, s.barnWin.y, ww, ww);
-      // 사과나무
+      // 나무 (봄: 꽃, 여름: 사과, 가을: 단풍, 겨울: 앙상한 가지에 눈)
       const tx = W * 0.87, tb = hz + H * 0.045, th = clamp(H * 0.3, 90, 220);
       g.fillStyle = '#92400e'; g.fillRect(tx - th * 0.06, tb - th * 0.5, th * 0.12, th * 0.5);
-      g.fillStyle = '#3f9d4b';
-      [[0, -0.72, 0.3], [-0.2, -0.58, 0.24], [0.2, -0.58, 0.24], [0, -0.5, 0.22]].forEach(([qx, qy, qr]) => { g.beginPath(); g.arc(tx + th * qx, tb + th * qy, th * qr, 0, TAU); g.fill(); });
-      g.fillStyle = '#ef4444';
-      [[-0.18, -0.62], [0.12, -0.78], [0.22, -0.55], [-0.02, -0.52], [-0.28, -0.5]].forEach(([qx, qy]) => { g.beginPath(); g.arc(tx + th * qx, tb + th * qy, th * 0.035, 0, TAU); g.fill(); });
-      // 울타리
+      if (s.season === 'winter') {
+        g.strokeStyle = '#92400e'; g.lineCap = 'round';
+        [[-0.25, -0.8], [0.22, -0.82], [0, -0.92], [-0.14, -0.66], [0.15, -0.64]].forEach(([qx, qy]) => { g.lineWidth = th * 0.035; g.beginPath(); g.moveTo(tx, tb - th * 0.48); g.lineTo(tx + th * qx, tb + th * qy); g.stroke(); });
+        g.fillStyle = '#f8fafc';
+        [[-0.25, -0.8], [0.22, -0.82], [0, -0.92]].forEach(([qx, qy]) => { ell(g, tx + th * qx, tb + th * qy - 2, th * 0.06, th * 0.025); g.fill(); });
+      } else {
+        const leaf = s.season === 'autumn' ? ['#ea8a1a', '#dc6b12', '#f2b33d', '#c2410c'] : [SC[4], SC[4], SC[4], SC[4]];
+        [[0, -0.72, 0.3], [-0.2, -0.58, 0.24], [0.2, -0.58, 0.24], [0, -0.5, 0.22]].forEach(([qx, qy, qr], i) => { g.fillStyle = leaf[i]; g.beginPath(); g.arc(tx + th * qx, tb + th * qy, th * qr, 0, TAU); g.fill(); });
+        g.fillStyle = s.season === 'spring' ? '#f9a8d4' : s.season === 'autumn' ? '#fde68a' : '#ef4444';
+        const dots = s.season === 'spring' ? [[-0.18, -0.62], [0.12, -0.78], [0.22, -0.55], [-0.02, -0.52], [-0.28, -0.5], [0.05, -0.68], [-0.1, -0.85], [0.28, -0.66]] : [[-0.18, -0.62], [0.12, -0.78], [0.22, -0.55], [-0.02, -0.52], [-0.28, -0.5]];
+        dots.forEach(([qx, qy]) => { g.beginPath(); g.arc(tx + th * qx, tb + th * qy, th * (s.season === 'spring' ? 0.028 : 0.035), 0, TAU); g.fill(); });
+      }
+      // 뒤쪽 울타리
       const fy = hz + H * 0.06, fh = 26 * k;
       g.strokeStyle = '#c9a66b'; g.fillStyle = '#f5e6c8'; g.lineWidth = 1.5;
       [0.35, 0.72].forEach(q => { g.fillRect(0, fy - fh * q - 2.5 * k, W, 5 * k); g.strokeRect(0, fy - fh * q - 2.5 * k, W, 5 * k); });
       for (let x = 14 * k; x < W; x += 48 * k) { rr(g, x - 4 * k, fy - fh, 8 * k, fh, 3 * k); g.fill(); g.stroke(); }
+      // 육식동물 우리 바닥은 모래빛 (초원 느낌)
+      if (s.season !== 'winter') {
+        const mx = PEN_X.meat[0] * W - 6 * k;
+        const sg = g.createLinearGradient(0, fy, 0, H);
+        sg.addColorStop(0, 'rgba(236,206,140,0.30)'); sg.addColorStop(1, 'rgba(214,170,96,0.42)');
+        g.fillStyle = sg; g.fillRect(mx, fy, W - mx, H - fy);
+      }
       // 풀 포기와 꽃
       for (let i = 0; i < 90; i++) {
         const d = rnd(), x = rnd() * W, y = lerp(fy + 6, H - 4, d), sz = (4 + rnd() * 5) * (0.6 + d * 0.7) * k;
-        g.strokeStyle = `rgba(34,120,50,${0.35 + rnd() * 0.3})`; g.lineWidth = Math.max(1, sz * 0.22); g.lineCap = 'round';
+        g.strokeStyle = s.season === 'winter' ? `rgba(100,116,139,${0.25 + rnd() * 0.2})` : s.season === 'autumn' ? `rgba(120,110,40,${0.35 + rnd() * 0.3})` : `rgba(34,120,50,${0.35 + rnd() * 0.3})`;
+        g.lineWidth = Math.max(1, sz * 0.22); g.lineCap = 'round';
         [-0.5, 0, 0.5].forEach(a => { g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.sin(a) * sz, y - Math.cos(a) * sz); g.stroke(); });
       }
-      for (let i = 0; i < 26; i++) {
+      const flowerN = { spring: 50, summer: 26, autumn: 10, winter: 0 }[s.season] ?? 26;
+      for (let i = 0; i < flowerN; i++) {
         const d = rnd(), x = rnd() * W, y = lerp(fy + 10, H - 6, d), sz = (2.2 + rnd() * 1.6) * (0.6 + d * 0.7) * k;
-        g.fillStyle = ['#ffffff', '#fde047', '#f9a8d4', '#fca5a5'][Math.floor(rnd() * 4)];
-        for (let p = 0; p < 5; p++) { g.beginPath(); g.arc(x + Math.cos(p * 1.257) * sz, y + Math.sin(p * 1.257) * sz, sz * 0.7, 0, TAU); g.fill(); }
+        g.fillStyle = s.season === 'autumn' ? ['#f59e0b', '#c2410c', '#fbbf24'][Math.floor(rnd() * 3)] : ['#ffffff', '#fde047', '#f9a8d4', '#fca5a5'][Math.floor(rnd() * 4)];
+        for (let q = 0; q < 5; q++) { g.beginPath(); g.arc(x + Math.cos(q * 1.257) * sz, y + Math.sin(q * 1.257) * sz, sz * 0.7, 0, TAU); g.fill(); }
         g.fillStyle = '#f59e0b'; g.beginPath(); g.arc(x, y, sz * 0.6, 0, TAU); g.fill();
       }
+      // 쉼터 (비가 오면 동물들이 이 앞으로 모인다)
+      const yd = (d) => lerp(s.fieldTop, s.fieldBot, d);
+      const sw = 116 * k, sh = 64 * k;
+      s.shelter = {
+        herb: { x: lerp(PEN_X.herb[0], PEN_X.herb[1], 0.78) * W, w: sw },
+        meat: { x: lerp(PEN_X.meat[0], PEN_X.meat[1], 0.66) * W, w: sw }
+      };
+      Object.values(s.shelter).forEach(({ x }) => {
+        const base = yd(0) + 2 * k;
+        g.fillStyle = '#7c4a1e'; g.fillRect(x - sw / 2, base - sh, sw, sh);
+        g.fillStyle = '#5b3716'; g.fillRect(x - sw * 0.36, base - sh * 0.72, sw * 0.72, sh * 0.72);
+        g.fillStyle = s.season === 'winter' ? '#f1f5f9' : '#b45309';
+        g.beginPath(); g.moveTo(x - sw * 0.62, base - sh); g.lineTo(x, base - sh * 1.55); g.lineTo(x + sw * 0.62, base - sh); g.closePath(); g.fill();
+        g.strokeStyle = '#78350f'; g.lineWidth = 2 * k; g.stroke();
+        g.fillStyle = '#a16207'; [-0.5, 0.5].forEach(q => g.fillRect(x + q * sw - 4 * k, base - sh, 8 * k, sh));
+      });
+      // 구역 울타리 (세로): 앞으로 올수록 크게
+      const postAt = (x) => {
+        const pts = [];
+        for (let i = 0; i <= 8; i++) { const d = i / 8, y = lerp(fy + 4 * k, H - 3 * k, d), z = 0.55 + d * 0.75; pts.push({ x, y, h: 24 * k * z, w: 7 * k * z }); }
+        g.strokeStyle = '#a07b47'; g.fillStyle = '#f5e6c8'; g.lineWidth = 1.4;
+        [0.4, 0.78].forEach(q => {
+          g.lineWidth = 5 * k; g.strokeStyle = '#e8d3a8'; g.beginPath(); pts.forEach((pt, i) => { const yy = pt.y - pt.h * q; if (i) g.lineTo(pt.x, yy); else g.moveTo(pt.x, yy); }); g.stroke();
+        });
+        g.lineWidth = 1.4; g.strokeStyle = '#a07b47';
+        pts.forEach(pt => { rr(g, pt.x - pt.w / 2, pt.y - pt.h, pt.w, pt.h, 2.5 * k); g.fill(); g.stroke(); });
+      };
+      FENCE_X.forEach(q => postAt(q * W));
+      // 구역 이름판
+      const sign = (cx, text) => {
+        const bw = 112 * k, bh = 26 * k, by = fy + 10 * k;
+        g.fillStyle = '#a16207'; g.fillRect(cx - 2 * k, by + bh, 4 * k, 10 * k);
+        rr(g, cx - bw / 2, by, bw, bh, 7 * k); g.fillStyle = '#fef3c7'; g.fill(); g.strokeStyle = '#a16207'; g.lineWidth = 2 * k; g.stroke();
+        g.fillStyle = '#78350f'; g.font = `900 ${Math.round(13 * k)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(text, cx, by + bh / 2 + 1);
+      };
+      sign((PEN_X.garden[0] + PEN_X.garden[1]) / 2 * W, '🌱 텃밭');
+      sign(lerp(PEN_X.herb[0], PEN_X.herb[1], 0.35) * W, `${FARM_PENS.herb.icon} ${FARM_PENS.herb.name}`);
+      sign(lerp(PEN_X.meat[0], PEN_X.meat[1], 0.26) * W, `${FARM_PENS.meat.icon} ${FARM_PENS.meat.name}`);
+      // 비 온 뒤 웅덩이 자리
+      const prnd = seeded(5150);
+      s.puddles = Array.from({ length: 7 }, (_, i) => ({ pen: i < 4 ? 'herb' : 'meat', q: 0.12 + prnd() * 0.76, d: 0.2 + prnd() * 0.7, w: 0.8 + prnd() * 0.6 }));
       s.layer = c;
     };
+    s.rebuild = () => buildLayer();
 
     const resize = () => {
       const r = wrap.getBoundingClientRect();
@@ -596,9 +677,19 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       if (s.redraw) s.redraw();   // 크기를 바꾸면 캔버스가 지워지므로 바로 다시 그린다 (깜빡임 방지)
     };
 
+    // 우리 안에서 다닐 수 있는 가로 범위(px)
+    const penRange = (pen) => { const [a, b] = PEN_X[pen]; return [a * s.W + 24 * s.k, b * s.W - 24 * s.k]; };
+    s.penRange = penRange;
+    // 텃밭 칸 (2열 × 3줄)
+    const plotRect = (i) => {
+      const col = i % 2, row = Math.floor(i / 2);
+      const x = s.W * (0.022 + col * 0.108), w = s.W * 0.098, d0 = 0.05 + row * 0.33, d1 = d0 + 0.26;
+      return { x, w, y: yOf(d0), h: yOf(d1) - yOf(d0), d: (d0 + d1) / 2 };
+    };
     const ensureRt = (a, entering) => {
       if (s.rt[a.uid]) return s.rt[a.uid];
-      const x = rand(0.12, 0.88) * s.W, d = rand(0.05, 0.95);
+      const [px0, px1] = penRange(farmPenOf(a.sp));
+      const x = rand(px0, px1), d = rand(0.05, 0.95);
       const r = { x, d, tx: x, td: d, wait: rand(0, 2.5), face: Math.random() < 0.5 ? 1 : -1, phase: rand(0, 6), moving: 0, hopT: entering ? 0.6 : 0, eatT: 0, washT: 0, poopDue: 0, lie: 0, run: false, blinkT: rand(1, 5) };
       s.rt[a.uid] = r;
       return r;
@@ -611,13 +702,72 @@ export default function FarmGame({ audio, speak, animals = [] }) {
     ro.observe(wrap);
 
     // ── 밥: 한 번에 한 상. 동물 수에 비례해 먹이 더미를 놓는다 (더미 하나에 세 입) ──
+    // 초식동물 우리엔 건초·채소, 육식동물 우리엔 고기
     s.feed = () => {
-      if (s.food.some(f => f.bites > 0)) { showToast('🥕 아직 밥이 남아 있어요!'); return; }
+      if (s.food.some(f => f.bites > 0 && !f.crop)) { showToast('🥕 아직 밥이 남아 있어요!'); return; }
       if (!game.animals.length) { showToast('🛒 상점에서 동물 친구를 데려와요!'); return; }
-      const n = clamp(Math.ceil(game.animals.length * 0.5), 1, 30);
-      for (let i = 0; i < n; i++) s.food.push({ x: rand(0.1, 0.9) * s.W, d: rand(0.1, 0.9), bites: 3, fall: 1 + i * 0.12, life: 90, gone: 0 });
+      ['herb', 'meat'].forEach(pen => {
+        const cnt = game.animals.filter(a => farmPenOf(a.sp) === pen).length;
+        if (!cnt) return;
+        const [x0, x1] = penRange(pen);
+        const n = clamp(Math.ceil(cnt * 0.5), 1, 30);
+        for (let i = 0; i < n; i++) s.food.push({ x: rand(x0, x1), d: rand(0.1, 0.9), bites: 3, fall: 1 + i * 0.12, life: 90, gone: 0, pen });
+      });
       audio.playYum();
       say('feed', VOICE.farmFeed(), 6);
+    };
+
+    // ── 날씨 ── 맑음·흐림·비(겨울엔 눈)가 몇 분마다 바뀐다. 비가 그치면 무지개
+    const setWeather = (kind, quiet) => {
+      const prev = s.weather ? s.weather.kind : 'sunny';
+      const [a, b] = WEATHER_SEC[kind];
+      s.weather = { kind, t: rand(a, b) };
+      if (quiet) return;
+      if (kind === 'rain') { say('rain', VOICE.farmRain(), 60); Object.values(s.rt).forEach(r => { r.wait = Math.min(r.wait, 0.3); }); }
+      if (kind === 'snow') say('snow', VOICE.farmSnow(), 60);
+      if (prev === 'rain' && kind === 'sunny') { s.rainbow = 40; after(() => say('rainbow', VOICE.farmRainbow(), 60), 1500); }
+    };
+    const nextWeather = () => {
+      if (s.weather.kind === 'rain' || s.weather.kind === 'snow') return 'sunny';
+      const q = Math.random();
+      return q < 0.5 ? 'sunny' : q < 0.72 ? 'cloudy' : s.season === 'winter' ? 'snow' : 'rain';
+    };
+    { const q = Math.random(); setWeather(q < 0.65 ? 'sunny' : q < 0.85 ? 'cloudy' : s.season === 'winter' ? 'snow' : 'rain', true); }
+    s.setWeather = setWeather;
+
+    // ── 텃밭: 빈 칸은 심기, 자라는 칸은 물 주기, 다 자란 칸은 수확 ──
+    const hitPlot = (x, y) => {
+      for (let i = 0; i < game.garden.length; i++) {
+        const R = plotRect(i);
+        if (x >= R.x - 6 && x <= R.x + R.w + 6 && y >= R.y - 26 * s.k && y <= R.y + R.h + 6) return i;
+      }
+      return -1;
+    };
+    const tapPlot = (i) => {
+      const plot = game.garden[i], R = plotRect(i), cx = R.x + R.w / 2, cy = R.y + R.h / 2;
+      if (!plot.crop) {
+        const crop = CROP_BY_ID[plot.seed];
+        plot.crop = plot.seed; plot.growth = 0; plot.water = s.weather.kind === 'rain' ? 1 : 0;
+        audio.playPopSound(); hearts(cx, cy, '🌱', 3);
+        say('plant', VOICE.farmPlant(crop), 2);
+      } else if (plot.growth >= 1) {
+        const crop = CROP_BY_ID[plot.crop];
+        plot.crop = null; plot.growth = 0; plot.water = 0; plot.seed = nextSeed(plot.seed);
+        addPoints(GARDEN_REWARDS.harvest, cx, cy - 30); hearts(cx, cy, crop.icon, 4);
+        audio.playFanfare(); say('harvest', VOICE.farmHarvest(crop), 2);
+        // 딴 채소는 초식동물 우리에 먹이로
+        if (game.animals.some(a => farmPenOf(a.sp) === 'herb')) {
+          const [x0, x1] = penRange('herb');
+          s.food.push({ x: rand(x0, x1), d: rand(0.15, 0.85), bites: 3, fall: 1, life: 120, gone: 0, pen: 'herb', crop: crop.id });
+        }
+      } else {
+        const dry = plot.water < 0.3;
+        plot.water = 1;
+        for (let j = 0; j < 7; j++) s.fx.push({ x: cx + rand(-R.w * 0.4, R.w * 0.4), y: R.y - rand(10, 40), text: '💧', life: rand(0.5, 0.9), vy: rand(60, 110) });
+        audio.playBubble();
+        if (dry) { addPoints(GARDEN_REWARDS.water, cx, R.y - 20); say('water', VOICE.farmWater(), 4); }
+      }
+      saveFarm(game);
     };
 
     // ── 입력 ──
@@ -716,6 +866,8 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         return;
       }
       if (m === 'wash') return;   // 문지르기는 매 프레임 처리
+      const pi = hitPlot(p.x, p.y);
+      if (pi >= 0) { tapPlot(pi); return; }
       const gi = s.gifts.findIndex(g => Math.hypot(g.x - p.x, yOf(g.d) - 14 * s.k - p.y) < 34 * s.k);
       if (gi >= 0) {
         const g = s.gifts[gi];
@@ -753,6 +905,28 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       const dirt = farmDirt(game);
       const fieldH = s.fieldBot - s.fieldTop;
       let sickCount = game.animals.filter(o => o.sick).length;
+
+      // 날씨
+      s.weather.t -= dt;
+      if (s.weather.t <= 0) setWeather(nextWeather());
+      const wk = s.weather.kind, raining = wk === 'rain';
+      s.gloom += (({ sunny: 0, cloudy: 0.45, rain: 0.8, snow: 0.5 })[wk] - s.gloom) * Math.min(1, dt * 0.4);
+      s.rainAmt += ((raining ? 1 : 0) - s.rainAmt) * Math.min(1, dt * 0.6);
+      s.snowAmt += ((wk === 'snow' ? 1 : 0) - s.snowAmt) * Math.min(1, dt * 0.5);
+      s.wet = clamp(s.wet + (raining ? dt / 20 : -dt / 70), 0, 1);
+      s.snowCover = clamp(s.snowCover + (wk === 'snow' ? dt / 45 : -dt / 150), 0, 0.85);
+      if (s.rainbow > 0) s.rainbow -= dt;
+
+      // 텃밭: 물기가 있을 때만 자라고, 비가 오면 저절로 물이 준다
+      game.garden.forEach(pl => {
+        if (!pl.crop || pl.growth >= 1) return;
+        if (raining) pl.water = 1;
+        if (pl.water > 0) {
+          pl.growth = Math.min(1, pl.growth + dt / CROP_BY_ID[pl.crop].growSec);
+          pl.water = Math.max(0, pl.water - GARDEN_RATES.dryPerSec * dt);
+          if (pl.growth >= 1) { say('ripe', VOICE.farmRipe(), 40); audio.playPopSound(); saveFarm(game); }
+        }
+      });
 
       // 밥
       s.food.forEach(f => {
@@ -808,6 +982,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
 
       game.animals.forEach(a => {
         const sp = FARM_BY_ID[a.sp], r = ensureRt(a, false);
+        const pen = farmPenOf(a.sp), [px0, px1] = penRange(pen);
         // 수치
         a.full = Math.max(0, a.full - FARM_RATES.fullDropPerSec * dt);
         a.happy = Math.max(0, a.happy - FARM_RATES.happyDropPerSec * dt);
@@ -873,6 +1048,16 @@ export default function FarmGame({ audio, speak, animals = [] }) {
             const wasHungry = a.full < 70;   // 배고플 때 먹으면 별을 더 준다
             a.full = Math.min(100, a.full + 40); a.happy = Math.min(100, a.happy + 6);
             addPoints(wasHungry ? FARM_REWARDS.eatHungry : FARM_REWARDS.eat, r.x, yOf(r.d) - sizeOf(a, r) - 10);
+            // 텃밭 채소: 기분이 더 좋아지고, 제일 좋아하는 채소면 하트·별을 더
+            if (r.eatCrop) {
+              a.happy = Math.min(100, a.happy + 15);
+              if (FAVORITE_CROP[a.sp] === r.eatCrop) {
+                r.hopT = 0.6; hearts(r.x, yOf(r.d) - sizeOf(a, r), '💖', 6);
+                addPoints(GARDEN_REWARDS.favorite, r.x, yOf(r.d) - sizeOf(a, r) - 34);
+                say('fav', VOICE.farmFavorite(), 12);
+              }
+              r.eatCrop = null;
+            }
             if (!(r.poopDue > 0)) r.poopDue = rand(FARM_RATES.poopEverySec[0], FARM_RATES.poopEverySec[1]);   // 이미 기다리는 중이면 미루지 않는다
             if (s.t - s.lastYum > 0.9) { s.lastYum = s.t; audio.playYum(); }
           }
@@ -882,8 +1067,9 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           if (a.full < 80) {
             let bd = Infinity;
             s.food.forEach(f => {
-              if (f.bites <= 0 || f.fall > 0) return;
-              const dd = Math.hypot(f.x - r.x, (f.d - r.d) * fieldH);
+              if (f.bites <= 0 || f.fall > 0 || (f.pen || 'herb') !== pen) return;
+              let dd = Math.hypot(f.x - r.x, (f.d - r.d) * fieldH);
+              if (f.crop && FAVORITE_CROP[a.sp] === f.crop) dd *= 0.4;   // 좋아하는 채소부터
               if (dd < bd) { bd = dd; seeking = f; }
             });
           }
@@ -894,7 +1080,9 @@ export default function FarmGame({ audio, speak, animals = [] }) {
             r.wait -= dt;
             if (sp.napper && r.wait > 3) lieTarget = 1;   // 고양이는 쉴 때 엎드려 낮잠
             if (r.wait <= 0) {
-              r.tx = rand(0.06, 0.94) * s.W; r.td = rand(0.02, 0.98);
+              r.tx = rand(px0, px1); r.td = rand(0.02, 0.98);
+              // 비가 오면 우리 쉼터 앞으로
+              if (raining && s.shelter) { const sh = s.shelter[pen]; r.tx = clamp(sh.x + rand(-0.5, 0.5) * sh.w, px0, px1); r.td = rand(0.02, 0.2); }
               // 아직 다 크지 않은 아기는 엄마 곁으로 졸졸 따라간다
               const mr = a.mom && a.growth < 0.8 ? s.rt[a.mom] : null;
               if (mr && Math.random() < 0.85) { r.tx = clamp(mr.x - mr.face * rand(30, 70) * s.k, 10, s.W - 10); r.td = clamp(mr.d + rand(-0.06, 0.06), 0, 1); r.wait = 0; }
@@ -905,23 +1093,28 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           if (dist > 6 && (seeking || r.wait <= 0)) {
             const v = 46 * s.k * sp.speed * (0.65 + 0.5 * r.d) * (sad ? 0.55 : 1) * (r.run ? 2 : 1) * (seeking ? 1.5 : 1);
             const step = Math.min(dist, v * dt);
-            r.x += (dx / dist) * step; r.d = clamp(r.d + (dy / dist) * step / fieldH, 0, 1);
+            r.x = clamp(r.x + (dx / dist) * step, px0, px1); r.d = clamp(r.d + (dy / dist) * step / fieldH, 0, 1);
             if (Math.abs(dx) > 2) r.face = dx > 0 ? 1 : -1;
             r.moving = 1;
             r.phase += dt * (sp.hop ? 7 : 9) * (r.run ? 1.6 : 1) * sp.speed;
           } else if (seeking) {
             r.face = seeking.x >= r.x ? 1 : -1;
-            seeking.bites -= 1; r.eatT = 1.3;
+            seeking.bites -= 1; r.eatT = 1.3; r.eatCrop = seeking.crop || null;
           } else if (r.wait <= 0) {
-            r.wait = rand(1.5, 5) * (sp.napper ? 2.6 : 1) * (a.mom && a.growth < 0.8 && s.rt[a.mom] ? 0.4 : 1);
+            r.wait = rand(1.5, 5) * (sp.napper ? 2.6 : 1) * (a.mom && a.growth < 0.8 && s.rt[a.mom] ? 0.4 : 1) * (raining ? 2 : 1);
           }
+          if (r.x < px0 - 1 || r.x > px1 + 1) r.x = clamp(r.x, px0, px1);
         }
         r.lie += (lieTarget - r.lie) * Math.min(1, dt * 5);
       });
 
       // 밤이면 한동안 아무도 만지지 않을 때 모두 잔다
       s.clockT -= dt;
-      if (s.clockT <= 0) { s.clockT = 5; s.night = isFarmNight(); s.dark = farmDark(); }
+      if (s.clockT <= 0) {
+        s.clockT = 5; s.night = isFarmNight(); s.dark = farmDark();
+        const season = farmSeasonOf();
+        if (season !== s.season) { s.season = season; buildLayer(); }
+      }
       const sleeping = s.night && s.t - s.lastActive > FARM_SLEEP_IDLE_SEC && !s.food.some(f => f.bites > 0);
       if (sleeping && !s.sleeping) say('night', VOICE.farmNight(), 120);
       s.sleeping = sleeping;
@@ -934,6 +1127,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         if (hungry * 2 >= game.animals.length && !s.food.length) say('nag', VOICE.farmHungry(), 60);
         else if (game.poop.length >= 5) say('nag', VOICE.farmPoop(), 60);
         else if (game.animals.some(a => a.mud > 75)) say('nag', VOICE.farmDirty(), 60);
+        else if (game.garden.some(pl => pl.crop && pl.growth < 1 && pl.water <= 0)) say('nag', VOICE.farmThirsty(), 90);
       }
 
       s.fx.forEach(f => { f.life -= dt; f.y += f.vy * dt; });
@@ -958,6 +1152,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       sky.addColorStop(0, mixColor('#38bdf8', '#0b1437', dark));
       sky.addColorStop(1, mixColor(mixColor('#e0f2fe', '#fdba74', dusk * 0.8), '#2b4470', dark * dark));
       ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+      if (s.gloom > 0.01) { ctx.fillStyle = `rgba(71,85,105,${s.gloom * 0.55})`; ctx.fillRect(0, 0, W, s.hz + H * 0.05); }
       if (dark > 0.35) {
         ctx.fillStyle = '#ffffff';
         stars.forEach(([sx, sy, sr, ph]) => { ctx.globalAlpha = (dark - 0.35) / 0.65 * (0.5 + 0.5 * Math.sin(s.t * 1.5 + ph)); ctx.beginPath(); ctx.arc(sx * W, sy * H, sr * k, 0, TAU); ctx.fill(); });
@@ -968,20 +1163,75 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       }
       if (dark < 0.75) {
         const sx = W * 0.76, sy = H * (0.12 + dark * 0.2);
-        ctx.globalAlpha = 1 - dark / 0.75;
+        ctx.globalAlpha = clamp((1 - dark / 0.75) * (1 - s.gloom * 1.15), 0, 1);
         ctx.strokeStyle = '#fde047'; ctx.lineWidth = 4 * k; ctx.lineCap = 'round';
         for (let i = 0; i < 10; i++) { const a = i / 10 * TAU + s.t * 0.15; ctx.beginPath(); ctx.moveTo(sx + Math.cos(a) * 34 * k, sy + Math.sin(a) * 34 * k); ctx.lineTo(sx + Math.cos(a) * 46 * k, sy + Math.sin(a) * 46 * k); ctx.stroke(); }
         ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.arc(sx, sy, 27 * k, 0, TAU); ctx.fill();
         ctx.globalAlpha = 1;
       }
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = mixColor('#ffffff', '#94a3b8', s.gloom);
       clouds.forEach(c => {
         const x = ((c.off * (W + 260) + s.t * c.sp) % (W + 260)) - 130, y = c.y * H, z = 26 * k * c.sz;
         ctx.globalAlpha = 0.92 - dark * 0.78;
         [[0, 0, 1], [-1, 0.25, 0.75], [1, 0.2, 0.8], [0.4, -0.35, 0.7]].forEach(([qx, qy, qr]) => { ctx.beginPath(); ctx.arc(x + qx * z, y + qy * z, z * qr, 0, TAU); ctx.fill(); });
       });
       ctx.globalAlpha = 1;
+      // 무지개 (비가 그친 뒤)
+      if (s.rainbow > 0) {
+        const ra = Math.min(1, s.rainbow / 6, (40 - s.rainbow) / 3) * 0.55 * (1 - dark);
+        if (ra > 0.01) {
+          const cx = W * 0.55, cy = s.hz + H * 0.12, R0 = Math.min(W * 0.42, H * 0.52);
+          ctx.lineWidth = 7 * k; ctx.globalAlpha = ra;
+          ['#ef4444', '#f97316', '#facc15', '#22c55e', '#3b82f6', '#6366f1', '#a855f7'].forEach((c, i) => { ctx.strokeStyle = c; ctx.beginPath(); ctx.arc(cx, cy, R0 - i * 7 * k, Math.PI, TAU); ctx.stroke(); });
+          ctx.globalAlpha = 1;
+        }
+      }
       if (s.layer) ctx.drawImage(s.layer, 0, 0, W, H);
+      // 웅덩이 (비가 오면 생기고 마르면 사라짐)
+      if (s.wet > 0.02) {
+        s.puddles.forEach(pd => {
+          const [x0, x1] = PEN_X[pd.pen], x = lerp(x0, x1, pd.q) * W, y = yOf(pd.d), sc = scaleOf(pd.d);
+          ctx.fillStyle = `rgba(96,150,210,${0.5 * s.wet})`; ell(ctx, x, y, 34 * sc * pd.w * (0.4 + 0.6 * s.wet), 9 * sc * pd.w * (0.4 + 0.6 * s.wet)); ctx.fill();
+          ctx.fillStyle = `rgba(255,255,255,${0.35 * s.wet})`; ell(ctx, x - 8 * sc, y - 2 * sc, 10 * sc * pd.w, 2.2 * sc); ctx.fill();
+          if (s.rainAmt > 0.3) { const ph = fract(s.t * 1.3 + pd.q * 7); ctx.strokeStyle = `rgba(255,255,255,${(1 - ph) * 0.6 * s.rainAmt})`; ctx.lineWidth = 1.2; ell(ctx, x + (pd.q - 0.5) * 20 * sc, y, 4 * sc + ph * 12 * sc, 1.2 * sc + ph * 3 * sc); ctx.stroke(); }
+        });
+      }
+      // 쌓인 눈
+      if (s.snowCover > 0.01) { ctx.fillStyle = `rgba(248,250,252,${s.snowCover * 0.6})`; ctx.fillRect(0, s.hz, W, H - s.hz); }
+      // 텃밭
+      game.garden.forEach((pl, i) => {
+        const R = plotRect(i), sc = scaleOf(R.d), cx = R.x + R.w / 2;
+        ctx.fillStyle = mixColor('#a87444', '#5b3a1e', clamp(pl.water, 0, 1));
+        rr(ctx, R.x, R.y, R.w, R.h, 8 * k); ctx.fill();
+        ctx.strokeStyle = '#78350f'; ctx.lineWidth = 2.5 * k; ctx.stroke();
+        ctx.strokeStyle = 'rgba(60,30,10,0.35)'; ctx.lineWidth = 2 * k;
+        for (let j = 1; j < 3; j++) { const yy = R.y + R.h * j / 3; ctx.beginPath(); ctx.moveTo(R.x + 6 * k, yy); ctx.lineTo(R.x + R.w - 6 * k, yy); ctx.stroke(); }
+        if (!pl.crop) {
+          // 심을 씨앗 그림을 흐리게 + 누르라는 손가락
+          emoji(CROP_BY_ID[pl.seed].icon, cx, R.y + R.h * 0.5, 22 * sc, 0.4);
+          emoji('👆', cx + R.w * 0.26, R.y + R.h * 0.78 + Math.sin(s.t * 4 + i) * 3, 15 * sc, 0.45 + 0.3 * Math.sin(s.t * 3 + i));
+          return;
+        }
+        const gr = pl.growth;
+        [0.2, 0.5, 0.8].forEach((q, j) => {
+          const px = R.x + R.w * q, py = R.y + R.h * (j === 1 ? 0.45 : 0.72);
+          if (gr < 0.12) { ctx.fillStyle = '#3f2a14'; ell(ctx, px, py, 2.6 * sc, 1.8 * sc); ctx.fill(); }
+          else if (gr < 1) {
+            const z = (5 + 14 * gr) * sc;
+            ctx.strokeStyle = '#15803d'; ctx.lineWidth = Math.max(1.2, 2 * sc); ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py - z * 0.8); ctx.stroke();
+            ctx.fillStyle = gr > 0.6 ? '#16a34a' : '#22c55e';
+            ell(ctx, px - z * 0.36, py - z * 0.72, z * 0.4, z * 0.18, -0.5); ctx.fill();
+            ell(ctx, px + z * 0.36, py - z * 0.78, z * 0.4, z * 0.18, 0.5); ctx.fill();
+          } else emoji(CROP_BY_ID[pl.crop].icon, px, py - 10 * sc + Math.sin(s.t * 3 + i + j) * 2 * sc, 26 * sc);
+        });
+        if (gr >= 1) emoji('✨', cx, R.y - 10 * sc + Math.sin(s.t * 4 + i) * 3, 18 * sc, 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3 + i)));
+        else if (pl.water <= 0.02) emoji('💧', cx, R.y - 12 * sc + Math.sin(s.t * 4 + i) * 3, 20 * sc, 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3)));
+        // 자람 막대
+        const bw = R.w - 16 * k;
+        ctx.fillStyle = 'rgba(0,0,0,0.25)'; rr(ctx, R.x + 8 * k, R.y + R.h - 8 * k, bw, 4 * k, 2 * k); ctx.fill();
+        if (gr > 0.02) { ctx.fillStyle = gr >= 1 ? '#facc15' : '#4ade80'; rr(ctx, R.x + 8 * k, R.y + R.h - 8 * k, bw * clamp(gr, 0, 1), 4 * k, 2 * k); ctx.fill(); }
+      });
 
       // 땅 위의 것들을 뒤에서부터
       const items = [];
@@ -1016,6 +1266,19 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         } else if (it.kind === 'food') {
           const f = it.f, sc = scaleOf(f.d), x = f.x, y = yOf(f.d) - f.fall * H * 0.5;
           const a = f.bites > 0 ? 1 : clamp(1 - f.gone / 1.2, 0, 1), z = (10 + Math.max(0, f.bites) * 5) * sc;
+          if (f.pen === 'meat') {
+            // 육식동물 우리: 고기
+            ctx.fillStyle = `rgba(120,53,15,${0.22 * a})`; ell(ctx, x, y - z * 0.1, z * 1.2, z * 0.42); ctx.fill();
+            emoji('🍖', x, y - z * 0.6, z * (1.3 + 0.22 * Math.max(0, f.bites)), a);
+            if (f.bites >= 3) emoji('🍗', x + z * 0.75, y - z * 0.45, z * 1.1, a);
+            return;
+          }
+          if (f.crop) {
+            // 텃밭에서 딴 채소
+            ctx.fillStyle = `rgba(234,179,8,${0.5 * a})`; ell(ctx, x, y - z * 0.2, z * 1.1, z * 0.4); ctx.fill();
+            emoji(CROP_BY_ID[f.crop].icon, x, y - z * 0.6, z * (1.2 + 0.25 * Math.max(0, f.bites)), a);
+            return;
+          }
           ctx.globalAlpha = a;
           ctx.fillStyle = '#eab308'; ell(ctx, x, y - z * 0.35, z * 1.25, z * 0.6); ctx.fill();
           ctx.strokeStyle = '#a16207'; ctx.lineWidth = Math.max(1, sc * 1.2); ctx.lineCap = 'round';
@@ -1065,6 +1328,48 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       badges.forEach(fn => fn());
       if (modeRef.current === 'wash' && s.pointer.down) drawSponge(ctx, s.pointer.x, s.pointer.y, 1.25 * k, s.t);
 
+      // 비·눈·계절 (봄 꽃잎, 가을 낙엽, 여름밤 반딧불)
+      if (s.rainAmt > 0.02) {
+        ctx.strokeStyle = `rgba(191,219,254,${0.75 * s.rainAmt})`; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+        ctx.beginPath();
+        for (let i = 0; i < 120; i++) {
+          const a = fract(i * 0.618034), b = fract(i * 0.381966 + 0.13);
+          const x = fract(a + s.t * 0.04) * (W + 60) - 30, y = fract(b + s.t * (0.9 + (i % 5) * 0.08)) * H;
+          ctx.moveTo(x, y); ctx.lineTo(x - 4 * k, y + 15 * k);
+        }
+        ctx.stroke();
+      }
+      if (s.snowAmt > 0.02) {
+        ctx.fillStyle = `rgba(255,255,255,${0.9 * s.snowAmt})`;
+        for (let i = 0; i < 80; i++) {
+          const a = fract(i * 0.618034), b = fract(i * 0.381966 + 0.29), r0 = (1.6 + (i % 3)) * k;
+          const x = fract(a + Math.sin(s.t * 0.7 + i) * 0.012) * W, y = fract(b + s.t * (0.06 + (i % 4) * 0.015)) * H;
+          ell(ctx, x, y, r0, r0); ctx.fill();
+        }
+      }
+      if ((s.season === 'autumn' || s.season === 'spring') && s.rainAmt < 0.6) {
+        const cols = s.season === 'autumn' ? ['#f59e0b', '#ea580c', '#b45309', '#facc15'] : ['#f9a8d4', '#fbcfe8', '#fda4af', '#ffffff'];
+        ctx.globalAlpha = 0.9 * (1 - s.rainAmt);
+        for (let i = 0; i < 14; i++) {
+          const a = fract(i * 0.618034 + 0.07), b = fract(i * 0.381966 + 0.51);
+          const x = fract(a + s.t * 0.018 * (1 + (i % 3) * 0.3)) * (W + 60) - 30, y = fract(b + s.t * (0.045 + (i % 4) * 0.012)) * H;
+          ctx.save(); ctx.translate(x, y); ctx.rotate(s.t * (1 + (i % 3)) + i);
+          ctx.fillStyle = cols[i % cols.length]; ell(ctx, 0, 0, (s.season === 'autumn' ? 6 : 4) * k, (s.season === 'autumn' ? 3 : 2.4) * k); ctx.fill();
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+      }
+      if (s.season === 'summer' && dark > 0.5) {
+        for (let i = 0; i < 12; i++) {
+          const a = fract(i * 0.618034), b = fract(i * 0.381966 + 0.2);
+          const x = a * W + Math.sin(s.t * 0.5 + i) * 30, y = lerp(s.fieldTop - 40, H - 20, b) + Math.cos(s.t * 0.7 + i) * 15;
+          ctx.globalAlpha = (0.5 + 0.5 * Math.sin(s.t * 3 + i)) * (dark - 0.5) * 2;
+          ctx.fillStyle = '#fef08a'; ell(ctx, x, y, 3 * k, 3 * k); ctx.fill();
+          ctx.fillStyle = 'rgba(254,240,138,0.25)'; ell(ctx, x, y, 9 * k, 9 * k); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
       // 어둠 (밤에는 헛간 창문에 불이 켜진다)
       if (dark > 0.02) {
         // 하늘은 이미 어두우니 위쪽은 옅게, 땅으로 갈수록 짙게 덮는다
@@ -1102,7 +1407,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       if (s.t - s.lastHud > 0.4) {
         s.lastHud = s.t;
         const avgMud = game.animals.length ? game.animals.reduce((n, a) => n + a.mud, 0) / game.animals.length : 0;
-        setHud({ points: game.points, clean: Math.round(100 - Math.max(farmDirt(game), avgMud)), sick: game.animals.filter(a => a.sick).length, night: s.night });
+        setHud({ points: game.points, clean: Math.round(100 - Math.max(farmDirt(game), avgMud)), sick: game.animals.filter(a => a.sick).length, night: s.night, weather: s.weather.kind, season: s.season });
         setInfoTick(n => n + 1);
       }
       if (s.t - s.lastSave > 5) { s.lastSave = s.t; game.lastTick = Date.now(); saveFarm(game); }
@@ -1155,6 +1460,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
     s.say('buy', VOICE.farmNew(sp));
     const v = farmVariantOf(a);
     if (v) showToast(`🎲 ${attachJosa(v.name, '이/가')} 왔어요!`);
+    else if (farmPenOf(id) === 'meat') showToast(`🍖 ${attachJosa(sp.babyName || sp.name, '은/는')} 육식동물 우리에서 지내요`);
     saveFarm(game);
     setInfo(a.uid);
     setHud(h => ({ ...h, points: game.points }));
@@ -1206,6 +1512,9 @@ export default function FarmGame({ audio, speak, animals = [] }) {
           ⭐ {hud.points}
         </div>
         <CleanMeter value={hud.clean} />
+        <div title={`${FARM_SEASONS[hud.season].name} · ${FARM_WEATHER[hud.weather].name}`} style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(255,255,255,0.15)', borderRadius: '18px', padding: '4px 10px', fontSize: '1.6rem', lineHeight: 1 }}>
+          {FARM_SEASONS[hud.season].icon}{FARM_WEATHER[hud.weather].icon}
+        </div>
         {hud.night && <div title="밤 (저녁 8시 ~ 아침 7시)" style={{ fontSize: '1.9rem', lineHeight: 1, filter: 'drop-shadow(0 0 6px #fde68a)' }}>🌙</div>}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>
           <FarmButton icon="🥕" label="밥" color="#f97316" onClick={() => { setMode('play'); if (simRef.current) simRef.current.feed(); }} />
@@ -1272,6 +1581,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
                   {farmVariantOf(infoAnimal) && <span style={{ fontSize: '0.8rem', color: '#be185d' }}> ({farmVariantOf(infoAnimal).name})</span>}
                   {infoAnimal.sex && <span style={{ marginLeft: '4px', fontSize: '0.8rem', color: '#ffffff', background: infoAnimal.sex === 'm' ? '#2563eb' : '#db2777', borderRadius: '10px', padding: '1px 7px' }}>{infoAnimal.sex === 'm' ? '♂' : '♀'} {FARM_SEX_NAMES[infoAnimal.sex]}</span>}
                   {' '}<span style={{ fontSize: '0.85rem', color: '#15803d' }}>· {FARM_STAGE_NAMES[stage]}</span>
+                  {' '}<span style={{ fontSize: '0.78rem', color: farmPenOf(infoAnimal.sp) === 'meat' ? '#b45309' : '#15803d' }}>· {FARM_PENS[farmPenOf(infoAnimal.sp)].icon} {FARM_PENS[farmPenOf(infoAnimal.sp)].name} 우리</span>
                 </div>
                 <button onClick={() => setInfo(null)} style={{ border: 'none', background: '#e2e8f0', borderRadius: '12px', padding: '4px 10px', fontWeight: 900, cursor: 'pointer' }}>✕</button>
               </div>
@@ -1395,6 +1705,9 @@ export default function FarmGame({ audio, speak, animals = [] }) {
                     <div style={{ fontWeight: 900, color: '#0f172a' }}>{sp.babyName || sp.name}</div>
                     <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textAlign: 'center' }}>{sp.desc}</div>
                     {FARM_VARIANTS[sp.id] && <div style={{ fontSize: '0.72rem', fontWeight: 900, color: '#be185d' }}>🎲 품종은 랜덤! ({FARM_VARIANTS[sp.id].length}가지)</div>}
+                    <div style={{ fontSize: '0.72rem', fontWeight: 900, color: farmPenOf(sp.id) === 'meat' ? '#b45309' : '#15803d' }}>
+                      {FARM_PENS[farmPenOf(sp.id)].icon} {FARM_PENS[farmPenOf(sp.id)].name} 우리{FAVORITE_CROP[sp.id] ? ` · 좋아하는 채소 ${CROP_BY_ID[FAVORITE_CROP[sp.id]].icon}` : ''}
+                    </div>
                     <button onClick={() => buy(sp.id)} style={{ marginTop: '6px', width: '100%', border: 'none', borderRadius: '12px', padding: '8px', fontWeight: 900, cursor: 'pointer', background: pointsNow >= sp.price ? '#16a34a' : '#cbd5e1', color: '#ffffff' }}>⭐ {sp.price}</button>
                   </div>
                 ))}
