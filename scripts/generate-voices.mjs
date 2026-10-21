@@ -14,7 +14,7 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 
 const VOICE_NAME = 'ko-KR-InJoonNeural';
 const PROSODY = { rate: '-4%' };
-const CONCURRENCY = 4;
+const CONCURRENCY = 2; // 너무 많이 동시에 보내면 429 로 막힌다
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = path.join(root, 'public', 'voice');
@@ -82,11 +82,14 @@ async function worker() {
   while (todo.length) {
     const [key, text] = todo.shift();
     let buf = null;
-    for (let attempt = 0; attempt < 3 && !buf; attempt++) {
+    for (let attempt = 0; attempt < 5 && !buf; attempt++) {
       try {
         const b = await synth(text);
         if (b.length > 1000) buf = b;
-      } catch (e) { /* 재시도 */ }
+      } catch (e) {
+        // 요청이 몰리면(429) 서버가 잠시 막으므로 점점 길게 쉬었다가 다시
+        await new Promise(r => setTimeout(r, [3000, 8000, 20000, 45000, 0][attempt]));
+      }
     }
     if (buf) fs.writeFileSync(path.join(outDir, `${key}.mp3`), buf);
     else failed.push(text);
