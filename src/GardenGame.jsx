@@ -356,13 +356,36 @@ export default function GardenGame({ audio, speak }) {
         if (g > 0.7) emoji(crop.icon, 0, -z * 0.95, 13 * sc, 0.75);   // 열매가 맺히기 시작
         ctx.restore();
       });
-      // 머리 위 표시
+      // 머리 위 표시 (왼쪽엔 이름표가 있으니 오른쪽에)
+      const mx = R.x + R.w * 0.8;
       if (p.bug) {
         const bx = R.x + R.w * (0.5 + 0.32 * Math.sin(s.t * 0.9 + i)), by = R.y + R.h * 0.55;
         emoji('🐛', bx, by + Math.sin(s.t * 8) * 1.5 * sc, 30 * sc);
-        emoji('❗', cx, R.y - 12 * sc + Math.sin(s.t * 5 + i) * 3, 22 * sc);
-      } else if (g >= 1) emoji('✨', cx, R.y - 12 * sc + Math.sin(s.t * 4 + i) * 3, 22 * sc, 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3 + i)));
-      else if (p.water <= 0.02) emoji('💧', cx, R.y - 14 * sc + Math.sin(s.t * 4 + i) * 3, 24 * sc, 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3)));
+        emoji('❗', mx, R.y - 12 * sc + Math.sin(s.t * 5 + i) * 3, 22 * sc);
+      } else if (g >= 1) emoji('✨', mx, R.y - 12 * sc + Math.sin(s.t * 4 + i) * 3, 22 * sc, 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3 + i)));
+      else if (p.water <= 0.02) emoji('💧', mx, R.y - 14 * sc + Math.sin(s.t * 4 + i) * 3, 24 * sc, 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3)));
+      // 이름표 (밭 왼쪽 위 말뚝): 무엇을 심었고 얼마나 자랐는지
+      {
+        const stage = p.bug ? '벌레!' : g >= 1 ? '다 자랐어요!' : g < 0.1 ? '씨앗' : g < 0.35 ? '새싹' : g < 0.7 ? '쑥쑥' : '열매';
+        const fs = Math.round(13 * sc), pad = 7 * sc, h = 26 * sc, x0 = R.x + 8 * k, y0 = R.y - h * 0.75;
+        ctx.font = `900 ${fs}px sans-serif`;
+        const nameW = ctx.measureText(crop.name).width;
+        ctx.font = `800 ${Math.round(11 * sc)}px sans-serif`;
+        const stageW = ctx.measureText(stage).width;
+        const iconW = 18 * sc, w = pad + iconW + 3 * sc + nameW + 8 * sc + stageW + pad;
+        // 말뚝
+        ctx.fillStyle = '#92400e'; ctx.fillRect(x0 + 14 * sc, y0 + h - 2, 5 * sc, R.y + 14 * sc - (y0 + h));
+        // 판
+        const ripe = g >= 1;
+        ctx.fillStyle = ripe ? '#fef08a' : p.bug ? '#fed7aa' : '#fef3c7';
+        rr(ctx, x0, y0, w, h, 7 * sc); ctx.fill();
+        ctx.strokeStyle = ripe ? '#eab308' : '#a16207'; ctx.lineWidth = 2 * sc; ctx.stroke();
+        emoji(crop.icon, x0 + pad + iconW / 2, y0 + h / 2 + 1, 17 * sc);
+        ctx.fillStyle = '#78350f'; ctx.font = `900 ${fs}px sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(crop.name, x0 + pad + iconW + 3 * sc, y0 + h / 2 + 1);
+        ctx.fillStyle = ripe ? '#a16207' : p.bug ? '#c2410c' : '#15803d'; ctx.font = `800 ${Math.round(11 * sc)}px sans-serif`;
+        ctx.fillText(stage, x0 + pad + iconW + 3 * sc + nameW + 8 * sc, y0 + h / 2 + 1);
+      }
       // 자람 막대
       const bw = R.w - 26 * k, by2 = R.y + R.h - 13 * k;
       ctx.fillStyle = 'rgba(0,0,0,0.25)'; rr(ctx, R.x + 13 * k, by2, bw, 6 * k, 3 * k); ctx.fill();
