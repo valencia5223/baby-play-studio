@@ -8,6 +8,7 @@ import { CROP_BY_ID, FARM_SAVE_KEY } from './farmData.js';
 
 export const GARDEN_SAVE_KEY = 'bps_garden_v1';
 export const GARDEN_PLOTS = 8; // 4칸 × 2줄
+export const GARDEN_YIELD = 6; // 한 밭에서 수확하는 채소 수 (밭에 그려지는 포기 수와 같다)
 export const GARDEN_RATES = {
   dryPerSec: 1 / 70,                 // 물 준 뒤 70초면 마른다 (다 자라려면 2~4번)
   offlineDryPerSec: 1 / (3 * 3600),  // 꺼둔 동안은 3시간에 걸쳐 천천히 마른다

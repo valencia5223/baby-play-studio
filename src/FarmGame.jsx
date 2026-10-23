@@ -734,11 +734,15 @@ export default function FarmGame({ audio, speak, animals = [] }) {
     s.feedVeg = () => {
       const herbs = game.animals.filter(a => farmPenOf(a.sp) === 'herb').length;
       if (!herbs) { showToast('🌿 초식동물 친구가 없어요!'); return; }
-      const crops = takeFromBasket(clamp(Math.ceil(herbs * 0.6), 1, 8));
+      // 한 번에 한 밭 수확만큼(6개), 초식동물이 많으면 그만큼 (최대 12개)
+      const crops = takeFromBasket(clamp(Math.max(6, herbs), 1, 12));
       s.basket = basketCount(loadGarden());
       if (!crops.length) { showToast('🧺 바구니가 비었어요! 텃밭에서 채소를 키워 와요'); say('vegempty', VOICE.farmBasketEmpty(), 4); return; }
       const [x0, x1] = penRange('herb');
-      crops.forEach((id, i) => s.food.push({ x: rand(x0, x1), d: rand(0.15, 0.85), bites: 3, fall: 1 + i * 0.15, life: 120, gone: 0, pen: 'herb', crop: id }));
+      crops.forEach((id, i) => s.food.push({ x: rand(x0, x1), d: rand(0.15, 0.85), bites: 2, fall: 1 + i * 0.12, life: 120, gone: 0, pen: 'herb', crop: id }));
+      const counts = {};
+      crops.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
+      showToast(`🧺 ${Object.entries(counts).map(([id, n]) => `${CROP_BY_ID[id].icon}${n}`).join(' ')} 채소 ${crops.length}개를 줬어요! (바구니에 ${s.basket}개 남음)`);
       audio.playYum();
       say('veg', VOICE.farmBasketFeed(), 4);
     };

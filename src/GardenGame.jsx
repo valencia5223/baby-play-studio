@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { VOICE } from './voiceLines.js';
 import { CROPS, CROP_BY_ID, farmSeasonOf, FARM_SEASONS, FARM_WEATHER } from './farmData.js';
-import { GARDEN_RATES, newPlot, loadGarden, saveGarden, catchUpGarden, basketCount } from './gardenData.js';
+import { GARDEN_RATES, GARDEN_YIELD, newPlot, loadGarden, saveGarden, catchUpGarden, basketCount } from './gardenData.js';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 🌱 텃밭 가꾸기 — 씨앗 심기 → 물 주기 → (벌레 쫓기) → 수확해서 바구니에 모으기
@@ -220,10 +220,13 @@ export default function GardenGame({ audio, speak }) {
       } else if (p.growth >= 1) {
         const crop = CROP_BY_ID[p.crop];
         Object.assign(p, newPlot());
-        garden.basket[crop.id] = (garden.basket[crop.id] || 0) + 1;
-        for (let j = 0; j < 3; j++) s.flies.push({ icon: crop.icon, x: cx + rand(-20, 20), y: cy, t: -j * 0.08 });
+        garden.basket[crop.id] = (garden.basket[crop.id] || 0) + GARDEN_YIELD;
+        // 밭에 있던 포기들이 하나씩 바구니로 날아간다
+        [0.42, 0.78].forEach((qy, row) => [0.22, 0.5, 0.78].forEach((qx, col) => {
+          s.flies.push({ icon: crop.icon, x: R.x + R.w * qx, y: R.y + R.h * qy, t: -(row * 3 + col) * 0.07 });
+        }));
         audio.playFanfare(); say('harvest', VOICE.gardenHarvest(crop), 2);
-        showToast(`🧺 ${crop.icon} ${crop.name} 바구니에 쏙! (목장 친구들에게 줄 수 있어요)`);
+        showToast(`🧺 ${crop.icon} ${crop.name} ${GARDEN_YIELD}개 바구니에 쏙! (목장 친구들에게 줄 수 있어요)`);
         pushHud();
       } else if (p.water < 0.97) {
         const dry = p.water < 0.3;
