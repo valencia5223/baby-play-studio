@@ -5,13 +5,14 @@ import {
   FARM_RATES, FARM_SLEEP_IDLE_SEC, isFarmNight, farmDirt, isFarmSad, farmCondition, farmGrowFactor,
   FARM_REWARDS, farmReleaseReward, newAnimal, loadFarm, saveFarm, catchUpFarm, farmTodayKey,
   YOUNG_GIFT_STARS, YOUNG_GIFT_MUL, farmBreedOf, farmMateStatus, FARM_SEX_NAMES, newFarmUid, FARM_LIMITS, FARM_VARIANTS, farmVariantOf, farmLookOf,
-  farmPenOf, FARM_PENS, CROP_BY_ID, FAVORITE_CROP, GARDEN_RATES, GARDEN_REWARDS, nextSeed, farmSeasonOf, FARM_SEASONS, FARM_WEATHER
+  farmPenOf, FARM_PENS, CROP_BY_ID, FAVORITE_CROP, FAVORITE_STARS, farmSeasonOf, FARM_SEASONS, FARM_WEATHER
 } from './farmData.js';
+import { loadGarden, basketCount, takeFromBasket } from './gardenData.js';
 const FARM_LIMITS_BREED = FARM_LIMITS.breed;
 
-// 들판 구역 (가로 비율): 왼쪽 텃밭 | 가운데 초식동물 우리 | 오른쪽 육식동물 우리
-const PEN_X = { garden: [0.012, 0.235], herb: [0.255, 0.665], meat: [0.685, 0.988] };
-const FENCE_X = [0.245, 0.675];
+// 들판 구역 (가로 비율): 왼쪽 초식동물 우리 | 오른쪽 육식동물 우리  (텃밭은 '텃밭 가꾸기' 탭으로 옮김)
+const PEN_X = { herb: [0.012, 0.6], meat: [0.62, 0.988] };
+const FENCE_X = [0.61];
 // 날씨가 이어지는 시간(초)
 const WEATHER_SEC = { sunny: [90, 180], cloudy: [45, 90], rain: [45, 80], snow: [60, 100] };
 // 계절 색: [먼 언덕, 가까운 언덕, 풀밭 위, 풀밭 아래, 나뭇잎]
@@ -475,7 +476,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
   const simRef = useRef(null);
   const modeRef = useRef('play');
 
-  const [hud, setHud] = useState({ points: 0, clean: 100, sick: 0, night: isFarmNight(), weather: 'sunny', season: farmSeasonOf() });
+  const [hud, setHud] = useState({ points: 0, clean: 100, sick: 0, night: isFarmNight(), weather: 'sunny', season: farmSeasonOf(), basket: 0 });
   const [mode, setModeState] = useState('play');
   const [shopOpen, setShopOpen] = useState(false);
   const [info, setInfo] = useState(null);
@@ -509,7 +510,8 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       lastSave: 0, lastHud: 0, lastVoice: {}, lastYum: -9, lastBubble: -9, lastSound: -9, nagT: 8, clockT: 0,
       // 날씨·계절 (날씨는 저장하지 않고 들어올 때마다 새로)
       season: farmSeasonOf(), weather: null, gloom: 0, rainAmt: 0, snowAmt: 0, wet: 0, snowCover: 0, rainbow: 0,
-      shelter: null, puddles: []
+      shelter: null, puddles: [],
+      basket: basketCount(loadGarden())   // 텃밭 바구니 채소 수 (🧺 버튼 숫자)
     };
     simRef.current = s;
     if (import.meta.env.DEV) window.__farm = s;   // 개발 중 확인용
@@ -621,7 +623,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       const yd = (d) => lerp(s.fieldTop, s.fieldBot, d);
       const sw = 116 * k, sh = 64 * k;
       s.shelter = {
-        herb: { x: lerp(PEN_X.herb[0], PEN_X.herb[1], 0.78) * W, w: sw },
+        herb: { x: lerp(PEN_X.herb[0], PEN_X.herb[1], 0.66) * W, w: sw },
         meat: { x: lerp(PEN_X.meat[0], PEN_X.meat[1], 0.66) * W, w: sw }
       };
       Object.values(s.shelter).forEach(({ x }) => {
@@ -653,12 +655,11 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         g.fillStyle = '#78350f'; g.font = `900 ${Math.round(13 * k)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
         g.fillText(text, cx, by + bh / 2 + 1);
       };
-      sign((PEN_X.garden[0] + PEN_X.garden[1]) / 2 * W, '🌱 텃밭');
-      sign(lerp(PEN_X.herb[0], PEN_X.herb[1], 0.35) * W, `${FARM_PENS.herb.icon} ${FARM_PENS.herb.name}`);
+      sign(lerp(PEN_X.herb[0], PEN_X.herb[1], 0.4) * W, `${FARM_PENS.herb.icon} ${FARM_PENS.herb.name}`);
       sign(lerp(PEN_X.meat[0], PEN_X.meat[1], 0.26) * W, `${FARM_PENS.meat.icon} ${FARM_PENS.meat.name}`);
       // 비 온 뒤 웅덩이 자리
       const prnd = seeded(5150);
-      s.puddles = Array.from({ length: 7 }, (_, i) => ({ pen: i < 4 ? 'herb' : 'meat', q: 0.12 + prnd() * 0.76, d: 0.2 + prnd() * 0.7, w: 0.8 + prnd() * 0.6 }));
+      s.puddles = Array.from({ length: 7 }, (_, i) => ({ pen: i < 5 ? 'herb' : 'meat', q: 0.12 + prnd() * 0.76, d: 0.2 + prnd() * 0.7, w: 0.8 + prnd() * 0.6 }));
       s.layer = c;
     };
     s.rebuild = () => buildLayer();
@@ -680,12 +681,6 @@ export default function FarmGame({ audio, speak, animals = [] }) {
     // 우리 안에서 다닐 수 있는 가로 범위(px)
     const penRange = (pen) => { const [a, b] = PEN_X[pen]; return [a * s.W + 24 * s.k, b * s.W - 24 * s.k]; };
     s.penRange = penRange;
-    // 텃밭 칸 (2열 × 3줄)
-    const plotRect = (i) => {
-      const col = i % 2, row = Math.floor(i / 2);
-      const x = s.W * (0.022 + col * 0.108), w = s.W * 0.098, d0 = 0.05 + row * 0.33, d1 = d0 + 0.26;
-      return { x, w, y: yOf(d0), h: yOf(d1) - yOf(d0), d: (d0 + d1) / 2 };
-    };
     const ensureRt = (a, entering) => {
       if (s.rt[a.uid]) return s.rt[a.uid];
       const [px0, px1] = penRange(farmPenOf(a.sp));
@@ -735,39 +730,17 @@ export default function FarmGame({ audio, speak, animals = [] }) {
     { const q = Math.random(); setWeather(q < 0.65 ? 'sunny' : q < 0.85 ? 'cloudy' : s.season === 'winter' ? 'snow' : 'rain', true); }
     s.setWeather = setWeather;
 
-    // ── 텃밭: 빈 칸은 심기, 자라는 칸은 물 주기, 다 자란 칸은 수확 ──
-    const hitPlot = (x, y) => {
-      for (let i = 0; i < game.garden.length; i++) {
-        const R = plotRect(i);
-        if (x >= R.x - 6 && x <= R.x + R.w + 6 && y >= R.y - 26 * s.k && y <= R.y + R.h + 6) return i;
-      }
-      return -1;
-    };
-    const tapPlot = (i) => {
-      const plot = game.garden[i], R = plotRect(i), cx = R.x + R.w / 2, cy = R.y + R.h / 2;
-      if (!plot.crop) {
-        const crop = CROP_BY_ID[plot.seed];
-        plot.crop = plot.seed; plot.growth = 0; plot.water = s.weather.kind === 'rain' ? 1 : 0;
-        audio.playPopSound(); hearts(cx, cy, '🌱', 3);
-        say('plant', VOICE.farmPlant(crop), 2);
-      } else if (plot.growth >= 1) {
-        const crop = CROP_BY_ID[plot.crop];
-        plot.crop = null; plot.growth = 0; plot.water = 0; plot.seed = nextSeed(plot.seed);
-        addPoints(GARDEN_REWARDS.harvest, cx, cy - 30); hearts(cx, cy, crop.icon, 4);
-        audio.playFanfare(); say('harvest', VOICE.farmHarvest(crop), 2);
-        // 딴 채소는 초식동물 우리에 먹이로
-        if (game.animals.some(a => farmPenOf(a.sp) === 'herb')) {
-          const [x0, x1] = penRange('herb');
-          s.food.push({ x: rand(x0, x1), d: rand(0.15, 0.85), bites: 3, fall: 1, life: 120, gone: 0, pen: 'herb', crop: crop.id });
-        }
-      } else {
-        const dry = plot.water < 0.3;
-        plot.water = 1;
-        for (let j = 0; j < 7; j++) s.fx.push({ x: cx + rand(-R.w * 0.4, R.w * 0.4), y: R.y - rand(10, 40), text: '💧', life: rand(0.5, 0.9), vy: rand(60, 110) });
-        audio.playBubble();
-        if (dry) { addPoints(GARDEN_REWARDS.water, cx, R.y - 20); say('water', VOICE.farmWater(), 4); }
-      }
-      saveFarm(game);
+    // ── 텃밭 바구니 채소를 초식동물 우리에 (좋아하는 채소를 먹으면 하트·별을 더) ──
+    s.feedVeg = () => {
+      const herbs = game.animals.filter(a => farmPenOf(a.sp) === 'herb').length;
+      if (!herbs) { showToast('🌿 초식동물 친구가 없어요!'); return; }
+      const crops = takeFromBasket(clamp(Math.ceil(herbs * 0.6), 1, 8));
+      s.basket = basketCount(loadGarden());
+      if (!crops.length) { showToast('🧺 바구니가 비었어요! 텃밭에서 채소를 키워 와요'); say('vegempty', VOICE.farmBasketEmpty(), 4); return; }
+      const [x0, x1] = penRange('herb');
+      crops.forEach((id, i) => s.food.push({ x: rand(x0, x1), d: rand(0.15, 0.85), bites: 3, fall: 1 + i * 0.15, life: 120, gone: 0, pen: 'herb', crop: id }));
+      audio.playYum();
+      say('veg', VOICE.farmBasketFeed(), 4);
     };
 
     // ── 입력 ──
@@ -866,8 +839,6 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         return;
       }
       if (m === 'wash') return;   // 문지르기는 매 프레임 처리
-      const pi = hitPlot(p.x, p.y);
-      if (pi >= 0) { tapPlot(pi); return; }
       const gi = s.gifts.findIndex(g => Math.hypot(g.x - p.x, yOf(g.d) - 14 * s.k - p.y) < 34 * s.k);
       if (gi >= 0) {
         const g = s.gifts[gi];
@@ -917,16 +888,6 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       s.snowCover = clamp(s.snowCover + (wk === 'snow' ? dt / 45 : -dt / 150), 0, 0.85);
       if (s.rainbow > 0) s.rainbow -= dt;
 
-      // 텃밭: 물기가 있을 때만 자라고, 비가 오면 저절로 물이 준다
-      game.garden.forEach(pl => {
-        if (!pl.crop || pl.growth >= 1) return;
-        if (raining) pl.water = 1;
-        if (pl.water > 0) {
-          pl.growth = Math.min(1, pl.growth + dt / CROP_BY_ID[pl.crop].growSec);
-          pl.water = Math.max(0, pl.water - GARDEN_RATES.dryPerSec * dt);
-          if (pl.growth >= 1) { say('ripe', VOICE.farmRipe(), 40); audio.playPopSound(); saveFarm(game); }
-        }
-      });
 
       // 밥
       s.food.forEach(f => {
@@ -1053,7 +1014,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
               a.happy = Math.min(100, a.happy + 15);
               if (FAVORITE_CROP[a.sp] === r.eatCrop) {
                 r.hopT = 0.6; hearts(r.x, yOf(r.d) - sizeOf(a, r), '💖', 6);
-                addPoints(GARDEN_REWARDS.favorite, r.x, yOf(r.d) - sizeOf(a, r) - 34);
+                addPoints(FAVORITE_STARS, r.x, yOf(r.d) - sizeOf(a, r) - 34);
                 say('fav', VOICE.farmFavorite(), 12);
               }
               r.eatCrop = null;
@@ -1127,7 +1088,6 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         if (hungry * 2 >= game.animals.length && !s.food.length) say('nag', VOICE.farmHungry(), 60);
         else if (game.poop.length >= 5) say('nag', VOICE.farmPoop(), 60);
         else if (game.animals.some(a => a.mud > 75)) say('nag', VOICE.farmDirty(), 60);
-        else if (game.garden.some(pl => pl.crop && pl.growth < 1 && pl.water <= 0)) say('nag', VOICE.farmThirsty(), 90);
       }
 
       s.fx.forEach(f => { f.life -= dt; f.y += f.vy * dt; });
@@ -1198,41 +1158,6 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       }
       // 쌓인 눈
       if (s.snowCover > 0.01) { ctx.fillStyle = `rgba(248,250,252,${s.snowCover * 0.6})`; ctx.fillRect(0, s.hz, W, H - s.hz); }
-      // 텃밭
-      game.garden.forEach((pl, i) => {
-        const R = plotRect(i), sc = scaleOf(R.d), cx = R.x + R.w / 2;
-        ctx.fillStyle = mixColor('#a87444', '#5b3a1e', clamp(pl.water, 0, 1));
-        rr(ctx, R.x, R.y, R.w, R.h, 8 * k); ctx.fill();
-        ctx.strokeStyle = '#78350f'; ctx.lineWidth = 2.5 * k; ctx.stroke();
-        ctx.strokeStyle = 'rgba(60,30,10,0.35)'; ctx.lineWidth = 2 * k;
-        for (let j = 1; j < 3; j++) { const yy = R.y + R.h * j / 3; ctx.beginPath(); ctx.moveTo(R.x + 6 * k, yy); ctx.lineTo(R.x + R.w - 6 * k, yy); ctx.stroke(); }
-        if (!pl.crop) {
-          // 심을 씨앗 그림을 흐리게 + 누르라는 손가락
-          emoji(CROP_BY_ID[pl.seed].icon, cx, R.y + R.h * 0.5, 22 * sc, 0.4);
-          emoji('👆', cx + R.w * 0.26, R.y + R.h * 0.78 + Math.sin(s.t * 4 + i) * 3, 15 * sc, 0.45 + 0.3 * Math.sin(s.t * 3 + i));
-          return;
-        }
-        const gr = pl.growth;
-        [0.2, 0.5, 0.8].forEach((q, j) => {
-          const px = R.x + R.w * q, py = R.y + R.h * (j === 1 ? 0.45 : 0.72);
-          if (gr < 0.12) { ctx.fillStyle = '#3f2a14'; ell(ctx, px, py, 2.6 * sc, 1.8 * sc); ctx.fill(); }
-          else if (gr < 1) {
-            const z = (5 + 14 * gr) * sc;
-            ctx.strokeStyle = '#15803d'; ctx.lineWidth = Math.max(1.2, 2 * sc); ctx.lineCap = 'round';
-            ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py - z * 0.8); ctx.stroke();
-            ctx.fillStyle = gr > 0.6 ? '#16a34a' : '#22c55e';
-            ell(ctx, px - z * 0.36, py - z * 0.72, z * 0.4, z * 0.18, -0.5); ctx.fill();
-            ell(ctx, px + z * 0.36, py - z * 0.78, z * 0.4, z * 0.18, 0.5); ctx.fill();
-          } else emoji(CROP_BY_ID[pl.crop].icon, px, py - 10 * sc + Math.sin(s.t * 3 + i + j) * 2 * sc, 26 * sc);
-        });
-        if (gr >= 1) emoji('✨', cx, R.y - 10 * sc + Math.sin(s.t * 4 + i) * 3, 18 * sc, 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3 + i)));
-        else if (pl.water <= 0.02) emoji('💧', cx, R.y - 12 * sc + Math.sin(s.t * 4 + i) * 3, 20 * sc, 0.6 + 0.4 * Math.abs(Math.sin(s.t * 3)));
-        // 자람 막대
-        const bw = R.w - 16 * k;
-        ctx.fillStyle = 'rgba(0,0,0,0.25)'; rr(ctx, R.x + 8 * k, R.y + R.h - 8 * k, bw, 4 * k, 2 * k); ctx.fill();
-        if (gr > 0.02) { ctx.fillStyle = gr >= 1 ? '#facc15' : '#4ade80'; rr(ctx, R.x + 8 * k, R.y + R.h - 8 * k, bw * clamp(gr, 0, 1), 4 * k, 2 * k); ctx.fill(); }
-      });
-
       // 땅 위의 것들을 뒤에서부터
       const items = [];
       game.poop.forEach(p => items.push({ d: p.y - 0.001, kind: 'poop', p }));
@@ -1407,7 +1332,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
       if (s.t - s.lastHud > 0.4) {
         s.lastHud = s.t;
         const avgMud = game.animals.length ? game.animals.reduce((n, a) => n + a.mud, 0) / game.animals.length : 0;
-        setHud({ points: game.points, clean: Math.round(100 - Math.max(farmDirt(game), avgMud)), sick: game.animals.filter(a => a.sick).length, night: s.night, weather: s.weather.kind, season: s.season });
+        setHud({ points: game.points, clean: Math.round(100 - Math.max(farmDirt(game), avgMud)), sick: game.animals.filter(a => a.sick).length, night: s.night, weather: s.weather.kind, season: s.season, basket: s.basket });
         setInfoTick(n => n + 1);
       }
       if (s.t - s.lastSave > 5) { s.lastSave = s.t; game.lastTick = Date.now(); saveFarm(game); }
@@ -1518,6 +1443,7 @@ export default function FarmGame({ audio, speak, animals = [] }) {
         {hud.night && <div title="밤 (저녁 8시 ~ 아침 7시)" style={{ fontSize: '1.9rem', lineHeight: 1, filter: 'drop-shadow(0 0 6px #fde68a)' }}>🌙</div>}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>
           <FarmButton icon="🥕" label="밥" color="#f97316" onClick={() => { setMode('play'); if (simRef.current) simRef.current.feed(); }} />
+          <FarmButton icon="🧺" label="채소" color="#65a30d" badge={hud.basket} onClick={() => { setMode('play'); if (simRef.current) simRef.current.feedVeg(); }} />
           <FarmButton icon={<BandageIcon />} label="치료" color="#f43f5e" badge={hud.sick} active={mode === 'heal'} onClick={() => { const m = mode === 'heal' ? 'play' : 'heal'; setMode(m); if (m === 'heal' && simRef.current) simRef.current.say('healmode', VOICE.farmHealMode(), 3); }} />
           <FarmButton icon="🧼" label="씻기·청소" color="#0ea5e9" active={mode === 'wash'} onClick={() => { const m = mode === 'wash' ? 'play' : 'wash'; setMode(m); if (m === 'wash' && simRef.current) simRef.current.say('washmode', VOICE.farmWashMode(), 20); }} />
           <FarmButton icon="🛒" label="상점" color="#8b5cf6" onClick={() => setShopOpen(true)} />

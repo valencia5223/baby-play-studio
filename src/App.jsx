@@ -32,6 +32,7 @@ import VOICE_INDEX from './voiceIndex.json';
 import AquariumGame from './AquariumGame.jsx';
 import FarmGame from './FarmGame.jsx';
 import TrainGame from './TrainGame.jsx';
+import GardenGame from './GardenGame.jsx';
 import LottoGacha from './LottoGacha.jsx';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
@@ -4052,7 +4053,7 @@ export default function App() {
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav style={{
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '5px',
+          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px',
           padding: '8px 8px', background: '#fff1f2', borderBottom: '3px solid #fca5a5',
           flexShrink: 0
         }}>
@@ -4060,6 +4061,7 @@ export default function App() {
             { id: 'cards', label: '📸 생생 카드', sub: '동물·과일·탈것', color: '#ef4444' },
             { id: 'ocean', label: '🐠 내 어항', sub: '물고기 키우기', color: '#06b6d4' },
             { id: 'farm', label: '🐮 내 목장', sub: '동물 키우기', color: '#16a34a' },
+            { id: 'garden', label: '🌱 텃밭 가꾸기', sub: '심고 물 주고 수확', color: '#65a30d' },
             // 🚂 기차 마을은 잠시 메뉴에서만 뺐다 (TrainGame.jsx·저장 데이터는 그대로, 아래 줄을 되살리면 다시 보인다)
             // { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
             { id: 'puzzle', label: '🧩 아기 퍼즐', sub: '조각 맞추기', color: '#8b5cf6' },
@@ -4363,6 +4365,13 @@ export default function App() {
 
           {/* ===== 🎰 로또 캡슐 뽑기 (LottoGacha.jsx, 어른용) ===== */}
           {activeTab === 'lotto' && <LottoGacha audio={audioEngine} />}
+
+          {/* ===== 🌱 텃밭 가꾸기 (GardenGame.jsx, 바구니 채소는 내 목장 🧺 버튼으로) ===== */}
+          {activeTab === 'garden' && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+              <GardenGame audio={audioEngine} speak={speakNaturalKorean} />
+            </div>
+          )}
 
           {/* ===== 모듈 3.6: 🚂 기차 마을 (TrainGame.jsx) ===== */}
           {activeTab === 'train' && (

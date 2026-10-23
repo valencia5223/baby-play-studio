@@ -126,7 +126,15 @@ export const VOICE = {
   farmWater: () => '물을 줬어요! 쑥쑥 자라라!',
   farmThirsty: () => '텃밭이 목말라요! 물을 주세요!',
   farmRipe: () => '텃밭 채소가 다 자랐어요! 눌러서 수확해요!',
-  farmHarvest: (crop) => `와아! ${attachJosa(crop.name, '을/를')} 수확했어요! 동물 친구들에게 줄게요!`,
+  gardenHarvest: (crop) => `와아! ${attachJosa(crop.name, '을/를')} 수확했어요! 바구니에 쏙!`,
+  gardenWelcome: () => '텃밭에 온 걸 환영해요! 씨앗을 골라서 밭에 심어 볼까요?',
+  gardenRain: () => '비가 와요! 텃밭 채소들이 물을 꿀꺽꿀꺽 마셔요!',
+  gardenBug: () => '앗! 애벌레가 채소를 먹으러 왔어요! 눌러서 쫓아 주세요!',
+  gardenBugGone: () => '훠이훠이! 애벌레를 쫓아냈어요!',
+  gardenEnough: () => '물은 충분해요! 쑥쑥 자라는 중이에요!',
+  gardenPickSeed: () => '어떤 씨앗을 심을까요? 골라 주세요!',
+  farmBasketFeed: () => '텃밭에서 키운 채소를 줬어요! 맛있게 먹어요!',
+  farmBasketEmpty: () => '바구니가 비었어요! 텃밭에서 채소를 키워 와요!',
   farmFavorite: () => '제일 좋아하는 음식이에요! 냠냠 신나요!',
   farmMeat: () => '육식동물 친구들은 고기를 먹어요!',
   farmNew: (species) => (species.babyName
@@ -204,7 +212,8 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   lines.push(VOICE.farmWelcome(), VOICE.farmWelcomeBack(), VOICE.farmHungry(), VOICE.farmDirty(), VOICE.farmPoop(), VOICE.farmFeed(), VOICE.farmWash(), VOICE.farmWashMode(),
     VOICE.farmGift(), VOICE.farmNeedMore(), VOICE.farmSick(), VOICE.farmHeal(), VOICE.farmNotSick(), VOICE.farmHealMode(), VOICE.farmNight(), VOICE.farmSleepTap(), VOICE.farmRelease(),
     VOICE.farmRain(), VOICE.farmSnow(), VOICE.farmRainbow(), VOICE.farmWater(), VOICE.farmThirsty(), VOICE.farmRipe(), VOICE.farmFavorite(), VOICE.farmMeat());
-  CROPS.forEach(c => lines.push(VOICE.farmPlant(c), VOICE.farmHarvest(c)));
+  CROPS.forEach(c => lines.push(VOICE.farmPlant(c), VOICE.gardenHarvest(c)));
+  lines.push(VOICE.gardenWelcome(), VOICE.gardenRain(), VOICE.gardenBug(), VOICE.gardenBugGone(), VOICE.gardenEnough(), VOICE.gardenPickSeed(), VOICE.farmBasketFeed(), VOICE.farmBasketEmpty());
   FARM_SPECIES.forEach(sp => {
     lines.push(VOICE.farmNew(sp), VOICE.farmGrow(sp, 'young'), VOICE.farmGrow(sp, 'adult'));
     Object.keys(FARM_STAGE_NAMES).forEach(stage => lines.push(VOICE.farmInfo(farmSpeciesAt(sp.id, stage), stage)));

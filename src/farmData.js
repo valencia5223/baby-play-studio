@@ -267,8 +267,8 @@ export const CARNIVORES = new Set(['dog', 'cat', 'fox', 'wolf', 'bear', 'lion', 
 export const farmPenOf = (spId) => (CARNIVORES.has(spId) ? 'meat' : 'herb');
 export const FARM_PENS = { herb: { name: '초식동물', icon: '🌿' }, meat: { name: '육식동물', icon: '🍖' } };
 
-// ── 텃밭 ── 밭 칸마다 씨앗을 심고(누르기) 물을 주면(누르기) 자라고, 다 자라면 눌러 수확한다.
-// 물기(water 1→0)가 있을 때만 자라고, 비가 오면 저절로 물이 준다. 수확한 채소는 초식동물 우리에 먹이로 넣는다.
+// ── 채소 ── '텃밭 가꾸기' 탭(GardenGame.jsx, 저장은 gardenData.js)에서 키워 바구니에 모으고,
+// 목장의 🧺 버튼으로 초식동물에게 준다. 좋아하는 채소를 먹으면 하트·별을 더 받는다.
 export const CROPS = [
   { id: 'carrot', name: '당근', icon: '🥕', growSec: 150 },
   { id: 'corn', name: '옥수수', icon: '🌽', growSec: 180 },
@@ -283,11 +283,7 @@ export const FAVORITE_CROP = {
   rabbit: 'carrot', horse: 'carrot', donkey: 'carrot', chicken: 'corn', duck: 'corn', alpaca: 'corn', zebra: 'corn', panda: 'corn',
   pig: 'pumpkin', cow: 'cabbage', sheep: 'cabbage', goat: 'cabbage', deer: 'strawberry', giraffe: 'strawberry', elephant: 'watermelon'
 };
-export const GARDEN_PLOTS = 6;
-export const GARDEN_RATES = { dryPerSec: 1 / 75, offlineDryPerSec: 1 / (3 * 3600), offlineGrowMul: 0.5 };
-export const GARDEN_REWARDS = { harvest: 4, favorite: 3, water: 1 };
-export const createGarden = () => Array.from({ length: GARDEN_PLOTS }, (_, i) => ({ seed: CROPS[i % CROPS.length].id, crop: null, growth: 0, water: 0 }));
-export const nextSeed = (id) => CROPS[(CROPS.findIndex(c => c.id === id) + 1) % CROPS.length].id;
+export const FAVORITE_STARS = 3;
 
 // ── 계절 ── 실제 달력 (3~5 봄, 6~8 여름, 9~11 가을, 12~2 겨울)
 export const FARM_SEASONS = {
@@ -314,7 +310,6 @@ export function createNewFarm() {
     points: 40,
     poop: [],     // { x, y } 는 밭 안의 0~1 비율 좌표
     eggs: [],     // 둥지 { uid, sp, x, d, n, t, family }
-    garden: createGarden(),   // 텃밭 칸 { seed: 심을 씨앗, crop: 자라는 채소, growth 0~1, water 0~1 }
     // 처음 받는 닭 두 마리는 암수 한 쌍
     animals: ['chicken', 'chicken', 'rabbit'].map((sp, i) => ({ ...newAnimal(sp), ...(i < 2 ? { sex: i ? 'f' : 'm' } : {}) })),
     lastTick: Date.now(),
@@ -332,9 +327,7 @@ export function loadFarm() {
         g.animals = g.animals.filter(a => FARM_BY_ID[a.sp]);
         if (!Array.isArray(g.poop)) g.poop = [];
         if (!Array.isArray(g.eggs)) g.eggs = [];
-        // 텃밭이 생기기 전의 목장
-        if (!Array.isArray(g.garden) || g.garden.length !== GARDEN_PLOTS) g.garden = createGarden();
-        g.garden.forEach((p, i) => { if (!CROP_BY_ID[p.seed]) p.seed = CROPS[i % CROPS.length].id; if (p.crop && !CROP_BY_ID[p.crop]) p.crop = null; });
+        // 예전 목장 텃밭(game.garden)은 '텃밭 가꾸기' 탭이 처음 열릴 때 옮겨 간다 (gardenData.js 의 loadGarden)
         // 암수가 생기기 전의 동물에게 성별을 정해 준다
         g.animals.forEach(a => { if (!a.sex) a.sex = randomSex(); });
         // 품종이 생기기 전의 강아지·고양이는 예전 모습(첫 품종)
@@ -369,13 +362,6 @@ export function catchUpFarm(game, now = Date.now()) {
     });
   }
   (game.eggs || []).forEach(e => { e.t = Math.max(1, e.t - gone); });
-  // 텃밭: 물기가 남아 있는 동안만 천천히 자란다
-  (game.garden || []).forEach(p => {
-    if (!p.crop) return;
-    const wetSec = Math.min(gone, p.water / GARDEN_RATES.offlineDryPerSec);
-    p.growth = Math.min(1, p.growth + wetSec * GARDEN_RATES.offlineGrowMul / CROP_BY_ID[p.crop].growSec);
-    p.water = Math.max(0, p.water - gone * GARDEN_RATES.offlineDryPerSec);
-  });
   game.lastTick = now;
   return { goneSec: gone, grown, sick };
 }
