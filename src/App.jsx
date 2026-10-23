@@ -4008,8 +4008,22 @@ export default function App() {
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* 🎵 동요 재생 (탭 줄 대신 맨 위에. 노래가 나오는 중에는 미니 플레이어의 곡 제목을 누르면 같은 화면) */}
+          {!songPlayerOn && <button onClick={() => {
+            audioEngine.interruptVoice();
+            setActiveTab('song');
+            audioEngine.playFreq(520, 'sine', 0.15);
+          }} title={`한국 동요 ${LOCAL_NURSERY_SONGS.length}곡`} style={{
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '14px', whiteSpace: 'nowrap',
+            border: activeTab === 'song' ? '2.5px solid #db2777' : '2.5px solid #f9a8d4',
+            background: activeTab === 'song' ? '#ec4899' : '#fdf2f8',
+            color: activeTab === 'song' ? '#ffffff' : '#be185d', fontWeight: 900, fontSize: '0.95rem', cursor: 'pointer',
+            boxShadow: activeTab === 'song' ? '0 6px 14px rgba(236,72,153,0.3)' : 'none'
+          }}>
+            🎵 동요 재생 <span style={{ fontSize: '0.72rem', opacity: 0.85 }}>({LOCAL_NURSERY_SONGS.length}곡)</span>
+          </button>}
           <button onClick={() => setIsIpadFrame(!isIpadFrame)} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '14px',
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '14px', whiteSpace: 'nowrap',
             border: isIpadFrame ? '2.5px solid #0284c7' : '2px solid #cbd5e1',
             background: isIpadFrame ? '#e0f2fe' : '#ffffff',
             color: isIpadFrame ? '#0369a1' : '#475569', fontWeight: 900, fontSize: '0.88rem', cursor: 'pointer'
@@ -4017,7 +4031,7 @@ export default function App() {
             <Smartphone size={17} /> {isIpadFrame ? 'iPad 12.9" 규격뷰' : '전체화면'}
           </button>
           <button onClick={() => setSoundEnabled(!soundEnabled)} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '14px',
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '14px', whiteSpace: 'nowrap',
             border: soundEnabled ? '2.5px solid #10b981' : '2px solid #cbd5e1',
             background: soundEnabled ? '#d1fae5' : '#f1f5f9',
             color: soundEnabled ? '#047857' : '#64748b', fontWeight: 900, fontSize: '0.88rem', cursor: 'pointer'
@@ -4038,7 +4052,7 @@ export default function App() {
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav style={{
-          display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '5px',
+          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '5px',
           padding: '8px 8px', background: '#fff1f2', borderBottom: '3px solid #fca5a5',
           flexShrink: 0
         }}>
@@ -4046,10 +4060,11 @@ export default function App() {
             { id: 'cards', label: '📸 생생 카드', sub: '동물·과일·탈것', color: '#ef4444' },
             { id: 'ocean', label: '🐠 내 어항', sub: '물고기 키우기', color: '#06b6d4' },
             { id: 'farm', label: '🐮 내 목장', sub: '동물 키우기', color: '#16a34a' },
-            { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
+            // 🚂 기차 마을은 잠시 메뉴에서만 뺐다 (TrainGame.jsx·저장 데이터는 그대로, 아래 줄을 되살리면 다시 보인다)
+            // { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
             { id: 'puzzle', label: '🧩 아기 퍼즐', sub: '조각 맞추기', color: '#8b5cf6' },
             { id: 'paint', label: '🎨 무지개 물감', sub: '터치 감각 미술', color: '#3b82f6' },
-            { id: 'song', label: '🎵 동요 재생', sub: `한국 동요 (${LOCAL_NURSERY_SONGS.length}곡)`, color: '#ec4899' },
+            // 🎵 동요 재생은 맨 위 헤더 버튼으로 옮겼다
             { id: 'lotto', label: '🎰 로또 뽑기', sub: '번호 캡슐 뽑기', color: '#4f46e5' }
           ].map(tab => {
             const isActive = activeTab === tab.id || (tab.id === 'cards' && isCardTab);
