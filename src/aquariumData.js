@@ -117,6 +117,60 @@ export const FISH_SPECIES = [
     top: '#78716c', belly: '#a8a29e', mottle: '#292524',
     tail: { color: 'rgba(120,113,108,0.85)', len: 0.18, spread: 0.3, solid: true }, fin: 'rgba(120,113,108,0.8)'
   },
+  // ── 새 민물 물고기 (모두 기존 normal 모양 + 무늬 조합) ──
+  {
+    id: 'medaka', name: '송사리', price: 75, len: 30, hRatio: 0.26, shape: 'normal', eyeK: 0.5, desc: '냇물의 작은 떼쟁이',
+    speed: 1.05, growMul: 1.25, school: true, zone: 'top',
+    top: '#c9a24a', belly: '#fff7d6',
+    bands: [{ color: 'rgba(255,255,255,0.55)', y: 0.02, from: 0.2, to: 0.9, w: 0.08 }],
+    tail: { color: 'rgba(253,230,138,0.6)', len: 0.3, spread: 0.32 }, fin: 'rgba(253,230,138,0.5)'
+  },
+  {
+    id: 'minnow', name: '피라미', price: 110, len: 46, hRatio: 0.26, shape: 'normal', eyeK: 0.42, desc: '분홍 줄무늬 냇물 달리기',
+    speed: 1.25, growMul: 1.05, school: true, zone: 'mid',
+    top: '#64748b', belly: '#f1f5f9', bars: 'rgba(244,114,182,0.8)',
+    bands: [{ color: 'rgba(96,165,250,0.7)', y: -0.06, from: 0.15, to: 0.95, w: 0.1 }],
+    tail: { color: 'rgba(148,163,184,0.7)', len: 0.34, spread: 0.46, fork: true }, fin: 'rgba(248,113,113,0.6)'
+  },
+  {
+    id: 'cherrybarb', name: '체리바브', price: 140, len: 36, hRatio: 0.36, shape: 'normal', desc: '체리처럼 빨개요',
+    speed: 0.95, growMul: 1.1, school: true, zone: 'mid',
+    top: '#b91c1c', belly: '#fca5a5',
+    bands: [{ color: 'rgba(69,10,10,0.55)', y: 0, from: 0.1, to: 0.95, w: 0.1 }],
+    tail: { color: 'rgba(220,38,38,0.7)', len: 0.32, spread: 0.38, fork: true }, fin: 'rgba(239,68,68,0.6)'
+  },
+  {
+    id: 'carp', name: '비단잉어', price: 300, len: 74, hRatio: 0.4, shape: 'normal', desc: '하얀 몸에 빨간 무늬',
+    speed: 0.5, growMul: 0.8, school: false, zone: 'mid',
+    top: '#f8fafc', belly: '#ffffff', patches: '#ef4444',
+    tail: { color: 'rgba(255,255,255,0.8)', len: 0.4, spread: 0.5 }, fin: 'rgba(255,255,255,0.75)'
+  },
+  // ── 새 바다 물고기 ──
+  {
+    id: 'damsel', name: '파랑 자리돔', price: 100, len: 36, hRatio: 0.46, shape: 'normal', desc: '새파랗게 반짝반짝', sea: true,
+    speed: 1, growMul: 1.15, school: true, zone: 'mid',
+    top: '#1d4ed8', belly: '#60a5fa', spots: 'rgba(191,219,254,0.8)',
+    tail: { color: 'rgba(37,99,235,0.8)', len: 0.3, spread: 0.4 }, fin: 'rgba(59,130,246,0.75)'
+  },
+  {
+    id: 'butterfly', name: '나비고기', price: 280, len: 50, hRatio: 0.9, shape: 'disc', desc: '노란 날개 나비처럼', sea: true,
+    speed: 0.7, growMul: 0.9, school: false, zone: 'mid',
+    top: '#facc15', belly: '#fef9c3', bars: 'rgba(15,23,42,0.85)',
+    tail: { color: 'rgba(250,204,21,0.85)', len: 0.25, spread: 0.32, solid: true }, fin: 'rgba(250,204,21,0.8)'
+  },
+  {
+    id: 'yellowtang', name: '옐로탱', price: 420, len: 58, hRatio: 0.66, shape: 'tang', desc: '샛노란 바다 친구', sea: true,
+    speed: 0.8, growMul: 0.85, school: false, zone: 'mid',
+    top: '#eab308', belly: '#fde047',
+    tail: { color: '#facc15', len: 0.36, spread: 0.4, solid: true }, fin: 'rgba(250,204,21,0.85)'
+  },
+  {
+    id: 'tuna', name: '참치', price: 450, len: 100, hRatio: 0.3, shape: 'normal', eyeK: 0.4, desc: '바다에서 제일 빨라요', sea: true,
+    speed: 1.45, growMul: 0.8, school: false, zone: 'mid',
+    top: '#1e3a8a', belly: '#e2e8f0',
+    bands: [{ color: 'rgba(250,204,21,0.85)', y: 0.02, from: 0.55, to: 0.95, w: 0.06 }],
+    tail: { color: 'rgba(30,58,138,0.9)', len: 0.34, spread: 0.6, fork: true, solid: true }, fin: 'rgba(250,204,21,0.75)'
+  },
   // ── 바다 친구 ── 물고기와 똑같이 밥 먹고·아프고·이름 짓고·자란다 (sea: 상점에서 바다 친구로 묶어 보여줌)
   //  shape 가 바다 친구 이름이면 drawFish 가 drawCreature 로 따로 그린다
   //  crawl: 바닥을 기어 다님(가라앉은 밥만 먹음) / swim: 기다가도 배고프면 헤엄쳐 올라가 밥을 먹음(게) / upright: 몸을 기울이지 않음
@@ -248,6 +302,16 @@ export const FISH_SPECIES = [
   }
 ];
 export const FISH_BY_ID = Object.fromEntries(FISH_SPECIES.map(f => [f.id, f]));
+
+// ── 어항 두 개: 민물 / 바다 ── 종류마다 사는 어항이 정해져 있다 (상점도 그 어항 친구만 보여 준다)
+export const TANKS = {
+  fresh: { id: 'fresh', name: '민물 어항', icon: '🌿' },
+  sea: { id: 'sea', name: '바다 어항', icon: '🌊' }
+};
+export const TANK_IDS = ['fresh', 'sea'];
+// 냇물·연못·강에 사는 친구 (나머지는 모두 바다)
+const FRESH_IDS = new Set(['neon', 'guppy', 'danio', 'goldfish', 'platy', 'cory', 'pleco', 'betta', 'angel', 'discus', 'crayfish', 'frog', 'turtle', 'shrimp', 'medaka', 'minnow', 'cherrybarb', 'carp']);
+export const habitatOf = (spId) => (FRESH_IDS.has(spId) ? 'fresh' : 'sea');
 // 개체를 부를 때 쓰는 종류 정보: 올챙이처럼 어릴 때 이름이 따로 있으면(babyName) 다 크기 전까지는 그 이름으로 부른다
 const BABY_VIEW = Object.fromEntries(FISH_SPECIES.filter(f => f.babyName).map(f => [f.id, { ...f, name: f.babyName }]));
 export const speciesOf = (f) => (BABY_VIEW[f.sp] && f.growth < 0.8 ? BABY_VIEW[f.sp] : FISH_BY_ID[f.sp]);
@@ -275,13 +339,14 @@ export const DECOR_ITEMS = [
   { id: 'grass', name: '수초 덤불', price: 70, icon: '🌿' },
   { id: 'rock', name: '둥근 바위', price: 50, icon: '🪨' },
   { id: 'sword', name: '넓은잎 수초', price: 120, icon: '🍃' },
-  { id: 'coral', name: '분홍 산호', price: 150, icon: '🪸' },
+  { id: 'coral', name: '분홍 산호', price: 150, icon: '🪸', only: 'sea' },
   { id: 'airstone', name: '뽀글 기포돌', price: 170, icon: '🫧' },
   { id: 'chest', name: '보물상자', price: 250, icon: '💰' },
   { id: 'castle', name: '모래성', price: 330, icon: '🏰' },
   { id: 'diver', name: '잠수부 아저씨', price: 420, icon: '🤿' }
 ];
 export const DECOR_BY_ID = Object.fromEntries(DECOR_ITEMS.map(d => [d.id, d]));
+export const decorFits = (id, tank) => !DECOR_BY_ID[id]?.only || DECOR_BY_ID[id].only === tank;
 
 // 기본 물고기(처음 받는 치어 종류)를 상점에서 더 살 때 가격
 export const STARTER_FISH_PRICE = 50;
@@ -358,7 +423,14 @@ export const releaseReward = (f) => {
 export const REWARDS = { eat: 1, poop: 2, algae: 1, waterChange: 10, juvenile: 20, adult: 50, pearl: 5, daily: 20, pet: 1, heal: 5, birth: 10 };
 
 // ── 저장 ──
-export const SAVE_KEY = 'bps_aquarium_v1';
+// 버전 2: 어항 두 개. 조개·오늘의 선물·환영 인사는 같이 쓰고, 물고기·물 더러움·장식 등은 어항마다 따로.
+//   { version: 2, tank, points, lastDaily, welcomed, tanks: { fresh: {...}, sea: {...} } }
+// 화면에는 한 번에 한 어항만 열리므로, loadGame(tank) 는 그 어항 칸을 펼친 예전(버전 1) 모양의 game 을 돌려주고
+// saveGame(game) 이 다시 접어 저장한다 (AquariumGame.jsx 의 나머지 코드는 어항이 하나일 때와 똑같이 돈다).
+export const SAVE_KEY = 'bps_aquarium_v2';
+const OLD_SAVE_KEY = 'bps_aquarium_v1';   // 예전 한 어항 저장 (옮긴 뒤에도 지우지 않고 남겨 둔다)
+const SHARED_FIELDS = ['points', 'lastDaily', 'welcomed'];
+const TANK_FIELDS = ['dirt', 'algae', 'poop', 'fish', 'eggs', 'decor', 'lastTick'];
 let uidSeq = 0;
 export const newUid = () => `${Date.now().toString(36)}${(uidSeq++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
@@ -384,63 +456,121 @@ export function mateStatus(game, f, now = Date.now()) {
   return null;
 }
 
-export function createNewGame() {
+// 떼 지어 다니는 종류는 암수가 섞이게
+const starterFish = (list) => list.map((sp, i, arr) => {
+  const f = newFish(sp);
+  const idx = arr.slice(0, i).filter(x => x === sp).length;
+  if (arr.filter(x => x === sp).length > 1) f.sex = idx % 2 ? 'f' : 'm';
+  return f;
+});
+
+function newTank(tank) {
   return {
-    version: 1,
-    points: 30,
     dirt: 0,
     algae: 0,
     poop: [],
-    // 처음엔 기본 물고기들의 치어로 시작 (떼 지어 다니는 종류는 여러 마리)
-    // 떼 지어 다니는 종류는 암수가 섞이게
-    fish: ['neon', 'neon', 'neon', 'danio', 'danio', 'guppy', 'guppy', 'goldfish'].map((sp, i, arr) => {
-      const f = newFish(sp);
-      const idx = arr.slice(0, i).filter(x => x === sp).length;
-      if (arr.filter(x => x === sp).length > 1) f.sex = idx % 2 ? 'f' : 'm';
-      return f;
-    }),
+    // 민물은 기본 물고기 치어들로, 바다는 흰동가리 한 쌍으로 시작
+    fish: tank === 'fresh' ? starterFish(['neon', 'neon', 'neon', 'danio', 'danio', 'guppy', 'guppy', 'goldfish']) : starterFish(['clownfish', 'clownfish']),
     eggs: [],
-    decor: [
-      { uid: newUid(), id: 'grass', x: 0.12 },
-      { uid: newUid(), id: 'rock', x: 0.72 },
-      { uid: newUid(), id: 'grass', x: 0.86 }
-    ],
-    lastTick: Date.now(),
-    lastDaily: '',
-    welcomed: false
+    decor: tank === 'fresh'
+      ? [{ uid: newUid(), id: 'grass', x: 0.12 }, { uid: newUid(), id: 'rock', x: 0.72 }, { uid: newUid(), id: 'grass', x: 0.86 }]
+      : [{ uid: newUid(), id: 'coral', x: 0.18 }, { uid: newUid(), id: 'rock', x: 0.7 }],
+    lastTick: Date.now()
   };
 }
 
-export function loadGame() {
+function newStore() {
+  return { version: 2, tank: 'fresh', points: 30, lastDaily: '', welcomed: false, tanks: { fresh: newTank('fresh'), sea: newTank('sea') } };
+}
+
+// 예전 한 어항 저장(버전 1)을 읽어 고칠 것들을 고친다
+function readOldGame() {
+  const raw = localStorage.getItem(OLD_SAVE_KEY);
+  if (!raw) return null;
+  const g = JSON.parse(raw);
+  if (!g || g.version !== 1 || !Array.isArray(g.fish)) return null;
+  // 디자인이 생기기 전에 들어온 구피는 원래 모습(무지개)으로
+  g.fish.forEach(f => { if (f.sp === 'guppy' && !f.variant) f.variant = 'rainbow'; });
+  // 예전 '바다 친구'는 이제 물고기와 똑같이 돌보는 개체로 옮긴다 (니모 물고기 → 흰동가리)
+  (g.friends || []).forEach(fr => {
+    const sp = fr.id === 'fish' ? 'clownfish' : fr.id;
+    if (!FISH_BY_ID[sp]) return;
+    g.fish.push({
+      uid: fr.uid || newUid(), sp, growth: typeof fr.growth === 'number' ? fr.growth : 1, full: 80, happy: 80,
+      bornAt: fr.bornAt || Date.now(), shiny: !!fr.shiny, sex: randomSex()
+    });
+  });
+  if (!Array.isArray(g.eggs)) g.eggs = [];
+  return g;
+}
+
+// 한 어항 → 두 어항: 물고기·알은 사는 곳에 따라 나누고, 장식은 두 어항에 똑같이 하나씩 (산호는 바다에만).
+// 똥·유리 이끼는 원래 어항을 이어받는 민물 어항에, 물 더러움은 두 어항 모두 그대로.
+function splitOldGame(g) {
+  const tankOf = (tank) => {
+    const fish = g.fish.filter(f => FISH_BY_ID[f.sp] && habitatOf(f.sp) === tank);
+    const decor = (g.decor || []).filter(d => DECOR_BY_ID[d.id] && decorFits(d.id, tank)).map(d => ({ ...d, uid: tank === 'fresh' ? d.uid : newUid() }));
+    return {
+      dirt: g.dirt || 0,
+      algae: tank === 'fresh' ? (g.algae || 0) : 0,
+      poop: tank === 'fresh' ? (g.poop || []) : [],
+      fish: fish.length ? fish : newTank(tank).fish,
+      eggs: g.eggs.filter(e => habitatOf(e.sp) === tank),
+      decor: decor.length ? decor : newTank(tank).decor,
+      lastTick: g.lastTick || Date.now()
+    };
+  };
+  return {
+    version: 2, tank: 'fresh', points: g.points || 0, lastDaily: g.lastDaily || '', welcomed: !!g.welcomed,
+    tanks: { fresh: tankOf('fresh'), sea: tankOf('sea') }
+  };
+}
+
+let store = null;
+function readStore() {
+  if (store) return store;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) {
-      const g = JSON.parse(raw);
-      if (g && g.version === 1 && Array.isArray(g.fish)) {
-        // 디자인이 생기기 전에 들어온 구피는 원래 모습(무지개)으로
-        g.fish.forEach(f => { if (f.sp === 'guppy' && !f.variant) f.variant = 'rainbow'; });
-        // 예전 '바다 친구'는 이제 물고기와 똑같이 돌보는 개체로 옮긴다 (니모 물고기 → 흰동가리)
-        (g.friends || []).forEach(fr => {
-          const sp = fr.id === 'fish' ? 'clownfish' : fr.id;
-          if (!FISH_BY_ID[sp]) return;
-          g.fish.push({
-            uid: fr.uid || newUid(), sp, growth: typeof fr.growth === 'number' ? fr.growth : 1, full: 80, happy: 80,
-            bornAt: fr.bornAt || Date.now(), shiny: !!fr.shiny, sex: randomSex()
-          });
-        });
-        g.friends = [];
-        // 암수가 생기기 전의 물고기에게 성별을 정해 준다
-        g.fish.forEach(f => { if (!f.sex) f.sex = randomSex(); });
-        if (!Array.isArray(g.eggs)) g.eggs = [];
-        return g;
-      }
+    const st = raw && JSON.parse(raw);
+    if (st && st.version === 2 && st.tanks) store = st;
+    else {
+      const old = readOldGame();
+      store = old ? splitOldGame(old) : newStore();
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(store)); } catch (e) { /* 저장 실패는 무시 */ }
     }
-  } catch (e) { /* 저장소를 못 쓰면 새 게임 */ }
-  return createNewGame();
+  } catch (e) { store = newStore(); }
+  TANK_IDS.forEach(id => {
+    const t = store.tanks[id] || (store.tanks[id] = newTank(id));
+    t.fish.forEach(f => { if (!f.sex) f.sex = randomSex(); });   // 암수가 생기기 전의 물고기에게 성별을 정해 준다
+    if (!Array.isArray(t.eggs)) t.eggs = [];
+    if (!Array.isArray(t.poop)) t.poop = [];
+    if (!Array.isArray(t.decor)) t.decor = [];
+  });
+  if (!TANK_IDS.includes(store.tank)) store.tank = 'fresh';
+  return store;
+}
+
+// 마지막으로 보던 어항
+export const loadTankChoice = () => readStore().tank;
+
+// 그 어항의 game (어항 칸 + 같이 쓰는 칸). 고른 어항을 기억해 둔다
+export function loadGame(tank = loadTankChoice()) {
+  const st = readStore();
+  st.tank = tank;
+  const game = { version: 2, tank };
+  SHARED_FIELDS.forEach(k => { game[k] = st[k]; });
+  TANK_FIELDS.forEach(k => { game[k] = st.tanks[tank][k]; });
+  return game;
 }
 
 export function saveGame(game) {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(game)); } catch (e) { /* 저장 실패는 무시 */ }
+  const st = readStore();
+  const tank = game.tank || 'fresh';
+  SHARED_FIELDS.forEach(k => { st[k] = game[k]; });
+  const t = st.tanks[tank];
+  TANK_FIELDS.forEach(k => { t[k] = game[k]; });
+  st.tank = tank;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(st)); } catch (e) { /* 저장 실패는 무시 */ }
 }
 
 // 앱을 꺼둔 시간만큼 천천히 배고파지고, 물이 더러워지고, 조금씩 자란다 (1분 단위로 계산)

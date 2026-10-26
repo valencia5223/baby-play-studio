@@ -4,6 +4,7 @@
 //  - 돌봐서 모은 조개(포인트)로 상점에서 물고기(치어)·장식·바다 친구를 사서 꾸민다
 //  - 그래픽: 캔버스(물고기·바다 친구·수초·장식·모래·거품) + WebGL 빛 레이어(물결 빛무늬·햇살)
 //    + 유리 이끼/탁한 물 레이어
+//  - 어항은 민물·바다 두 개 (종류마다 사는 어항이 정해져 있음, 조개는 같이 씀). 고르면 같은 화면이 그 어항으로 다시 시작한다
 //  - 진행 상황은 이 기기의 localStorage 에 저장된다 (aquariumData.js)
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
@@ -11,7 +12,7 @@ import { VOICE, attachJosa } from './voiceLines.js';
 import {
   FISH_SPECIES, FISH_BY_ID, speciesOf, releaseReward, GUPPY_BY_ID, DECOR_ITEMS, DECOR_BY_ID, STARTER_FISH_PRICE, LIMITS, STAGE_NAMES,
   stageOf, sizeScale, RATES, breedOf, mateStatus, SEX_NAMES, isNightTime, SLEEP_IDLE_SEC, isSad, conditionOf, growFactor, REWARDS,
-  loadGame, saveGame, catchUpOffline, newFish, newUid, todayKey
+  loadGame, saveGame, catchUpOffline, newFish, newUid, todayKey, TANKS, TANK_IDS, habitatOf, decorFits, loadTankChoice
 } from './aquariumData.js';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -1902,6 +1903,8 @@ export default function AquariumGame({ audio, speak }) {
   const rootRef = useRef(null);
   const [full, setFull] = useState(false);   // 전체화면 (지원하면 진짜 전체화면, 아니면 화면을 꽉 채우기)
   const [light, setLight] = useState(3);            // 조명 단계 (처음엔 가장 밝게 켜짐)
+  const lightLvlRef = useRef(3);                     // 어항을 바꿔도 조명 단계는 그대로
+  const [tank, setTank] = useState(loadTankChoice);  // 'fresh' 민물 / 'sea' 바다
 
   const setMode = (m) => { modeRef.current = m; setModeState(m); };
 
@@ -1921,7 +1924,9 @@ export default function AquariumGame({ audio, speak }) {
     const octx = overlay.getContext('2d');
     const light = initLightLayer(lightRef.current);
 
-    const game = loadGame();
+    const switching = !!simRef.current;   // 어항을 바꿔서 다시 시작하는 중
+    const game = loadGame(tank);
+    const fresh = tank === 'fresh';
     const offline = catchUpOffline(game);
     saveGame(game);   // 꺼둔 동안 생긴 변화(아픔·성장)를 바로 저장
     const s = {
@@ -1932,7 +1937,7 @@ export default function AquariumGame({ audio, speak }) {
       pointer: { down: false, x: 0, y: 0, downAt: 0, drag: null },
       tilt: { x: 0, y: 0 }, tiltRaw: { x: 0, y: 0 }, tiltBase: null,
       shaker: null, waterChange: null, overlayKey: '', algaeLayer: null,
-      dtLast: 0, fx: 1, lampNow: LAMP[3], light: 3, ambient: ambientDark(), darkNow: 0, glNow: 1, night: isNightTime(), sleeping: false, lastActive: 0, touched: false,
+      dtLast: 0, fx: 1, lampNow: LAMP[lightLvlRef.current], light: lightLvlRef.current, tank, ambient: ambientDark(), darkNow: 0, glNow: 1, night: isNightTime(), sleeping: false, lastActive: 0, touched: false,
       lastSave: 0, lastHud: 0, lastVoice: {}, lastYum: 0, bubbleT: 0, backdrop: null, gravel: null
     };
     simRef.current = s;
@@ -1950,7 +1955,8 @@ export default function AquariumGame({ audio, speak }) {
     }
     if (offline.grown.length) setTimeout(() => showToast(`🌱 그동안 ${offline.grown.length}마리가 자랐어요!`), 3200);
     if (offline.sick && offline.sick.length) setTimeout(() => { showToast(`🩹 그동안 ${offline.sick.length}마리가 아파졌어요! 밴드를 붙여 주세요`); speak(VOICE.aquaSick(speciesOf(offline.sick[0]))); }, 6000);
-    if (welcomeLines.length) setTimeout(() => speak(welcomeLines[0]), 500);
+    if (!welcomeLines.length && switching) welcomeLines.push(fresh ? VOICE.aquaTankFresh() : VOICE.aquaTankSea());
+    if (welcomeLines.length) setTimeout(() => speak(welcomeLines[0]), switching ? 150 : 500);
 
     setPlaced({ decor: game.decor.slice() });
     // 이름 지은 물고기의 인사 음성을 미리 받아 둔다 (눌렀을 때 바로 남성 음성으로)
@@ -2001,6 +2007,154 @@ export default function AquariumGame({ audio, speak }) {
       }
       const sc = L / Lq;
       ctx.drawImage(c, -c.ox * sc, -c.oh / 2 * sc, c.ow * sc, c.oh * sc);
+    };
+
+
+    // ── 민물 어항 배경: 맑은 초록빛 물 + 뒤쪽 수초 숲·유목(물에 잠긴 나뭇가지) + 갈색 수초 흙·냇돌·잔디 수초 ──
+    // (바다 어항은 위의 파란 물·모래 자갈 그대로)
+    const buildFreshLayers = () => {
+      const { W, H, floor, k } = s;
+      const rnd = (() => { let v = 7; return () => { v = (v * 16807) % 2147483647; return v / 2147483647; }; })();   // 크기가 바뀌어도 같은 모습
+      const [bc, bx] = makeLayer(W, H);
+      const g = bx.createLinearGradient(0, s.surfaceBase, 0, H);
+      g.addColorStop(0, '#8be3c4'); g.addColorStop(0.3, '#34b394'); g.addColorStop(0.7, '#1d7f67'); g.addColorStop(1, '#134f43');
+      bx.fillStyle = g; bx.fillRect(0, 0, W, H);
+      // 멀리 흐릿한 수초 숲 (위로 갈수록 물빛에 녹아든다)
+      const ribbon = (x, h, w, bend, col) => {
+        bx.fillStyle = col;
+        bx.beginPath(); bx.moveTo(x - w, floor);
+        bx.quadraticCurveTo(x - w + bend * 0.5, floor - h * 0.55, x + bend, floor - h);
+        bx.quadraticCurveTo(x + w + bend * 0.5, floor - h * 0.5, x + w, floor); bx.fill();
+      };
+      const far = bx.createLinearGradient(0, floor - H * 0.75, 0, floor);
+      far.addColorStop(0, 'rgba(30,110,80,0)'); far.addColorStop(1, 'rgba(30,110,80,0.42)');
+      for (let x = -10; x < W + 10; x += 9 + rnd() * 9) ribbon(x, H * (0.35 + rnd() * 0.4), 3 + rnd() * 3, (rnd() - 0.5) * 50, far);
+      // 뒤쪽 흙 언덕
+      bx.fillStyle = 'rgba(52,38,26,0.55)';
+      bx.beginPath(); bx.moveTo(0, floor);
+      for (let x = 0; x <= W; x += 30) bx.lineTo(x, floor - 18 - Math.sin(x * 0.011 + 0.6) * 14 - Math.sin(x * 0.037) * 5);
+      bx.lineTo(W, floor); bx.closePath(); bx.fill();
+      // 유목: 왼쪽 바닥에서 비스듬히 뻗은 나뭇가지
+      const wood = (pts, w0, w1) => {
+        for (let i = 0; i < pts.length - 1; i++) {
+          const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+          const ww = w0 + (w1 - w0) * (i / (pts.length - 1));
+          bx.strokeStyle = '#4a3222'; bx.lineWidth = ww; bx.lineCap = 'round';
+          bx.beginPath(); bx.moveTo(x0, y0); bx.lineTo(x1, y1); bx.stroke();
+          bx.strokeStyle = 'rgba(160,120,80,0.45)'; bx.lineWidth = ww * 0.28;
+          bx.beginPath(); bx.moveTo(x0 - ww * 0.2, y0 - ww * 0.25); bx.lineTo(x1 - ww * 0.2, y1 - ww * 0.25); bx.stroke();
+        }
+      };
+      const wx = W * 0.16, top = floor - H * 0.55;
+      const trunk = [[wx - 30 * k, floor + 4], [wx, floor - H * 0.16], [wx + 34 * k, floor - H * 0.32], [wx + 56 * k, top]];
+      wood(trunk, 22 * k, 9 * k);
+      wood([trunk[1], [wx - 40 * k, floor - H * 0.3], [wx - 60 * k, floor - H * 0.42]], 11 * k, 5 * k);
+      wood([trunk[2], [wx + 90 * k, floor - H * 0.4], [wx + 130 * k, floor - H * 0.43]], 10 * k, 4 * k);
+      wood([trunk[3], [wx + 40 * k, top - 30 * k]], 7 * k, 4 * k);
+      // 유목에 붙은 이끼 뭉치
+      [[trunk[1], 16], [trunk[2], 14], [[wx + 90 * k, floor - H * 0.4], 12], [[wx - 40 * k, floor - H * 0.3], 11], [trunk[3], 10]].forEach(([[mx, my], r]) => {
+        for (let i = 0; i < 7; i++) {
+          const a = rnd() * TAU, d = rnd() * r * 0.7 * k;
+          bx.fillStyle = i % 2 ? 'rgba(74,140,52,0.9)' : 'rgba(110,170,70,0.85)';
+          bx.beginPath(); bx.arc(mx + Math.cos(a) * d, my + Math.sin(a) * d * 0.6 - 3 * k, (r * 0.35 + rnd() * r * 0.3) * k, 0, TAU); bx.fill();
+        }
+      });
+      // 오른쪽 뒤 줄기 수초 (끝이 붉은 동글잎)
+      for (let i = 0; i < 7; i++) {
+        const sx = W * (0.68 + i * 0.045) + (rnd() - 0.5) * 10, sh = H * (0.3 + rnd() * 0.22);
+        const sway = (rnd() - 0.5) * 24;
+        bx.strokeStyle = 'rgba(52,110,50,0.9)'; bx.lineWidth = 2 * k;
+        bx.beginPath(); bx.moveTo(sx, floor); bx.quadraticCurveTo(sx + sway * 0.3, floor - sh * 0.5, sx + sway, floor - sh); bx.stroke();
+        for (let j = 1; j <= 12; j++) {
+          const tt = j / 12, ly = floor - sh * tt, lx = sx + sway * tt * tt;
+          bx.fillStyle = tt > 0.72
+            ? `rgba(${Math.round(200 + rnd() * 30)},${Math.round(80 + rnd() * 40)},70,0.92)`
+            : `rgba(${Math.round(70 + rnd() * 30)},${Math.round(150 + rnd() * 40)},70,0.9)`;
+          [-1, 1].forEach(side => { bx.beginPath(); bx.ellipse(lx + side * 5 * k, ly, 5 * k, 2.4 * k, side * 0.5, 0, TAU); bx.fill(); });
+        }
+      }
+      s.backdrop = bc; s.backdropPlain = bc;
+
+      // 바닥: 갈색 수초 흙 + 냇돌 + 잔디 수초
+      const [gc, gx] = makeLayer(W, H);
+      const sg = gx.createLinearGradient(0, floor - 8, 0, H);
+      sg.addColorStop(0, '#6b5038'); sg.addColorStop(1, '#2e2219');
+      gx.fillStyle = sg;
+      gx.beginPath(); gx.moveTo(0, H);
+      for (let x = 0; x <= W; x += 8) gx.lineTo(x, groundY(x));
+      gx.lineTo(W, H); gx.closePath(); gx.fill();
+      const soilCols = ['#4a3727', '#7a5c40', '#3b2b1f', '#8b6b4a', '#5c4430'];
+      const n = Math.round(W * s.gravelH / 26);
+      for (let i = 0; i < n; i++) {
+        const x = rnd() * W, y = groundY(x) + 3 + Math.pow(rnd(), 0.8) * (H - groundY(x) - 3);
+        gx.fillStyle = soilCols[i % soilCols.length];
+        gx.beginPath(); gx.arc(x, y, (1 + rnd() * 1.8) * k, 0, TAU); gx.fill();
+      }
+      const stoneCols = [['#d6d3d1', '#78716c'], ['#e7d8bf', '#8a7356'], ['#a8a29e', '#57534e'], ['#cbbfa8', '#6b5d48']];
+      const stones = Math.round(W / 70);
+      for (let i = 0; i < stones; i++) {
+        const x = rnd() * W, y = groundY(x) + 6 + rnd() * Math.max(1, H - groundY(x) - 10), r = (5 + rnd() * 7) * k;
+        const [c1, c2] = stoneCols[i % stoneCols.length];
+        const pg = gx.createRadialGradient(x - r * 0.4, y - r * 0.4, r * 0.1, x, y, r * 1.3);
+        pg.addColorStop(0, c1); pg.addColorStop(1, c2);
+        gx.fillStyle = pg; gx.beginPath(); gx.ellipse(x, y, r * 1.4, r, (rnd() - 0.5) * 0.6, 0, TAU); gx.fill();
+      }
+      // 흙 위를 덮은 잔디 수초 (뭉치마다 짧은 잎 여러 개)
+      gx.lineCap = 'round';
+      for (let x = 0; x < W; x += 5 + rnd() * 7) {
+        if (rnd() < 0.18) continue;   // 군데군데 흙이 보이게
+        const gy0 = groundY(x) + 3;
+        for (let j = 0; j < 4; j++) {
+          const bx0 = x + (rnd() - 0.5) * 6, h = (5 + rnd() * 8) * k, lean = (rnd() - 0.5) * 6 * k;
+          gx.strokeStyle = rnd() < 0.5 ? '#4d9a3c' : '#6dbb4a'; gx.lineWidth = 1.6 * k;
+          gx.beginPath(); gx.moveTo(bx0, gy0); gx.quadraticCurveTo(bx0 + lean * 0.3, gy0 - h * 0.6, bx0 + lean, gy0 - h); gx.stroke();
+        }
+      }
+      const front = gx.createLinearGradient(0, floor + 10, 0, H);
+      front.addColorStop(0, 'rgba(15,23,42,0)'); front.addColorStop(1, 'rgba(15,23,42,0.28)');
+      gx.fillStyle = front; gx.fillRect(0, floor + 10, W, H - floor);
+      s.gravel = gc;
+    };
+
+    // 민물 어항 수면의 연잎·연꽃·개구리밥 (수면이 출렁이면 같이 흔들린다)
+    const LILY = [{ x: 0.24, r: 30, flower: false }, { x: 0.5, r: 22, flower: false }, { x: 0.78, r: 34, flower: true }];
+    const surfaceAt = (x) => s.surface + Math.sin(x * 0.035 + s.t * 2.2) * 1.6 + s.tilt.x * (x - s.W / 2) * 0.04;
+    const drawLilies = () => {
+      const { W, t, k } = s;
+      for (let i = 0; i < 26; i++) {
+        const x = ((i * 0.137 + 0.05) % 1) * W + Math.sin(t * 0.3 + i) * 6;
+        ctx.fillStyle = i % 3 ? '#86c94f' : '#5ea83a';
+        ctx.beginPath(); ctx.ellipse(x, surfaceAt(x) + 1, 3.2 * k, 1.4 * k, 0, 0, TAU); ctx.fill();
+      }
+      LILY.forEach((p, i) => {
+        const x = p.x * W + Math.sin(t * 0.4 + i * 2) * 8, y = surfaceAt(x);
+        const r = p.r * k;
+        // 줄기: 물속으로 늘어진 연줄기
+        ctx.strokeStyle = 'rgba(60,120,50,0.55)'; ctx.lineWidth = 2 * k;
+        ctx.beginPath(); ctx.moveTo(x, y + 2); ctx.quadraticCurveTo(x + Math.sin(t * 0.6 + i) * 10, y + 40 * k, x - 6 * k, y + 80 * k); ctx.stroke();
+        // 잎: 옆에서 본 납작한 원판 (아랫면은 진하게, 윗면은 밝게)
+        ctx.fillStyle = '#3f7f2e';
+        ctx.beginPath(); ctx.ellipse(x, y + 2 * k, r, r * 0.2, 0, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#6cbf45';
+        ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.16, 0, 0, TAU); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1.2 * k;
+        ctx.beginPath(); ctx.ellipse(x, y - 0.5, r * 0.8, r * 0.1, 0, Math.PI * 1.1, Math.PI * 1.6); ctx.stroke();
+        if (!p.flower) return;
+        // 연꽃: 수면 위로 피어 있는 분홍 꽃
+        const fx = x + r * 0.3, fy = y - 2 * k;
+        [[-0.9, 0.55], [0.9, 0.55], [-0.45, 0.9], [0.45, 0.9], [0, 1]].forEach(([a, len]) => {
+          ctx.save(); ctx.translate(fx, fy); ctx.rotate(a * 0.7);
+          const pg = ctx.createLinearGradient(0, 0, 0, -14 * k * len);
+          pg.addColorStop(0, '#fbcfe8'); pg.addColorStop(1, '#ec4899');
+          ctx.fillStyle = pg;
+          ctx.beginPath(); ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(-6 * k, -8 * k * len, 0, -15 * k * len);
+          ctx.quadraticCurveTo(6 * k, -8 * k * len, 0, 0); ctx.fill();
+          ctx.restore();
+        });
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath(); ctx.arc(fx, fy - 4 * k, 2.6 * k, 0, TAU); ctx.fill();
+      });
     };
 
     const resize = () => {
@@ -2080,6 +2234,7 @@ export default function AquariumGame({ audio, speak }) {
       front.addColorStop(0, 'rgba(15,23,42,0)'); front.addColorStop(1, 'rgba(15,23,42,0.22)');
       gx.fillStyle = front; gx.fillRect(0, s.floor + 10, s.W, s.H - s.floor);
       s.gravel = gc;
+      if (fresh) buildFreshLayers();
       // 물속을 천천히 떠도는 작은 부유물 (z: 0 먼 곳 ~ 1 가까운 곳)
       if (!s.motes) s.motes = [];
       const moteN = Math.round(clamp(s.W * s.H / 22000, 18, 60));
@@ -3066,6 +3221,7 @@ export default function AquariumGame({ audio, speak }) {
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(W, 0);
       for (let x = W; x >= 0; x -= 14) ctx.lineTo(x, s.surface + Math.sin(x * 0.035 + t * 2.2) * 1.6 + s.tilt.x * (x - W / 2) * 0.04);
       ctx.closePath(); ctx.fill();
+      if (fresh) drawLilies();
 
       const flow = s.tilt.x;
       // 장식 (수초·바위 등) – 자갈보다 먼저 그려 밑동이 자갈에 묻히게
@@ -3556,7 +3712,15 @@ export default function AquariumGame({ audio, speak }) {
       window.removeEventListener('pagehide', persist);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tank]);
+
+  // 어항 바꾸기: 열려 있던 카드·모드·상점은 닫고, 시뮬레이션은 그 어항 저장으로 다시 시작
+  const switchTank = (id) => {
+    if (id === tank) return;
+    setInfo(null); setMode('play'); setShopOpen(false);
+    audio.playBubble();
+    setTank(id);
+  };
 
   // 선택한 물고기 표시 링
   useEffect(() => { if (simRef.current) simRef.current.setInfoUid(info); }, [info]);
@@ -3665,19 +3829,37 @@ export default function AquariumGame({ audio, speak }) {
     }}>
       {/* 상단 상태판: 27개월 아기도 알아보게 큰 그림 버튼 위주 (글자는 부모용으로 작게) */}
       <div style={{
-        background: 'linear-gradient(135deg, #0369a1 0%, #075985 100%)', borderRadius: '22px', padding: '0.55rem 0.9rem',
+        background: tank === 'fresh' ? 'linear-gradient(135deg, #047857 0%, #065f46 100%)' : 'linear-gradient(135deg, #0369a1 0%, #075985 100%)', borderRadius: '22px', padding: '0.55rem 0.9rem',
         display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', flexShrink: 0,
-        border: '3px solid #38bdf8', boxShadow: '0 8px 22px rgba(2,132,199,0.25)'
+        border: tank === 'fresh' ? '3px solid #34d399' : '3px solid #38bdf8', boxShadow: tank === 'fresh' ? '0 8px 22px rgba(5,150,105,0.25)' : '0 8px 22px rgba(2,132,199,0.25)'
       }}>
         <div style={{ background: '#fef08a', color: '#713f12', fontWeight: 900, fontSize: '1.45rem', padding: '6px 14px', borderRadius: '18px', boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.1)' }}>
           🐚 {hud.points}
+        </div>
+        {/* 어항 고르기: 민물 / 바다 (아기도 누르기 쉽게 큰 그림 버튼) */}
+        <div role="tablist" aria-label="어항 고르기" style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.18)', borderRadius: '20px', padding: '4px' }}>
+          {TANK_IDS.map(id => {
+            const on = tank === id;
+            return (
+              <button key={id} role="tab" aria-selected={on} onClick={() => switchTank(id)} title={TANKS[id].name} style={{
+                border: 'none', borderRadius: '16px', padding: '6px 12px', minHeight: '52px', cursor: 'pointer', touchAction: 'manipulation',
+                display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900, fontSize: '0.95rem',
+                background: on ? (id === 'fresh' ? '#bbf7d0' : '#bae6fd') : 'transparent',
+                color: on ? (id === 'fresh' ? '#14532d' : '#0c4a6e') : 'rgba(255,255,255,0.85)',
+                boxShadow: on ? '0 3px 8px rgba(0,0,0,0.18)' : 'none'
+              }}>
+                <span style={{ fontSize: '1.7rem', lineHeight: 1 }}>{TANKS[id].icon}</span>
+                {id === 'fresh' ? '민물' : '바다'}
+              </button>
+            );
+          })}
         </div>
         <WaterMeter value={hud.clean} />
         {night && <div title="밤 (저녁 8시 ~ 아침 7시)" style={{ fontSize: '1.9rem', lineHeight: 1, filter: 'drop-shadow(0 0 6px #fde68a)' }}>🌙</div>}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>
           {/* 수조 조명: 누를 때마다 꺼짐 → 1단 → 2단 → 3단 (수조를 가리지 않게 상단 버튼줄에 둠) */}
           <button
-            onClick={() => { if (simRef.current) setLight(simRef.current.toggleLight()); }}
+            onClick={() => { if (simRef.current) { const v = simRef.current.toggleLight(); lightLvlRef.current = v; setLight(v); } }}
             aria-label="조명"
             title="조명"
             style={{
@@ -3712,7 +3894,7 @@ export default function AquariumGame({ audio, speak }) {
         ref={wrapRef}
         style={{
           flex: 1, minHeight: '260px', position: 'relative', overflow: 'hidden', borderRadius: '18px',
-          border: '7px solid #1e293b', borderTopWidth: '14px', background: '#0e6f8f',
+          border: '7px solid #1e293b', borderTopWidth: '14px', background: tank === 'fresh' ? '#1f7a5c' : '#0e6f8f',
           boxShadow: '0 14px 30px rgba(15,23,42,0.35), inset 0 0 0 2px rgba(255,255,255,0.15)',
           touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none',
           cursor: mode === 'clean' ? SPONGE_CURSOR : mode === 'heal' ? 'crosshair' : mode === 'decorate' ? 'grab' : 'pointer'
@@ -3909,14 +4091,14 @@ export default function AquariumGame({ audio, speak }) {
           <div data-ui onPointerDown={stop} style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
             <div style={{ background: '#ffffff', borderRadius: '26px', width: 'min(760px, 100%)', maxHeight: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.35)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#ffffff' }}>
-                <div style={{ fontWeight: 900, fontSize: '1.3rem' }}>🛒 바다 상점</div>
+                <div style={{ fontWeight: 900, fontSize: '1.3rem' }}>🛒 {TANKS[tank].name} 상점</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ background: '#fef08a', color: '#713f12', fontWeight: 900, padding: '4px 12px', borderRadius: '14px' }}>🐚 {pointsNow}</span>
                   <button onClick={() => setShopOpen(false)} style={{ border: 'none', background: 'rgba(255,255,255,0.25)', color: '#ffffff', borderRadius: '12px', padding: '6px 12px', fontWeight: 900, cursor: 'pointer' }}>✕</button>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '6px', padding: '10px 14px 0' }}>
-                {[['fish', '🐟 물고기·바다 친구'], ['decor', '🪸 장식']].map(([k, label]) => (
+                {[['fish', tank === 'fresh' ? '🐟 민물 친구' : '🐟 물고기·바다 친구'], ['decor', '🪸 장식']].map(([k, label]) => (
                   <button key={k} onClick={() => setShopTab(k)} style={{
                     border: 'none', borderRadius: '14px', padding: '8px 14px', fontWeight: 900, cursor: 'pointer',
                     background: shopTab === k ? '#8b5cf6' : '#f1f5f9', color: shopTab === k ? '#ffffff' : '#475569'
@@ -3924,7 +4106,7 @@ export default function AquariumGame({ audio, speak }) {
                 ))}
               </div>
               <div style={{ padding: '12px 14px 16px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
-                {shopTab === 'fish' && [...FISH_SPECIES].sort((a, b) => (a.price || STARTER_FISH_PRICE) - (b.price || STARTER_FISH_PRICE)).map(sp => {
+                {shopTab === 'fish' && FISH_SPECIES.filter(sp => habitatOf(sp.id) === tank).sort((a, b) => (a.price || STARTER_FISH_PRICE) - (b.price || STARTER_FISH_PRICE)).map(sp => {
                   const price = sp.price || STARTER_FISH_PRICE;
                   return (
                     <div key={sp.id} style={{ border: '2px solid #e2e8f0', borderRadius: '18px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: sp.sea ? '#eff6ff' : '#f0f9ff' }}>
@@ -3938,7 +4120,7 @@ export default function AquariumGame({ audio, speak }) {
                     </div>
                   );
                 })}
-                {shopTab === 'decor' && DECOR_ITEMS.map(d => (
+                {shopTab === 'decor' && DECOR_ITEMS.filter(d => decorFits(d.id, tank)).map(d => (
                   <div key={d.id} style={{ border: '2px solid #e2e8f0', borderRadius: '18px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f0fdf4' }}>
                     <DecorPreview id={d.id} />
                     <div style={{ fontWeight: 900, color: '#0f172a' }}>{d.name}</div>
