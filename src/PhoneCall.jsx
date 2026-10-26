@@ -208,8 +208,8 @@ function toWavBase64(chunks, srcRate) {
 // 친구 목소리를 크게: 서버 목소리(Edge TTS)는 볼륨을 올려도 거의 안 커져서(+60% ≈ 2.5dB, 그 위로는 그대로)
 // 기기에서 MP3 를 풀어 말소리 크기를 맞추고, 넘치는 부분은 부드럽게 눌러(tanh) WAV 로 만든다.
 // OfflineAudioContext 는 재생용이 아니라서 아이폰에서 마이크·잠금 상태와 상관없이 쓸 수 있다. 실패하면 원래 MP3 그대로
-const VOICE_TARGET_RMS = 0.36;   // 말소리 부분의 목표 크기 (다른 탭 안내 음성만큼 크게)
-const VOICE_BOOST_MAX = 5;       // 최대 약 +14dB
+const VOICE_TARGET_RMS = 0.45;   // 말소리 부분의 목표 크기 (다른 탭 안내 음성만큼 크게)
+const VOICE_BOOST_MAX = 7;       // 최대 약 +17dB
 async function loudVoiceUrl(blob) {
   try {
     const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;

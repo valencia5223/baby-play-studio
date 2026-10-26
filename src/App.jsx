@@ -406,6 +406,38 @@ class BabySoundEngine {
     }
   }
 
+  // 🔊 elementMode(아이폰·아이패드에서 마이크를 쓴 뒤)의 안내 음성: Web Audio → <audio> 스트림 우회는 화상통화처럼 작게 들려서,
+  //    풀어 둔 음성을 마스터 출력만큼 키운(tanh 로 부드럽게 제한) WAV 파일로 만들어 보통 <audio> 로 튼다
+  async _loudVoiceUrl(url) {
+    if (!this.loudUrls) this.loudUrls = new Map();
+    if (this.loudUrls.has(url)) return this.loudUrls.get(url);
+    const buf = this.voiceBufferCache.get(url) || await this.getVoiceBuffer(url).catch(() => null);
+    if (!buf) return null;
+    const d = buf.getChannelData(0), n = d.length, rate = buf.sampleRate;
+    const out = new ArrayBuffer(44 + n * 2), v = new DataView(out);
+    const str = (off, t) => { for (let i = 0; i < t.length; i++) v.setUint8(off + i, t.charCodeAt(i)); };
+    str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    str(36, 'data'); v.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.round(Math.tanh(d[i] * MASTER_GAIN) * 0x7fff), true);
+    const blobUrl = URL.createObjectURL(new Blob([out], { type: 'audio/wav' }));
+    if (this.loudUrls.size >= 40) {   // 메모리를 너무 쓰지 않게 오래된 것부터 지운다 (WAV 는 MP3 보다 크다)
+      const [oldKey, oldUrl] = this.loudUrls.entries().next().value;
+      this.loudUrls.delete(oldKey); URL.revokeObjectURL(oldUrl);
+    }
+    this.loudUrls.set(url, blobUrl);
+    return blobUrl;
+  }
+  // elementMode 에서 음성 하나 틀기: 크게 만든 WAV → 원래 MP3 → 브라우저 TTS 순서로
+  async _playVoiceElementMode(url, token, onEnded, fallbackFn) {
+    const loud = await Promise.race([this._loudVoiceUrl(url).catch(() => null), new Promise(r => setTimeout(() => r(null), isRemoteVoice(url) ? 5000 : 2500))]);
+    if (this.voicePlayToken !== token) return;
+    if (loud && await this._playUrlViaElement(loud, token, onEnded)) return;
+    if (this.voicePlayToken !== token) return;
+    if (await this._playUrlViaElement(url, token, onEnded)) return;
+    if (fallbackFn && this.voicePlayToken === token) fallbackFn();
+  }
+
   // 🎙️ 남성 아나운서 음성 MP3 재생 (Web Audio 버퍼)
   // 항상 한 번에 하나만 재생: 새 음성은 이전 음성을 끊고 시작하므로 쌓여서 반복되는 일이 없다.
   // 버퍼를 못 받거나 오디오가 잠겨 있으면 fallbackFn(브라우저 TTS)으로 대체한다.
@@ -414,6 +446,7 @@ class BabySoundEngine {
     if (this.muted) return;
     const token = this.voicePlayToken;
     this.init();
+    if (this.elementMode) { await this._playVoiceElementMode(url, token, null, fallbackFn); return; }
 
     const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
     // 📱 iOS에서 resume/decode가 멈춰 있어도 일정 시간 안에 결론을 낸다
@@ -440,6 +473,7 @@ class BabySoundEngine {
     if (this.muted) return;
     const token = this.voicePlayToken;
     this.init();
+    if (this.elementMode) { await this._playVoiceElementMode(url, token, onEnded, fallbackFn); return; }
     const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
     const buf = this.voiceBufferCache.get(url) || await withTimeout(this.getVoiceBuffer(url).catch(() => null), timeoutMs);
     if (this.voicePlayToken !== token) return;
