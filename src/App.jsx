@@ -36,6 +36,7 @@ import GardenGame from './GardenGame.jsx';
 import LottoGacha from './LottoGacha.jsx';
 import PaintMotion from './PaintMotion.jsx';
 import StoryBook from './StoryBook.jsx';
+import PhoneCall from './PhoneCall.jsx';
 import STORY_VOICE_INDEX from './storyVoiceIndex.json';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
@@ -313,13 +314,13 @@ class BabySoundEngine {
   }
 
   // 🌙 그림책: 음성 하나를 재생하고, 다 읽으면 onEnded 를 부른다 (다음 쪽으로 넘기기용)
-  async playClipThen(url, onEnded, fallbackFn = null) {
+  async playClipThen(url, onEnded, fallbackFn = null, timeoutMs = 4000) {
     this.stopVoice();
     if (this.muted) return;
     const token = this.voicePlayToken;
     this.init();
     const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
-    const buf = this.voiceBufferCache.get(url) || await withTimeout(this.getVoiceBuffer(url).catch(() => null), 4000);
+    const buf = this.voiceBufferCache.get(url) || await withTimeout(this.getVoiceBuffer(url).catch(() => null), timeoutMs);
     if (this.voicePlayToken !== token) return;
     if (buf && this.ctx && this.ctx.state !== 'running') {
       await withTimeout(this.ctx.resume().catch(() => { }), 300);
@@ -4001,14 +4002,14 @@ export default function App() {
       overflow: 'hidden', overscrollBehavior: 'none', touchAction: 'none'
     }}>
       {/* 헤더 (12.9인치 규격에 딱 맞는 컴팩트 레이아웃) */}
-      <header style={{
+      <header className="bps-header" style={{
         width: '100%', maxWidth: '1366px', background: 'rgba(255,255,255,0.86)', borderRadius: '26px',
         padding: '0.55rem 1.2rem', boxShadow: '0 10px 30px -12px rgba(120, 86, 60, 0.18)',
         border: '1px solid #f3e8dc', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', marginBottom: '0.55rem', flexShrink: 0
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
+        <div className="bps-brand" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div className="bps-logo" style={{
             background: 'linear-gradient(145deg, #ffe4e6, #fde68a)',
             width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 6px 14px -6px rgba(244, 114, 182, 0.55)'
@@ -4016,10 +4017,10 @@ export default function App() {
             <span role="img" aria-label="판다" style={{ fontSize: '2rem', lineHeight: 1 }}>🐼</span>
           </div>
           <div>
-            <h1 style={{ fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontSize: '1.7rem', fontWeight: 400, color: '#3f3a52', margin: 0, letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h1 className="bps-title" style={{ fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontSize: '1.7rem', fontWeight: 400, color: '#3f3a52', margin: 0, letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               유나의 두뇌 발달 놀이터 🖍️
             </h1>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#8a7f96', display: 'inline-block', marginTop: '1px' }}>
+            <span className="bps-subtitle" style={{ fontSize: '0.76rem', fontWeight: 800, color: '#8a7f96', display: 'inline-block', marginTop: '1px' }}>
               ✨ 보고 듣고 만지며 쑥쑥 자라는 놀이 세상!
             </span>
           </div>
@@ -4049,7 +4050,7 @@ export default function App() {
             ))}
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="bps-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* 🎵 동요 재생 (탭 줄 대신 맨 위에. 노래가 나오는 중에는 미니 플레이어의 곡 제목을 누르면 같은 화면) */}
           {!songPlayerOn && <button onClick={() => {
             audioEngine.interruptVoice();
@@ -4120,8 +4121,8 @@ export default function App() {
         overflow: 'hidden', display: 'flex', flexDirection: 'column'
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
-        <nav style={{
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px',
+        <nav className="bps-nav" style={{
+          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px',
           padding: '10px 12px', background: '#fffcf8', borderBottom: '1px solid #f3e8dc',
           flexShrink: 0
         }}>
@@ -4135,6 +4136,7 @@ export default function App() {
             // { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
             { id: 'puzzle', icon: '🧩', label: '아기 퍼즐', sub: '조각 맞추기', pastel: '#ddd2fa', soft: '#f1ecfd', ink: '#55399e' },
             { id: 'paint', icon: '🎨', label: '무지개 물감', sub: '터치 감각 미술', pastel: '#ffe0b2', soft: '#fff2df', ink: '#9a5b0d' },
+            { id: 'phone', icon: '📞', label: '전화 놀이', sub: '친구와 통화해요', pastel: '#c4f0de', soft: '#e3f8ef', ink: '#1f6f55' },
             // 🎵 동요 재생·🎰 로또 뽑기는 맨 위 헤더 버튼으로 옮겼다
           ].map(tab => {
             const isActive = activeTab === tab.id || (tab.id === 'cards' && isCardTab);
@@ -4142,12 +4144,13 @@ export default function App() {
               <button key={tab.id} onClick={() => {
                 // 이전 화면의 음성과 예약된 음성(다음 문제 안내 등)을 모두 끊는다
                 audioEngine.interruptVoice();
+                if (tab.id === 'phone' && songPlayerOn) stopSongPlayer();   // 통화할 땐 동요를 끈다 (마이크에 섞이지 않게)
                 if (tab.id === 'puzzle' && !puzzleCompleted) {
                   speakNaturalKorean(VOICE.puzzleStart(puzzleTheme));
                 }
                 setActiveTab(tab.id);
                 audioEngine.playFreq(520, 'sine', 0.15);
-              }} style={{
+              }} className="bps-nav-tab" style={{
                 minHeight: '74px', padding: '6px 6px', borderRadius: '22px', border: 'none',
                 background: isActive ? tab.pastel : '#ffffff',
                 color: tab.ink, cursor: 'pointer',
@@ -4155,14 +4158,14 @@ export default function App() {
                 transition: 'background 0.2s ease, box-shadow 0.2s ease',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
               }}>
-                <span style={{
+                <span className="bps-nav-icon" style={{
                   width: '50px', height: '50px', borderRadius: '50%', flexShrink: 0,
                   background: isActive ? 'rgba(255,255,255,0.7)' : tab.soft,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.9rem', lineHeight: 1
                 }}>{tab.icon}</span>
                 <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0 }}>
                   <span style={{ fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontSize: '1.08rem', lineHeight: 1.15, whiteSpace: 'nowrap' }}>{tab.label}</span>
-                  <span style={{ fontSize: '0.66rem', opacity: 0.7, fontWeight: 800, marginTop: '2px', whiteSpace: 'nowrap' }}>{tab.sub}</span>
+                  <span className="bps-nav-sub" style={{ fontSize: '0.66rem', opacity: 0.7, fontWeight: 800, marginTop: '2px', whiteSpace: 'nowrap' }}>{tab.sub}</span>
                 </span>
               </button>
             );
@@ -4172,7 +4175,7 @@ export default function App() {
         {/* 캔버스 영역 (스크롤 메뉴와 비스크롤 고정 메뉴 분기) */}
         <div style={{
           flex: 1,
-          padding: activeTab === 'paint' || activeTab === 'story' ? '0.6rem 1rem' : '1.2rem 1.6rem',
+          padding: activeTab === 'paint' || activeTab === 'story' || activeTab === 'phone' ? '0.6rem 1rem' : '1.2rem 1.6rem',
           position: 'relative',
           background: '#fffdfa',
           overflowY: isScrollableTab ? 'auto' : 'hidden',
@@ -4443,6 +4446,7 @@ export default function App() {
 
           {/* ===== 🎰 로또 캡슐 뽑기 (LottoGacha.jsx, 어른용) ===== */}
           {activeTab === 'lotto' && <LottoGacha audio={audioEngine} />}
+          {activeTab === 'phone' && <PhoneCall audio={audioEngine} />}
           {activeTab === 'story' && (
             <StoryBook
               audio={audioEngine}

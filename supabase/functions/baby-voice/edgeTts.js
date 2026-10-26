@@ -75,7 +75,9 @@ function indexOfBytes(hay, needle) {
   return -1;
 }
 
-export async function synthesize(text, WebSocketImpl, timeoutMs = 15000) {
+// opts: { voice, rate, pitch } — 전화 놀이 친구마다 목소리·속도·음높이를 다르게 (없으면 기본 남성 아나운서)
+export async function synthesize(text, WebSocketImpl, timeoutMs = 15000, opts = {}) {
+  const voice = opts.voice || VOICE_NAME, rate = opts.rate || RATE, pitch = opts.pitch || '+0Hz';
   const url = `${WSS_URL}?TrustedClientToken=${TRUSTED_CLIENT_TOKEN}&Sec-MS-GEC=${await secMsGec()}&Sec-MS-GEC-Version=${GEC_VERSION}&ConnectionId=${uuid()}`;
   const ws = new WebSocketImpl(url, { headers: HEADERS });
   ws.binaryType = 'arraybuffer';
@@ -88,7 +90,7 @@ export async function synthesize(text, WebSocketImpl, timeoutMs = 15000) {
       ws.send(`X-Timestamp:${ts}\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n` +
         '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"false","wordBoundaryEnabled":"false"},"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}');
       const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="ko-KR">` +
-        `<voice name="${VOICE_NAME}"><prosody pitch="+0Hz" rate="${RATE}" volume="+0%">${xmlEscape(text)}</prosody></voice></speak>`;
+        `<voice name="${voice}"><prosody pitch="${pitch}" rate="${rate}" volume="+0%">${xmlEscape(text)}</prosody></voice></speak>`;
       ws.send(`X-RequestId:${uuid()}\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:${ts}Z\r\nPath:ssml\r\n\r\n${ssml}`);
     };
     ws.onmessage = (m) => {

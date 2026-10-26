@@ -245,3 +245,22 @@ button:active {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.18); }
 }
+
+/* ── 휴대폰·좁은 화면 (헤더 한 줄 제목 + 버튼 줄과 메뉴 줄은 옆으로 밀어서 보기) ── */
+@media (max-width: 820px) {
+  .bps-header { flex-wrap: wrap !important; gap: 8px !important; padding: 0.5rem 0.7rem !important; border-radius: 20px !important; }
+  .bps-brand { gap: 8px !important; min-width: 0; }
+  .bps-logo { width: 40px !important; height: 40px !important; }
+  .bps-logo span { font-size: 1.4rem !important; }
+  .bps-title { font-size: 1.15rem !important; white-space: nowrap; }
+  .bps-title + span, .bps-subtitle { display: none !important; }
+  .bps-header-actions { width: 100%; overflow-x: auto; flex-wrap: nowrap !important; gap: 6px !important; padding-bottom: 2px; touch-action: pan-x; scrollbar-width: none; }
+  .bps-header-actions::-webkit-scrollbar { display: none; }
+  .bps-header-actions > button { height: 40px !important; padding: 0 14px !important; font-size: 0.92rem !important; flex-shrink: 0; }
+  .bps-header-actions > div { flex-shrink: 0; }
+  .bps-nav { display: flex !important; overflow-x: auto; gap: 6px !important; padding: 8px !important; touch-action: pan-x; scrollbar-width: none; }
+  .bps-nav::-webkit-scrollbar { display: none; }
+  .bps-nav-tab { flex: 0 0 auto; min-height: 60px !important; padding: 4px 12px 4px 6px !important; gap: 6px !important; }
+  .bps-nav-icon { width: 40px !important; height: 40px !important; font-size: 1.5rem !important; }
+  .bps-nav-sub { display: none !important; }
+}

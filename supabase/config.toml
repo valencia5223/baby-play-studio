@@ -8,3 +8,7 @@ verify_jwt = false
 # 로또 탭 최신 회차 중계 (배포: npx supabase functions deploy lotto-draws --project-ref auaygojvfrvxmaerzmzi --use-api)
 [functions.lotto-draws]
 verify_jwt = false
+
+# 📞 전화 놀이 친구 대답 (Gemini, 키는 Secrets GEMINI_API_KEY) 배포: npx supabase functions deploy baby-call --project-ref auaygojvfrvxmaerzmzi --use-api
+[functions.baby-call]
+verify_jwt = false
