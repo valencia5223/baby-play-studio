@@ -9,7 +9,8 @@
     "build": "vite build",
     "update-lotto": "node scripts/update-lotto.mjs",
     "preview": "vite preview",
-    "voices": "node scripts/generate-voices.mjs"
+    "voices": "node scripts/generate-voices.mjs",
+    "story-voices": "node scripts/generate-story-voices.mjs"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",

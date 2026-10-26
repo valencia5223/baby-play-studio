@@ -35,9 +35,14 @@ import TrainGame from './TrainGame.jsx';
 import GardenGame from './GardenGame.jsx';
 import LottoGacha from './LottoGacha.jsx';
 import PaintMotion from './PaintMotion.jsx';
+import StoryBook from './StoryBook.jsx';
+import STORY_VOICE_INDEX from './storyVoiceIndex.json';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
 const VOICE_KEYS = new Set(VOICE_INDEX);
+// 🌙 그림책은 부드러운 여성 목소리(ko-KR-SunHiNeural) MP3 를 따로 쓴다 (scripts/generate-story-voices.mjs)
+const STORY_VOICE_KEYS = new Set(STORY_VOICE_INDEX);
+const storyClipUrl = (text) => { const key = voiceKey(text); return STORY_VOICE_KEYS.has(key) ? `/story-voice/${key}.mp3` : null; };
 const voiceClipUrl = (text) => {
   const key = voiceKey(text);
   return VOICE_KEYS.has(key) ? `/voice/${key}.mp3` : null;
@@ -305,6 +310,23 @@ class BabySoundEngine {
     } else if (fallbackFn) {
       fallbackFn();
     }
+  }
+
+  // 🌙 그림책: 음성 하나를 재생하고, 다 읽으면 onEnded 를 부른다 (다음 쪽으로 넘기기용)
+  async playClipThen(url, onEnded, fallbackFn = null) {
+    this.stopVoice();
+    if (this.muted) return;
+    const token = this.voicePlayToken;
+    this.init();
+    const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
+    const buf = this.voiceBufferCache.get(url) || await withTimeout(this.getVoiceBuffer(url).catch(() => null), 4000);
+    if (this.voicePlayToken !== token) return;
+    if (buf && this.ctx && this.ctx.state !== 'running') {
+      await withTimeout(this.ctx.resume().catch(() => { }), 300);
+      if (this.voicePlayToken !== token) return;
+    }
+    if (buf && this.ctx && this.ctx.state === 'running') this._playBufferDirect(buf, token, onEnded);
+    else if (fallbackFn) fallbackFn();
   }
 
   // 🎙️ 다음에 나올 음성 미리 받아두기 (아이패드에서 지연 없이 바로 재생)
@@ -4041,6 +4063,20 @@ export default function App() {
           }}>
             🎵 동요 재생 <span style={{ fontSize: '0.72rem', opacity: 0.85 }}>({LOCAL_NURSERY_SONGS.length}곡)</span>
           </button>}
+          {/* 🌙 잠자리 그림책 (헤더 버튼, StoryBook.jsx) */}
+          <button onClick={() => {
+            audioEngine.interruptVoice();
+            if (songPlayerOn) stopSongPlayer();   // 동요가 나오고 있으면 끄고 그림책 목소리만
+            setActiveTab('story');
+            audioEngine.playFreq(520, 'sine', 0.15);
+          }} title="잠자리 그림책" style={{
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '0 18px', height: '48px', borderRadius: '24px', whiteSpace: 'nowrap',
+            fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontWeight: 400, fontSize: '1.05rem', cursor: 'pointer',
+            border: 'none', background: activeTab === 'story' ? '#a5b4fc' : '#e0e7ff', color: activeTab === 'story' ? '#1e1b4b' : '#4338ca',
+            boxShadow: activeTab === 'story' ? '0 8px 18px -8px rgba(67,56,202,0.6)' : 'none'
+          }}>
+            🌙 그림책
+          </button>
           {/* 🎰 로또 뽑기 (탭 줄 대신 맨 위에) */}
           <button onClick={() => {
             audioEngine.interruptVoice();
@@ -4136,7 +4172,7 @@ export default function App() {
         {/* 캔버스 영역 (스크롤 메뉴와 비스크롤 고정 메뉴 분기) */}
         <div style={{
           flex: 1,
-          padding: activeTab === 'paint' ? '0.6rem 1rem' : '1.2rem 1.6rem',
+          padding: activeTab === 'paint' || activeTab === 'story' ? '0.6rem 1rem' : '1.2rem 1.6rem',
           position: 'relative',
           background: '#fffdfa',
           overflowY: isScrollableTab ? 'auto' : 'hidden',
@@ -4407,6 +4443,20 @@ export default function App() {
 
           {/* ===== 🎰 로또 캡슐 뽑기 (LottoGacha.jsx, 어른용) ===== */}
           {activeTab === 'lotto' && <LottoGacha audio={audioEngine} />}
+          {activeTab === 'story' && (
+            <StoryBook
+              audio={audioEngine}
+              lullabyUrl={(LOCAL_NURSERY_SONGS.find(s => s.title.includes('자장가')) || {}).url}
+              stopLine={() => audioEngine.interruptVoice()}
+              playLine={(text, onEnd) => {
+                const spoken = formatSpokenKoreanText(text);
+                const url = storyClipUrl(spoken);
+                // 여성 목소리 MP3 가 없으면 기기 목소리로 (넘기기는 그림책의 안전 타이머가 맡는다)
+                if (url) audioEngine.playClipThen(url, onEnd, () => speakNativeKorean(spoken, { pitch: 1.1, rate: 0.85 }));
+                else { audioEngine.stopVoice(); if (!audioEngine.muted) speakNativeKorean(spoken, { pitch: 1.1, rate: 0.85 }); }
+              }}
+            />
+          )}
 
           {/* ===== 🌱 텃밭 가꾸기 (GardenGame.jsx, 바구니 채소는 내 목장 🧺 버튼으로) ===== */}
           {activeTab === 'garden' && (
