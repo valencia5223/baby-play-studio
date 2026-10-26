@@ -10,6 +10,8 @@
 //    친구 목소리를 아기 말로 착각하지 않게 울림 제거(echoCancellation)를 켠다 (안 되는 기기는 기본 설정)
 //  - 아이폰: 마이크를 열면 앱의 Web Audio 가 '중단'되어 소리가 안 나거나 늦게 난다 →
 //    연결음·친구 목소리는 터치 때 미리 깨워 둔 <audio> 플레이어 하나로, 녹음은 마이크를 연 뒤 만든 녹음 전용 AudioContext 로 한다
+//  - 아이폰: 마이크가 켜져 있으면 '통화 모드'가 되어 스피커 소리가 아주 작아진다 → 번갈아 말하기
+//    (친구가 말할 때는 마이크를 닫고 재생 모드, 친구 말이 끝나면 다시 연다. 끼어들기는 🎤 버튼으로만)
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -296,6 +298,7 @@ export default function PhoneCall({ audio }) {
 
   // 친구가 말하기 (목소리 MP3 를 받아 재생, 다 말하면 onDone)
   const say = (text, onDone) => {
+    pauseMicForFriend();
     const id = callIdRef.current, sid = ++sayIdRef.current;
     turnsRef.current.push({ who: 'friend', text });
     talkingRef.current = true;
@@ -341,6 +344,7 @@ export default function PhoneCall({ audio }) {
   const friendTurn = (phase, audioB64 = null) => {
     const id = callIdRef.current, seq = ++turnSeqRef.current;
     thinkingRef.current = true; setThinking(true);
+    pauseMicForFriend();   // 대답을 기다리는 동안 미리 재생 모드로 바꿔 둔다 (아이폰)
     askFriend(friendId, turnsRef.current, phase, audioB64).then(({ text, heard: h }) => {
       if (callIdRef.current !== id || seq !== turnSeqRef.current || screenRef.current !== 'call') return;   // 그 사이 아기가 또 말했으면 버린다
       thinkingRef.current = false;
@@ -352,7 +356,8 @@ export default function PhoneCall({ audio }) {
       }
       say(text, () => {
         if (phase === 'bye') { later(() => hangUp(true), 700); return; }
-        if (!capRef.current) waitForBaby();   // 마이크가 없으면 시간이 지나면 친구가 이어 간다
+        if (isIOS && !micErrRef.current) listenForBaby();   // 아이폰: 친구 말이 끝났으니 마이크를 다시 연다
+        else if (!capRef.current) waitForBaby();   // 마이크가 없으면 시간이 지나면 친구가 이어 간다
       });
     });
   };
@@ -413,19 +418,33 @@ export default function PhoneCall({ audio }) {
     p.finally(() => { micPromiseRef.current = null; });
     return p;
   };
-  // 화면을 떠날 때: 마이크를 닫고 일반 재생 모드로 (아이폰에서 소리가 다시 커지게)
-  function releaseMic() {
+  // 마이크를 닫고 일반 재생 모드로 (아이폰에서 소리가 다시 커지게)
+  function closeMic() {
+    endSession();
     const m = micRef.current; micRef.current = null;
     if (m) m.stream.getTracks().forEach(t => t.stop());
     const c = capCtxRef.current; capCtxRef.current = null;
     if (c) c.close().catch(() => { });
-    stopPlayer();
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* 무시 */ }
   }
+  // 화면을 떠날 때
+  function releaseMic() { closeMic(); stopPlayer(); }
+  // 아이폰: 마이크가 켜져 있으면 '통화 모드'가 되어 스피커 소리가 아주 작아진다 →
+  // 친구가 말할 때는 마이크를 닫고(번갈아 말하기, 끼어들기 없음), 아기 차례에 다시 연다
+  const pauseMicForFriend = () => { if (isIOS && (micRef.current || capRef.current)) closeMic(); };
+  const listenForBaby = () => {
+    const id = callIdRef.current;
+    ensureMic().then(ok => {
+      if (callIdRef.current !== id || screenRef.current !== 'call' || talkingRef.current) return;
+      if (ok) startCapture().then(started => { if (!started) waitForBaby(); });
+      else waitForBaby();
+    });
+  };
 
   const startCall = () => {
     playUrl(toneUrl('ring', RING));   // 터치 안에서 바로 틀어야 아이폰에서도 들린다 (플레이어도 함께 깨워짐)
-    ensureMic();   // 통화 버튼을 누른 순간(사용자 동작)에 마이크 허락을 받아 둔다
+    // 통화 버튼을 누른 순간(사용자 동작)에 마이크 허락을 받아 둔다 (아이폰은 따르릉이 크게 들리게 허락만 받고 바로 닫는다)
+    ensureMic().then(ok => { if (ok && isIOS && !capRef.current) closeMic(); });
     clearTimers();
     callIdRef.current++;
     turnsRef.current = []; babyTurnsRef.current = 0; nudgeRef.current = 0; idleSinceRef.current = 0;
@@ -436,7 +455,7 @@ export default function PhoneCall({ audio }) {
       if (screenRef.current !== 'ringing') return;
       setScreen('call'); screenRef.current = 'call';
       callStartRef.current = Date.now();
-      ensureMic().then(ok => { if (ok) startCapture(); });   // 통화 내내 듣기 (언제든 말하기)
+      if (!isIOS) ensureMic().then(ok => { if (ok) startCapture(); });   // 통화 내내 듣기 (언제든 말하기, 아이폰은 친구 인사가 끝난 뒤)
       friendTurn('hello');
     }, 4200);
   };
@@ -533,6 +552,7 @@ export default function PhoneCall({ audio }) {
     if (cap && cap.utt) { cap.endUtterance(); return; }
     if (cap && talkingRef.current) { bargeIn(); idleSinceRef.current = Date.now(); return; }
     if (!cap) {
+      if (talkingRef.current) { bargeIn(); idleSinceRef.current = Date.now(); }   // 아이폰: 친구 말을 멈추고 마이크를 연다
       ensureMic().then(ok => {
         if (ok) startCapture();
         else if (['denied', 'inapp'].includes(micErrRef.current)) setShowMicHelp(true);
@@ -627,7 +647,7 @@ export default function PhoneCall({ audio }) {
           >🎤</button>
         )}
         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(255,255,255,0.75)', minHeight: '1.2em', textAlign: 'center' }}>
-          {ringing ? '' : !micOk ? (MIC_HELP[micErr] || MIC_HELP.other) : listening ? '말하는 중... 멈추면 친구가 대답해요' : heard ? `유나: ${heard}` : '언제든 말해 보세요'}
+          {ringing ? '' : !micOk ? (MIC_HELP[micErr] || MIC_HELP.other) : listening ? '말하는 중... 멈추면 친구가 대답해요' : heard ? `유나: ${heard}` : isIOS ? '친구 말이 끝나면 말해 보세요' : '언제든 말해 보세요'}
           {diag && !micOk && <div style={{ fontSize: '0.62rem', opacity: 0.6, marginTop: '2px' }}>{diag}</div>}
         </div>
         <button onClick={() => hangUp(false)} aria-label="전화 끊기" style={{ ...roundBtn('#ef4444', 70), fontSize: '1.9rem' }}>✕</button>
