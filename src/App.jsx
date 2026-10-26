@@ -147,16 +147,22 @@ class BabySoundEngine {
     } catch (e) { return ctx.destination; }
   }
 
-  // 📱 iOS 오디오 세션: 처음엔 'playback'(무음 스위치를 켜도 소리 남).
-  //    마이크를 쓰면(전화 놀이) 'playback' ↔ 'play-and-record' 를 직접 바꾸는 것이 아이패드에서 앱 소리를 끊어 버려서,
-  //    그 뒤로는 마이크를 쓰는 보통 웹사이트처럼 'auto'(브라우저에 맡김)로 둔다
+  // 📱 iOS 오디오 세션: 평소엔 'playback'(무음 스위치를 켜도 소리 남, 가장 큼).
+  //    마이크가 켜져 있는 동안만 'auto'(브라우저에 맡김 → 녹음 가능). 'auto' 로 계속 두면 아이패드가 통화용 음량으로 남아 소리가 작았다.
+  //    (마이크를 쓴 뒤 Web Audio 가 스피커로 소리를 못 내는 문제는 elementMode 로 우회)
   applySession() {
-    const want = this.micUsed ? 'auto' : 'playback';
+    const want = this.micOpen ? 'auto' : 'playback';
     try { if (navigator.audioSession && navigator.audioSession.type !== want) navigator.audioSession.type = want; } catch (e) { }
   }
   // 마이크를 열기 직전에 부른다
   beforeMic() {
     this.micUsed = true;
+    this.micOpen = true;
+    this.applySession();
+  }
+  // 마이크를 닫은 뒤에 부른다
+  afterMic() {
+    this.micOpen = false;
     this.applySession();
   }
 
@@ -166,6 +172,7 @@ class BabySoundEngine {
   //    (안내 음성은 MP3 를 <audio> 로 바로, 효과음은 Web Audio → <audio> 로 흘려 보냄)
   resetAfterMic() {
     this.micUsed = true;
+    this.micOpen = false;
     if (IS_IOS_DEVICE) this.elementMode = true;
     this.applySession();
     const old = this.ctx; this.ctx = null;
@@ -407,10 +414,6 @@ class BabySoundEngine {
     if (this.muted) return;
     const token = this.voicePlayToken;
     this.init();
-    if (this.elementMode) {   // 아이패드에서 마이크를 쓴 뒤: Web Audio 대신 <audio> 로 바로
-      if (!(await this._playUrlViaElement(url, token)) && fallbackFn && this.voicePlayToken === token) fallbackFn();
-      return;
-    }
 
     const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
     // 📱 iOS에서 resume/decode가 멈춰 있어도 일정 시간 안에 결론을 낸다
@@ -437,10 +440,6 @@ class BabySoundEngine {
     if (this.muted) return;
     const token = this.voicePlayToken;
     this.init();
-    if (this.elementMode) {
-      if (!(await this._playUrlViaElement(url, token, onEnded)) && fallbackFn && this.voicePlayToken === token) fallbackFn();
-      return;
-    }
     const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
     const buf = this.voiceBufferCache.get(url) || await withTimeout(this.getVoiceBuffer(url).catch(() => null), timeoutMs);
     if (this.voicePlayToken !== token) return;
