@@ -30,16 +30,29 @@ const COMMON = `너는 27개월 아기 "유나"와 장난감 전화로 통화하
 - 질문은 "응/아니"나 한 낱말로 답할 수 있게 해. 예: "유나는 사과 좋아해?"
 - 늘 다정하고 밝게. 무섭거나 슬프거나 위험한 이야기, 먹으면 안 되는 것, 어른 이야기는 하지 마. 주소·전화번호·어린이집 이름 같은 걸 묻지 마.
 - 이모지, 영어, 괄호, 따옴표, 물결표 없이 한글과 . , ! ? 만 써.
-- 대답 글자만 써. 이름표나 설명을 붙이지 마.`;
+- 대답 글자만 써. 이름표나 설명을 붙이지 마.
+- 다른 만화·영화·게임 캐릭터 이름은 말하지 마. 너는 정해진 친구 그대로야 (호칭을 삼촌·이모 등으로 바꾸지 마).`;
 
 const FRIENDS: Record<string, string> = {
   shark: `너는 "아기상어"야. 바닷속에 엄마상어, 아빠상어, 할머니상어, 할아버지상어와 살아. "뚜루루뚜루" 노래를 정말 좋아하고 명랑해. 흰동가리, 해파리, 꽃게 친구 이야기를 해. 말끝을 "~했어!", "~할래?"처럼 신나게 해.`,
   monkey: `너는 "원숭이"야. 정글 나무 위에 살고 바나나를 제일 좋아해. 장난꾸러기라서 "우끼끼!" 하고 잘 웃어. 나무 타기, 그네 타기, 숨바꼭질 이야기를 해. 빠르고 신나게 말해.`,
-  panda: `너는 "판다"야. 대나무 숲에 살고 대나무를 냠냠 먹어. 느긋하고 다정한 형아야. 하품을 자주 하고 낮잠을 좋아해. "음~ 그렇구나" 하고 천천히, 포근하게 말해.`
+  panda: `너는 "판다"야. 대나무 숲에 살고 대나무를 냠냠 먹어. 느긋하고 다정해. 자기를 부를 때는 "판다"라고만 해 (형·삼촌·아저씨라고 하지 마). 하품을 자주 하고 낮잠을 좋아해. "음~ 그렇구나" 하고 천천히, 포근하게 말해.`
 };
 
+// 첫인사를 통화마다 다르게: 아래 중 하나를 골라 지시에 덧붙인다
+const HELLO_STYLES = [
+  '"여보세요?" 하고 받은 뒤 유나 이름을 반갑게 불러.',
+  '네 대표 의성어나 웃음소리로 시작해.',
+  '방금 하던 일을 한마디로 말해 (예: 밥 먹다가, 놀다가).',
+  '"유나다!" 하고 깜짝 반가워해.',
+  '보고 싶었다고 짧게 말해.',
+  '아주 짧은 질문 하나로 끝내 (예: 뭐 해?).',
+  '속삭이듯 비밀 얘기하자고 해.',
+  '노래 한 소절이나 소리 흉내로 인사해.'
+];
+
 const PHASE: Record<string, string> = {
-  hello: '지금 막 전화를 받았어. 유나에게 반갑게 인사하고 너를 소개한 뒤 쉬운 질문 하나를 해.',
+  hello: '지금 막 전화를 받았어. 한 문장, 20자 안팎으로 아주 짧게 반갑게 받아. 길게 자기소개하지 마.',
   chat: '유나가 한 말에 먼저 대답해. 질문이면 첫 문장에서 꼭 바로 그 질문에 맞는 답을 하고(나이·색깔·좋아하는 것 같은 건 친구로서 귀엽게 지어서 답해도 돼), 배고프다·졸리다 같은 말이면 그 마음에 먼저 공감해. 그다음 짧게 이어서 말해. 이미 인사했으니 다시 인사하지 마.',
   bye: '이제 통화를 끝낼 시간이야. "또 전화해!"처럼 다정하게 작별 인사를 한 문장으로 해.'
 };
@@ -92,7 +105,8 @@ Deno.serve(async (req) => {
       const said = lastBaby && phase === 'chat'
         ? (lastBaby.text.trim() ? `유나가 방금 "${lastBaby.text.trim()}" 라고 말했어. ` : '유나가 아무 말도 안 하고 조용히 듣고 있어. ')
         : '';
-      return `[지금 할 일] ${said}${PHASE[phase]}`;
+      const style = phase === 'hello' ? ` ${HELLO_STYLES[Math.floor(Math.random() * HELLO_STYLES.length)]}` : '';
+      return `[지금 할 일] ${said}${PHASE[phase]}${style}`;
     })();
   const lastIsUser = contents.length && contents[contents.length - 1].role === 'user';
   if (audio) {
@@ -106,6 +120,7 @@ Deno.serve(async (req) => {
   const first = Deno.env.get('GEMINI_MODEL');
   const chain = first ? [first, ...MODELS.filter(m => m !== first)] : MODELS;
   let lastErr = '';
+  const errs: string[] = [];
   for (const model of chain) {
     for (let i = thinkingChoice.get(model) ?? 0; i < THINKING.length; i++) {
       const tc = THINKING[i];
@@ -116,7 +131,7 @@ Deno.serve(async (req) => {
           systemInstruction: { parts: [{ text: `${COMMON}\n\n${persona}` }] },
           contents,
           generationConfig: {
-            temperature: 0.7, maxOutputTokens: 600, ...(tc ? { thinkingConfig: tc } : {}),
+            temperature: phase === 'hello' ? 1.0 : 0.7, maxOutputTokens: 800, ...(tc ? { thinkingConfig: tc } : {}),
             ...(audio ? { responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { heard: { type: 'STRING' }, reply: { type: 'STRING' } }, required: ['heard', 'reply'] } } : {})
           },
           safetySettings: ['HARM_CATEGORY_HARASSMENT', 'HARM_CATEGORY_HATE_SPEECH', 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'HARM_CATEGORY_DANGEROUS_CONTENT']
@@ -125,15 +140,15 @@ Deno.serve(async (req) => {
       });
       const d = await r.json().catch(() => ({}));
       if (r.status === 400 && /thinking/i.test(d?.error?.message || '')) continue;   // 이 모델이 받지 않는 생각 설정 → 다음 설정
-      if (!r.ok) { lastErr = `${model} ${r.status} ${d?.error?.message || ''}`.slice(0, 200); break; }   // 한도·없는 모델 → 다음 모델
+      if (!r.ok) { lastErr = `${model} ${r.status} ${d?.error?.message || ''}`.slice(0, 200); errs.push(lastErr.slice(0, 80)); break; }   // 한도·없는 모델 → 다음 모델
       thinkingChoice.set(model, i);
       const raw = (d?.candidates?.[0]?.content?.parts || []).filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text || '').join(' ');
       let heard = '', reply = raw;
       if (audio) { try { const o = JSON.parse(raw); heard = String(o.heard || ''); reply = String(o.reply || ''); } catch { /* 글자 그대로 */ } }
       const text = clean(reply);
-      if (!text) { lastErr = `${model} empty`; break; }
+      if (!text) { lastErr = `${model} empty ${d?.candidates?.[0]?.finishReason || ''} ${d?.promptFeedback?.blockReason || ''}`; errs.push(lastErr); continue; }   // 빈 대답(생각만 하고 끝남 등) → 다른 생각 설정으로 한 번 더
       return json({ text, heard: heard.slice(0, 200), model });
     }
   }
-  return json({ error: lastErr || 'no model' }, 502);
+  return json({ error: lastErr || 'no model', tried: errs }, 502);
 });

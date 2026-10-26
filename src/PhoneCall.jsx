@@ -214,6 +214,8 @@ export default function PhoneCall({ audio }) {
   const [micOk, setMicOk] = useState(true);            // 마이크를 못 열면 false (친구가 혼자 이어 간다)
   const [micErr, setMicErr] = useState('');            // denied 허락 안 함 · inapp 앱 안 브라우저 · nomic · unsupported · other
   const micPromiseRef = useRef(null);
+  const [showMicHelp, setShowMicHelp] = useState(false);
+  const isIOS = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
   const screenRef = useRef(screen);
   useEffect(() => { screenRef.current = screen; }, [screen]);
   const friend = FRIEND_BY_ID[friendId];
@@ -419,6 +421,11 @@ export default function PhoneCall({ audio }) {
   const micDown = () => {
     if (talking || thinking) return;
     if (listeningRef.current) { if (sessionRef.current) sessionRef.current.finish(); return; }
+    if (!micOk) {
+      // 이미 막힌 마이크는 사이트가 다시 물을 수 없다 → 한 번 더 시도해 보고, 안 되면 켜는 방법을 크게 보여 준다
+      ensureMic().then(ok => { if (ok) listen(true); else setShowMicHelp(true); });
+      return;
+    }
     listen(true);
   };
 
@@ -529,7 +536,26 @@ export default function PhoneCall({ audio }) {
     );
   }
 
-  const dark = consent && (screen === 'ringing' || screen === 'call');
+  // 마이크 켜는 방법 (막혔을 때 🎤 를 누르면)
+  if (showMicHelp) {
+    const steps = micErr === 'inapp'
+      ? ['오른쪽 위(또는 아래) ⋮ 메뉴를 눌러요', '"다른 브라우저로 열기"를 눌러요', '크롬이나 사파리에서 전화 놀이를 다시 열어요']
+      : isIOS
+        ? ['주소창 왼쪽의 "가가"(또는 ⚙︎)를 눌러요', '"웹사이트 설정" → 마이크를 "허용"으로 바꿔요', '아래 "새로고침"을 눌러요']
+        : ['주소창 왼쪽의 자물쇠(또는 ⓘ)를 눌러요', '"권한" → 마이크를 "허용"으로 바꿔요', '아래 "새로고침"을 눌러요'];
+    body = (
+      <div style={{ flex: '1 0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'safe center', gap: '12px', padding: '6px 4px', color: '#3f3a52' }}>
+        <div style={{ fontSize: '2.4rem', textAlign: 'center', lineHeight: 1 }}>🎤🚫</div>
+        <div style={{ fontFamily: JUA, fontSize: '1.25rem', textAlign: 'center' }}>마이크가 꺼져 있어요</div>
+        <div style={{ fontSize: '0.82rem', fontWeight: 700, textAlign: 'center', color: '#6b7280' }}>한 번 '허용 안 함'이 되면 앱이 다시 물어볼 수 없어서, 부모님이 직접 켜 주셔야 해요.</div>
+        <ol style={{ margin: 0, paddingLeft: '1.3rem', fontSize: '0.92rem', lineHeight: 1.6, fontWeight: 800 }}>{steps.map(t => <li key={t}>{t}</li>)}</ol>
+        <button onClick={() => window.location.reload()} style={{ border: 'none', borderRadius: '22px', minHeight: '54px', flexShrink: 0, background: '#34d399', color: '#ffffff', fontFamily: JUA, fontSize: '1.2rem', cursor: 'pointer' }}>🔄 새로고침</button>
+        <button onClick={() => setShowMicHelp(false)} style={{ border: 'none', borderRadius: '22px', minHeight: '46px', flexShrink: 0, background: '#e5e7eb', color: '#374151', fontFamily: JUA, fontSize: '1.05rem', cursor: 'pointer' }}>돌아가기</button>
+      </div>
+    );
+  }
+
+  const dark = consent && !showMicHelp && (screen === 'ringing' || screen === 'call');
   const screenBg = dark ? `linear-gradient(180deg, ${friend.ink} 0%, #1e1b4b 100%)` : 'linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%)';
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '28px', padding: '6px', background: 'radial-gradient(circle at 30% 20%, #e0f2fe 0, rgba(224,242,254,0) 45%), radial-gradient(circle at 75% 80%, #fce7f3 0, rgba(252,231,243,0) 45%)', borderRadius: '28px' }}>
