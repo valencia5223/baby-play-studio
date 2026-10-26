@@ -1,12 +1,12 @@
 // 🎰 로또 캡슐 뽑기 탭: 동행복권 당첨 결과를 분석해 번호를 캡슐 뽑기로 한 개씩 뽑는다
-// 데이터는 public/lotto/draws.json(빌드 전 scripts/update-lotto.mjs 가 갱신) + /dh 중계로 그 뒤 회차 확인
+// 데이터는 public/lotto/draws.json(빌드 전 scripts/update-lotto.mjs 가 갱신) + 열 때마다 Supabase 함수 lotto-draws 로 그 뒤 회차 확인
 // 스타일은 다른 탭과 섞이지 않게 모두 lg- 로 시작 (LottoGacha.css)
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FIELDS, numsOf, ballClass, buildPopularityModel, buildStats, MODES, planSet, reasonFor,
   makeSetRanker, describeSet, rankOf, nextDrawInfo, fmtDate
 } from './lottoLogic';
-import { toRow, ROUND_URL } from './lottoRows';
+import { toRow } from './lottoRows';
 import LottoMachine from './LottoMachine';
 import './LottoGacha.css';
 
@@ -14,6 +14,8 @@ const SAVE_KEY = 'bps_lotto_saved_v1';
 const SPIN_MS = 900;
 const DROP_MS = 650;
 const BASE = import.meta.env.BASE_URL || '/';
+// 최신 회차 중계: baby-play-studio 전용 Supabase(서울) Edge Function → 동행복권 (supabase/functions/lotto-draws)
+const LIVE_API = 'https://auaygojvfrvxmaerzmzi.supabase.co/functions/v1/lotto-draws';
 
 const loadSaved = () => {
   try {
@@ -28,7 +30,7 @@ const storeSaved = (list) => {
   } catch { /* 저장 공간 문제는 무시 */ }
 };
 
-// 당첨 결과: draws.json 을 읽고, /dh 중계가 되면 그 뒤 회차를 더 받음
+// 당첨 결과: draws.json 을 읽고, 중계 함수로 그 뒤 회차를 더 받음 (추첨이 끝나면 바로 보임)
 const useDraws = () => {
   const [state, setState] = useState({ draws: null, updatedAt: null, live: false, error: null });
   useEffect(() => {
@@ -52,7 +54,7 @@ const useDraws = () => {
           const max = draws[draws.length - 1][FIELDS.round];
           // 아직 없는 회차를 기준으로 물으면 빈 목록이 오므로, 가진 마지막 회차를 기준으로 묻는다
           // (응답은 최신 회차까지 잘려서 그 뒤 새 회차들이 같이 옴)
-          const res = await fetch(`${BASE}dh${ROUND_URL(max)}`, { headers: { accept: 'application/json' } });
+          const res = await fetch(`${LIVE_API}?round=${max}`, { cache: 'no-cache' });
           if (!res.ok || !(res.headers.get('content-type') || '').includes('json')) break;
           const list = (await res.json())?.data?.list;
           if (!Array.isArray(list)) break;
@@ -62,7 +64,7 @@ const useDraws = () => {
           draws = [...draws, ...fresh];
           updatedAt = new Date().toISOString();
         }
-      } catch { /* 중계가 없으면 draws.json 만 씀 */ }
+      } catch { /* 중계가 안 되면 draws.json 만 씀 */ }
       if (!cancelled) setState({ draws, updatedAt, live, error: null });
     })();
     return () => {

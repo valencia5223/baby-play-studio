@@ -4,3 +4,7 @@
 
 [functions.baby-voice]
 verify_jwt = false
+
+# 로또 탭 최신 회차 중계 (배포: npx supabase functions deploy lotto-draws --project-ref auaygojvfrvxmaerzmzi --use-api)
+[functions.lotto-draws]
+verify_jwt = false
