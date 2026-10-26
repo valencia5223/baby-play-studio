@@ -314,7 +314,7 @@ class BabySoundEngine {
   }
 
   // 🌙 그림책: 음성 하나를 재생하고, 다 읽으면 onEnded 를 부른다 (다음 쪽으로 넘기기용)
-  async playClipThen(url, onEnded, fallbackFn = null, timeoutMs = 4000) {
+  async playClipThen(url, onEnded, fallbackFn = null, timeoutMs = 4000, gain = 1) {
     this.stopVoice();
     if (this.muted) return;
     const token = this.voicePlayToken;
@@ -326,7 +326,7 @@ class BabySoundEngine {
       await withTimeout(this.ctx.resume().catch(() => { }), 300);
       if (this.voicePlayToken !== token) return;
     }
-    if (buf && this.ctx && this.ctx.state === 'running') this._playBufferDirect(buf, token, onEnded);
+    if (buf && this.ctx && this.ctx.state === 'running') this._playBufferDirect(buf, token, onEnded, gain);
     else if (fallbackFn) fallbackFn();
   }
 
@@ -338,7 +338,7 @@ class BabySoundEngine {
   }
 
   // Web Audio 버퍼 직접 재생 헬퍼 (비동기 타이머/setTimeout에서도 아이패드에서 100% 재생됨)
-  _playBufferDirect(buffer, token, onEnded = null) {
+  _playBufferDirect(buffer, token, onEnded = null, gain = 1.0) {
     if (!this.ctx || this.voicePlayToken !== token) return;
     try {
       if (this.ctx.state === 'suspended') {
@@ -346,7 +346,7 @@ class BabySoundEngine {
       }
       const source = this.ctx.createBufferSource();
       const gainNode = this.ctx.createGain();
-      gainNode.gain.value = 1.0;
+      gainNode.gain.value = gain;
       source.buffer = buffer;
       source.connect(gainNode);
       gainNode.connect(this.ctx.destination);
