@@ -92,8 +92,21 @@ class BabySoundEngine {
       if (AudioCtx) this.ctx = new AudioCtx();
     }
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') {
-        this.ctx.resume();
+      // 📱 iOS: 전화 놀이에서 마이크를 쓰고 나오면 AudioContext 가 'interrupted' 로 남아 소리가 안 난다
+      //    → 재생 세션으로 되돌리고 깨우되, 그래도 안 살아나면 새로 만든다
+      const st = this.ctx.state;
+      if (st === 'suspended' || st === 'interrupted') {
+        try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch (e) { }
+        const old = this.ctx;
+        const revive = () => {
+          if (this.ctx !== old || old.state === 'running') return;
+          try { old.close().catch(() => { }); } catch (e) { }
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+          if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => { });
+        };
+        old.resume().then(() => { if (st === 'interrupted') setTimeout(revive, 300); }, revive);
+        if (st === 'interrupted') setTimeout(revive, 400);
       }
     }
 

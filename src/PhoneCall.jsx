@@ -222,7 +222,8 @@ const nativeSay = (text, onEnd) => {
     window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
   } catch { setTimeout(onEnd, 800 + text.length * 90); }
 };
-const voiceUrl = (friendId, text) => `${API}/baby-voice?who=${friendId}&text=${encodeURIComponent(text.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ,.!?-]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 118))}`;
+// v: 서버 목소리(크기 등)를 바꾸면 올린다 (예전 목소리가 기기 캐시에서 나오지 않게)
+const voiceUrl = (friendId, text) => `${API}/baby-voice?v=2&who=${friendId}&text=${encodeURIComponent(text.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ,.!?-]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 118))}`;
 
 // ─────────────────────────────── 화면 ───────────────────────────────
 export default function PhoneCall({ audio }) {
@@ -265,7 +266,7 @@ export default function PhoneCall({ audio }) {
 
   const later = (fn, ms) => { const id = setTimeout(fn, ms); timersRef.current.push(id); return id; };
   const clearTimers = () => { timersRef.current.forEach(clearTimeout); timersRef.current = []; };
-  useEffect(() => () => { clearTimers(); callIdRef.current++; audio.interruptVoice(); endSession(); releaseMic(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { clearTimers(); callIdRef.current++; audio.interruptVoice(); endSession(); releaseMic(); audio.init(); }, []);   // 마이크를 닫은 뒤 앱 소리 엔진을 다시 깨운다 (아이폰)   // eslint-disable-line react-hooks/exhaustive-deps
 
   // 통화 시간
   useEffect(() => {
