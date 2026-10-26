@@ -22,7 +22,7 @@ const CONSENT_KEY = 'bps_phone_consent_v1';
 const MAX_BABY_TURNS = 6;          // 아기가 이만큼 말하면 친구가 작별 인사
 const MAX_CALL_SEC = 180;          // 통화는 최대 3분
 const IDLE_NUDGE_SEC = 14;         // (눌러서 말하기일 때) 아기가 말이 없으면 친구가 먼저 한마디 (두 번까지)
-const SILENCE_MS = 1000;           // 자동 듣기: 아기가 말하다 이만큼 조용하면 말이 끝난 것으로
+const SILENCE_MS = 800;            // 자동 듣기: 아기가 말하다 이만큼 조용하면 말이 끝난 것으로 (짧을수록 대답이 빠르다)
 const MAX_UTTER_MS = 8000;         // 한 번에 녹음하는 최대 길이
 const NO_SPEECH_MS = 9000;         // 자동 듣기: 이만큼 아무 말이 없으면 친구가 먼저 이어 간다
 
@@ -158,7 +158,7 @@ async function askFriend(friendId, turns, phase, audioB64) {
 
 // 간단한 소리(연결음·버튼음)를 WAV data URL 로 만든다. segs: [[주파수들, 초], ...] (주파수 [] = 조용)
 const toneCache = new Map();
-function toneUrl(key, segs, vol = 0.35) {
+function toneUrl(key, segs, vol = 0.6) {
   if (toneCache.has(key)) return toneCache.get(key);
   const rate = 16000, n = Math.round(segs.reduce((a, [, d]) => a + d, 0) * rate);
   const buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
@@ -205,6 +205,34 @@ function toWavBase64(chunks, srcRate) {
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
   return btoa(bin);
 }
+// 친구 목소리를 크게: 서버 목소리(Edge TTS)는 볼륨을 올려도 거의 안 커져서(+60% ≈ 2.5dB, 그 위로는 그대로)
+// 기기에서 MP3 를 풀어 말소리 크기를 맞추고, 넘치는 부분은 부드럽게 눌러(tanh) WAV 로 만든다.
+// OfflineAudioContext 는 재생용이 아니라서 아이폰에서 마이크·잠금 상태와 상관없이 쓸 수 있다. 실패하면 원래 MP3 그대로
+const VOICE_TARGET_RMS = 0.28;   // 말소리 부분의 목표 크기
+const VOICE_BOOST_MAX = 3.5;     // 최대 약 +11dB
+async function loudVoiceUrl(blob) {
+  try {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) throw new Error('no OfflineAudioContext');
+    const ab = await blob.arrayBuffer();
+    const dec = new OAC(1, 1, 24000);
+    const buf = await new Promise((res, rej) => { const p = dec.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+    const d = buf.getChannelData(0), n = d.length, rate = buf.sampleRate;
+    let sum = 0, cnt = 0;
+    for (let i = 0; i < n; i++) { const x = d[i]; if (x > 0.01 || x < -0.01) { sum += x * x; cnt++; } }
+    const rms = cnt ? Math.sqrt(sum / cnt) : 0;
+    const g = rms ? Math.min(VOICE_BOOST_MAX, Math.max(1, VOICE_TARGET_RMS / rms)) : 1;
+    const out = new ArrayBuffer(44 + n * 2), v = new DataView(out);
+    const str = (off, t) => { for (let i = 0; i < t.length; i++) v.setUint8(off + i, t.charCodeAt(i)); };
+    str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    str(36, 'data'); v.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.round(Math.tanh(d[i] * g) * 0x7fff), true);
+    return URL.createObjectURL(new Blob([out], { type: 'audio/wav' }));
+  } catch { return URL.createObjectURL(blob); }
+}
+// 문장마다 목소리를 동시에 받아 기기 메모리에 (받는 대로 바로 틀 수 있게, 크게 만들어서)
+const fetchClips = (friendId, lines) => lines.map(l => fetch(voiceUrl(friendId, l)).then(r => (r.ok ? r.blob() : null)).then(b => (b ? loudVoiceUrl(b) : null)).catch(() => null));
 // 대답을 문장 단위로 나눈다 (아주 짧은 조각은 다음 문장과 합침) → 문장마다 목소리를 동시에 만들어 첫 문장부터 바로 말하기
 const splitLines = (text) => {
   const parts = (text.match(/[^.!?]+[.!?]*/g) || [text]).map(t => t.trim()).filter(Boolean);
@@ -266,7 +294,17 @@ export default function PhoneCall({ audio }) {
 
   const later = (fn, ms) => { const id = setTimeout(fn, ms); timersRef.current.push(id); return id; };
   const clearTimers = () => { timersRef.current.forEach(clearTimeout); timersRef.current = []; };
-  useEffect(() => () => { clearTimers(); callIdRef.current++; audio.interruptVoice(); endSession(); releaseMic(); audio.init(); }, []);   // 마이크를 닫은 뒤 앱 소리 엔진을 다시 깨운다 (아이폰)   // eslint-disable-line react-hooks/exhaustive-deps
+  // 화면을 떠날 때: 마이크를 닫고, 앱 소리 엔진을 새로 깨운다 (아이폰·아이패드에서 다른 탭 소리가 안 나지 않게)
+  const unmountedRef = useRef(false);
+  const micUsedRef = useRef(false);                    // 이 화면에서 마이크를 연 적이 있는지
+  useEffect(() => {
+    unmountedRef.current = false;
+    return () => {
+      unmountedRef.current = true;
+      clearTimers(); callIdRef.current++; audio.interruptVoice(); endSession(); releaseMic();
+      if (micUsedRef.current && audio.resetAfterMic) audio.resetAfterMic(); else audio.init();
+    };
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
   // 통화 시간
   useEffect(() => {
@@ -298,7 +336,8 @@ export default function PhoneCall({ audio }) {
   const stopPlayer = () => { const a = playerRef.current; if (a) { a.onended = a.onerror = a.onplaying = null; try { a.pause(); } catch { /* 무시 */ } } };
 
   // 친구가 말하기 (목소리 MP3 를 받아 재생, 다 말하면 onDone)
-  const say = (text, onDone) => {
+  // clipsIn: 미리 받아 둔 목소리 (첫인사는 따르릉 동안 받아 둔다)
+  const say = (text, onDone, clipsIn = null) => {
     pauseMicForFriend();
     const id = callIdRef.current, sid = ++sayIdRef.current;
     turnsRef.current.push({ who: 'friend', text });
@@ -312,8 +351,7 @@ export default function PhoneCall({ audio }) {
       onDone && onDone();
     };
     const lines = splitLines(text);
-    // 모든 문장의 목소리를 동시에 받아 기기 메모리에 (받는 대로 바로 틀 수 있게)
-    const clips = lines.map(l => fetch(voiceUrl(friendId, l)).then(r => (r.ok ? r.blob() : null)).then(b => (b ? URL.createObjectURL(b) : null)).catch(() => null));
+    const clips = clipsIn || fetchClips(friendId, lines);
     let shown = 0;
     const show = (i) => {   // 자막은 소리가 나기 시작할 때 (문장이 나올 때마다 이어 붙인다)
       if (!alive()) return;
@@ -342,11 +380,12 @@ export default function PhoneCall({ audio }) {
 
   // 다음 친구 말 요청
   // audioB64: 아기가 방금 한 말의 녹음 (있으면 Gemini 가 듣고 heard 로 알아들은 말을 돌려준다)
-  const friendTurn = (phase, audioB64 = null) => {
+  // ready: 미리 요청해 둔 대답 (첫인사)
+  const friendTurn = (phase, audioB64 = null, ready = null) => {
     const id = callIdRef.current, seq = ++turnSeqRef.current;
     thinkingRef.current = true; setThinking(true);
     pauseMicForFriend();   // 대답을 기다리는 동안 미리 재생 모드로 바꿔 둔다 (아이폰)
-    askFriend(friendId, turnsRef.current, phase, audioB64).then(({ text, heard: h }) => {
+    (ready || askFriend(friendId, turnsRef.current, phase, audioB64)).then(({ text, heard: h, clips }) => {
       if (callIdRef.current !== id || seq !== turnSeqRef.current || screenRef.current !== 'call') return;   // 그 사이 아기가 또 말했으면 버린다
       thinkingRef.current = false;
       if (audioB64) {
@@ -359,7 +398,7 @@ export default function PhoneCall({ audio }) {
         if (phase === 'bye') { later(() => hangUp(true), 700); return; }
         if (isIOS && !micErrRef.current) listenForBaby();   // 아이폰: 친구 말이 끝났으니 마이크를 다시 연다
         else if (!capRef.current) waitForBaby();   // 마이크가 없으면 시간이 지나면 친구가 이어 간다
-      });
+      }, clips);
     });
   };
 
@@ -389,6 +428,7 @@ export default function PhoneCall({ audio }) {
       // 아이폰: 앱이 처음에 'playback'(재생 전용)으로 정해 두므로, 그대로면 마이크가
       // "InvalidStateError: AudioSession category is not compatible with audio capture" 로 막힌다 → 녹음 가능한 세션으로 바꾼다
       try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch { /* 무시 */ }
+      micUsedRef.current = true;
       // 울림 제거를 켠 설정 → 안 되는 기기면 기본 설정으로 한 번 더
       for (const c of [{ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }, { audio: true }]) {
         try { stream = await navigator.mediaDevices.getUserMedia(c); break; } catch (e) { err = e; if (e && e.name === 'NotAllowedError') break; }
@@ -401,6 +441,12 @@ export default function PhoneCall({ audio }) {
         micRef.current = null; setMicOk(false);
         setMicErr(IN_APP ? 'inapp' : err && err.name === 'NotAllowedError' ? 'denied' : err && err.name === 'NotFoundError' ? 'nomic' : 'other');
         setDiag(`마이크: ${err && err.name} ${err && err.message ? err.message.slice(0, 60) : ''}`);
+        return false;
+      }
+      // 마이크가 열리는 사이에 화면을 떠났으면 바로 닫는다 (안 그러면 마이크가 켜진 채로 남아 다른 탭 소리가 안 난다)
+      if (unmountedRef.current) {
+        stream.getTracks().forEach(t => t.stop());
+        if (audio.resetAfterMic) audio.resetAfterMic();
         return false;
       }
       micRef.current = { stream };
@@ -451,14 +497,28 @@ export default function PhoneCall({ audio }) {
     turnsRef.current = []; babyTurnsRef.current = 0; nudgeRef.current = 0; idleSinceRef.current = 0;
     setSec(0); setHeard(''); setFriendLine(''); setTalking(false); setThinking(false);
     setScreen('ringing');
-    // 따르릉 두 번 → 받음
-    later(() => {
-      if (screenRef.current !== 'ringing') return;
+    // 첫인사는 따르릉 동안 미리 받아 둔다 (대답 글 + 첫 문장 목소리) → 받자마자 바로 말한다
+    const hello = askFriend(friendId, [], 'hello').then(r => ({ ...r, clips: fetchClips(friendId, splitLines(r.text)) }));
+    let helloReady = false;
+    hello.then(r => r.clips[0]).then(() => { helloReady = true; });
+    const t0 = Date.now(), id = callIdRef.current;
+    let rangAgain = false;
+    // 따르릉 한 번(3.4초) 뒤 인사가 준비됐으면 받고, 아직이면 한 번 더 울리며 기다린다 (최대 9초)
+    const pickUp = () => {
+      if (screenRef.current !== 'ringing' || callIdRef.current !== id) return;
+      const waited = Date.now() - t0;
+      if (!helloReady && waited < 9000) {
+        if (waited > 3800 && !rangAgain) { rangAgain = true; playUrl(toneUrl('ring', RING)); }
+        later(pickUp, 150);
+        return;
+      }
+      if (rangAgain) stopPlayer();
       setScreen('call'); screenRef.current = 'call';
       callStartRef.current = Date.now();
       if (!isIOS) ensureMic().then(ok => { if (ok) startCapture(); });   // 통화 내내 듣기 (언제든 말하기, 아이폰은 친구 인사가 끝난 뒤)
-      friendTurn('hello');
-    }, 4200);
+      friendTurn('hello', null, hello);
+    };
+    later(pickUp, 3400);
   };
 
   function hangUp(byFriend = false) {

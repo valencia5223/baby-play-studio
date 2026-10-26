@@ -10,6 +10,9 @@ const MODELS = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-l
 // 생각 시간: 'low'(질문을 제대로 알아듣는다). minimal 은 빠르지만 엉뚱한 대답이 잦았다
 const THINKING: (Record<string, unknown> | null)[] = [{ thinkingLevel: 'low' }, { thinkingLevel: 'minimal' }, { thinkingBudget: 256 }, null];
 const thinkingChoice = new Map<string, number>();
+// 한도(429)·없는 모델 등으로 실패한 모델은 잠시 건너뛴다 (매번 먼저 시도했다 실패하느라 대답이 1~2초 늦어지지 않게)
+const COOLDOWN_MS = 10 * 60 * 1000;
+const skipUntil = new Map<string, number>();
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -118,7 +121,10 @@ Deno.serve(async (req) => {
   if (contents[0].role !== 'user') contents.unshift({ role: 'user', parts: [{ text: '(전화 연결)' }] });
 
   const first = Deno.env.get('GEMINI_MODEL');
-  const chain = first ? [first, ...MODELS.filter(m => m !== first)] : MODELS;
+  const all = first ? [first, ...MODELS.filter(m => m !== first)] : MODELS;
+  const now = Date.now();
+  const fresh = all.filter(m => (skipUntil.get(m) || 0) <= now);
+  const chain = fresh.length ? [...fresh, ...all.filter(m => !fresh.includes(m))] : all;
   let lastErr = '';
   const errs: string[] = [];
   for (const model of chain) {
@@ -140,14 +146,19 @@ Deno.serve(async (req) => {
       });
       const d = await r.json().catch(() => ({}));
       if (r.status === 400 && /thinking/i.test(d?.error?.message || '')) continue;   // 이 모델이 받지 않는 생각 설정 → 다음 설정
-      if (!r.ok) { lastErr = `${model} ${r.status} ${d?.error?.message || ''}`.slice(0, 200); errs.push(lastErr.slice(0, 80)); break; }   // 한도·없는 모델 → 다음 모델
+      if (!r.ok) {   // 한도·없는 모델 → 다음 모델 (잠시 건너뛰기)
+        lastErr = `${model} ${r.status} ${d?.error?.message || ''}`.slice(0, 200); errs.push(lastErr.slice(0, 80));
+        if ([403, 404, 429].includes(r.status) || r.status >= 500) skipUntil.set(model, Date.now() + (r.status >= 500 ? 60_000 : COOLDOWN_MS));
+        break;
+      }
+      skipUntil.delete(model);
       thinkingChoice.set(model, i);
       const raw = (d?.candidates?.[0]?.content?.parts || []).filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text || '').join(' ');
       let heard = '', reply = raw;
       if (audio) { try { const o = JSON.parse(raw); heard = String(o.heard || ''); reply = String(o.reply || ''); } catch { /* 글자 그대로 */ } }
       const text = clean(reply);
       if (!text) { lastErr = `${model} empty ${d?.candidates?.[0]?.finishReason || ''} ${d?.promptFeedback?.blockReason || ''}`; errs.push(lastErr); continue; }   // 빈 대답(생각만 하고 끝남 등) → 다른 생각 설정으로 한 번 더
-      return json({ text, heard: heard.slice(0, 200), model });
+      return json({ text, heard: heard.slice(0, 200), model, skipped: errs.length ? errs : undefined });
     }
   }
   return json({ error: lastErr || 'no model', tried: errs }, 502);

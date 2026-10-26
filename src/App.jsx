@@ -125,6 +125,16 @@ class BabySoundEngine {
     }
   }
 
+  // 📱 iOS·iPadOS: 마이크를 쓰고 나면(전화 놀이) 기존 AudioContext 가 겉으로는 살아 있어도 소리가 안 날 때가 있다
+  //    → 재생 세션으로 되돌리고 AudioContext 를 새로 만들어 다시 잠금 해제한다 (탭을 누른 터치 안에서 부르면 바로 살아난다)
+  resetAfterMic() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }
+    const old = this.ctx; this.ctx = null;
+    if (old) { try { old.close().catch(() => { }); } catch (e) { } }
+    this.isAudioUnlocked = false;
+    this.init();
+  }
+
   // 📱 iOS Safari AudioContext가 suspended 상태일 때 확실히 resume 완료 후 반환
   async ensureAudioContext() {
     this.init();
