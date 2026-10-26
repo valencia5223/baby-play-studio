@@ -151,6 +151,21 @@ export function drawFish(ctx, sp, L, o = {}) {
   const tailX = xs(1), tailY = wave(1);
   const swing = Math.sin(ph - 3.6) * amp * 1.9;
   const t = sp.tail;
+  // 아귀 초롱 (glow: 야광 레이어에서 방울만 빛나게)
+  const drawLure = (glow) => {
+    const bx = xs(0.16), by = wave(0.16) - half(0.16) * 0.9;
+    const sway = Math.sin(ph * 0.7) * H * 0.08;
+    const lx = xs(-0.16), ly = wave(0) - H * 0.95 + sway;
+    if (!glow) {
+      ctx.strokeStyle = sp.top; ctx.lineWidth = Math.max(0.8, L * 0.014); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(xs(0.02), wave(0) - H * 1.25, lx, ly); ctx.stroke();
+    }
+    ctx.save();
+    ctx.shadowColor = '#fde047'; ctx.shadowBlur = L * (glow ? 0.5 : 0.18);
+    ctx.fillStyle = glow ? 'rgba(254,240,138,0.95)' : '#fde68a';
+    ctx.beginPath(); ctx.arc(lx, ly + L * 0.03, L * 0.045, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  };
 
   ctx.save();
   ctx.globalAlpha *= 1 - fry * 0.28;
@@ -361,7 +376,11 @@ export function drawFish(ctx, sp, L, o = {}) {
       ctx.shadowBlur = 0;
     });
   }
-  if (glowOnly) { ctx.restore(); ctx.restore(); return; }
+  if (glowOnly) {
+    ctx.restore();
+    if (sp.lure && fry < 0.8) drawLure(true);
+    ctx.restore(); return;
+  }
   if (belly > 0.05) {
     // 불룩한 배: 밝은 배 + 난태생은 배 속 아기 눈이 비치는 까만 임신 반점
     ctx.fillStyle = `rgba(255,255,255,${0.25 * belly})`;
@@ -512,7 +531,7 @@ export function drawFish(ctx, sp, L, o = {}) {
     });
   }
   // 갈치: 아래턱이 앞으로 튀어나온 뾰족한 입과 작은 송곳니
-  if (ribbon && fry < 0.8) {
+  if (ribbon && fry < 0.8 && !sp.barbels) {
     ctx.fillStyle = sp.belly;
     ctx.beginPath(); ctx.moveTo(xs(0.07), wave(0.07) + half(0.07) * 0.55); ctx.lineTo(xs(0) + L * 0.035, wave(0) - H * 0.03); ctx.lineTo(xs(0.02), wave(0.02) + H * 0.04); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = 'rgba(51,65,85,0.55)'; ctx.lineWidth = Math.max(0.5, L * 0.005);
@@ -535,6 +554,27 @@ export function drawFish(ctx, sp, L, o = {}) {
       ctx.quadraticCurveTo(mx + L * len * 0.5, my + H * dy - H * 0.1 * k2, mx + L * len * (i < 2 ? 0.75 : 0.9), my + H * (dy + 0.35 * k2) + wig * k2);
       ctx.stroke();
     });
+  }
+  // 아귀: 위로 벌어진 넓은 입에 삐죽삐죽 이빨
+  if (sp.teeth && fry < 0.8) {
+    ctx.fillStyle = '#f8fafc';
+    for (let i = 0; i < 6; i++) {
+      const q = 0.01 + i * 0.03, x = xs(q), y = wave(q) + H * (0.06 + i * 0.012);
+      ctx.beginPath(); ctx.moveTo(x - L * 0.008, y); ctx.lineTo(x + L * 0.008, y); ctx.lineTo(x, y + (i % 2 ? -H * 0.12 : H * 0.1)); ctx.closePath(); ctx.fill();
+    }
+  }
+  if (sp.lure && fry < 0.8) drawLure(false);
+  // 날치: 몸 옆으로 크게 펼친 날개 같은 가슴지느러미
+  if (sp.wings) {
+    const flap = Math.sin(ph * 1.6) * H * 0.25;
+    ctx.fillStyle = sp.fin;
+    ctx.beginPath();
+    ctx.moveTo(xs(0.26), wave(0.26) + H * 0.05);
+    ctx.quadraticCurveTo(xs(0.5), wave(0.5) - H * 0.9 - flap, xs(0.82), wave(0.82) - H * 0.95 - flap);
+    ctx.quadraticCurveTo(xs(0.66), wave(0.66) - H * 0.35, xs(0.42), wave(0.42) + H * 0.15);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = Math.max(0.5, L * 0.006);
+    [0.45, 0.6, 0.72].forEach(q => { ctx.beginPath(); ctx.moveTo(xs(0.3), wave(0.3) + H * 0.02); ctx.lineTo(xs(q + 0.08), wave(q) - H * (0.4 + q) - flap * 0.8); ctx.stroke(); });
   }
   // 누운 몸 위에서는 눈을 납작하게 하지 않고 몸 위로 볼록 솟게 그린다
   const lieY = (y) => (o.lie ? y * o.lie - H * 0.14 : y);
@@ -1063,7 +1103,7 @@ function drawCreature(ctx, sp, L, o = {}) {
         ctx.strokeStyle = fin; ctx.lineWidth = Math.max(1.4, L * 0.06);
         ctx.beginPath(); ctx.moveTo(side * L * 0.24, -H * 0.05); ctx.lineTo(side * L * 0.38, -H * 0.32); ctx.stroke();
         ctx.save(); ctx.translate(side * L * 0.42, -H * 0.44);
-        ctx.fillStyle = top;
+        ctx.fillStyle = sp.accent ? accent : top;
         ctx.beginPath(); ctx.ellipse(side * L * 0.03, -H * 0.13, L * 0.045, H * 0.14, side * (0.3 + open), 0, TAU); ctx.fill();
         ctx.beginPath(); ctx.ellipse(side * L * 0.07, -H * 0.03, L * 0.035, H * 0.1, side * (0.9 + open), 0, TAU); ctx.fill();
         ctx.beginPath(); ctx.ellipse(0, H * 0.04, L * 0.08, H * 0.12, 0, 0, TAU); ctx.fill();
@@ -1235,9 +1275,16 @@ function drawCreature(ctx, sp, L, o = {}) {
       ctx.fill();
       ctx.restore();
       ctx.beginPath();
-      ctx.moveTo(L * 0.06, -H * 0.44);
-      ctx.quadraticCurveTo(-L * 0.02, -H * 0.78, -L * 0.13, -H * 1.0);
-      ctx.quadraticCurveTo(-L * 0.08, -H * 0.62, -L * 0.17, -H * 0.36);
+      if (sp.orca) {
+        // 범고래: 하늘로 우뚝 솟은 높은 등지느러미
+        ctx.moveTo(L * 0.08, -H * 0.44);
+        ctx.quadraticCurveTo(L * 0.02, -H * 1.0, -L * 0.04, -H * 1.55);
+        ctx.quadraticCurveTo(-L * 0.06, -H * 0.8, -L * 0.14, -H * 0.38);
+      } else {
+        ctx.moveTo(L * 0.06, -H * 0.44);
+        ctx.quadraticCurveTo(-L * 0.02, -H * 0.78, -L * 0.13, -H * 1.0);
+        ctx.quadraticCurveTo(-L * 0.08, -H * 0.62, -L * 0.17, -H * 0.36);
+      }
       ctx.closePath(); ctx.fill();
       ctx.beginPath();
       ctx.moveTo(L * 0.5, H * 0.08);
@@ -1249,8 +1296,19 @@ function drawCreature(ctx, sp, L, o = {}) {
       ctx.quadraticCurveTo(-L * 0.05, H * 0.5, L * 0.2, H * 0.42);
       ctx.quadraticCurveTo(L * 0.4, H * 0.34, L * 0.5, H * 0.08);
       ctx.closePath();
-      ctx.fillStyle = grad(-H * 0.5, H * 0.5, 0.62);
-      finish();
+      ctx.fillStyle = sp.orca ? top : grad(-H * 0.5, H * 0.5, 0.62);
+      finish(sp.orca ? () => {
+        // 범고래 무늬: 흰 턱·배, 눈 뒤 흰 반점, 등지느러미 뒤 회색 안장
+        ctx.fillStyle = belly;
+        ctx.beginPath();
+        ctx.moveTo(L * 0.5, H * 0.12);
+        ctx.quadraticCurveTo(L * 0.3, H * 0.2, L * 0.12, H * 0.16);
+        ctx.quadraticCurveTo(-L * 0.08, H * 0.08, -L * 0.2, H * 0.3);
+        ctx.lineTo(-L * 0.2, H * 0.6); ctx.lineTo(L * 0.5, H * 0.6); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(L * 0.2, -H * 0.18, L * 0.07, H * 0.11, -0.2, 0, TAU); ctx.fill();
+        ctx.fillStyle = 'rgba(203,213,225,0.55)';
+        ctx.beginPath(); ctx.ellipse(-L * 0.12, -H * 0.42, L * 0.09, H * 0.1, 0.1, 0, TAU); ctx.fill();
+      } : undefined);
       ctx.fillStyle = fin;
       ctx.save(); ctx.translate(L * 0.15, H * 0.24); ctx.rotate(0.35 + Math.sin(ph * 1.2) * 0.15);
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-L * 0.04, H * 0.45, -L * 0.13, H * 0.55); ctx.quadraticCurveTo(-L * 0.07, H * 0.2, -L * 0.07, 0); ctx.closePath(); ctx.fill();
@@ -1259,7 +1317,7 @@ function drawCreature(ctx, sp, L, o = {}) {
       ctx.beginPath(); ctx.moveTo(L * 0.49, H * 0.1); ctx.quadraticCurveTo(L * 0.42, H * 0.2, L * 0.33, H * 0.1); ctx.stroke();
       ctx.fillStyle = 'rgba(15,23,42,0.45)';
       ctx.beginPath(); ctx.ellipse(L * 0.19, -H * 0.47, L * 0.012, H * 0.04, 0, 0, TAU); ctx.fill();   // 숨구멍
-      creatureEye(ctx, L * 0.3, -H * 0.08, er * 0.55, o);
+      creatureEye(ctx, L * 0.3, -H * (sp.orca ? 0.04 : 0.08), er * 0.55, o);
       break;
     }
     case 'crayfish': {
@@ -1411,17 +1469,19 @@ function drawCreature(ctx, sp, L, o = {}) {
         }
       };
       const sway = Math.sin(ph * 0.7) * 0.12;
-      [[-1.75, 0.2], [-2.2, 0.22], [-2.65, 0.2]].forEach(([a, ln]) => gill(L * 0.22, -H * 0.28, a + sway, L * ln));
+      if (!sp.noGills) [[-1.75, 0.2], [-2.2, 0.22], [-2.65, 0.2]].forEach(([a, ln]) => gill(L * 0.22, -H * 0.28, a + sway, L * ln));
       // 몸
       ctx.beginPath(); ctx.ellipse(L * 0.02, w * 0.2, L * 0.22, H * 0.3, 0, 0, TAU);
       ctx.fillStyle = grad(-H * 0.3, H * 0.3, 0.75);
       finish(() => { if (sp.spots) dots([[-0.1, -0.12], [0.02, -0.18], [0.12, -0.1], [-0.02, -0.04]].map(([x, y]) => [L * x, H * y]), L * 0.014); });
       // 큰 머리
-      ctx.beginPath(); ctx.ellipse(L * 0.3, -H * 0.04, L * 0.17, H * 0.4, 0, 0, TAU);
+      ctx.beginPath();
+      if (sp.noGills) ctx.ellipse(L * 0.3, -H * 0.02, L * 0.15, H * 0.3, 0, 0, TAU);   // 도롱뇽은 머리가 작고 갸름하다
+      else ctx.ellipse(L * 0.3, -H * 0.04, L * 0.17, H * 0.4, 0, 0, TAU);
       ctx.fillStyle = grad(-H * 0.4, H * 0.36, 0.7);
-      finish();
+      finish(sp.noGills && sp.spots ? () => dots([[0.26, -0.18], [0.34, -0.22], [0.2, -0.08]].map(([x, y]) => [L * x, H * y]), L * 0.014) : undefined);
       // 이쪽 아가미 (머리 위에 겹쳐 보인다)
-      [[-2.35, 0.21], [-2.95, 0.22], [2.75, 0.17]].forEach(([a, ln]) => gill(L * 0.18, -H * 0.06, a - sway, L * ln));
+      if (!sp.noGills) [[-2.35, 0.21], [-2.95, 0.22], [2.75, 0.17]].forEach(([a, ln]) => gill(L * 0.18, -H * 0.06, a - sway, L * ln));
       // 활짝 웃는 넓은 입 + 발그레한 볼
       ctx.strokeStyle = 'rgba(131,24,67,0.75)'; ctx.lineWidth = Math.max(0.8, L * 0.013);
       ctx.beginPath(); ctx.moveTo(L * 0.46, H * 0.06); ctx.quadraticCurveTo(L * 0.36, H * 0.26, L * 0.22, H * 0.12); ctx.stroke();

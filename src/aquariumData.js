@@ -151,6 +151,50 @@ export const FISH_SPECIES = [
     top: '#4b5135', belly: '#d6d3c4', mottle: '#1c1f12', barbels: 'rgba(41,45,28,0.85)',
     tail: { color: 'rgba(75,81,53,0.9)', len: 0.26, spread: 0.34, solid: true }, fin: 'rgba(75,81,53,0.8)'
   },
+  {
+    id: 'snakehead', name: '가물치', price: 230, len: 96, hRatio: 0.2, shape: 'normal', eyeK: 0.35, desc: '뱀처럼 길쭉한 얼룩 대장',
+    speed: 0.7, growMul: 0.8, school: false, zone: 'mid', bigMouth: true,
+    top: '#3f3f2a', belly: '#b3ad92', mottle: '#14140a',
+    tail: { color: 'rgba(63,63,42,0.9)', len: 0.22, spread: 0.32, solid: true }, fin: 'rgba(63,63,42,0.8)'
+  },
+  {
+    id: 'bagrid', name: '빠가사리', price: 170, len: 60, hRatio: 0.26, shape: 'normal', eyeK: 0.34, desc: '빠각빠각 노란 수염 물고기',
+    speed: 0.55, growMul: 0.9, school: false, zone: 'bottom', bottomFeeder: true, nocturnal: true, spiny: true,
+    top: '#a67c2a', belly: '#f3e2a9', mottle: '#3b2a0a', barbels: 'rgba(80,55,15,0.85)',
+    tail: { color: 'rgba(166,124,42,0.85)', len: 0.28, spread: 0.42, fork: true }, fin: 'rgba(166,124,42,0.75)'
+  },
+  {
+    id: 'shiri', name: '쉬리', price: 150, len: 44, hRatio: 0.22, shape: 'normal', eyeK: 0.42, desc: '우리나라에만 사는 줄무늬 물고기',
+    speed: 1.2, growMul: 1.05, school: true, zone: 'mid',
+    top: '#57534e', belly: '#fef3c7',
+    bands: [{ color: '#facc15', y: -0.2, from: 0.15, to: 0.95, w: 0.08 }, { color: 'rgba(30,41,59,0.85)', y: -0.04, from: 0.1, to: 0.98, w: 0.1 }, { color: 'rgba(250,204,21,0.6)', y: 0.12, from: 0.2, to: 0.9, w: 0.06 }],
+    tail: { color: 'rgba(87,83,78,0.75)', len: 0.3, spread: 0.42, fork: true }, fin: 'rgba(250,204,21,0.5)'
+  },
+  {
+    id: 'salamander', name: '도롱뇽', price: 240, len: 56, hRatio: 0.32, shape: 'axolotl', desc: '맑은 냇물의 꼬마 도롱뇽', crawl: true, swim: true, upright: true, noGills: true,
+    speed: 0.45, growMul: 0.9, school: false, zone: 'bottom',
+    top: '#7a6038', belly: '#e9d9ae', spots: 'rgba(41,30,12,0.6)', fin: 'rgba(122,96,56,0.55)', accent: '#7a6038', tail: {}
+  },
+  {
+    id: 'trout', name: '송어', price: 190, len: 70, hRatio: 0.28, shape: 'normal', eyeK: 0.4, desc: '무지갯빛 띠 차가운 냇물 친구',
+    speed: 1.05, growMul: 0.9, school: false, zone: 'mid',
+    top: '#5f6b4a', belly: '#f1f5f9', spots: '#1f2a14',
+    bands: [{ color: 'rgba(244,114,182,0.6)', y: 0.04, from: 0.12, to: 0.92, w: 0.2 }],
+    tail: { color: 'rgba(95,107,74,0.85)', len: 0.3, spread: 0.46, spots: 'rgba(31,42,20,0.6)' }, fin: 'rgba(95,107,74,0.7)'
+  },
+  {
+    id: 'loach', name: '미꾸라지', price: 110, len: 72, hRatio: 0.12, shape: 'ribbon', eyeK: 0.5, desc: '미끌미끌 꿈틀꿈틀',
+    speed: 0.6, growMul: 1.05, school: false, zone: 'bottom', bottomFeeder: true,
+    top: '#7a6a45', belly: '#e9dfb8', mottle: '#3a2f17', barbels: 'rgba(58,47,23,0.85)',
+    tail: { color: 'rgba(122,106,69,0.8)', len: 0.12, spread: 0.2, solid: true }, fin: 'rgba(122,106,69,0.6)'
+  },
+  {
+    id: 'bass', name: '배스', price: 210, len: 72, hRatio: 0.34, shape: 'normal', eyeK: 0.4, desc: '입이 커다란 초록 사냥꾼',
+    speed: 0.9, growMul: 0.85, school: false, zone: 'mid', bigMouth: true, spiny: true,
+    top: '#4d6b2e', belly: '#e8eccf',
+    bands: [{ color: 'rgba(30,41,20,0.65)', y: 0, from: 0.1, to: 0.95, w: 0.14 }],
+    tail: { color: 'rgba(77,107,46,0.85)', len: 0.3, spread: 0.44 }, fin: 'rgba(77,107,46,0.75)'
+  },
   // 민물 친구 (바다 친구처럼 따로 그림: drawCreature 의 softshell·axolotl·croc)
   {
     id: 'softshell', name: '자라', price: 260, len: 66, hRatio: 0.44, shape: 'softshell', desc: '대롱 코로 숨을 쉬어요', crawl: true, swim: true,
@@ -205,6 +249,66 @@ export const FISH_SPECIES = [
     speed: 0.6, growMul: 0.85, school: false, zone: 'bottom', bottomFeeder: true,
     top: '#6b8fb5', belly: '#dbe7f3', spots: 'rgba(226,232,240,0.85)', fin: '#56789e', tail: {}
   },
+  {
+    id: 'jack', name: '전갱이', price: 130, len: 58, hRatio: 0.3, shape: 'normal', eyeK: 0.45, desc: '노란 줄이 반짝 떼쟁이', sea: true,
+    speed: 1.2, growMul: 1, school: true, zone: 'mid',
+    top: '#3b6c8f', belly: '#e2e8f0',
+    bands: [{ color: 'rgba(250,204,21,0.6)', y: 0, from: 0.3, to: 0.96, w: 0.05 }],
+    tail: { color: 'rgba(59,108,143,0.85)', len: 0.32, spread: 0.5, fork: true }, fin: 'rgba(250,204,21,0.5)'
+  },
+  {
+    id: 'shad', name: '전어', price: 120, len: 50, hRatio: 0.4, shape: 'normal', eyeK: 0.45, desc: '가을에 고소한 은빛 물고기', sea: true,
+    speed: 1.15, growMul: 1.05, school: true, zone: 'mid',
+    top: '#4b6a88', belly: '#f1f5f9', spots: 'rgba(30,41,59,0.55)',
+    tail: { color: 'rgba(75,106,136,0.85)', len: 0.3, spread: 0.5, fork: true }, fin: 'rgba(148,163,184,0.6)'
+  },
+  {
+    id: 'seabass', name: '농어', price: 240, len: 80, hRatio: 0.3, shape: 'normal', eyeK: 0.38, desc: '점박이 은빛 사냥꾼', sea: true,
+    speed: 0.95, growMul: 0.85, school: false, zone: 'mid', spiny: true, bigMouth: true,
+    top: '#6b7280', belly: '#f3f4f6', spots: 'rgba(17,24,39,0.55)',
+    tail: { color: 'rgba(107,114,128,0.85)', len: 0.3, spread: 0.46, fork: true }, fin: 'rgba(107,114,128,0.7)'
+  },
+  {
+    id: 'knifejaw', name: '돌돔', price: 320, len: 58, hRatio: 0.56, shape: 'normal', desc: '까만 줄무늬 바다 친구', sea: true,
+    speed: 0.75, growMul: 0.85, school: false, zone: 'mid', spiny: true,
+    top: '#cbd5e1', belly: '#f8fafc', bars: '#1f2937',
+    tail: { color: 'rgba(31,41,55,0.8)', len: 0.3, spread: 0.42, solid: true }, fin: 'rgba(31,41,55,0.7)'
+  },
+  {
+    id: 'flatfish', name: '도다리', price: 260, len: 60, hRatio: 0.55, shape: 'flat', desc: '봄 바다에 납작 엎드려요', lieDown: true, sea: true,
+    speed: 0.4, growMul: 0.85, school: false, zone: 'bottom',
+    top: '#8b7355', belly: '#b49a72', mottle: '#3f2d1c', spots: 'rgba(250,240,220,0.85)',
+    tail: { color: 'rgba(139,115,85,0.85)', len: 0.18, spread: 0.3, solid: true }, fin: 'rgba(139,115,85,0.8)'
+  },
+  {
+    id: 'whiteshrimp', name: '흰다리새우', price: 140, len: 48, hRatio: 0.5, shape: 'shrimp', desc: '하얀 다리 통통 새우', sea: true,
+    speed: 0.7, growMul: 1.1, school: false, zone: 'bottom',
+    top: '#d6d3d1', belly: '#fafaf9', fin: 'rgba(231,229,228,0.85)', tail: {}
+  },
+  {
+    id: 'orca', name: '범고래', price: 520, len: 140, hRatio: 0.32, shape: 'dolphin', desc: '까만 몸에 하얀 무늬, 점프!', sea: true, jumper: true, orca: true,
+    speed: 1.2, growMul: 0.7, school: false, zone: 'mid',
+    top: '#0f172a', belly: '#f8fafc', fin: '#111827', tail: {}
+  },
+  {
+    id: 'yellowtail', name: '방어', price: 280, len: 92, hRatio: 0.28, shape: 'normal', eyeK: 0.4, desc: '노란 띠 겨울 바다 대장', sea: true,
+    speed: 1.3, growMul: 0.8, school: true, zone: 'mid',
+    top: '#3b5a7a', belly: '#eef2f7',
+    bands: [{ color: 'rgba(250,204,21,0.8)', y: -0.02, from: 0.15, to: 0.98, w: 0.08 }],
+    tail: { color: 'rgba(234,179,8,0.85)', len: 0.34, spread: 0.56, fork: true }, fin: 'rgba(234,179,8,0.6)'
+  },
+  {
+    id: 'flyingfish', name: '날치', price: 260, len: 58, hRatio: 0.24, shape: 'normal', eyeK: 0.5, desc: '날개를 펴고 물 위로 슝!', sea: true, jumper: true, wings: true,
+    speed: 1.35, growMul: 0.95, school: false, zone: 'top',
+    top: '#1e40af', belly: '#e0f2fe',
+    tail: { color: 'rgba(30,64,175,0.8)', len: 0.34, spread: 0.5, fork: true }, fin: 'rgba(147,197,253,0.6)'
+  },
+  {
+    id: 'angler', name: '아귀', price: 340, len: 70, hRatio: 0.6, shape: 'normal', eyeK: 0.3, desc: '머리 위 초롱이 반짝반짝', sea: true, glow: true,
+    speed: 0.35, growMul: 0.85, school: false, zone: 'bottom', bottomFeeder: true, bigMouth: true, teeth: true, lure: true,
+    top: '#5b4636', belly: '#a68b6d', mottle: '#2a1d12',
+    tail: { color: 'rgba(91,70,54,0.9)', len: 0.24, spread: 0.36, solid: true }, fin: 'rgba(91,70,54,0.85)'
+  },
   // ── 바다 친구 ── 물고기와 똑같이 밥 먹고·아프고·이름 짓고·자란다 (sea: 상점에서 바다 친구로 묶어 보여줌)
   //  shape 가 바다 친구 이름이면 drawFish 가 drawCreature 로 따로 그린다
   //  crawl: 바닥을 기어 다님(가라앉은 밥만 먹음) / swim: 기다가도 배고프면 헤엄쳐 올라가 밥을 먹음(게) / upright: 몸을 기울이지 않음
@@ -215,9 +319,10 @@ export const FISH_SPECIES = [
     tail: { color: 'rgba(234,88,12,0.85)', len: 0.3, spread: 0.4 }, fin: 'rgba(249,115,22,0.8)'
   },
   {
-    id: 'crab', name: '게', price: 125, len: 50, hRatio: 0.62, shape: 'crab', desc: '옆으로 엉금엉금', sea: true, crawl: true, swim: true,
+    id: 'crab', name: '꽃게', price: 125, len: 50, hRatio: 0.62, shape: 'crab', desc: '파란 집게로 옆으로 엉금엉금', sea: true, crawl: true, swim: true,
     speed: 0.45, growMul: 1, school: false, zone: 'bottom',
-    top: '#dc2626', belly: '#f87171', fin: '#b91c1c', tail: {}
+    // 실제 꽃게: 보랏빛 도는 갈색 등딱지, 파란 다리와 집게
+    top: '#6b5876', belly: '#a08cab', fin: '#4a73b8', accent: '#5b84d0', tail: {}
   },
   {
     // 소라게: 소라 껍데기를 지고 바닥을 기어 다니며 자주 멈춘다. 놀라면 껍데기 속으로 쏙(hermit),
@@ -344,7 +449,7 @@ export const TANKS = {
 };
 export const TANK_IDS = ['fresh', 'sea'];
 // 냇물·연못·강에 사는 친구 (나머지는 모두 바다)
-const FRESH_IDS = new Set(['neon', 'guppy', 'danio', 'goldfish', 'platy', 'cory', 'pleco', 'betta', 'angel', 'discus', 'crayfish', 'frog', 'turtle', 'shrimp', 'medaka', 'minnow', 'cherrybarb', 'carp', 'catfish', 'softshell', 'axolotl', 'croc']);
+const FRESH_IDS = new Set(['neon', 'guppy', 'danio', 'goldfish', 'platy', 'cory', 'pleco', 'betta', 'angel', 'discus', 'crayfish', 'frog', 'turtle', 'shrimp', 'medaka', 'minnow', 'cherrybarb', 'carp', 'catfish', 'softshell', 'axolotl', 'croc', 'snakehead', 'bagrid', 'shiri', 'salamander', 'trout', 'loach', 'bass']);
 export const habitatOf = (spId) => (FRESH_IDS.has(spId) ? 'fresh' : 'sea');
 // 개체를 부를 때 쓰는 종류 정보: 올챙이처럼 어릴 때 이름이 따로 있으면(babyName) 다 크기 전까지는 그 이름으로 부른다
 const BABY_VIEW = Object.fromEntries(FISH_SPECIES.filter(f => f.babyName).map(f => [f.id, { ...f, name: f.babyName }]));
@@ -404,7 +509,8 @@ const BREED = {
   turtle: { type: 'egg', storesSperm: false, brood: [2, 4] },
   softshell: { type: 'egg', storesSperm: false, brood: [2, 4] },
   croc: { type: 'egg', storesSperm: false, brood: [1, 3] },
-  ray: { type: 'live', storesSperm: false, brood: [1, 2] }
+  ray: { type: 'live', storesSperm: false, brood: [1, 2] },
+  orca: { type: 'live', storesSperm: false, brood: [1, 1] }
 };
 const BREED_DEFAULT = { type: 'egg', storesSperm: false, brood: [3, 6] };
 export const breedOf = (spId) => BREED[spId] || BREED_DEFAULT;
