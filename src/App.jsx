@@ -55,6 +55,9 @@ const remoteVoiceUrl = (text) => (REMOTE_VOICE_API && text && text.length <= 60 
 const isRemoteVoice = (url) => !!REMOTE_VOICE_API && url.startsWith(REMOTE_VOICE_API);
 const REMOTE_VOICE_CACHE = 'bps-voice-v1';   // 한 번 받은 이름 음성은 기기에 저장 (다음부터 서버·인터넷 없이 재생)
 
+const MASTER_GAIN = 2.2;   // 마스터 출력 증폭 (압축기 뒤, 약 +7dB)
+const IS_IOS_DEVICE = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
 // --- 실제 동물 울음소리 MP3 재생 사운드 엔진 ---
 class BabySoundEngine {
   constructor() {
@@ -98,18 +101,50 @@ class BabySoundEngine {
     }
 
     // 📱 iOS Safari 제스처 언락 (사용자 터치 시 1회 무음 활성화)
-    if (this.sharedVoiceAudio && !this.isAudioUnlocked) {
+    if (this.sharedVoiceAudio && !this.isAudioUnlocked && !this.elementVoiceOn) {   // <audio> 로 음성을 트는 중이면 건드리지 않는다
       try {
-        this.sharedVoiceAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        const silent = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        this.sharedVoiceAudio.src = silent;
         const p = this.sharedVoiceAudio.play();
         if (p && typeof p.then === 'function') {
           p.then(() => {
             this.isAudioUnlocked = true;
-            this.sharedVoiceAudio.pause();
+            if (this.sharedVoiceAudio.src === silent) this.sharedVoiceAudio.pause();
           }).catch(() => { });
         }
       } catch (e) { }
     }
+  }
+
+  // 🔊 모든 Web Audio 소리(안내 음성·실로폰·효과음)가 나가는 마스터 출력: 압축기로 큰 소리를 눌러 두고 전체를 키운다
+  //    (휴대폰·태블릿 스피커에서 작게 들려서). AudioContext 를 새로 만들면 출력도 새로 만든다
+  //    elementMode(아이폰·아이패드에서 마이크를 쓴 뒤): Web Audio 가 스피커로 직접은 소리를 못 내므로
+  //    MediaStreamDestination → <audio>(pipeEl) 로 흘려 보낸다 (<audio> 소리는 계속 잘 나서)
+  out() {
+    const ctx = this.ctx;
+    if (this._out && this._outCtx === ctx && this._outMode === !!this.elementMode) return this._out;
+    try {
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -20; comp.knee.value = 12; comp.ratio.value = 4;
+      comp.attack.value = 0.003; comp.release.value = 0.2;
+      const gain = ctx.createGain();
+      gain.gain.value = MASTER_GAIN;
+      comp.connect(gain);
+      let piped = false;
+      if (this.elementMode && ctx.createMediaStreamDestination) {
+        try {
+          const dest = ctx.createMediaStreamDestination();
+          gain.connect(dest);
+          if (!this.pipeEl) { this.pipeEl = new Audio(); this.pipeEl.setAttribute('playsinline', ''); }
+          this.pipeEl.srcObject = dest.stream;
+          this.pipeEl.play().catch(() => { });
+          piped = true;
+        } catch (e) { piped = false; }
+      }
+      if (!piped) gain.connect(ctx.destination);
+      this._out = comp; this._outCtx = ctx; this._outMode = !!this.elementMode;
+      return comp;
+    } catch (e) { return ctx.destination; }
   }
 
   // 📱 iOS 오디오 세션: 처음엔 'playback'(무음 스위치를 켜도 소리 남).
@@ -127,13 +162,17 @@ class BabySoundEngine {
 
   // 📱 iOS·iPadOS: 마이크를 쓰고 나면(전화 놀이) 기존 AudioContext 가 겉으로는 살아 있어도 소리가 안 날 때가 있다
   //    → AudioContext 를 새로 만들어 다시 잠금 해제한다 (탭을 누른 터치 안에서 부르면 바로 살아난다)
+  //    그래도 아이패드에서는 새 AudioContext 도 'running' 인데 소리가 안 났다 → 그 뒤로는 elementMode 로
+  //    (안내 음성은 MP3 를 <audio> 로 바로, 효과음은 Web Audio → <audio> 로 흘려 보냄)
   resetAfterMic() {
     this.micUsed = true;
+    if (IS_IOS_DEVICE) this.elementMode = true;
     this.applySession();
     const old = this.ctx; this.ctx = null;
     if (old) { try { old.close().catch(() => { }); } catch (e) { } }
     this.isAudioUnlocked = false;
     this.init();
+    if (this.elementMode && this.ctx) this.out();   // 터치 안에서 <audio> 출력을 미리 틀어 둔다
   }
 
   // 📱 화면을 터치할 때마다 (App 의 전역 터치 핸들러). 터치 안에서만 AudioContext 를 확실히 깨울 수 있다.
@@ -143,6 +182,10 @@ class BabySoundEngine {
   //    (한 번 탭하면 touchstart·pointerdown·click 이 모두 오므로, 깨우기를 시도하고 0.6초 넘게 지난 뒤의 터치에서만 새로 만든다)
   onUserGesture() {
     this.init();
+    if (this.elementMode && this.ctx) {   // <audio> 출력이 멈춰 있으면 터치 안에서 다시 튼다
+      this.out();
+      if (this.pipeEl && this.pipeEl.paused) this.pipeEl.play().catch(() => { });
+    }
     const ctx = this.ctx;
     if (!ctx || ctx.state === 'running') { this.wakeTry = null; return; }
     const now = Date.now();
@@ -211,7 +254,7 @@ class BabySoundEngine {
           audio = new Audio(src);
         }
 
-        audio.volume = 0.85;
+        audio.volume = 1;
         audio.currentTime = 0;
         audio.play().then(() => {
           this.currentAudio = audio;
@@ -364,6 +407,10 @@ class BabySoundEngine {
     if (this.muted) return;
     const token = this.voicePlayToken;
     this.init();
+    if (this.elementMode) {   // 아이패드에서 마이크를 쓴 뒤: Web Audio 대신 <audio> 로 바로
+      if (!(await this._playUrlViaElement(url, token)) && fallbackFn && this.voicePlayToken === token) fallbackFn();
+      return;
+    }
 
     const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
     // 📱 iOS에서 resume/decode가 멈춰 있어도 일정 시간 안에 결론을 낸다
@@ -390,6 +437,10 @@ class BabySoundEngine {
     if (this.muted) return;
     const token = this.voicePlayToken;
     this.init();
+    if (this.elementMode) {
+      if (!(await this._playUrlViaElement(url, token, onEnded)) && fallbackFn && this.voicePlayToken === token) fallbackFn();
+      return;
+    }
     const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
     const buf = this.voiceBufferCache.get(url) || await withTimeout(this.getVoiceBuffer(url).catch(() => null), timeoutMs);
     if (this.voicePlayToken !== token) return;
@@ -421,7 +472,7 @@ class BabySoundEngine {
       gainNode.gain.value = gain;
       source.buffer = buffer;
       source.connect(gainNode);
-      gainNode.connect(this.ctx.destination);
+      gainNode.connect(this.out());
 
       source.onended = () => {
         if (this.voicePlayToken === token) {
@@ -462,7 +513,7 @@ class BabySoundEngine {
       gain.gain.setValueAtTime(gainVal, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.out());
       osc.start(now);
       osc.stop(now + duration + 0.02);
     } catch (e) { }
@@ -485,7 +536,7 @@ class BabySoundEngine {
       gain1.gain.linearRampToValueAtTime(volume * 0.75, now + 0.006);
       gain1.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
       osc1.connect(gain1);
-      gain1.connect(this.ctx.destination);
+      gain1.connect(this.out());
       osc1.start(now);
       osc1.stop(now + 1.25);
 
@@ -498,7 +549,7 @@ class BabySoundEngine {
       gain2.gain.linearRampToValueAtTime(volume * 0.45, now + 0.003);
       gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
       osc2.connect(gain2);
-      gain2.connect(this.ctx.destination);
+      gain2.connect(this.out());
       osc2.start(now);
       osc2.stop(now + 0.32);
 
@@ -511,7 +562,7 @@ class BabySoundEngine {
       gain3.gain.linearRampToValueAtTime(volume * 0.25, now + 0.002);
       gain3.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
       osc3.connect(gain3);
-      gain3.connect(this.ctx.destination);
+      gain3.connect(this.out());
       osc3.start(now);
       osc3.stop(now + 0.2);
     } catch (e) { }
@@ -3744,7 +3795,7 @@ export default function App() {
     }
 
     const audio = new Audio(song.url);
-    audio.volume = 0.85;
+    audio.volume = 1;
     audio.muted = !soundEnabled;
     audio.play().then(() => {
       setIsSongPlaying(true);
