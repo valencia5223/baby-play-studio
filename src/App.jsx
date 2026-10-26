@@ -34,6 +34,7 @@ import FarmGame from './FarmGame.jsx';
 import TrainGame from './TrainGame.jsx';
 import GardenGame from './GardenGame.jsx';
 import LottoGacha from './LottoGacha.jsx';
+import PaintMotion from './PaintMotion.jsx';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
 const VOICE_KEYS = new Set(VOICE_INDEX);
@@ -3402,6 +3403,22 @@ export default function App() {
   const [strokes, setStrokes] = useState([]);
   const [brushSize, setBrushSize] = useState('medium');
   const [tracingMode, setTracingMode] = useState(null); // null = 자유그리기, template object = 따라쓰기
+  const [paintFx, setPaintFx] = useState(null);        // ✨ 움직이기 효과 (PaintMotion.jsx): null | 'wiggle' | 'bounce' | 'rainbow' | 'replay'
+  useEffect(() => { setPaintFx(null); }, [activeTab, paintMode]);
+  const PAINT_FX = [
+    { id: 'wiggle', icon: '🌊', label: '살랑살랑', color: '#0ea5e9', voice: () => VOICE.paintFxWiggle() },
+    { id: 'bounce', icon: '🏀', label: '통통', color: '#f97316', voice: () => VOICE.paintFxBounce() },
+    { id: 'rainbow', icon: '🌈', label: '무지개 반짝', color: '#a855f7', voice: () => VOICE.paintFxRainbow() },
+    { id: 'replay', icon: '🎬', label: '다시 그리기', color: '#10b981', voice: () => VOICE.paintFxReplay() }
+  ];
+  const togglePaintFx = (fx) => {
+    audioEngine.interruptVoice();
+    if (paintFx === fx.id) { setPaintFx(null); audioEngine.playFreq(330, 'sine', 0.12); return; }
+    if (!strokes.length && !stamps.length) { speakNaturalKorean(VOICE.paintFxEmpty()); return; }
+    isDrawingRef.current = false; currentStrokeRef.current = null;
+    setPaintFx(fx.id);
+    speakNaturalKorean(fx.voice());
+  };
 
   const isDrawingRef = useRef(false);
   const currentStrokeRef = useRef(null);
@@ -3861,6 +3878,7 @@ export default function App() {
 
   const handlePointerDown = (e) => {
     e.preventDefault();
+    if (paintFx) return;   // 움직이기 효과 중에는 그리지 않는다
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.round(e.clientX - rect.left);
     const y = Math.round(e.clientY - rect.top);
@@ -4023,6 +4041,20 @@ export default function App() {
           }}>
             🎵 동요 재생 <span style={{ fontSize: '0.72rem', opacity: 0.85 }}>({LOCAL_NURSERY_SONGS.length}곡)</span>
           </button>}
+          {/* 🎰 로또 뽑기 (탭 줄 대신 맨 위에) */}
+          <button onClick={() => {
+            audioEngine.interruptVoice();
+            setActiveTab('lotto');
+            audioEngine.playFreq(520, 'sine', 0.15);
+          }} title="로또 번호 캡슐 뽑기" style={{
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '14px', whiteSpace: 'nowrap',
+            border: activeTab === 'lotto' ? '2.5px solid #4338ca' : '2.5px solid #a5b4fc',
+            background: activeTab === 'lotto' ? '#4f46e5' : '#eef2ff',
+            color: activeTab === 'lotto' ? '#ffffff' : '#4338ca', fontWeight: 900, fontSize: '0.95rem', cursor: 'pointer',
+            boxShadow: activeTab === 'lotto' ? '0 6px 14px rgba(79,70,229,0.3)' : 'none'
+          }}>
+            🎰 로또 뽑기
+          </button>
           <button onClick={() => setIsIpadFrame(!isIpadFrame)} style={{
             display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '14px', whiteSpace: 'nowrap',
             border: isIpadFrame ? '2.5px solid #0284c7' : '2px solid #cbd5e1',
@@ -4053,7 +4085,7 @@ export default function App() {
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav style={{
-          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px',
+          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '5px',
           padding: '8px 8px', background: '#fff1f2', borderBottom: '3px solid #fca5a5',
           flexShrink: 0
         }}>
@@ -4066,8 +4098,7 @@ export default function App() {
             // { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
             { id: 'puzzle', label: '🧩 아기 퍼즐', sub: '조각 맞추기', color: '#8b5cf6' },
             { id: 'paint', label: '🎨 무지개 물감', sub: '터치 감각 미술', color: '#3b82f6' },
-            // 🎵 동요 재생은 맨 위 헤더 버튼으로 옮겼다
-            { id: 'lotto', label: '🎰 로또 뽑기', sub: '번호 캡슐 뽑기', color: '#4f46e5' }
+            // 🎵 동요 재생·🎰 로또 뽑기는 맨 위 헤더 버튼으로 옮겼다
           ].map(tab => {
             const isActive = activeTab === tab.id || (tab.id === 'cards' && isCardTab);
             return (
@@ -4637,13 +4668,41 @@ export default function App() {
 
                   <span style={{ width: '2px', height: '26px', background: '#bae6fd', borderRadius: '2px' }} />
 
-                  <button onClick={() => { setStrokes([]); setStamps([]); }} style={{
+                  <button onClick={() => { setStrokes([]); setStamps([]); setPaintFx(null); }} style={{
                     background: '#ef4444', color: '#ffffff', border: 'none', padding: '7px 14px',
                     borderRadius: '14px', fontWeight: 900, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.86rem',
                     boxShadow: '0 3px 10px rgba(239,68,68,0.25)'
                   }}><Eraser size={16} /> 싹 지우기</button>
                 </div>
+              </div>
+
+              {/* ✨ 움직이기: 그린 그림에 효과를 줘서 움직인다 (다시 누르면 멈춤) */}
+              <div style={{
+                display: 'flex', gap: '8px', marginBottom: '0.6rem', flexWrap: 'wrap', flexShrink: 0, alignItems: 'center',
+                background: '#faf5ff', padding: '8px 14px', borderRadius: '16px', border: '2px solid #e9d5ff'
+              }}>
+                <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#7e22ce', marginRight: '4px' }}>✨ 움직이기:</span>
+                {PAINT_FX.map(fx => {
+                  const on = paintFx === fx.id;
+                  return (
+                    <button key={fx.id} onClick={() => togglePaintFx(fx)} style={{
+                      padding: '6px 14px', borderRadius: '14px', cursor: 'pointer', fontWeight: 900, fontSize: '0.9rem',
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      background: on ? fx.color : '#ffffff', color: on ? '#ffffff' : '#581c87',
+                      border: on ? '3px solid rgba(0,0,0,0.15)' : '2px solid #e9d5ff',
+                      boxShadow: on ? '0 4px 12px rgba(0,0,0,0.18)' : 'none'
+                    }}>
+                      <span style={{ fontSize: '1.3rem', lineHeight: 1 }}>{fx.icon}</span>{fx.label}
+                    </button>
+                  );
+                })}
+                {paintFx && (
+                  <button onClick={() => { setPaintFx(null); audioEngine.playFreq(330, 'sine', 0.12); }} style={{
+                    padding: '6px 14px', borderRadius: '14px', cursor: 'pointer', fontWeight: 900, fontSize: '0.9rem',
+                    background: '#475569', color: '#ffffff', border: 'none'
+                  }}>⏹ 멈추고 다시 그리기</button>
+                )}
               </div>
 
               {/* 🐾 스탬프 선택 바 (퐁퐁 스탬프 모드일 때) */}
@@ -4721,8 +4780,13 @@ export default function App() {
                   </svg>
                 )}
 
+                {/* ✨ 움직이기 효과 (켜져 있으면 원래 그림 대신 이 캔버스가 그린다) */}
+                {paintFx && (
+                  <PaintMotion key={paintFx} effect={paintFx} strokes={strokes} stamps={stamps} audio={audioEngine} onDone={() => setPaintFx(null)} />
+                )}
+
                 {/* 찍힌 스탬프들 */}
-                {stamps.map(st => (
+                {!paintFx && stamps.map(st => (
                   <div
                     key={st.id}
                     className="stamp-pop"
@@ -4743,7 +4807,7 @@ export default function App() {
                 ))}
 
                 {/* 사용자가 그린 연필 브러시 스트로크 선 (SVG Vector Lines) */}
-                <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }}>
+                <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2, visibility: paintFx ? 'hidden' : 'visible' }}>
                   {strokes.map(s => {
                     if (!s.points || s.points.length === 0) return null;
                     const d = s.points.length === 1

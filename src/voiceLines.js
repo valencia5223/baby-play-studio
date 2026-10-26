@@ -88,6 +88,11 @@ export const VOICE = {
   aquaHello: (species, name) => `안녕! 나는 ${species.name} ${attachJosa(name, '이에요/예요')}`,
   aquaRelease: (species) => `안녕, ${attachJosa(species.name, '아/야')}! 넓은 자연에서 행복하게 지내!`,
   aquaNight: () => '밤이 됐어요. 물고기들이 코 자고 있어요.',
+  paintFxWiggle: () => '살랑살랑! 그림이 춤을 춰요!',
+  paintFxBounce: () => '통통통! 그림이 통통 튀어요! 화면을 누르면 폴짝 뛰어요!',
+  paintFxRainbow: () => '반짝반짝! 무지개 그림이 됐어요!',
+  paintFxReplay: () => '처음부터 다시 그려 볼게요!',
+  paintFxEmpty: () => '먼저 그림을 그려 주세요!',
   aquaTankFresh: () => '민물 어항이에요! 냇물과 연못 친구들이 살아요!',
   aquaTankSea: () => '바다 어항이에요! 바다 친구들이 살아요!',
   aquaSleepTap: () => '쉿, 자고 있어요. 유나도 물고기처럼 자야 할 시간이에요.',
@@ -195,7 +200,7 @@ export const VOICE = {
 
 // 앱에서 나올 수 있는 모든 문장 목록 (MP3 생성 스크립트용)
 export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, foods, oceanCreatures, puzzles }) {
-  const lines = [VOICE.puzzleWrong()];
+  const lines = [VOICE.puzzleWrong(), VOICE.paintFxWiggle(), VOICE.paintFxBounce(), VOICE.paintFxRainbow(), VOICE.paintFxReplay(), VOICE.paintFxEmpty()];
   puzzles.forEach(t => lines.push(VOICE.puzzleStart(t), VOICE.puzzleDone(t)));
   oceanCreatures.forEach(c => lines.push(VOICE.itemSound(c)));
   lines.push(VOICE.aquaWelcome(), VOICE.aquaWelcomeBack(), VOICE.aquaHungry(), VOICE.aquaDirty(), VOICE.aquaFeed(),

@@ -579,19 +579,22 @@ export default function GardenGame({ audio, speak }) {
         {/* 씨앗 고르기 창: 누른 밭 위에 띄운다 */}
         {picking && (() => {
           const ww = wrapRef.current ? wrapRef.current.clientWidth : 800, wh = wrapRef.current ? wrapRef.current.clientHeight : 600;
-          const pw = 330, ph = 236;
+          // 씨앗 15종: 5칸 × 3줄 (좁은 화면은 칸 수를 줄이고 넘치면 스크롤)
+          const cols = ww < 460 ? 4 : 5;
+          const pw = Math.min(cols * 80 + 24, ww - 16), ph = Math.min(Math.ceil(CROPS.length / cols) * 70 + 58, wh - 16);
           const left = clamp(picking.x + picking.w / 2 - pw / 2, 8, ww - pw - 8);
           const top = clamp(picking.y + picking.h / 2 - ph / 2, 8, wh - ph - 8);
           return (
             <div data-ui onPointerDown={(e) => e.stopPropagation()} style={{
               position: 'absolute', left, top, width: pw, zIndex: 8, background: 'rgba(255,255,255,0.97)', borderRadius: '22px',
-              padding: '10px 12px 12px', boxShadow: '0 14px 30px rgba(0,0,0,0.3)', border: '4px solid #facc15'
+              padding: '10px 12px 12px', boxShadow: '0 14px 30px rgba(0,0,0,0.3)', border: '4px solid #facc15',
+              maxHeight: ph, overflowY: 'auto', boxSizing: 'border-box'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontWeight: 900, color: '#365314', fontSize: '1rem' }}>🌰 어떤 씨앗을 심을까요?</span>
                 <button onClick={closePicker} aria-label="닫기" style={{ border: 'none', background: '#e2e8f0', borderRadius: '12px', padding: '4px 10px', fontWeight: 900, cursor: 'pointer' }}>✕</button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '8px' }}>
                 {CROPS.map(c => (
                   <GardenButton key={c.id} label={`${c.name} 씨앗`} color="#f7fee7" onClick={() => plantSeed(c.id)}>
                     <span style={{ fontSize: '2rem', lineHeight: 1 }}>{c.icon}</span>

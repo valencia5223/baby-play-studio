@@ -275,7 +275,16 @@ export const CROPS = [
   { id: 'cabbage', name: '양배추', icon: '🥬', growSec: 160 },
   { id: 'strawberry', name: '딸기', icon: '🍓', growSec: 140 },
   { id: 'pumpkin', name: '호박', icon: '🎃', growSec: 210 },
-  { id: 'watermelon', name: '수박', icon: '🍉', growSec: 240 }
+  { id: 'watermelon', name: '수박', icon: '🍉', growSec: 240 },
+  { id: 'tomato', name: '토마토', icon: '🍅', growSec: 170 },
+  { id: 'cucumber', name: '오이', icon: '🥒', growSec: 150 },
+  { id: 'eggplant', name: '가지', icon: '🍆', growSec: 175 },
+  { id: 'pepper', name: '고추', icon: '🌶️', growSec: 160 },
+  { id: 'paprika', name: '파프리카', icon: '🫑', growSec: 175 },
+  { id: 'broccoli', name: '브로콜리', icon: '🥦', growSec: 185 },
+  { id: 'potato', name: '감자', icon: '🥔', growSec: 190 },
+  { id: 'sweetpotato', name: '고구마', icon: '🍠', growSec: 200 },
+  { id: 'onion', name: '양파', icon: '🧅', growSec: 165 }
 ];
 export const CROP_BY_ID = Object.fromEntries(CROPS.map(c => [c.id, c]));
 // 좋아하는 채소를 먹으면 하트와 별을 더 받는다
