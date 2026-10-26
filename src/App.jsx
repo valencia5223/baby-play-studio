@@ -90,21 +90,10 @@ class BabySoundEngine {
       if (AudioCtx) this.ctx = new AudioCtx();
     }
     if (this.ctx) {
-      // 📱 iOS: 전화 놀이에서 마이크를 쓰고 나오면 AudioContext 가 'interrupted' 로 남아 소리가 안 난다
-      //    → 재생 세션으로 되돌리고 깨우되, 그래도 안 살아나면 새로 만든다
       const st = this.ctx.state;
       if (st === 'suspended' || st === 'interrupted') {
         this.applySession();
-        const old = this.ctx;
-        const revive = () => {
-          if (this.ctx !== old || old.state === 'running') return;
-          try { old.close().catch(() => { }); } catch (e) { }
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioCtx();
-          if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => { });
-        };
-        old.resume().then(() => { if (st === 'interrupted') setTimeout(revive, 300); }, revive);
-        if (st === 'interrupted') setTimeout(revive, 400);
+        this.ctx.resume().catch(() => { });
       }
     }
 
@@ -147,12 +136,31 @@ class BabySoundEngine {
     this.init();
   }
 
-  // 📱 iOS Safari AudioContext가 suspended 상태일 때 확실히 resume 완료 후 반환
+  // 📱 화면을 터치할 때마다 (App 의 전역 터치 핸들러). 터치 안에서만 AudioContext 를 확실히 깨울 수 있다.
+  //    iPadOS: 전화 놀이(마이크)를 쓰고 나오면 AudioContext 가 resume() 해도 영영 깨어나지 않을 때가 있다
+  //    (<audio> 로 트는 동물 울음소리·동요는 나는데 Web Audio 소리만 안 남) →
+  //    지난 터치에서 깨웠는데도 아직 멈춰 있으면, 이번 터치 안에서 새로 만든다
+  //    (한 번 탭하면 touchstart·pointerdown·click 이 모두 오므로, 깨우기를 시도하고 0.6초 넘게 지난 뒤의 터치에서만 새로 만든다)
+  onUserGesture() {
+    this.init();
+    const ctx = this.ctx;
+    if (!ctx || ctx.state === 'running') { this.wakeTry = null; return; }
+    const now = Date.now();
+    if (!this.wakeTry || this.wakeTry.ctx !== ctx) { this.wakeTry = { ctx, at: now }; return; }   // init() 이 방금 resume() 을 불렀다
+    if (now - this.wakeTry.at < 600) return;
+    try { ctx.close().catch(() => { }); } catch (e) { }
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    try { this.ctx = new AudioCtx(); } catch (e) { this.ctx = null; this.wakeTry = null; return; }
+    if (this.ctx.state !== 'running') this.ctx.resume().catch(() => { });
+    this.wakeTry = { ctx: this.ctx, at: now };
+  }
+
+  // 📱 iOS Safari AudioContext가 suspended 상태일 때 resume 완료 후 반환 (깨어나지 않아도 0.4초 넘게 기다리지 않음)
   async ensureAudioContext() {
     this.init();
-    if (this.ctx && this.ctx.state === 'suspended') {
+    if (this.ctx && this.ctx.state !== 'running') {
       try {
-        await this.ctx.resume();
+        await Promise.race([this.ctx.resume(), new Promise(r => setTimeout(r, 400))]);
       } catch (e) { }
     }
     return this.ctx;
@@ -225,7 +233,29 @@ class BabySoundEngine {
       } catch (e) { }
       this.currentVoiceSource = null;
     }
+    if (this.elementVoiceOn && this.sharedVoiceAudio) {
+      this.elementVoiceOn = false;
+      try { this.sharedVoiceAudio.onended = this.sharedVoiceAudio.onerror = null; this.sharedVoiceAudio.pause(); } catch (e) { }
+    }
     cancelNativeSpeech();
+  }
+
+  // Web Audio 가 멈춰 있을 때(아이패드에서 전화 놀이 뒤 등) 음성 MP3 를 <audio> 로 대신 튼다. 못 틀면 false
+  _playUrlViaElement(url, token, onEnded = null) {
+    const a = this.sharedVoiceAudio;
+    if (!a || this.voicePlayToken !== token) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      try {
+        this.elementVoiceOn = true;
+        a.onended = () => { if (this.voicePlayToken === token) { this.elementVoiceOn = false; if (onEnded) onEnded(); } };
+        a.onerror = () => resolve(false);
+        a.volume = 1;
+        a.src = url;
+        const p = a.play();
+        if (p && typeof p.then === 'function') p.then(() => resolve(true), () => { this.elementVoiceOn = false; resolve(false); });
+        else resolve(true);
+      } catch (e) { this.elementVoiceOn = false; resolve(false); }
+    });
   }
 
   // 🎬 화면 전환/모달 닫기: 음성 정지 + 이전 화면에서 later()로 예약한 음성/진행 타이머 무효화
@@ -246,6 +276,10 @@ class BabySoundEngine {
   async decodeAudio(arrayBuffer) {
     await this.ensureAudioContext();
     if (!this.ctx) return null;
+    // 풀기는 재생용 AudioContext 상태와 상관없는 OfflineAudioContext 로 (재생용이 멈춰 있어도 풀 수 있게)
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!this.decodeCtx && OAC) { try { this.decodeCtx = new OAC(1, 1, this.ctx.sampleRate || 44100); } catch (e) { this.decodeCtx = null; } }
+    const decoder = this.decodeCtx || this.ctx;
     return new Promise((resolve) => {
       let isSettled = false;
       // 📱 iOS Safari AudioContext suspended 상태 시 decodeAudioData 무한 프리징 방지용 안전 타이머
@@ -274,7 +308,7 @@ class BabySoundEngine {
       try {
         // Safari는 원본 ArrayBuffer를 detach할 수 있으므로 slice(0) 사본 전달
         const copy = arrayBuffer.slice(0);
-        const res = this.ctx.decodeAudioData(copy, onSuccess, onError);
+        const res = decoder.decodeAudioData(copy, onSuccess, onError);
         if (res && typeof res.then === 'function') {
           res.then(onSuccess).catch(onError);
         }
@@ -343,7 +377,9 @@ class BabySoundEngine {
 
     if (buf && this.ctx && this.ctx.state === 'running') {
       this._playBufferDirect(buf, token);
-    } else if (fallbackFn) {
+    } else if (await this._playUrlViaElement(url, token)) {
+      // Web Audio 가 멈춰 있어도 <audio> 로 들려줌
+    } else if (fallbackFn && this.voicePlayToken === token) {
       fallbackFn();
     }
   }
@@ -362,7 +398,8 @@ class BabySoundEngine {
       if (this.voicePlayToken !== token) return;
     }
     if (buf && this.ctx && this.ctx.state === 'running') this._playBufferDirect(buf, token, onEnded, gain);
-    else if (fallbackFn) fallbackFn();
+    else if (await this._playUrlViaElement(url, token, onEnded)) { /* <audio> 로 대신 */ }
+    else if (fallbackFn && this.voicePlayToken === token) fallbackFn();
   }
 
   // 🎙️ 다음에 나올 음성 미리 받아두기 (아이패드에서 지연 없이 바로 재생)
@@ -3668,7 +3705,7 @@ export default function App() {
 
     // 📱 iOS Safari 전역 제스처 언락 (화면 아무 곳이나 탭하면 Web Audio 즉시 활성화)
     const handleGlobalUnlock = () => {
-      audioEngine.init();
+      audioEngine.onUserGesture();
     };
     window.addEventListener('touchstart', handleGlobalUnlock, { passive: true });
     window.addEventListener('pointerdown', handleGlobalUnlock, { passive: true });
