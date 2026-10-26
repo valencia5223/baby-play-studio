@@ -1447,17 +1447,23 @@ function drawCreature(ctx, sp, L, o = {}) {
       tailPts.forEach(([x, y], i) => ctx.lineTo(x, y - H * 0.17 * (1 - i / 10)));
       for (let i = tailPts.length - 1; i >= 0; i--) { const [x, y] = tailPts[i]; ctx.lineTo(x, y + H * 0.15 * (1 - i / 10)); }
       ctx.closePath(); ctx.fill();
-      // 먼 쪽 다리
-      const leg = (x, y, a, color) => {
-        ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+      // 도롱뇽(metamorph)은 자라면서 모습이 바뀐다: 아기 땐 다리 없이 깃털 아가미 → 앞다리 → 뒷다리 → 아가미가 사라짐
+      const gg = growth;
+      const gillK = sp.metamorph ? 1 - smooth01(0.62, 0.85, gg) : sp.noGills ? 0 : 1;
+      const frontK = sp.metamorph ? smooth01(0.25, 0.45, gg) : 1;
+      const hindK = sp.metamorph ? smooth01(0.42, 0.62, gg) : 1;
+      // 먼 쪽 다리 (k: 0~1 다리가 나온 정도)
+      const leg = (x, y, a, color, k = 1) => {
+        if (k < 0.05) return;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.scale(k, k);
         taperStroke(ctx, [[0, 0], [0, H * 0.18], [L * 0.02, H * 0.3]], L * 0.045, L * 0.03, color);
         ctx.fillStyle = color;
         [-1, 0, 1].forEach(k => { ctx.beginPath(); ctx.arc(L * (0.02 + k * 0.018), H * 0.33, Math.max(0.6, L * 0.012), 0, TAU); ctx.fill(); });
         ctx.restore();
       };
       const farLeg = mixColor(top, '#9d174d', 0.2);
-      leg(L * 0.15, H * 0.05, -0.3 + Math.sin(ph * 1.2) * 0.4, farLeg);
-      leg(-L * 0.08, H * 0.05, -0.2 - Math.sin(ph * 1.2) * 0.4, farLeg);
+      leg(L * 0.15, H * 0.05, -0.3 + Math.sin(ph * 1.2) * 0.4, farLeg, frontK);
+      leg(-L * 0.08, H * 0.05, -0.2 - Math.sin(ph * 1.2) * 0.4, farLeg, hindK);
       // 깃털 아가미 (머리 뒤에서 위·뒤로 세 갈래씩)
       const gill = (bx, by, ang, len) => {
         const ex2 = bx + Math.cos(ang) * len, ey2 = by + Math.sin(ang) * len;
@@ -1469,7 +1475,7 @@ function drawCreature(ctx, sp, L, o = {}) {
         }
       };
       const sway = Math.sin(ph * 0.7) * 0.12;
-      if (!sp.noGills) [[-1.75, 0.2], [-2.2, 0.22], [-2.65, 0.2]].forEach(([a, ln]) => gill(L * 0.22, -H * 0.28, a + sway, L * ln));
+      if (gillK > 0.05) [[-1.75, 0.2], [-2.2, 0.22], [-2.65, 0.2]].forEach(([a, ln]) => gill(L * 0.22, -H * 0.28, a + sway, L * ln * gillK));
       // 몸
       ctx.beginPath(); ctx.ellipse(L * 0.02, w * 0.2, L * 0.22, H * 0.3, 0, 0, TAU);
       ctx.fillStyle = grad(-H * 0.3, H * 0.3, 0.75);
@@ -1481,7 +1487,7 @@ function drawCreature(ctx, sp, L, o = {}) {
       ctx.fillStyle = grad(-H * 0.4, H * 0.36, 0.7);
       finish(sp.noGills && sp.spots ? () => dots([[0.26, -0.18], [0.34, -0.22], [0.2, -0.08]].map(([x, y]) => [L * x, H * y]), L * 0.014) : undefined);
       // 이쪽 아가미 (머리 위에 겹쳐 보인다)
-      if (!sp.noGills) [[-2.35, 0.21], [-2.95, 0.22], [2.75, 0.17]].forEach(([a, ln]) => gill(L * 0.18, -H * 0.06, a - sway, L * ln));
+      if (gillK > 0.05) [[-2.35, 0.21], [-2.95, 0.22], [2.75, 0.17]].forEach(([a, ln]) => gill(L * 0.18, -H * 0.06, a - sway, L * ln * gillK));
       // 활짝 웃는 넓은 입 + 발그레한 볼
       ctx.strokeStyle = 'rgba(131,24,67,0.75)'; ctx.lineWidth = Math.max(0.8, L * 0.013);
       ctx.beginPath(); ctx.moveTo(L * 0.46, H * 0.06); ctx.quadraticCurveTo(L * 0.36, H * 0.26, L * 0.22, H * 0.12); ctx.stroke();
@@ -1489,8 +1495,8 @@ function drawCreature(ctx, sp, L, o = {}) {
       ctx.beginPath(); ctx.ellipse(L * 0.26, H * 0.08, L * 0.035, H * 0.06, 0, 0, TAU); ctx.fill();
       creatureEye(ctx, L * 0.38, -H * 0.12, er * 0.62, o);
       // 이쪽 다리
-      leg(L * 0.12, H * 0.12, 0.2 + Math.sin(ph * 1.2 + 1.5) * 0.4, top);
-      leg(-L * 0.12, H * 0.12, 0.3 - Math.sin(ph * 1.2 + 1.5) * 0.4, top);
+      leg(L * 0.12, H * 0.12, 0.2 + Math.sin(ph * 1.2 + 1.5) * 0.4, top, frontK);
+      leg(-L * 0.12, H * 0.12, 0.3 - Math.sin(ph * 1.2 + 1.5) * 0.4, top, hindK);
       break;
     }
     case 'croc': {

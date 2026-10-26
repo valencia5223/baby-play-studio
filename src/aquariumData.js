@@ -171,9 +171,13 @@ export const FISH_SPECIES = [
     tail: { color: 'rgba(87,83,78,0.75)', len: 0.3, spread: 0.42, fork: true }, fin: 'rgba(250,204,21,0.5)'
   },
   {
-    id: 'salamander', name: '도롱뇽', price: 240, len: 56, hRatio: 0.32, shape: 'axolotl', desc: '맑은 냇물의 꼬마 도롱뇽', crawl: true, swim: true, upright: true, noGills: true,
+    // 도롱뇽: 개구리처럼 자라며 모습이 바뀐다 (metamorph: 깃털 아가미 아기 → 앞다리 → 뒷다리 → 아가미가 사라진 도롱뇽)
+    id: 'salamander', name: '도롱뇽', babyName: '아기 도롱뇽', price: 240, len: 56, hRatio: 0.32, shape: 'axolotl', desc: '자라면 아가미가 사라져요!', crawl: true, swim: true, upright: true, noGills: true, metamorph: true,
     speed: 0.45, growMul: 0.9, school: false, zone: 'bottom',
-    top: '#7a6038', belly: '#e9d9ae', spots: 'rgba(41,30,12,0.6)', fin: 'rgba(122,96,56,0.55)', accent: '#7a6038', tail: {}
+    top: '#7a6038', belly: '#e9d9ae', spots: 'rgba(41,30,12,0.6)', fin: 'rgba(122,96,56,0.55)', accent: '#d9826a', tail: {},
+    stageNames: { fry: '아기 도롱뇽', juvenile: '다리가 난 아기 도롱뇽', adult: '도롱뇽' },
+    infoLines: { fry: '아기 도롱뇽이에요! 깃털 아가미로 물속에서 숨을 쉬어요!', juvenile: '다리가 난 아기 도롱뇽이에요! 곧 아가미가 없어져요!', adult: '도롱뇽이에요! 아가미가 없어도 잘 지내요!' },
+    growLines: { juvenile: '와아! 아기 도롱뇽 다리가 쏙 나왔어요!', adult: '와아! 아가미가 없어지고 도롱뇽이 됐어요!' }
   },
   {
     id: 'trout', name: '송어', price: 190, len: 70, hRatio: 0.28, shape: 'normal', eyeK: 0.4, desc: '무지갯빛 띠 차가운 냇물 친구',
