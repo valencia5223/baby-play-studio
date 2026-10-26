@@ -3,10 +3,11 @@
 //  - 흐름: 친구 고르기 → 번호 누르기(아무 숫자나 눌러도 친구 번호가 한 자리씩 채워짐) → 따르릉 → 통화 → 끊기
 //  - 대답: Supabase Edge Function baby-call (Gemini, 아기 수준·친구 성격, 저장 안 함)
 //  - 목소리: baby-voice?who=친구 (무료 Edge 목소리 3개를 친구마다 속도·음높이로 다르게)
-//  - 아기 말: 친구 말이 끝나면 저절로 듣기 시작 → 소리 크기로 말 시작·끝을 알아채(1초 조용하면 끝) 짧게 녹음(16kHz WAV)
+//  - 아기 말: 통화 중에는 마이크가 계속 듣는다(언제든 말하기). 소리 크기로 말 시작·끝을 알아채(1초 조용하면 끝) 짧게 녹음(16kHz WAV).
+//    친구가 말하는 중에 아기가 말하면 친구가 멈추고 듣는다(끼어들기, 울림 제거를 켜고 더 큰 소리에만 반응)
 //    → baby-call 에 보내 Gemini 가 직접 듣고 대답. 기기 음성 인식(Web Speech)은 쓰지 않는다 (받아 적기 실수·매번 권한 질문·통화 음량 저하 때문에)
 //  - 마이크는 통화 화면에서 한 번 열어 계속 쓰고(권한을 매번 묻지 않게), 화면을 떠나면 닫는다
-//    통화용 음성 처리(echoCancellation)를 끄고 열어 스피커 소리가 작아지지 않게 한다 (친구 말이 끝난 뒤에만 들으므로 필요 없다)
+//    친구 목소리를 아기 말로 착각하지 않게 울림 제거(echoCancellation)를 켠다 (안 되는 기기는 기본 설정)
 //  - 아이폰: 마이크를 열면 앱의 Web Audio 가 '중단'되어 소리가 안 나거나 늦게 난다 →
 //    연결음·친구 목소리는 터치 때 미리 깨워 둔 <audio> 플레이어 하나로, 녹음은 마이크를 연 뒤 만든 녹음 전용 AudioContext 로 한다
 // ═════════════════════════════════════════════════════════════════════════════
@@ -238,8 +239,6 @@ export default function PhoneCall({ audio }) {
   const nudgeRef = useRef(0);
   const callIdRef = useRef(0);                         // 통화마다 번호 (끊은 뒤 늦게 온 대답 무시)
   const timersRef = useRef([]);
-  const listeningRef = useRef(false);
-  const sessionRef = useRef(null);                     // 지금 듣기 (자동 또는 누르기)
   const callStartRef = useRef(0);
   const micRef = useRef(null);                         // { stream } 통화 화면에서 한 번 연 마이크
   const [micOk, setMicOk] = useState(true);            // 마이크를 못 열면 false (친구가 혼자 이어 간다)
@@ -250,6 +249,12 @@ export default function PhoneCall({ audio }) {
   const capCtxRef = useRef(null);                      // 녹음 전용 AudioContext (마이크를 연 뒤 만든다)
   const playerRef = useRef(null);                      // 연결음·친구 목소리를 트는 <audio> 하나 (터치 때 깨워 둔다)
   const [diag, setDiag] = useState('');                // 마이크·소리 문제 진단 (부모용 작은 글씨)
+  const talkingRef = useRef(false);                    // 친구가 말하는 중
+  const thinkingRef = useRef(false);                   // 친구 대답을 기다리는 중
+  const idleSinceRef = useRef(0);                      // 친구 말이 끝난 시각 (아기가 조용하면 친구가 먼저 이어 가기)
+  const turnSeqRef = useRef(0);                        // 대답 요청 번호 (아기가 또 말하면 앞 요청의 대답은 버린다)
+  const sayIdRef = useRef(0);                          // 친구 말 번호 (끼어들면 하던 말을 멈춘다)
+  const capRef = useRef(null);                         // 통화 중 계속 듣기
   const [showMicHelp, setShowMicHelp] = useState(false);
   const isIOS = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
   const screenRef = useRef(screen);
@@ -291,61 +296,77 @@ export default function PhoneCall({ audio }) {
 
   // 친구가 말하기 (목소리 MP3 를 받아 재생, 다 말하면 onDone)
   const say = (text, onDone) => {
-    const id = callIdRef.current;
+    const id = callIdRef.current, sid = ++sayIdRef.current;
     turnsRef.current.push({ who: 'friend', text });
+    talkingRef.current = true;
     let done = false;
-    const finish = () => { if (done || callIdRef.current !== id) return; done = true; setTalking(false); onDone && onDone(); };
+    const alive = () => !done && callIdRef.current === id && sayIdRef.current === sid;
+    const finish = () => {
+      if (!alive()) return;
+      done = true; talkingRef.current = false; setTalking(false);
+      idleSinceRef.current = Date.now();
+      onDone && onDone();
+    };
     const lines = splitLines(text);
     // 모든 문장의 목소리를 동시에 받아 기기 메모리에 (받는 대로 바로 틀 수 있게)
     const clips = lines.map(l => fetch(voiceUrl(friendId, l)).then(r => (r.ok ? r.blob() : null)).then(b => (b ? URL.createObjectURL(b) : null)).catch(() => null));
     let shown = 0;
     const show = (i) => {   // 자막은 소리가 나기 시작할 때 (문장이 나올 때마다 이어 붙인다)
-      if (callIdRef.current !== id) return;
+      if (!alive()) return;
       shown = Math.max(shown, i + 1);
       setThinking(false); setTalking(true); setFriendLine(lines.slice(0, shown).join(' '));
     };
     const playAt = async (i) => {
-      if (done || callIdRef.current !== id) return;
+      if (!alive()) return;
       if (i >= lines.length) { finish(); return; }
       const next = () => playAt(i + 1);
       const url = await clips[i];
-      if (done || callIdRef.current !== id) return;
+      if (!alive()) return;
       if (!url) { show(i); nativeSay(lines[i], next); return; }
       playUrl(url, { onStart: () => show(i), onEnd: () => { URL.revokeObjectURL(url); next(); }, onFail: () => { show(i); nativeSay(lines[i], next); } });
     };
     playAt(0);
     later(finish, 20000 + text.length * 220);   // 무슨 일이 있어도 다음으로
   };
+  // 아기가 끼어들면: 친구가 하던 말을 바로 멈춘다
+  const bargeIn = () => {
+    sayIdRef.current++;
+    stopPlayer();
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch { /* 무시 */ }
+    talkingRef.current = false; setTalking(false);
+  };
 
   // 다음 친구 말 요청
   // audioB64: 아기가 방금 한 말의 녹음 (있으면 Gemini 가 듣고 heard 로 알아들은 말을 돌려준다)
   const friendTurn = (phase, audioB64 = null) => {
-    const id = callIdRef.current;
-    setThinking(true);
+    const id = callIdRef.current, seq = ++turnSeqRef.current;
+    thinkingRef.current = true; setThinking(true);
     askFriend(friendId, turnsRef.current, phase, audioB64).then(({ text, heard: h }) => {
-      if (callIdRef.current !== id || screenRef.current !== 'call') return;
+      if (callIdRef.current !== id || seq !== turnSeqRef.current || screenRef.current !== 'call') return;   // 그 사이 아기가 또 말했으면 버린다
+      thinkingRef.current = false;
       if (audioB64) {
         const said = (h || '').trim();
         setHeard(said);
         turnsRef.current.push({ who: 'baby', text: said });
-        if (said) { babyTurnsRef.current++; nudgeRef.current = 0; } else nudgeRef.current++;
+        if (said) { babyTurnsRef.current++; nudgeRef.current = 0; }
       }
       say(text, () => {
         if (phase === 'bye') { later(() => hangUp(true), 700); return; }
-        if (micRef.current) later(() => listen(false), 350);   // 스피커 소리 끝자락을 듣지 않게 잠깐 쉬고
-        else waitForBaby();
+        if (!capRef.current) waitForBaby();   // 마이크가 없으면 시간이 지나면 친구가 이어 간다
       });
     });
   };
 
-  // 아기 차례: 한동안 말이 없으면 친구가 먼저 이어서 (두 번까지), 그다음은 작별
+  // 아기가 조용할 때 친구가 먼저 이어 가기 (두 번까지, 그다음은 작별)
+  const nudge = () => {
+    turnsRef.current.push({ who: 'baby', text: '' });
+    if (nudgeRef.current >= 2) friendTurn('bye');
+    else { nudgeRef.current++; friendTurn('chat'); }
+  };
+  // (마이크가 없을 때) 아기 차례: 한동안 기다렸다가 친구가 먼저
   const waitForBaby = () => {
     const id = callIdRef.current;
-    later(() => {
-      if (callIdRef.current !== id || listeningRef.current) return;
-      if (nudgeRef.current < 2) { nudgeRef.current++; turnsRef.current.push({ who: 'baby', text: '' }); friendTurn('chat'); }
-      else friendTurn('bye');
-    }, IDLE_NUDGE_SEC * 1000);
+    later(() => { if (callIdRef.current === id && !capRef.current) nudge(); }, IDLE_NUDGE_SEC * 1000);
   };
 
   // 마이크 열기 (통화 화면에서 한 번만 → 다음 통화부터는 다시 묻지 않는다)
@@ -359,8 +380,8 @@ export default function PhoneCall({ audio }) {
       if (navigator.permissions && navigator.permissions.query) {
         try { const st = await navigator.permissions.query({ name: 'microphone' }); setDiag(`권한: ${st.state}`); } catch { /* 지원 안 함 */ }
       }
-      // 통화용 음성 처리를 끈 설정 → 안 되는 기기면 기본 설정으로 한 번 더
-      for (const c of [{ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } }, { audio: true }]) {
+      // 울림 제거를 켠 설정 → 안 되는 기기면 기본 설정으로 한 번 더
+      for (const c of [{ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }, { audio: true }]) {
         try { stream = await navigator.mediaDevices.getUserMedia(c); break; } catch (e) { err = e; if (e && e.name === 'NotAllowedError') break; }
       }
       if (!stream) {
@@ -400,7 +421,7 @@ export default function PhoneCall({ audio }) {
     ensureMic();   // 통화 버튼을 누른 순간(사용자 동작)에 마이크 허락을 받아 둔다
     clearTimers();
     callIdRef.current++;
-    turnsRef.current = []; babyTurnsRef.current = 0; nudgeRef.current = 0;
+    turnsRef.current = []; babyTurnsRef.current = 0; nudgeRef.current = 0; idleSinceRef.current = 0;
     setSec(0); setHeard(''); setFriendLine(''); setTalking(false); setThinking(false);
     setScreen('ringing');
     // 따르릉 두 번 → 받음
@@ -408,108 +429,108 @@ export default function PhoneCall({ audio }) {
       if (screenRef.current !== 'ringing') return;
       setScreen('call'); screenRef.current = 'call';
       callStartRef.current = Date.now();
+      ensureMic().then(ok => { if (ok) startCapture(); });   // 통화 내내 듣기 (언제든 말하기)
       friendTurn('hello');
     }, 4200);
   };
 
   function hangUp(byFriend = false) {
     clearTimers();
-    callIdRef.current++;
+    callIdRef.current++; turnSeqRef.current++; sayIdRef.current++;
+    talkingRef.current = false; thinkingRef.current = false;
     audio.interruptVoice();
     stopPlayer();
     endSession();
-    listeningRef.current = false; setListening(false); setTalking(false); setThinking(false);
+    setListening(false); setTalking(false); setThinking(false);
     if (!byFriend) playUrl(toneUrl('hangup', [[[480, 620], 0.25], [[], 0.1], [[480, 620], 0.25]]));
     setScreen('ended');
   }
 
-  // 듣기 끝 정리 (녹음 노드 떼고 마이크는 꺼 둔다)
+  // 계속 듣기 멈춤 (통화 끝·화면 떠남)
   function endSession() {
-    const ss = sessionRef.current; sessionRef.current = null;
-    if (!ss) return;
-    ss.done = true; clearInterval(ss.poll);
-    try { ss.src && ss.src.disconnect(); ss.proc && ss.proc.disconnect(); } catch { /* 무시 */ }
-    if (ss.proc) ss.proc.onaudioprocess = null;
+    const cap = capRef.current; capRef.current = null;
+    if (!cap) return;
+    clearInterval(cap.poll);
+    if (cap.proc) cap.proc.onaudioprocess = null;
+    try { cap.src && cap.src.disconnect(); cap.proc && cap.proc.disconnect(); } catch { /* 무시 */ }
   }
 
-  // 듣기: 소리 크기로 말 시작·끝을 알아채 녹음 → 끝나면 친구에게 보낸다. manual 이면 🎤 를 눌러 시작한 것
-  const listen = async () => {
-    if (listeningRef.current || screenRef.current !== 'call') return;
+  // 통화 중 계속 듣기: 소리 크기로 말 시작·끝을 알아챈다
+  //  - 친구가 조용할 때: 보통 크기 소리 두 토막(약 0.2초)이면 말 시작
+  //  - 친구가 말하는 중: 더 큰 소리가 세 토막(약 0.25초) 이어져야 끼어들기 (친구 목소리를 착각하지 않게)
+  const startCapture = async () => {
+    if (capRef.current) return true;
     const id = callIdRef.current;
-    clearTimers();
-    const ok = await ensureMic();
-    const ctx = capCtxRef.current;
-    if (ctx && ctx.state !== 'running') { try { await Promise.race([ctx.resume(), new Promise(r => setTimeout(r, 600))]); } catch { /* 아래에서 처리 */ } }
-    if (!ok || !ctx || callIdRef.current !== id || screenRef.current !== 'call') { waitForBaby(); return; }
-    if (ctx.state !== 'running') {
-      // 녹음 엔진이 아직 잠들어 있다 (아이폰은 터치가 있어야 깨어나기도 함) → 🎤 를 눌러 달라고
-      setDiag(`녹음 엔진: ${ctx.state}`); setMicOk(false); setMicErr('tap'); waitForBaby(); return;
-    }
-    listeningRef.current = true; setListening(true); setHeard('');
-    const stream = micRef.current.stream;
-    const ss = { done: false, chunks: [], speechAt: -1, lastVoice: 0, startAt: Date.now(), floor: 0, frames: 0, loud: 0, poll: 0, src: null, proc: null };
-    sessionRef.current = ss;
-    const finish = () => {
-      if (ss.done) return;
-      const chunks = ss.chunks, got = ss.speechAt >= 0, rate = ctx.sampleRate;
-      endSession();
-      listeningRef.current = false; setListening(false);
-      if (callIdRef.current !== id) return;
-      setThinking(true);
+    const ctx = capCtxRef.current, m = micRef.current;
+    if (!ctx || !m) return false;
+    if (ctx.state !== 'running') { try { await Promise.race([ctx.resume(), new Promise(r => setTimeout(r, 600))]); } catch { /* 아래에서 처리 */ } }
+    if (callIdRef.current !== id || screenRef.current !== 'call') return false;
+    if (ctx.state !== 'running') { setDiag(`녹음 엔진: ${ctx.state}`); setMicOk(false); setMicErr('tap'); return false; }
+    const cap = { pre: [], utt: null, floor: 0, frames: 0, loud: 0, poll: 0, src: null, proc: null, rate: ctx.sampleRate };
+    const endUtterance = () => {
+      const u = cap.utt; cap.utt = null; setListening(false);
+      if (!u || Date.now() - u.start < 350) return;   // 아주 짧은 소리(기침·톡)는 무시
+      idleSinceRef.current = 0;
       const over = babyTurnsRef.current + 1 >= MAX_BABY_TURNS || (Date.now() - callStartRef.current) / 1000 >= MAX_CALL_SEC;
-      if (!got) {
-        // 아무 말이 없었다: 두 번까지는 친구가 먼저 이어 가고, 그다음은 작별
-        turnsRef.current.push({ who: 'baby', text: '' });
-        if (nudgeRef.current >= 2) friendTurn('bye'); else { nudgeRef.current++; friendTurn(over ? 'bye' : 'chat'); }
-        return;
-      }
-      // 말 시작 0.4초 전부터 보낸다 (첫소리가 잘리지 않게)
-      const per = chunks.length ? chunks[0].length / rate : 0.085;
-      const from = Math.max(0, ss.speechAt - Math.ceil(0.4 / per));
-      friendTurn(over ? 'bye' : 'chat', toWavBase64(chunks.slice(from), rate));
+      friendTurn(over ? 'bye' : 'chat', toWavBase64(u.chunks, cap.rate));
     };
-    ss.finish = finish;
+    cap.endUtterance = endUtterance;
     try {
-      ss.src = ctx.createMediaStreamSource(stream);
-      ss.proc = ctx.createScriptProcessor(4096, 1, 1);
-      ss.proc.onaudioprocess = (e) => {
-        if (ss.done) return;
+      cap.src = ctx.createMediaStreamSource(m.stream);
+      cap.proc = ctx.createScriptProcessor(4096, 1, 1);
+      cap.proc.onaudioprocess = (e) => {
         const d = e.inputBuffer.getChannelData(0);
         const copy = new Float32Array(d.length); copy.set(d);
-        ss.chunks.push(copy);
         let sum = 0; for (let i = 0; i < d.length; i++) sum += d[i] * d[i];
         const rms = Math.sqrt(sum / d.length);
-        ss.frames++;
-        if (ss.frames <= 3) { ss.floor = Math.max(ss.floor, rms); return; }   // 처음 잠깐은 주변 소리 크기를 잰다
-        const th = Math.min(0.08, Math.max(0.012, ss.floor * 2.5));
-        if (rms > th) { ss.loud++; ss.lastVoice = Date.now(); if (ss.loud >= 2 && ss.speechAt < 0) ss.speechAt = ss.chunks.length - 2; }
-        else { ss.loud = 0; if (rms > th * 0.7) ss.lastVoice = Date.now(); }
+        cap.frames++;
+        const busy = talkingRef.current;
+        if (cap.utt) {
+          cap.utt.chunks.push(copy);
+          if (rms > cap.utt.th * 0.7) cap.utt.lastVoice = Date.now();
+          return;
+        }
+        cap.pre.push(copy); if (cap.pre.length > 5) cap.pre.shift();   // 말 시작 직전 0.4초쯤 (첫소리가 잘리지 않게)
+        if (cap.frames <= 3) { cap.floor = Math.max(cap.floor, rms); return; }   // 처음엔 주변 소리 크기를 잰다
+        if (!busy && !thinkingRef.current) cap.floor = cap.floor * 0.97 + Math.min(rms, cap.floor * 2 + 0.002) * 0.03;
+        const th = Math.min(0.08, Math.max(0.012, cap.floor * 2.5));
+        const need = busy ? 3 : 2, thr = busy ? Math.max(th * 2, 0.05) : th;
+        if (rms > thr) {
+          if (++cap.loud >= need) {
+            cap.utt = { chunks: cap.pre.slice(), start: Date.now(), lastVoice: Date.now(), th };
+            cap.pre = []; cap.loud = 0;
+            if (talkingRef.current) bargeIn();   // 친구가 말하던 중이면 멈추고 듣기
+            setListening(true);
+          }
+        } else cap.loud = 0;
       };
-      ss.src.connect(ss.proc); ss.proc.connect(ctx.destination);   // 출력은 비워 두므로 소리가 나지 않는다
-    } catch (e) { endSession(); listeningRef.current = false; setListening(false); setDiag(`녹음: ${e && e.name}`); setMicOk(false); setMicErr('other'); waitForBaby(); return; }
-    ss.poll = setInterval(() => {
-      if (ss.done) return;
+      cap.src.connect(cap.proc); cap.proc.connect(ctx.destination);   // 출력은 비워 두므로 소리가 나지 않는다
+    } catch (e) { setDiag(`녹음: ${e && e.name}`); setMicOk(false); setMicErr('other'); return false; }
+    cap.poll = setInterval(() => {
       const now = Date.now();
-      if (ss.speechAt >= 0 && now - ss.lastVoice > SILENCE_MS) finish();          // 말하다 조용해짐 → 대답
-      else if (ss.speechAt >= 0 && now - ss.startAt > MAX_UTTER_MS + 2000) finish(); // 너무 길면 끊어서 보낸다
-      else if (ss.speechAt < 0 && now - ss.startAt > NO_SPEECH_MS) finish();       // 아무 말 없음 → 친구가 이어 가기
+      if (cap.utt) {
+        if (now - cap.utt.lastVoice > SILENCE_MS || now - cap.utt.start > MAX_UTTER_MS) endUtterance();   // 말이 끝남 → 대답
+      } else if (!talkingRef.current && !thinkingRef.current && idleSinceRef.current && now - idleSinceRef.current > NO_SPEECH_MS) {
+        idleSinceRef.current = 0; nudge();   // 친구 말이 끝나고 한참 조용 → 친구가 먼저
+      }
     }, 150);
+    capRef.current = cap;
+    setMicOk(true); setMicErr('');
+    return true;
   };
-  // 🎤 버튼: 듣는 중이면 "다 말했어요", 아니면 듣기 시작 (마이크 허락을 다시 받을 때도)
+
+  // 🎤 버튼: 말하는 중이면 "다 말했어요", 친구가 말하는 중이면 멈추게, 마이크가 막혔으면 다시 시도·켜는 방법
   const micDown = () => {
-    if (talking || thinking) return;
-    if (listeningRef.current) { if (sessionRef.current) sessionRef.current.finish(); return; }
-    // 터치 안에서 녹음 엔진을 깨운다 (아이폰)
-    if (capCtxRef.current && capCtxRef.current.state !== 'running') capCtxRef.current.resume().catch(() => { });
-    if (!micOk) {
-      // 허락 거절·앱 안 브라우저는 사이트가 다시 물을 수 없다 → 한 번 더 시도해 보고, 안 되면 켜는 방법을 크게 보여 준다
+    if (capCtxRef.current && capCtxRef.current.state !== 'running') capCtxRef.current.resume().catch(() => { });   // 터치 안에서 녹음 엔진 깨우기 (아이폰)
+    const cap = capRef.current;
+    if (cap && cap.utt) { cap.endUtterance(); return; }
+    if (cap && talkingRef.current) { bargeIn(); idleSinceRef.current = Date.now(); return; }
+    if (!cap) {
       ensureMic().then(ok => {
-        if (ok) { setMicOk(true); setMicErr(''); listen(true); }
+        if (ok) startCapture();
         else if (['denied', 'inapp'].includes(micErrRef.current)) setShowMicHelp(true);
       });
-      return;
     }
-    listen(true);
   };
 
   const pressKey = (k) => {
@@ -594,13 +615,12 @@ export default function PhoneCall({ audio }) {
         {!ringing && (
           <button
             onPointerDown={(e) => { e.preventDefault(); micDown(); }}
-            disabled={talking || thinking}
             aria-label="말하기"
-            style={{ ...roundBtn(listening ? '#f43f5e' : '#ffffff', 108), color: listening ? '#ffffff' : '#3f3a52', fontSize: '2.8rem', opacity: talking || thinking ? 0.45 : 1, animation: listening ? 'micPulse 1.2s ease-in-out infinite' : 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+            style={{ ...roundBtn(listening ? '#f43f5e' : '#ffffff', 108), color: listening ? '#ffffff' : '#3f3a52', fontSize: '2.8rem', opacity: micOk ? 1 : 0.7, animation: listening ? 'micPulse 0.9s ease-in-out infinite' : 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
           >🎤</button>
         )}
         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(255,255,255,0.75)', minHeight: '1.2em', textAlign: 'center' }}>
-          {ringing ? '' : listening ? '듣고 있어요... 말해 보세요' : talking || thinking ? (heard ? `유나: ${heard}` : '') : (micOk ? '' : MIC_HELP[micErr] || MIC_HELP.other)}
+          {ringing ? '' : !micOk ? (MIC_HELP[micErr] || MIC_HELP.other) : listening ? '말하는 중... 멈추면 친구가 대답해요' : heard ? `유나: ${heard}` : '언제든 말해 보세요'}
           {diag && !micOk && <div style={{ fontSize: '0.62rem', opacity: 0.6, marginTop: '2px' }}>{diag}</div>}
         </div>
         <button onClick={() => hangUp(false)} aria-label="전화 끊기" style={{ ...roundBtn('#ef4444', 70), fontSize: '1.9rem' }}>✕</button>
