@@ -368,32 +368,32 @@ export default function PhoneCall({ audio }) {
   let body;
   if (!consent) {
     body = (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '14px', padding: '10px 6px', color: '#3f3a52' }}>
-        <div style={{ fontSize: '3rem', textAlign: 'center' }}>📞</div>
-        <div style={{ fontFamily: JUA, fontSize: '1.4rem', textAlign: 'center' }}>부모님께 먼저 알려 드려요</div>
-        <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.88rem', lineHeight: 1.6, fontWeight: 700 }}>
+      <div style={{ flex: '1 0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'safe center', gap: '10px', padding: '6px 4px', color: '#3f3a52' }}>
+        <div style={{ fontSize: '2.4rem', textAlign: 'center', lineHeight: 1 }}>📞</div>
+        <div style={{ fontFamily: JUA, fontSize: '1.3rem', textAlign: 'center' }}>부모님께 먼저 알려 드려요</div>
+        <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.84rem', lineHeight: 1.5, fontWeight: 700 }}>
           <li>통화 중에 친구 말이 끝나면 아기 목소리를 듣고, 이 기기가 글자로 바꿔요.</li>
           <li>그 글자만 AI(Google Gemini)에 보내 친구의 대답을 만들어요.</li>
           <li>목소리와 대화 내용은 어디에도 저장하지 않아요.</li>
           <li>처음 한 번 마이크 사용 허락을 물어봐요.</li>
         </ul>
-        <button onClick={() => { try { localStorage.setItem(CONSENT_KEY, '1'); } catch { /* 무시 */ } setConsent(true); audio.playFreq(660, 'sine', 0.12); }} style={{ border: 'none', borderRadius: '22px', height: '56px', background: '#34d399', color: '#ffffff', fontFamily: JUA, fontSize: '1.25rem', cursor: 'pointer' }}>알겠어요, 시작할게요</button>
+        <button onClick={() => { try { localStorage.setItem(CONSENT_KEY, '1'); } catch { /* 무시 */ } setConsent(true); audio.playFreq(660, 'sine', 0.12); }} style={{ border: 'none', borderRadius: '22px', minHeight: '56px', flexShrink: 0, background: '#34d399', color: '#ffffff', fontFamily: JUA, fontSize: '1.25rem', cursor: 'pointer' }}>알겠어요, 시작할게요</button>
       </div>
     );
   } else if (screen === 'contacts') {
     body = (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', padding: '6px 2px' }}>
+      <div style={{ flex: '1 0 auto', display: 'flex', flexDirection: 'column', gap: '12px', padding: '6px 2px' }}>
         <div style={{ fontFamily: JUA, fontSize: '1.5rem', color: '#3f3a52', padding: '0 6px' }}>누구에게 전화할까?</div>
         {FRIENDS.map(f => (
           <button key={f.id} onClick={() => { setFriendId(f.id); setTyped(''); setScreen('dial'); audio.playFreq(660, 'sine', 0.1); }} style={{
             display: 'flex', alignItems: 'center', gap: '12px', border: 'none', borderRadius: '26px', padding: '10px 14px', background: f.color, cursor: 'pointer', touchAction: 'manipulation', textAlign: 'left', boxShadow: `0 10px 20px -14px ${f.ink}`
           }}>
-            <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><FriendFace id={f.id} size={80} /></div>
+            <div className="bps-contact-face" style={{ width: 84, height: 84, borderRadius: '50%', background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><FriendFace id={f.id} size={80} /></div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: JUA, fontSize: '1.5rem', color: f.ink }}>{f.name}</div>
               <div style={{ fontSize: '0.82rem', fontWeight: 800, color: f.ink, opacity: 0.7 }}>{f.desc}</div>
             </div>
-            <span style={{ width: 56, height: 56, borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.7rem', flexShrink: 0 }}>📞</span>
+            <span className="bps-contact-call" style={{ width: 56, height: 56, borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.7rem', flexShrink: 0 }}>📞</span>
           </button>
         ))}
       </div>
@@ -401,7 +401,7 @@ export default function PhoneCall({ audio }) {
   } else if (screen === 'dial') {
     const ready = typed.length >= friend.number.length;
     body = (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '4px 2px' }}>
+      <div style={{ flex: '1 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '4px 2px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', alignSelf: 'stretch' }}>
           <button onClick={() => setScreen('contacts')} style={{ border: 'none', background: 'transparent', fontSize: '1.6rem', cursor: 'pointer' }}>⬅️</button>
           <FriendFace id={friend.id} size={52} />
@@ -466,14 +466,14 @@ export default function PhoneCall({ audio }) {
     <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '28px', padding: '6px', background: 'radial-gradient(circle at 30% 20%, #e0f2fe 0, rgba(224,242,254,0) 45%), radial-gradient(circle at 75% 80%, #fce7f3 0, rgba(252,231,243,0) 45%)', borderRadius: '28px' }}>
       <style>{'@keyframes phonePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); } 50% { box-shadow: 0 0 0 16px rgba(34,197,94,0); } } @keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.55); } 50% { box-shadow: 0 0 0 22px rgba(244,63,94,0); } }'}</style>
       {/* 장난감 전화기 */}
-      <div style={{
+      <div className="bps-phone" style={{
         height: '100%', maxHeight: '700px', aspectRatio: '0.52', minHeight: 0, background: 'linear-gradient(145deg, #fb7185, #f472b6)', borderRadius: '52px', padding: '14px',
         boxShadow: '0 30px 50px -24px rgba(190,24,93,0.6), inset 0 2px 0 rgba(255,255,255,0.4)', display: 'flex', flexDirection: 'column', position: 'relative'
       }}>
         {/* 옆 버튼 */}
         <span style={{ position: 'absolute', left: '-6px', top: '22%', width: '6px', height: '54px', borderRadius: '4px 0 0 4px', background: '#e11d48' }} />
         <span style={{ position: 'absolute', right: '-6px', top: '30%', width: '6px', height: '80px', borderRadius: '0 4px 4px 0', background: '#e11d48' }} />
-        <div style={{ flex: 1, minHeight: 0, borderRadius: '40px', background: screenBg, padding: '10px 14px 14px', display: 'flex', flexDirection: 'column', overflow: 'hidden', transition: 'background 0.4s' }}>
+        <div style={{ flex: 1, minHeight: 0, borderRadius: '40px', background: screenBg, padding: '10px 14px 14px', display: 'flex', flexDirection: 'column', overflowX: 'hidden', overflowY: 'auto', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', transition: 'background 0.4s' }}>
           {/* 상태 표시줄 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 800, color: dark ? '#ffffff' : '#3f3a52', padding: '0 8px 6px' }}>
             <span>{clock}</span>

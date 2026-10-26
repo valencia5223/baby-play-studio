@@ -263,4 +263,9 @@ button:active {
   .bps-nav-tab { flex: 0 0 auto; min-height: 60px !important; padding: 4px 12px 4px 6px !important; gap: 6px !important; }
   .bps-nav-icon { width: 40px !important; height: 40px !important; font-size: 1.5rem !important; }
   .bps-nav-sub { display: none !important; }
+  /* 📞 전화 놀이: 휴대폰에서는 전화기가 화면 폭을 꽉 채운다 (높이에 맞춘 비율이면 너무 좁아짐) */
+  .bps-contact-face { width: 60px !important; height: 60px !important; }
+  .bps-contact-face canvas { width: 58px !important; height: 58px !important; }
+  .bps-contact-call { width: 46px !important; height: 46px !important; font-size: 1.35rem !important; }
+  .bps-phone { aspect-ratio: auto !important; width: 100% !important; max-width: 440px; max-height: none !important; border-radius: 40px !important; padding: 10px !important; }
 }
