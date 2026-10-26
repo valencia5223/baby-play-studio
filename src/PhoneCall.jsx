@@ -426,16 +426,17 @@ export default function PhoneCall({ audio }) {
         try { const st = await navigator.permissions.query({ name: 'microphone' }); setDiag(`권한: ${st.state}`); } catch { /* 지원 안 함 */ }
       }
       // 아이폰: 앱이 처음에 'playback'(재생 전용)으로 정해 두므로, 그대로면 마이크가
-      // "InvalidStateError: AudioSession category is not compatible with audio capture" 로 막힌다 → 녹음 가능한 세션으로 바꾼다
-      try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch { /* 무시 */ }
+      // "InvalidStateError: AudioSession category is not compatible with audio capture" 로 막힌다 →
+      // 세션을 'auto'(브라우저에 맡김)로 바꾼다. 'play-and-record'↔'playback' 을 직접 오가면 아이패드에서 다른 탭 소리가 끊겼다
+      if (audio.beforeMic) audio.beforeMic();
       micUsedRef.current = true;
       // 울림 제거를 켠 설정 → 안 되는 기기면 기본 설정으로 한 번 더
       for (const c of [{ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }, { audio: true }]) {
         try { stream = await navigator.mediaDevices.getUserMedia(c); break; } catch (e) { err = e; if (e && e.name === 'NotAllowedError') break; }
       }
-      // 그래도 세션 문제로 막히면 세션 지정을 'auto'(브라우저에 맡김)로 풀고 한 번 더
+      // 그래도 세션 문제로 막히면 녹음 가능한 세션으로 지정하고 한 번 더
       if (!stream && err && err.name === 'InvalidStateError' && navigator.audioSession) {
-        try { navigator.audioSession.type = 'auto'; stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { err = e; }
+        try { navigator.audioSession.type = 'play-and-record'; stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { err = e; }
       }
       if (!stream) {
         micRef.current = null; setMicOk(false);
@@ -465,14 +466,14 @@ export default function PhoneCall({ audio }) {
     p.finally(() => { micPromiseRef.current = null; });
     return p;
   };
-  // 마이크를 닫고 일반 재생 모드로 (아이폰에서 소리가 다시 커지게)
+  // 마이크를 닫는다 (마이크가 꺼지면 브라우저가 알아서 일반 재생으로 돌아가 아이폰에서 소리가 다시 커진다)
   function closeMic() {
     endSession();
     const m = micRef.current; micRef.current = null;
     if (m) m.stream.getTracks().forEach(t => t.stop());
     const c = capCtxRef.current; capCtxRef.current = null;
     if (c) c.close().catch(() => { });
-    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* 무시 */ }
+    if (audio.applySession) audio.applySession();   // 혹시 'play-and-record' 로 바꿨다면 'auto' 로 되돌린다
   }
   // 화면을 떠날 때
   function releaseMic() { closeMic(); stopPlayer(); }

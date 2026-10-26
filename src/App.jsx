@@ -84,10 +84,8 @@ class BabySoundEngine {
 
   init() {
     if (!this.ctx) {
-      // 📱 iOS 16.4+: 무음 스위치/모드에서도 Web Audio 음성이 들리도록 재생 세션으로 지정
-      try {
-        if (navigator.audioSession) navigator.audioSession.type = 'playback';
-      } catch (e) { }
+      // 📱 iOS 16.4+: 무음 스위치/모드에서도 Web Audio 음성이 들리도록 재생 세션으로 지정 (마이크를 쓴 뒤로는 브라우저에 맡김)
+      this.applySession();
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) this.ctx = new AudioCtx();
     }
@@ -96,7 +94,7 @@ class BabySoundEngine {
       //    → 재생 세션으로 되돌리고 깨우되, 그래도 안 살아나면 새로 만든다
       const st = this.ctx.state;
       if (st === 'suspended' || st === 'interrupted') {
-        try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch (e) { }
+        this.applySession();
         const old = this.ctx;
         const revive = () => {
           if (this.ctx !== old || old.state === 'running') return;
@@ -125,10 +123,24 @@ class BabySoundEngine {
     }
   }
 
+  // 📱 iOS 오디오 세션: 처음엔 'playback'(무음 스위치를 켜도 소리 남).
+  //    마이크를 쓰면(전화 놀이) 'playback' ↔ 'play-and-record' 를 직접 바꾸는 것이 아이패드에서 앱 소리를 끊어 버려서,
+  //    그 뒤로는 마이크를 쓰는 보통 웹사이트처럼 'auto'(브라우저에 맡김)로 둔다
+  applySession() {
+    const want = this.micUsed ? 'auto' : 'playback';
+    try { if (navigator.audioSession && navigator.audioSession.type !== want) navigator.audioSession.type = want; } catch (e) { }
+  }
+  // 마이크를 열기 직전에 부른다
+  beforeMic() {
+    this.micUsed = true;
+    this.applySession();
+  }
+
   // 📱 iOS·iPadOS: 마이크를 쓰고 나면(전화 놀이) 기존 AudioContext 가 겉으로는 살아 있어도 소리가 안 날 때가 있다
-  //    → 재생 세션으로 되돌리고 AudioContext 를 새로 만들어 다시 잠금 해제한다 (탭을 누른 터치 안에서 부르면 바로 살아난다)
+  //    → AudioContext 를 새로 만들어 다시 잠금 해제한다 (탭을 누른 터치 안에서 부르면 바로 살아난다)
   resetAfterMic() {
-    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }
+    this.micUsed = true;
+    this.applySession();
     const old = this.ctx; this.ctx = null;
     if (old) { try { old.close().catch(() => { }); } catch (e) { } }
     this.isAudioUnlocked = false;
