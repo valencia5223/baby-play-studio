@@ -3280,9 +3280,10 @@ function PuzzlePiece({ theme, idx, uid, style, className }) {
 
 // 📸 생생 카드 탭 안에서 고르는 세 가지 종류 (activeTab 값은 예전 탭 id 그대로)
 const CARD_CATEGORIES = [
-  { id: 'animal', icon: '🦁', label: '동물', sub: '진짜 울음소리가 들려요', color: '#ef4444', bg: '#fff1f2' },
-  { id: 'fruit', icon: '🍎', label: '과일·채소', sub: '싱싱한 사진과 먹이기 놀이', color: '#10b981', bg: '#ecfdf5' },
-  { id: 'vehicle', icon: '🚗', label: '탈것', sub: '부릉부릉 소리가 들려요', color: '#0284c7', bg: '#f0f9ff' }
+  // color: 진한 글자색, bg: 파스텔 카드 바탕, pastel: 고른 버튼 바탕 (파스텔 테마)
+  { id: 'animal', icon: '🦁', label: '동물', sub: '진짜 울음소리가 들려요', color: '#b0413e', bg: '#ffeceb', pastel: '#ffc9c9' },
+  { id: 'fruit', icon: '🍎', label: '과일·채소', sub: '싱싱한 사진과 먹이기 놀이', color: '#2f7a4f', bg: '#e7f7ec', pastel: '#bfe8cc' },
+  { id: 'vehicle', icon: '🚗', label: '탈것', sub: '부릉부릉 소리가 들려요', color: '#1d6a93', bg: '#e6f4fb', pastel: '#b9e3f5' }
 ];
 
 export default function App() {
@@ -3972,32 +3973,32 @@ export default function App() {
     <div style={{
       width: '100%', height: '100dvh',
       position: 'fixed', inset: 0,
-      background: 'linear-gradient(135deg, #fffbebf8 0%, #fef3c7 40%, #d1fae5 100%)',
+      background: 'radial-gradient(circle at 8% 0%, #ffe4e6 0%, rgba(255,228,230,0) 38%), radial-gradient(circle at 96% 100%, #dcfce7 0%, rgba(220,252,231,0) 42%), radial-gradient(circle at 90% 4%, #e0f2fe 0%, rgba(224,242,254,0) 34%), #fff8f0',
       padding: isIpadFrame ? '8px 12px' : '4px 8px',
       display: 'flex', flexDirection: 'column', alignItems: 'center', userSelect: 'none',
       overflow: 'hidden', overscrollBehavior: 'none', touchAction: 'none'
     }}>
-      {/* 짱구 스타일 헤더 (12.9인치 규격에 딱 맞는 컴팩트 레이아웃) */}
+      {/* 헤더 (12.9인치 규격에 딱 맞는 컴팩트 레이아웃) */}
       <header style={{
-        width: '100%', maxWidth: '1366px', background: '#ffffff', borderRadius: '20px',
-        padding: '0.6rem 1.4rem', boxShadow: '0 8px 20px -4px rgba(239, 68, 68, 0.18)',
-        border: '3.5px solid #ef4444', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', marginBottom: '0.5rem', flexShrink: 0
+        width: '100%', maxWidth: '1366px', background: 'rgba(255,255,255,0.86)', borderRadius: '26px',
+        padding: '0.55rem 1.2rem', boxShadow: '0 10px 30px -12px rgba(120, 86, 60, 0.18)',
+        border: '1px solid #f3e8dc', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', marginBottom: '0.55rem', flexShrink: 0
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
-            background: '#fff1f2', border: '2.5px solid #f87171',
-            padding: '4px 10px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '8px',
-            boxShadow: '0 4px 10px rgba(239, 68, 68, 0.12)'
+            background: 'linear-gradient(145deg, #ffe4e6, #fde68a)',
+            width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 6px 14px -6px rgba(244, 114, 182, 0.55)'
           }}>
-            <img src="/shinchan_sticker.png" alt="짱구" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+            <span role="img" aria-label="판다" style={{ fontSize: '2rem', lineHeight: 1 }}>🐼</span>
           </div>
           <div>
-            <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#dc2626', margin: 0, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h1 style={{ fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontSize: '1.7rem', fontWeight: 400, color: '#3f3a52', margin: 0, letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               유나의 두뇌 발달 놀이터 🖍️
             </h1>
-            <span style={{ fontSize: '0.78rem', fontWeight: 900, color: '#047857', background: '#d1fae5', padding: '1px 8px', borderRadius: '10px', display: 'inline-block', marginTop: '1px' }}>
-              ✨ 짱구와 함께하는 신나는 놀이 세상!
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#8a7f96', display: 'inline-block', marginTop: '1px' }}>
+              ✨ 보고 듣고 만지며 쑥쑥 자라는 놀이 세상!
             </span>
           </div>
         </div>
@@ -4033,11 +4034,10 @@ export default function App() {
             setActiveTab('song');
             audioEngine.playFreq(520, 'sine', 0.15);
           }} title={`한국 동요 ${LOCAL_NURSERY_SONGS.length}곡`} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '14px', whiteSpace: 'nowrap',
-            border: activeTab === 'song' ? '2.5px solid #db2777' : '2.5px solid #f9a8d4',
-            background: activeTab === 'song' ? '#ec4899' : '#fdf2f8',
-            color: activeTab === 'song' ? '#ffffff' : '#be185d', fontWeight: 900, fontSize: '0.95rem', cursor: 'pointer',
-            boxShadow: activeTab === 'song' ? '0 6px 14px rgba(236,72,153,0.3)' : 'none'
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '0 18px', height: '48px', borderRadius: '24px', whiteSpace: 'nowrap',
+            fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontWeight: 400, fontSize: '1.05rem', cursor: 'pointer',
+            border: 'none', background: activeTab === 'song' ? '#f9a8d4' : '#ffe4ef', color: activeTab === 'song' ? '#5b1239' : '#b03a72',
+            boxShadow: activeTab === 'song' ? '0 8px 18px -8px rgba(219,39,119,0.6)' : 'none'
           }}>
             🎵 동요 재생 <span style={{ fontSize: '0.72rem', opacity: 0.85 }}>({LOCAL_NURSERY_SONGS.length}곡)</span>
           </button>}
@@ -4047,57 +4047,58 @@ export default function App() {
             setActiveTab('lotto');
             audioEngine.playFreq(520, 'sine', 0.15);
           }} title="로또 번호 캡슐 뽑기" style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '14px', whiteSpace: 'nowrap',
-            border: activeTab === 'lotto' ? '2.5px solid #4338ca' : '2.5px solid #a5b4fc',
-            background: activeTab === 'lotto' ? '#4f46e5' : '#eef2ff',
-            color: activeTab === 'lotto' ? '#ffffff' : '#4338ca', fontWeight: 900, fontSize: '0.95rem', cursor: 'pointer',
-            boxShadow: activeTab === 'lotto' ? '0 6px 14px rgba(79,70,229,0.3)' : 'none'
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '0 18px', height: '48px', borderRadius: '24px', whiteSpace: 'nowrap',
+            fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontWeight: 400, fontSize: '1.05rem', cursor: 'pointer',
+            border: 'none', background: activeTab === 'lotto' ? '#c4b5fd' : '#ede9fe', color: activeTab === 'lotto' ? '#2e1065' : '#6d4fc4',
+            boxShadow: activeTab === 'lotto' ? '0 8px 18px -8px rgba(109,40,217,0.55)' : 'none'
           }}>
             🎰 로또 뽑기
           </button>
-          <button onClick={() => setIsIpadFrame(!isIpadFrame)} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '14px', whiteSpace: 'nowrap',
-            border: isIpadFrame ? '2.5px solid #0284c7' : '2px solid #cbd5e1',
-            background: isIpadFrame ? '#e0f2fe' : '#ffffff',
-            color: isIpadFrame ? '#0369a1' : '#475569', fontWeight: 900, fontSize: '0.88rem', cursor: 'pointer'
-          }}>
-            <Smartphone size={17} /> {isIpadFrame ? 'iPad 12.9" 규격뷰' : '전체화면'}
-          </button>
-          <button onClick={() => setSoundEnabled(!soundEnabled)} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '14px', whiteSpace: 'nowrap',
-            border: soundEnabled ? '2.5px solid #10b981' : '2px solid #cbd5e1',
-            background: soundEnabled ? '#d1fae5' : '#f1f5f9',
-            color: soundEnabled ? '#047857' : '#64748b', fontWeight: 900, fontSize: '0.88rem', cursor: 'pointer'
-          }}>
-            {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
-            {soundEnabled ? '소리 켜짐 🔊' : '음소거 🔇'}
-          </button>
+          {/* 부모용 버튼 (아기가 잘 누르지 않게 작고 차분하게 한 묶음) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: '#f6efe7', borderRadius: '20px', padding: '3px', marginLeft: '4px' }}>
+            <button onClick={() => setIsIpadFrame(!isIpadFrame)} title={isIpadFrame ? 'iPad 12.9" 규격뷰' : '전체화면'} style={{
+              display: 'flex', alignItems: 'center', gap: '5px', padding: '0 12px', height: '34px', borderRadius: '17px', whiteSpace: 'nowrap',
+              border: 'none', background: isIpadFrame ? '#ffffff' : 'transparent', boxShadow: isIpadFrame ? '0 2px 6px rgba(120,86,60,0.12)' : 'none',
+              color: '#7c6f66', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer'
+            }}>
+              <Smartphone size={15} /> {isIpadFrame ? 'iPad 규격' : '전체화면'}
+            </button>
+            <button onClick={() => setSoundEnabled(!soundEnabled)} title={soundEnabled ? '소리 켜짐' : '음소거'} style={{
+              display: 'flex', alignItems: 'center', gap: '5px', padding: '0 12px', height: '34px', borderRadius: '17px', whiteSpace: 'nowrap',
+              border: 'none', background: soundEnabled ? '#ffffff' : 'transparent', boxShadow: soundEnabled ? '0 2px 6px rgba(120,86,60,0.12)' : 'none',
+              color: soundEnabled ? '#3f8f6a' : '#a1958c', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer'
+            }}>
+              {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+              {soundEnabled ? '소리 켜짐' : '음소거'}
+            </button>
+          </div>
         </div>
       </header>
 
       {/* 메인 뷰포트 (12.9인치 화면에 1px 오차 없이 완전 고정) */}
       <main style={{
         width: '100%', maxWidth: isIpadFrame ? '1366px' : '100%',
-        flex: 1, minHeight: 0, background: '#ffffff', borderRadius: '26px',
-        border: isIpadFrame ? '5px solid #ef4444' : '2px solid #e2e8f0',
-        boxShadow: '0 16px 36px -8px rgba(239, 68, 68, 0.22)',
+        flex: 1, minHeight: 0, background: '#ffffff', borderRadius: '30px',
+        border: '1px solid #f3e8dc',
+        boxShadow: '0 18px 40px -18px rgba(120, 86, 60, 0.25)',
         overflow: 'hidden', display: 'flex', flexDirection: 'column'
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav style={{
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '5px',
-          padding: '8px 8px', background: '#fff1f2', borderBottom: '3px solid #fca5a5',
+          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px',
+          padding: '10px 12px', background: '#fffcf8', borderBottom: '1px solid #f3e8dc',
           flexShrink: 0
         }}>
           {[
-            { id: 'cards', label: '📸 생생 카드', sub: '동물·과일·탈것', color: '#ef4444' },
-            { id: 'ocean', label: '🐠 내 어항', sub: '물고기 키우기', color: '#06b6d4' },
-            { id: 'farm', label: '🐮 내 목장', sub: '동물 키우기', color: '#16a34a' },
-            { id: 'garden', label: '🌱 텃밭 가꾸기', sub: '심고 물 주고 수확', color: '#65a30d' },
+            // 파스텔 테마: pastel = 고른 메뉴 바탕, soft = 그림 동그라미, ink = 글자
+            { id: 'cards', icon: '📸', label: '생생 카드', sub: '동물·과일·탈것', pastel: '#ffc9c9', soft: '#ffe8e8', ink: '#9b2c2c' },
+            { id: 'ocean', icon: '🐠', label: '내 어항', sub: '물고기 키우기', pastel: '#b9e3f5', soft: '#e3f4fb', ink: '#1d5f7a' },
+            { id: 'farm', icon: '🐮', label: '내 목장', sub: '동물 키우기', pastel: '#c8ebc0', soft: '#e8f7e4', ink: '#2f6b25' },
+            { id: 'garden', icon: '🌱', label: '텃밭 가꾸기', sub: '심고 물 주고 수확', pastel: '#e3eeb4', soft: '#f3f8de', ink: '#5a6b16' },
             // 🚂 기차 마을은 잠시 메뉴에서만 뺐다 (TrainGame.jsx·저장 데이터는 그대로, 아래 줄을 되살리면 다시 보인다)
             // { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
-            { id: 'puzzle', label: '🧩 아기 퍼즐', sub: '조각 맞추기', color: '#8b5cf6' },
-            { id: 'paint', label: '🎨 무지개 물감', sub: '터치 감각 미술', color: '#3b82f6' },
+            { id: 'puzzle', icon: '🧩', label: '아기 퍼즐', sub: '조각 맞추기', pastel: '#ddd2fa', soft: '#f1ecfd', ink: '#55399e' },
+            { id: 'paint', icon: '🎨', label: '무지개 물감', sub: '터치 감각 미술', pastel: '#ffe0b2', soft: '#fff2df', ink: '#9a5b0d' },
             // 🎵 동요 재생·🎰 로또 뽑기는 맨 위 헤더 버튼으로 옮겼다
           ].map(tab => {
             const isActive = activeTab === tab.id || (tab.id === 'cards' && isCardTab);
@@ -4111,16 +4112,22 @@ export default function App() {
                 setActiveTab(tab.id);
                 audioEngine.playFreq(520, 'sine', 0.15);
               }} style={{
-                padding: '8px 2px', borderRadius: '16px',
-                border: isActive ? `3px solid ${tab.color}` : '2px solid #fed7aa',
-                background: isActive ? tab.color : '#ffffff',
-                color: isActive ? '#ffffff' : '#475569', fontWeight: 900, cursor: 'pointer',
-                boxShadow: isActive ? '0 6px 14px rgba(0,0,0,0.15)' : 'none',
-                transform: isActive ? 'scale(1.02)' : 'scale(1)', transition: 'all 0.15s ease',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                minHeight: '74px', padding: '6px 6px', borderRadius: '22px', border: 'none',
+                background: isActive ? tab.pastel : '#ffffff',
+                color: tab.ink, cursor: 'pointer',
+                boxShadow: isActive ? `0 10px 22px -12px ${tab.ink}` : '0 2px 8px -4px rgba(120,86,60,0.18)',
+                transition: 'background 0.2s ease, box-shadow 0.2s ease',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
               }}>
-                <span style={{ fontSize: '0.94rem', lineHeight: 1.2 }}>{tab.label}</span>
-                <span style={{ fontSize: '0.68rem', opacity: isActive ? 0.95 : 0.7, fontWeight: 800, marginTop: '2px' }}>{tab.sub}</span>
+                <span style={{
+                  width: '50px', height: '50px', borderRadius: '50%', flexShrink: 0,
+                  background: isActive ? 'rgba(255,255,255,0.7)' : tab.soft,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.9rem', lineHeight: 1
+                }}>{tab.icon}</span>
+                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0 }}>
+                  <span style={{ fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontSize: '1.08rem', lineHeight: 1.15, whiteSpace: 'nowrap' }}>{tab.label}</span>
+                  <span style={{ fontSize: '0.66rem', opacity: 0.7, fontWeight: 800, marginTop: '2px', whiteSpace: 'nowrap' }}>{tab.sub}</span>
+                </span>
               </button>
             );
           })}
@@ -4131,7 +4138,7 @@ export default function App() {
           flex: 1,
           padding: activeTab === 'paint' ? '0.6rem 1rem' : '1.2rem 1.6rem',
           position: 'relative',
-          background: '#fafafa',
+          background: '#fffdfa',
           overflowY: isScrollableTab ? 'auto' : 'hidden',
           overscrollBehaviorY: isScrollableTab ? 'contain' : 'none',
           touchAction: isScrollableTab ? 'pan-y' : 'none',
@@ -4144,19 +4151,22 @@ export default function App() {
           {/* ===== 📸 생생 카드: 동물·과일·탈것 중에서 골라 들어간다 ===== */}
           {activeTab === 'cards' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1.4rem' }}>
-              <h2 style={{ fontSize: '1.7rem', fontWeight: 900, color: '#9a3412', margin: 0, textAlign: 'center' }}>
+              <h2 style={{ fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontSize: '1.9rem', fontWeight: 400, color: '#3f3a52', margin: 0, textAlign: 'center' }}>
                 📸 무엇을 볼까요? 콕 눌러 보세요!
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.4rem' }}>
                 {CARD_CATEGORIES.map(cat => (
                   <button key={cat.id} onClick={() => enterCardTab(cat.id)} style={{
-                    background: cat.bg, border: `5px solid ${cat.color}`, borderRadius: '32px', cursor: 'pointer',
-                    padding: '1.8rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
-                    boxShadow: '0 12px 26px rgba(0,0,0,0.12)', touchAction: 'manipulation'
+                    background: cat.bg, border: 'none', borderRadius: '36px', cursor: 'pointer',
+                    padding: '2rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
+                    boxShadow: `0 18px 34px -20px ${cat.color}`, touchAction: 'manipulation'
                   }}>
-                    <span style={{ fontSize: '6.5rem', lineHeight: 1 }}>{cat.icon}</span>
-                    <span style={{ fontSize: '1.9rem', fontWeight: 900, color: cat.color }}>{cat.label}</span>
-                    <span style={{ fontSize: '1rem', fontWeight: 800, color: '#475569' }}>{cat.sub}</span>
+                    <span style={{
+                      width: '9.5rem', height: '9.5rem', borderRadius: '50%', background: 'rgba(255,255,255,0.75)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '6rem', lineHeight: 1
+                    }}>{cat.icon}</span>
+                    <span style={{ fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontSize: '2rem', fontWeight: 400, color: cat.color }}>{cat.label}</span>
+                    <span style={{ fontSize: '0.98rem', fontWeight: 800, color: '#8a7f96' }}>{cat.sub}</span>
                   </button>
                 ))}
               </div>
@@ -4167,15 +4177,16 @@ export default function App() {
           {isCardTab && (
             <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexShrink: 0, flexWrap: 'wrap' }}>
               <button onClick={() => { audioEngine.interruptVoice(); setActiveTab('cards'); audioEngine.playFreq(440, 'sine', 0.12); }} style={{
-                border: '3px solid #cbd5e1', background: '#ffffff', color: '#334155', borderRadius: '18px',
-                padding: '10px 18px', fontWeight: 900, fontSize: '1.05rem', cursor: 'pointer', touchAction: 'manipulation'
+                border: 'none', background: '#f6efe7', color: '#5c5248', borderRadius: '24px', minHeight: '52px',
+                padding: '0 20px', fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontSize: '1.1rem', cursor: 'pointer', touchAction: 'manipulation'
               }}>⬅️ 처음으로</button>
               {CARD_CATEGORIES.map(cat => {
                 const on = activeTab === cat.id;
                 return (
                   <button key={cat.id} onClick={() => { if (!on) enterCardTab(cat.id); }} style={{
-                    border: `3px solid ${cat.color}`, background: on ? cat.color : '#ffffff', color: on ? '#ffffff' : cat.color,
-                    borderRadius: '18px', padding: '10px 18px', fontWeight: 900, fontSize: '1.05rem', cursor: 'pointer', touchAction: 'manipulation'
+                    border: 'none', background: on ? cat.pastel : cat.bg, color: cat.color, minHeight: '52px',
+                    boxShadow: on ? `0 10px 20px -12px ${cat.color}` : 'none',
+                    borderRadius: '24px', padding: '0 20px', fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontSize: '1.1rem', cursor: 'pointer', touchAction: 'manipulation'
                   }}>{cat.icon} {cat.label}</button>
                 );
               })}
@@ -4608,7 +4619,7 @@ export default function App() {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               {/* 상단 툴바 */}
               <div style={{
-                background: '#e0f2fe', border: '2.5px solid #bae6fd', borderRadius: '20px',
+                background: '#eef7fc', border: 'none', borderRadius: '24px',
                 padding: '0.7rem 1.2rem', marginBottom: '0.8rem',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px',
                 flexShrink: 0
@@ -4680,7 +4691,7 @@ export default function App() {
               {/* ✨ 움직이기: 그린 그림에 효과를 줘서 움직인다 (다시 누르면 멈춤) */}
               <div style={{
                 display: 'flex', gap: '8px', marginBottom: '0.6rem', flexWrap: 'wrap', flexShrink: 0, alignItems: 'center',
-                background: '#faf5ff', padding: '8px 14px', borderRadius: '16px', border: '2px solid #e9d5ff'
+                background: '#f6f1fd', padding: '8px 14px', borderRadius: '22px', border: 'none'
               }}>
                 <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#7e22ce', marginRight: '4px' }}>✨ 움직이기:</span>
                 {PAINT_FX.map(fx => {
@@ -4761,7 +4772,8 @@ export default function App() {
                 onPointerCancel={handlePointerUp}
                 style={{
                   width: '100%', flex: 1, minHeight: 0, background: '#ffffff', borderRadius: '24px',
-                  border: paintMode === 'stamp' ? '4px dashed #f472b6' : '4px dashed #38bdf8',
+                  border: paintMode === 'stamp' ? '3px dashed #f9c4dc' : '3px dashed #bfe0f2',
+                  boxShadow: 'inset 0 2px 10px rgba(120,86,60,0.05)',
                   position: 'relative', overflow: 'hidden',
                   cursor: paintMode === 'stamp' ? 'pointer' : 'crosshair',
                   touchAction: 'none'

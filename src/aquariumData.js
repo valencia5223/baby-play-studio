@@ -313,6 +313,16 @@ export const FISH_SPECIES = [
     top: '#5b4636', belly: '#a68b6d', mottle: '#2a1d12',
     tail: { color: 'rgba(91,70,54,0.9)', len: 0.24, spread: 0.36, solid: true }, fin: 'rgba(91,70,54,0.85)'
   },
+  {
+    id: 'seacucumber', name: '해삼', price: 150, len: 64, hRatio: 0.36, shape: 'seacucumber', desc: '오돌토돌 바닥을 꿈틀꿈틀', sea: true, crawl: true, upright: true,
+    speed: 0.18, growMul: 0.9, school: false, zone: 'bottom', bottomFeeder: true, likedBy: '엄마',
+    top: '#5a2f26', belly: '#a8705c', spots: '#7a4536', accent: '#e9c3a8', tail: {}
+  },
+  {
+    id: 'spoonworm', name: '개불', price: 140, len: 58, hRatio: 0.4, shape: 'spoonworm', desc: '말랑말랑 분홍 꿈틀이', sea: true, crawl: true, upright: true,
+    speed: 0.15, growMul: 0.95, school: false, zone: 'bottom', bottomFeeder: true, likedBy: '엄마',
+    top: '#f28a78', belly: '#ffc9bb', accent: '#e86f5c', tail: {}
+  },
   // ── 바다 친구 ── 물고기와 똑같이 밥 먹고·아프고·이름 짓고·자란다 (sea: 상점에서 바다 친구로 묶어 보여줌)
   //  shape 가 바다 친구 이름이면 drawFish 가 drawCreature 로 따로 그린다
   //  crawl: 바닥을 기어 다님(가라앉은 밥만 먹음) / swim: 기다가도 배고프면 헤엄쳐 올라가 밥을 먹음(게) / upright: 몸을 기울이지 않음
@@ -326,7 +336,8 @@ export const FISH_SPECIES = [
     id: 'crab', name: '꽃게', price: 125, len: 50, hRatio: 0.62, shape: 'crab', desc: '파란 집게로 옆으로 엉금엉금', sea: true, crawl: true, swim: true,
     speed: 0.45, growMul: 1, school: false, zone: 'bottom',
     // 실제 꽃게: 보랏빛 도는 갈색 등딱지, 파란 다리와 집게
-    top: '#6b5876', belly: '#a08cab', fin: '#4a73b8', accent: '#5b84d0', tail: {}
+    top: '#6b5876', belly: '#a08cab', fin: '#4a73b8', accent: '#5b84d0', tail: {},
+    likedBy: '아빠'   // 누르거나 새로 오면 '아빠가 좋아해요!'
   },
   {
     // 소라게: 소라 껍데기를 지고 바닥을 기어 다니며 자주 멈춘다. 놀라면 껍데기 속으로 쏙(hermit),

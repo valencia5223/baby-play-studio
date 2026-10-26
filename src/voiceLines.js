@@ -81,11 +81,11 @@ export const VOICE = {
   aquaGrow: (species, stage) => (species.growLines && species.growLines[stage]) || `와아! ${attachJosa(species.name, '이/가')} ${stage === 'juvenile' ? '어린 물고기로' : '다 큰 물고기로'} 자랐어요!`,
   aquaNewFish: (species) => (species.babyName
     ? `새 친구 ${attachJosa(species.babyName, '이/가')} 왔어요! 잘 키우면 ${attachJosa(species.name, '이/가')} 돼요!`
-    : `새 친구 ${attachJosa(species.name, '이/가')} 왔어요! 잘 키워 주세요!`),
-  aquaFishInfo: (species, stage) => (species.infoLines && species.infoLines[stage]) || `${attachJosa(species.name, '이에요/예요')} 지금은 ${attachJosa((species.stageNames || STAGE_NAMES)[stage], '이에요/예요')}`,
+    : `새 친구 ${attachJosa(species.name, '이/가')} 왔어요! ${species.likedBy ? `${species.likedBy}가 좋아해요!` : '잘 키워 주세요!'}`),
+  aquaFishInfo: (species, stage) => ((species.infoLines && species.infoLines[stage]) || `${attachJosa(species.name, '이에요/예요')} 지금은 ${attachJosa((species.stageNames || STAGE_NAMES)[stage], '이에요/예요')}`) + (species.likedBy ? ` ${species.likedBy}가 좋아해요!` : ''),
   aquaShiny: (thing) => `와아! 반짝반짝 특별한 색깔의 ${attachJosa(thing.name, '이/가')} 왔어요!`,
   // 직접 지은 이름은 미리 만든 음성이 없어 기기 음성(TTS)으로 읽는다
-  aquaHello: (species, name) => `안녕! 나는 ${species.name} ${attachJosa(name, '이에요/예요')}`,
+  aquaHello: (species, name) => `안녕! 나는 ${species.name} ${attachJosa(name, '이에요/예요')}` + (species.likedBy ? ` ${species.likedBy}가 좋아해요!` : ''),
   aquaRelease: (species) => `안녕, ${attachJosa(species.name, '아/야')}! 넓은 자연에서 행복하게 지내!`,
   aquaNight: () => '밤이 됐어요. 물고기들이 코 자고 있어요.',
   paintFxWiggle: () => '살랑살랑! 그림이 춤을 춰요!',

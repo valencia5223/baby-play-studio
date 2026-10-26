@@ -680,7 +680,7 @@ export function drawPlecoGlass(ctx, sp, L, o = {}) {
 // ═══════════════════════════════ 바다 친구 그리기 ═══════════════════════════════
 // 물고기와 같은 규칙으로 그린다: 원점이 몸 가운데, +x 방향을 본다. L: 현재 몸 길이(px)
 // 자면 눈을 감고, 슬프면 색이 바래고 눈물, 기쁘면 볼이 발그레, 아기일 때는 눈이 크고 조금 투명하다.
-const CREATURE_SHAPES = new Set(['crab', 'starfish', 'shrimp', 'seahorse', 'jellyfish', 'octopus', 'squid', 'turtle', 'penguin', 'seal', 'shark', 'whale', 'frog', 'hermit', 'dolphin', 'crayfish', 'otter', 'softshell', 'axolotl', 'croc', 'ray']);
+const CREATURE_SHAPES = new Set(['crab', 'starfish', 'shrimp', 'seahorse', 'jellyfish', 'octopus', 'squid', 'turtle', 'penguin', 'seal', 'shark', 'whale', 'frog', 'hermit', 'dolphin', 'crayfish', 'otter', 'softshell', 'axolotl', 'croc', 'ray', 'seacucumber', 'spoonworm']);
 const TAU = Math.PI * 2;
 
 // 슬플 때 색을 회색 쪽으로 바랜다
@@ -1607,6 +1607,72 @@ function drawCreature(ctx, sp, L, o = {}) {
       creatureEye(ctx, L * 0.2, -H * 0.1, er * 0.5, o);
       creatureEye(ctx, L * 0.22, H * 0.08, er * 0.62, o);
       smile(ctx, L * 0.31, H * 0.02, er * 0.5);
+      break;
+    }
+    case 'seacucumber':
+    case 'spoonworm': {
+      // 해삼: 오돌토돌 돌기가 난 길쭉한 몸, 앞쪽에 꽃 같은 촉수, 배 밑 관족으로 꿈틀꿈틀 기어간다
+      // 개불: 말랑말랑 통통한 분홍 소시지 몸이 꿈틀꿈틀 부풀었다 줄었다, 앞쪽에 숟가락 같은 입
+      const cucumber = sp.shape === 'seacucumber';
+      const N = 18, x0 = -L * 0.46, x1 = L * 0.42;
+      const pts = [];
+      for (let i = 0; i <= N; i++) {
+        const q = i / N, x = x0 + (x1 - x0) * q;
+        const end = Math.max(0.02, Math.sin(Math.PI * q));   // 양 끝은 둥글게
+        const bulge = 1 + Math.sin(ph * 1.3 - q * 7) * (cucumber ? 0.08 : 0.16);   // 꿈틀꿈틀 연동 운동
+        const hh = H * 0.5 * Math.pow(end, cucumber ? 0.5 : 0.42) * bulge;
+        const yc = Math.sin(ph * 0.8 - q * 3) * H * 0.05;
+        pts.push([x, yc - hh * 1.05, yc + hh * 0.85]);
+      }
+      // 배 밑 관족 / 꼬리 쪽 강모
+      ctx.strokeStyle = mixColor(belly, '#000000', 0.15); ctx.lineWidth = Math.max(0.6, L * 0.01);
+      if (cucumber) {
+        for (let i = 2; i < N - 1; i += 1) {
+          const [x, , yb] = pts[i], lift = Math.sin(ph * 2 + i) * H * 0.05;
+          ctx.beginPath(); ctx.moveTo(x, yb - H * 0.04); ctx.lineTo(x + L * 0.01, yb + H * 0.12 - lift); ctx.stroke();
+        }
+      } else {
+        const [x, yt, yb] = pts[0];
+        for (let k = 0; k < 5; k++) { const yy = yt + (yb - yt) * (0.2 + k * 0.15); ctx.beginPath(); ctx.moveTo(x + L * 0.02, yy); ctx.lineTo(x - L * 0.05, yy + (k - 2) * H * 0.06); ctx.stroke(); }
+      }
+      // 몸
+      ctx.beginPath();
+      pts.forEach(([x, yt], i) => (i ? ctx.lineTo(x, yt) : ctx.moveTo(x, yt)));
+      for (let i = N; i >= 0; i--) ctx.lineTo(pts[i][0], pts[i][2]);
+      ctx.closePath();
+      ctx.fillStyle = grad(-H * 0.5, H * 0.45, cucumber ? 0.8 : 0.7);
+      finish(() => {
+        if (cucumber) {
+          // 오돌토돌 돌기
+          ctx.fillStyle = spots;
+          for (let i = 1; i < N; i++) {
+            const [x, yt] = pts[i];
+            ctx.beginPath(); ctx.moveTo(x - L * 0.018, yt + H * 0.1); ctx.lineTo(x + L * 0.004, yt - H * 0.02); ctx.lineTo(x + L * 0.022, yt + H * 0.1); ctx.closePath(); ctx.fill();
+            if (i % 2) { ctx.beginPath(); ctx.arc(x + L * 0.01, (yt + pts[i][2]) / 2 - H * 0.05, L * 0.012, 0, TAU); ctx.fill(); }
+          }
+        } else {
+          // 말랑한 마디 줄 + 반짝이는 윤기
+          ctx.strokeStyle = 'rgba(190,80,70,0.25)'; ctx.lineWidth = Math.max(0.6, L * 0.008);
+          for (let i = 3; i < N; i += 3) { const [x, yt, yb] = pts[i]; ctx.beginPath(); ctx.moveTo(x, yt); ctx.quadraticCurveTo(x + L * 0.02, (yt + yb) / 2, x, yb); ctx.stroke(); }
+          ctx.fillStyle = 'rgba(255,255,255,0.35)';
+          ctx.beginPath(); ctx.ellipse(-L * 0.05, -H * 0.22, L * 0.25, H * 0.07, -0.05, 0, TAU); ctx.fill();
+        }
+      });
+      // 앞쪽: 해삼은 꽃 같은 촉수, 개불은 숟가락 입
+      const [hx, hyt, hyb] = pts[N], hy = (hyt + hyb) / 2;
+      if (cucumber) {
+        ctx.fillStyle = accent;
+        for (let k = 0; k < 5; k++) {
+          const a = -0.9 + k * 0.45 + Math.sin(ph * 1.5 + k) * 0.12;
+          const tx = hx + Math.cos(a) * L * 0.07, ty = hy + Math.sin(a) * L * 0.07;
+          ctx.beginPath(); ctx.ellipse(tx, ty, L * 0.022, L * 0.014, a, 0, TAU); ctx.fill();
+        }
+      } else {
+        ctx.fillStyle = accent;
+        ctx.beginPath(); ctx.ellipse(hx + L * 0.045, hy + H * 0.04, L * 0.05, H * 0.16, 0.3, 0, TAU); ctx.fill();
+      }
+      creatureEye(ctx, L * 0.3, hy - H * 0.12, er * 0.6, o);
+      smile(ctx, L * 0.36, hy + H * 0.12, er * 0.55);
       break;
     }
     case 'otter': {
