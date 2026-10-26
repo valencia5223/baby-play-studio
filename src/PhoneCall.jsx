@@ -380,9 +380,16 @@ export default function PhoneCall({ audio }) {
       if (navigator.permissions && navigator.permissions.query) {
         try { const st = await navigator.permissions.query({ name: 'microphone' }); setDiag(`권한: ${st.state}`); } catch { /* 지원 안 함 */ }
       }
+      // 아이폰: 앱이 처음에 'playback'(재생 전용)으로 정해 두므로, 그대로면 마이크가
+      // "InvalidStateError: AudioSession category is not compatible with audio capture" 로 막힌다 → 녹음 가능한 세션으로 바꾼다
+      try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch { /* 무시 */ }
       // 울림 제거를 켠 설정 → 안 되는 기기면 기본 설정으로 한 번 더
       for (const c of [{ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }, { audio: true }]) {
         try { stream = await navigator.mediaDevices.getUserMedia(c); break; } catch (e) { err = e; if (e && e.name === 'NotAllowedError') break; }
+      }
+      // 그래도 세션 문제로 막히면 세션 지정을 'auto'(브라우저에 맡김)로 풀고 한 번 더
+      if (!stream && err && err.name === 'InvalidStateError' && navigator.audioSession) {
+        try { navigator.audioSession.type = 'auto'; stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { err = e; }
       }
       if (!stream) {
         micRef.current = null; setMicOk(false);
