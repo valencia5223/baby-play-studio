@@ -31,6 +31,15 @@ const FRIENDS = [
     fallback: ['음, 유나야 안녕. 나는 대나무를 냠냠 먹었어.', '음~ 그렇구나. 참 좋다.', '유나는 낮잠 잤어?', '하아암, 판다는 조금 졸려.'], bye: '음, 유나야. 또 전화해 줘. 잘 지내, 안녕.' }
 ];
 const FRIEND_BY_ID = Object.fromEntries(FRIENDS.map(f => [f.id, f]));
+const MIC_HELP = {
+  inapp: '카카오톡 같은 앱 안에서는 마이크를 못 써요. ⋮ 메뉴 → 다른 브라우저로 열기',
+  denied: '마이크가 막혀 있어요. 주소창 옆 설정에서 마이크를 허용한 뒤 🎤를 눌러 주세요',
+  nomic: '마이크를 찾지 못했어요',
+  unsupported: '이 브라우저는 마이크를 쓸 수 없어요. 크롬이나 사파리로 열어 주세요',
+  other: '🎤를 누르면 마이크 허락을 다시 물어봐요'
+};
+// 카카오톡·네이버·인스타그램·페이스북·라인 앱 안의 브라우저는 마이크를 막는 경우가 많다
+const IN_APP = typeof navigator !== 'undefined' && /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|DaumApps|everytimeApp/i.test(navigator.userAgent || '');
 
 // ─────────────────────────────── 친구 얼굴 ───────────────────────────────
 // 원점은 얼굴 가운데, S 는 지름 정도. mouth 0~1 (말할 때 벌어짐)
@@ -203,6 +212,8 @@ export default function PhoneCall({ audio }) {
   const callStartRef = useRef(0);
   const micRef = useRef(null);                         // { stream } 통화 화면에서 한 번 연 마이크
   const [micOk, setMicOk] = useState(true);            // 마이크를 못 열면 false (친구가 혼자 이어 간다)
+  const [micErr, setMicErr] = useState('');            // denied 허락 안 함 · inapp 앱 안 브라우저 · nomic · unsupported · other
+  const micPromiseRef = useRef(null);
   const screenRef = useRef(screen);
   useEffect(() => { screenRef.current = screen; }, [screen]);
   const friend = FRIEND_BY_ID[friendId];
@@ -272,15 +283,30 @@ export default function PhoneCall({ audio }) {
   };
 
   // 마이크 열기 (통화 화면에서 한 번만 → 다음 통화부터는 다시 묻지 않는다)
-  const ensureMic = async () => {
-    if (micRef.current && micRef.current.stream.getAudioTracks().some(t => t.readyState === 'live')) return true;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true, channelCount: 1 } });
+  // 동시에 여러 번 부르면 같은 요청을 기다린다 (허락 창이 두 번 뜨지 않게)
+  const ensureMic = () => {
+    if (micRef.current && micRef.current.stream.getAudioTracks().some(t => t.readyState === 'live')) return Promise.resolve(true);
+    if (micPromiseRef.current) return micPromiseRef.current;
+    const p = (async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setMicErr(IN_APP ? 'inapp' : 'unsupported'); setMicOk(false); return false; }
+      let stream = null, err = null;
+      // 통화용 음성 처리를 끈 설정 → 안 되는 기기면 기본 설정으로 한 번 더
+      for (const c of [{ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } }, { audio: true }]) {
+        try { stream = await navigator.mediaDevices.getUserMedia(c); break; } catch (e) { err = e; if (e && e.name === 'NotAllowedError') break; }
+      }
+      if (!stream) {
+        micRef.current = null; setMicOk(false);
+        setMicErr(IN_APP ? 'inapp' : err && err.name === 'NotAllowedError' ? 'denied' : err && err.name === 'NotFoundError' ? 'nomic' : 'other');
+        return false;
+      }
       stream.getAudioTracks().forEach(t => { t.enabled = false; });   // 들을 때만 켠다
       micRef.current = { stream };
-      setMicOk(true);
+      setMicOk(true); setMicErr('');
       return true;
-    } catch { micRef.current = null; setMicOk(false); return false; }
+    })();
+    micPromiseRef.current = p;
+    p.finally(() => { micPromiseRef.current = null; });
+    return p;
   };
   // 화면을 떠날 때: 마이크를 닫고 일반 재생 모드로 (아이폰에서 소리가 다시 커지게)
   function releaseMic() {
@@ -418,9 +444,10 @@ export default function PhoneCall({ audio }) {
           <li>통화 중에 친구 말이 끝나면 아기 목소리를 몇 초 녹음해요.</li>
           <li>그 녹음을 AI(Google Gemini)에 보내 알아듣고 친구의 대답을 만들어요.</li>
           <li>이 앱은 녹음과 대화를 저장하지 않아요. (보낸 내용은 Google 정책에 따라 처리돼요)</li>
-          <li>처음 한 번 마이크 사용 허락을 물어봐요.</li>
+          <li>'알겠어요'를 누르면 마이크 사용 허락을 물어봐요. '허용'을 눌러 주세요.</li>
+          {IN_APP && <li style={{ color: '#dc2626' }}>지금은 앱(카카오톡 등) 안에서 열려 있어서 마이크가 안 될 수 있어요. ⋮ 메뉴에서 '다른 브라우저로 열기'를 눌러 주세요.</li>}
         </ul>
-        <button onClick={() => { try { localStorage.setItem(CONSENT_KEY, '1'); } catch { /* 무시 */ } setConsent(true); audio.playFreq(660, 'sine', 0.12); }} style={{ border: 'none', borderRadius: '22px', minHeight: '56px', flexShrink: 0, background: '#34d399', color: '#ffffff', fontFamily: JUA, fontSize: '1.25rem', cursor: 'pointer' }}>알겠어요, 시작할게요</button>
+        <button onClick={() => { try { localStorage.setItem(CONSENT_KEY, '1'); } catch { /* 무시 */ } setConsent(true); audio.playFreq(660, 'sine', 0.12); ensureMic(); }} style={{ border: 'none', borderRadius: '22px', minHeight: '56px', flexShrink: 0, background: '#34d399', color: '#ffffff', fontFamily: JUA, fontSize: '1.25rem', cursor: 'pointer' }}>알겠어요, 시작할게요</button>
       </div>
     );
   } else if (screen === 'contacts') {
@@ -428,7 +455,7 @@ export default function PhoneCall({ audio }) {
       <div style={{ flex: '1 0 auto', display: 'flex', flexDirection: 'column', gap: '12px', padding: '6px 2px' }}>
         <div style={{ fontFamily: JUA, fontSize: '1.5rem', color: '#3f3a52', padding: '0 6px' }}>누구에게 전화할까?</div>
         {FRIENDS.map(f => (
-          <button key={f.id} onClick={() => { setFriendId(f.id); setTyped(''); setScreen('dial'); audio.playFreq(660, 'sine', 0.1); }} style={{
+          <button key={f.id} onClick={() => { setFriendId(f.id); setTyped(''); setScreen('dial'); audio.playFreq(660, 'sine', 0.1); ensureMic(); }} style={{
             display: 'flex', alignItems: 'center', gap: '12px', border: 'none', borderRadius: '26px', padding: '10px 14px', background: f.color, cursor: 'pointer', touchAction: 'manipulation', textAlign: 'left', boxShadow: `0 10px 20px -14px ${f.ink}`
           }}>
             <div className="bps-contact-face" style={{ width: 84, height: 84, borderRadius: '50%', background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><FriendFace id={f.id} size={80} /></div>
@@ -483,7 +510,7 @@ export default function PhoneCall({ audio }) {
           >🎤</button>
         )}
         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(255,255,255,0.75)', minHeight: '1.2em', textAlign: 'center' }}>
-          {ringing ? '' : listening ? '듣고 있어요... 말해 보세요' : talking || thinking ? (heard ? `유나: ${heard}` : '') : (micOk ? '' : '마이크를 허락하면 이야기할 수 있어요 (🎤 누르기)')}
+          {ringing ? '' : listening ? '듣고 있어요... 말해 보세요' : talking || thinking ? (heard ? `유나: ${heard}` : '') : (micOk ? '' : MIC_HELP[micErr] || MIC_HELP.other)}
         </div>
         <button onClick={() => hangUp(false)} aria-label="전화 끊기" style={{ ...roundBtn('#ef4444', 70), fontSize: '1.9rem' }}>✕</button>
       </div>
