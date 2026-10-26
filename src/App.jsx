@@ -118,33 +118,23 @@ class BabySoundEngine {
 
   // 🔊 모든 Web Audio 소리(안내 음성·실로폰·효과음)가 나가는 마스터 출력: 압축기로 큰 소리를 눌러 두고 전체를 키운다
   //    (휴대폰·태블릿 스피커에서 작게 들려서). AudioContext 를 새로 만들면 출력도 새로 만든다
-  //    elementMode(아이폰·아이패드에서 마이크를 쓴 뒤): Web Audio 가 스피커로 직접은 소리를 못 내므로
-  //    MediaStreamDestination → <audio>(pipeEl) 로 흘려 보낸다 (<audio> 소리는 계속 잘 나서)
+  //    (elementMode 에서는 Web Audio 를 스피커로 내지 않는다: 안내 음성·효과음 모두 WAV 로 만들어 <audio> 로)
   out() {
     const ctx = this.ctx;
-    if (this._out && this._outCtx === ctx && this._outMode === !!this.elementMode) return this._out;
+    if (this._out && this._outCtx === ctx) return this._out;
+    this._out = this._master(ctx, ctx.destination); this._outCtx = ctx;
+    return this._out;
+  }
+  _master(ctx, dest) {
     try {
       const comp = ctx.createDynamicsCompressor();
       comp.threshold.value = -20; comp.knee.value = 12; comp.ratio.value = 4;
       comp.attack.value = 0.003; comp.release.value = 0.2;
       const gain = ctx.createGain();
       gain.gain.value = MASTER_GAIN;
-      comp.connect(gain);
-      let piped = false;
-      if (this.elementMode && ctx.createMediaStreamDestination) {
-        try {
-          const dest = ctx.createMediaStreamDestination();
-          gain.connect(dest);
-          if (!this.pipeEl) { this.pipeEl = new Audio(); this.pipeEl.setAttribute('playsinline', ''); }
-          this.pipeEl.srcObject = dest.stream;
-          this.pipeEl.play().catch(() => { });
-          piped = true;
-        } catch (e) { piped = false; }
-      }
-      if (!piped) gain.connect(ctx.destination);
-      this._out = comp; this._outCtx = ctx; this._outMode = !!this.elementMode;
+      comp.connect(gain); gain.connect(dest);
       return comp;
-    } catch (e) { return ctx.destination; }
+    } catch (e) { return dest; }
   }
 
   // 📱 iOS 오디오 세션: 평소엔 'playback'(무음 스위치를 켜도 소리 남, 가장 큼).
@@ -169,7 +159,7 @@ class BabySoundEngine {
   // 📱 iOS·iPadOS: 마이크를 쓰고 나면(전화 놀이) 기존 AudioContext 가 겉으로는 살아 있어도 소리가 안 날 때가 있다
   //    → AudioContext 를 새로 만들어 다시 잠금 해제한다 (탭을 누른 터치 안에서 부르면 바로 살아난다)
   //    그래도 아이패드에서는 새 AudioContext 도 'running' 인데 소리가 안 났다 → 그 뒤로는 elementMode 로
-  //    (안내 음성은 MP3 를 <audio> 로 바로, 효과음은 Web Audio → <audio> 로 흘려 보냄)
+  //    (안내 음성·효과음 모두 크게 만든 WAV 를 보통 <audio> 로. Web Audio 를 스트림으로 <audio> 에 흘려 보내면 통화 음량이 되어 작았다)
   resetAfterMic() {
     this.micUsed = true;
     this.micOpen = false;
@@ -179,7 +169,7 @@ class BabySoundEngine {
     if (old) { try { old.close().catch(() => { }); } catch (e) { } }
     this.isAudioUnlocked = false;
     this.init();
-    if (this.elementMode && this.ctx) this.out();   // 터치 안에서 <audio> 출력을 미리 틀어 둔다
+    if (this.elementMode) this._unlockFxPool();   // 터치 안에서 효과음용 <audio> 를 미리 깨워 둔다
   }
 
   // 📱 화면을 터치할 때마다 (App 의 전역 터치 핸들러). 터치 안에서만 AudioContext 를 확실히 깨울 수 있다.
@@ -189,10 +179,7 @@ class BabySoundEngine {
   //    (한 번 탭하면 touchstart·pointerdown·click 이 모두 오므로, 깨우기를 시도하고 0.6초 넘게 지난 뒤의 터치에서만 새로 만든다)
   onUserGesture() {
     this.init();
-    if (this.elementMode && this.ctx) {   // <audio> 출력이 멈춰 있으면 터치 안에서 다시 튼다
-      this.out();
-      if (this.pipeEl && this.pipeEl.paused) this.pipeEl.play().catch(() => { });
-    }
+    if (this.elementMode) this._unlockFxPool();   // 효과음용 <audio> 를 터치 안에서 깨워 둔다
     const ctx = this.ctx;
     if (!ctx || ctx.state === 'running') { this.wakeTry = null; return; }
     const now = Date.now();
@@ -530,75 +517,135 @@ class BabySoundEngine {
     this.interruptVoice();
   }
 
+  // 🔊 elementMode(아이폰·아이패드에서 마이크를 쓴 뒤)의 효과음: 같은 소리를 OfflineAudioContext 로 짧은 WAV 로 만들어
+  //    미리 터치로 깨워 둔 <audio> 로 튼다 (Web Audio 를 스피커로 직접 내면 소리가 안 나고, 스트림으로 우회하면 통화 음량이 되어 작아서)
+  _renderPlay(key, dur, build) {
+    if (!this.fxUrls) this.fxUrls = new Map();
+    const play = (url) => {
+      const pool = this.fxPool || [];
+      const a = pool.length ? pool[(this.fxNext = ((this.fxNext || 0) + 1) % pool.length)] : new Audio();
+      try { a.src = url; a.volume = 1; a.play().catch(() => { }); } catch (e) { }
+    };
+    if (this.fxUrls.has(key)) { play(this.fxUrls.get(key)); return; }
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return;
+    try {
+      const rate = 44100, ctx = new OAC(1, Math.ceil(dur * rate), rate);
+      build(ctx, this._master(ctx, ctx.destination), 0.005);
+      const done = (buf) => {
+        const d = buf.getChannelData(0), n = d.length;
+        const out = new ArrayBuffer(44 + n * 2), v = new DataView(out);
+        const str = (off, t) => { for (let i = 0; i < t.length; i++) v.setUint8(off + i, t.charCodeAt(i)); };
+        str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt '); v.setUint32(16, 16, true);
+        v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+        str(36, 'data'); v.setUint32(40, n * 2, true);
+        for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 0x7fff), true);
+        const url = URL.createObjectURL(new Blob([out], { type: 'audio/wav' }));
+        if (this.fxUrls.size >= 60) { const [k, u] = this.fxUrls.entries().next().value; this.fxUrls.delete(k); URL.revokeObjectURL(u); }
+        this.fxUrls.set(key, url);
+        play(url);
+      };
+      const p = ctx.startRendering();
+      if (p && p.then) p.then(done).catch(() => { });
+      else ctx.oncomplete = (e) => done(e.renderedBuffer);
+    } catch (e) { }
+  }
+  // 효과음용 <audio> 여러 개를 터치 안에서 깨워 둔다 (아이폰은 터치로 한 번 튼 <audio> 만 나중에 마음대로 틀 수 있다)
+  _unlockFxPool() {
+    if (!this.fxPool) this.fxPool = [0, 1, 2, 3, 4, 5].map(() => { const a = new Audio(); a.setAttribute('playsinline', ''); return a; });
+    if (this.fxPoolUnlocked) return;
+    const silent = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+    let ok = 0;
+    this.fxPool.forEach(a => {
+      try { a.src = silent; const p = a.play(); if (p && p.then) p.then(() => { if (++ok === this.fxPool.length) this.fxPoolUnlocked = true; }).catch(() => { }); } catch (e) { }
+    });
+  }
+
+  _buildFreq(ctx, out, now, freq, type, duration, gainVal) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(gainVal, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    osc.connect(gain);
+    gain.connect(out);
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+  }
+
   playFreq(freq, type = 'sine', duration = 0.25, gainVal = 0.4) {
     if (this.muted) return;
+    if (this.elementMode) {
+      const f = Math.round(freq / 10) * 10;   // 비슷한 소리는 같은 파일로 (만든 파일 재사용)
+      this._renderPlay(`f${f}|${type}|${duration}|${gainVal}`, duration + 0.06, (ctx, out, now) => this._buildFreq(ctx, out, now, f, type, duration, gainVal));
+      return;
+    }
     this.init();
     if (!this.ctx) return;
     try {
       if (this.ctx.state === 'suspended') {
         this.ctx.resume().catch(() => { });
       }
-      const now = (this.ctx.currentTime || 0) + 0.005;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, now);
-      gain.gain.setValueAtTime(gainVal, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-      osc.connect(gain);
-      gain.connect(this.out());
-      osc.start(now);
-      osc.stop(now + duration + 0.02);
+      this._buildFreq(this.ctx, this.out(), (this.ctx.currentTime || 0) + 0.005, freq, type, duration, gainVal);
     } catch (e) { }
   }
 
   // 🔔 맑고 청명한 실로폰/글로켄슈필 사운드 (펀더멘털 사인파 + 말렛 타격 배음 + 고음 은방울 배음)
   async playXylophone(freq = 523.25, volume = 0.7) {
     if (this.muted) return;
+    if (this.elementMode) {
+      this._renderPlay(`x${freq}|${volume}`, 1.3, (ctx, out, now) => this._buildXylophone(ctx, out, now, freq, volume));
+      return;
+    }
     await this.ensureAudioContext();
     if (!this.ctx) return;
     try {
-      const now = (this.ctx.currentTime || 0) + 0.005;
+      this._buildXylophone(this.ctx, this.out(), (this.ctx.currentTime || 0) + 0.005, freq, volume);
+    } catch (e) { }
+  }
 
+  _buildXylophone(ctx, out, now, freq, volume) {
+    {
       // 1. 기본음 (맑고 영롱한 실로폰 울림)
-      const osc1 = this.ctx.createOscillator();
-      const gain1 = this.ctx.createGain();
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(freq, now);
       gain1.gain.setValueAtTime(0.001, now);
       gain1.gain.linearRampToValueAtTime(volume * 0.75, now + 0.006);
       gain1.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
       osc1.connect(gain1);
-      gain1.connect(this.out());
+      gain1.connect(out);
       osc1.start(now);
       osc1.stop(now + 1.25);
 
       // 2. 말렛 타격 배음 (실로폰 채로 건반을 통 쳤을 때 나는 맑은 목재/금속 타격감)
-      const osc2 = this.ctx.createOscillator();
-      const gain2 = this.ctx.createGain();
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
       osc2.type = 'triangle';
       osc2.frequency.setValueAtTime(freq * 2, now);
       gain2.gain.setValueAtTime(0.001, now);
       gain2.gain.linearRampToValueAtTime(volume * 0.45, now + 0.003);
       gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
       osc2.connect(gain2);
-      gain2.connect(this.out());
+      gain2.connect(out);
       osc2.start(now);
       osc2.stop(now + 0.32);
 
       // 3. 반짝이는 은방울 배음 (3배 고음 배음)
-      const osc3 = this.ctx.createOscillator();
-      const gain3 = this.ctx.createGain();
+      const osc3 = ctx.createOscillator();
+      const gain3 = ctx.createGain();
       osc3.type = 'sine';
       osc3.frequency.setValueAtTime(freq * 3, now);
       gain3.gain.setValueAtTime(0.001, now);
       gain3.gain.linearRampToValueAtTime(volume * 0.25, now + 0.002);
       gain3.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
       osc3.connect(gain3);
-      gain3.connect(this.out());
+      gain3.connect(out);
       osc3.start(now);
       osc3.stop(now + 0.2);
-    } catch (e) { }
+    }
   }
 
   playPopSound() {
