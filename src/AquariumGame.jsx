@@ -525,6 +525,17 @@ export function drawFish(ctx, sp, L, o = {}) {
     ctx.strokeStyle = 'rgba(12,10,9,0.55)'; ctx.lineWidth = Math.max(0.8, L * 0.016);
     ctx.beginPath(); ctx.moveTo(xs(0.0), wave(0) + H * 0.04); ctx.lineTo(xs(0.1), wave(0.1) + H * 0.12); ctx.stroke();
   }
+  // 메기 수염: 입가에서 긴 수염 한 쌍(위) + 짧은 수염 한 쌍(아래)이 살랑살랑
+  if (sp.barbels && !glowOnly && fry < 0.9) {
+    ctx.strokeStyle = sp.barbels; ctx.lineCap = 'round';
+    const mx = xs(0.01), my = wave(0) + H * 0.02, wig = Math.sin(ph * 1.6) * H * 0.12;
+    [[0.32, -0.05, 1, 0.014], [0.26, 0.12, 0.8, 0.012], [0.12, 0.42, 0.5, 0.01], [0.08, 0.5, 0.4, 0.009]].forEach(([len, dy, k2, w], i) => {
+      ctx.lineWidth = Math.max(0.6, L * w);
+      ctx.beginPath(); ctx.moveTo(mx, my + H * dy * 0.3);
+      ctx.quadraticCurveTo(mx + L * len * 0.5, my + H * dy - H * 0.1 * k2, mx + L * len * (i < 2 ? 0.75 : 0.9), my + H * (dy + 0.35 * k2) + wig * k2);
+      ctx.stroke();
+    });
+  }
   // 누운 몸 위에서는 눈을 납작하게 하지 않고 몸 위로 볼록 솟게 그린다
   const lieY = (y) => (o.lie ? y * o.lie - H * 0.14 : y);
   if (o.lie) ctx.scale(1, 1 / o.lie);
@@ -629,7 +640,7 @@ export function drawPlecoGlass(ctx, sp, L, o = {}) {
 // ═══════════════════════════════ 바다 친구 그리기 ═══════════════════════════════
 // 물고기와 같은 규칙으로 그린다: 원점이 몸 가운데, +x 방향을 본다. L: 현재 몸 길이(px)
 // 자면 눈을 감고, 슬프면 색이 바래고 눈물, 기쁘면 볼이 발그레, 아기일 때는 눈이 크고 조금 투명하다.
-const CREATURE_SHAPES = new Set(['crab', 'starfish', 'shrimp', 'seahorse', 'jellyfish', 'octopus', 'squid', 'turtle', 'penguin', 'seal', 'shark', 'whale', 'frog', 'hermit', 'dolphin', 'crayfish', 'otter']);
+const CREATURE_SHAPES = new Set(['crab', 'starfish', 'shrimp', 'seahorse', 'jellyfish', 'octopus', 'squid', 'turtle', 'penguin', 'seal', 'shark', 'whale', 'frog', 'hermit', 'dolphin', 'crayfish', 'otter', 'softshell', 'axolotl', 'croc', 'ray']);
 const TAU = Math.PI * 2;
 
 // 슬플 때 색을 회색 쪽으로 바랜다
@@ -1315,6 +1326,221 @@ function drawCreature(ctx, sp, L, o = {}) {
       });
       claw(0, top);
       creatureEye(ctx, u * 0.27, -H * 0.3, er * 0.6, o);
+      break;
+    }
+    case 'softshell': {
+      // 자라: 납작하고 말랑한 가죽 등껍질, 대롱처럼 뾰족한 코, 물갈퀴 발
+      const fl = Math.sin(ph * 0.9);
+      const foot = (x, y, rot, rx, ry) => {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+        ctx.beginPath(); ctx.ellipse(rx * 0.7, 0, rx, ry, 0, 0, TAU); ctx.fill();
+        ctx.fillStyle = 'rgba(15,23,42,0.35)';   // 발톱
+        [-0.5, 0, 0.5].forEach(k => { ctx.beginPath(); ctx.arc(rx * 1.6, ry * k, Math.max(0.5, ry * 0.18), 0, TAU); ctx.fill(); });
+        ctx.restore();
+      };
+      ctx.fillStyle = mixColor(accent, '#000000', 0.25);
+      foot(L * 0.14, -H * 0.06, -0.8 + fl * 0.4, L * 0.12, H * 0.12);
+      foot(-L * 0.24, -H * 0.02, -2.5 - fl * 0.3, L * 0.09, H * 0.1);
+      // 긴 목 + 머리 + 대롱 코
+      ctx.fillStyle = accent;
+      ctx.beginPath(); ctx.ellipse(L * 0.24, -H * 0.02, L * 0.1, H * 0.13, -0.1, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(L * 0.36, -H * 0.06, L * 0.09, H * 0.16, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(L * 0.45, -H * 0.09, L * 0.05, H * 0.055, -0.15, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(15,23,42,0.55)';
+      ctx.beginPath(); ctx.arc(L * 0.495, -H * 0.1, Math.max(0.6, L * 0.008), 0, TAU); ctx.fill();   // 콧구멍
+      // 꼬리
+      ctx.fillStyle = accent;
+      ctx.beginPath(); ctx.moveTo(-L * 0.3, H * 0.02); ctx.lineTo(-L * 0.42, H * 0.08 + fl * H * 0.04); ctx.lineTo(-L * 0.3, H * 0.12); ctx.closePath(); ctx.fill();
+      // 납작한 등껍질 (가장자리가 말랑하게 넓다)
+      ctx.beginPath();
+      ctx.moveTo(-L * 0.38, H * 0.1);
+      ctx.bezierCurveTo(-L * 0.34, -H * 0.5, L * 0.26, -H * 0.5, L * 0.3, H * 0.08);
+      ctx.quadraticCurveTo(-L * 0.04, H * 0.26, -L * 0.38, H * 0.1);
+      ctx.closePath();
+      ctx.fillStyle = grad(-H * 0.45, H * 0.25, 0.92);
+      finish(() => {
+        dots([[-0.2, -0.22], [-0.05, -0.3], [0.1, -0.24], [-0.14, -0.06], [0.04, -0.1], [0.18, -0.06], [-0.27, -0.02]].map(([x, y]) => [L * x, H * y]), L * 0.018);
+        ctx.strokeStyle = 'rgba(255,255,255,0.28)'; ctx.lineWidth = Math.max(0.8, L * 0.02);
+        ctx.beginPath(); ctx.moveTo(-L * 0.34, H * 0.04); ctx.bezierCurveTo(-L * 0.3, -H * 0.4, L * 0.22, -H * 0.4, L * 0.26, H * 0.04); ctx.stroke();
+      });
+      ctx.strokeStyle = belly; ctx.lineWidth = Math.max(1, H * 0.06);
+      ctx.beginPath(); ctx.moveTo(-L * 0.36, H * 0.1); ctx.quadraticCurveTo(-L * 0.04, H * 0.26, L * 0.28, H * 0.09); ctx.stroke();
+      ctx.fillStyle = accent;
+      foot(L * 0.12, H * 0.16, 0.9 - fl * 0.45, L * 0.13, H * 0.13);
+      foot(-L * 0.26, H * 0.15, 2.4 + fl * 0.3, L * 0.09, H * 0.1);
+      creatureEye(ctx, L * 0.39, -H * 0.13, er * 0.7, o);
+      smile(ctx, L * 0.42, H * 0.03, er * 0.55);
+      break;
+    }
+    case 'axolotl': {
+      // 우파루파(아홀로틀): 분홍 몸, 머리 뒤 깃털 아가미 세 쌍, 활짝 웃는 넓은 입, 짧은 네 다리, 지느러미 꼬리
+      const w = Math.sin(ph) * H * 0.18;
+      const tailPts = [];
+      for (let i = 0; i <= 10; i++) { const q = i / 10; tailPts.push([-L * (0.12 + q * 0.38), Math.sin(ph - q * 2.6) * H * 0.22 * q]); }
+      // 꼬리 지느러미 (위아래로 얇은 막)
+      ctx.fillStyle = fin;
+      ctx.beginPath(); ctx.moveTo(L * 0.05, -H * 0.26);
+      tailPts.forEach(([x, y], i) => ctx.lineTo(x, y - H * (0.3 - i * 0.025)));
+      for (let i = tailPts.length - 1; i >= 0; i--) { const [x, y] = tailPts[i]; ctx.lineTo(x, y + H * (0.22 - i * 0.02)); }
+      ctx.closePath(); ctx.fill();
+      // 꼬리 살
+      ctx.fillStyle = top;
+      ctx.beginPath(); ctx.moveTo(-L * 0.1, -H * 0.17);
+      tailPts.forEach(([x, y], i) => ctx.lineTo(x, y - H * 0.17 * (1 - i / 10)));
+      for (let i = tailPts.length - 1; i >= 0; i--) { const [x, y] = tailPts[i]; ctx.lineTo(x, y + H * 0.15 * (1 - i / 10)); }
+      ctx.closePath(); ctx.fill();
+      // 먼 쪽 다리
+      const leg = (x, y, a, color) => {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+        taperStroke(ctx, [[0, 0], [0, H * 0.18], [L * 0.02, H * 0.3]], L * 0.045, L * 0.03, color);
+        ctx.fillStyle = color;
+        [-1, 0, 1].forEach(k => { ctx.beginPath(); ctx.arc(L * (0.02 + k * 0.018), H * 0.33, Math.max(0.6, L * 0.012), 0, TAU); ctx.fill(); });
+        ctx.restore();
+      };
+      const farLeg = mixColor(top, '#9d174d', 0.2);
+      leg(L * 0.15, H * 0.05, -0.3 + Math.sin(ph * 1.2) * 0.4, farLeg);
+      leg(-L * 0.08, H * 0.05, -0.2 - Math.sin(ph * 1.2) * 0.4, farLeg);
+      // 깃털 아가미 (머리 뒤에서 위·뒤로 세 갈래씩)
+      const gill = (bx, by, ang, len) => {
+        const ex2 = bx + Math.cos(ang) * len, ey2 = by + Math.sin(ang) * len;
+        taperStroke(ctx, [[bx, by], [ex2, ey2]], L * 0.03, L * 0.014, accent);
+        ctx.strokeStyle = mixColor(accent, '#ffffff', 0.25); ctx.lineWidth = Math.max(0.5, L * 0.008);
+        for (let i = 1; i <= 5; i++) {
+          const q = i / 6, px = bx + (ex2 - bx) * q, py = by + (ey2 - by) * q, fl = len * 0.22;
+          [-1, 1].forEach(sd => { ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + Math.cos(ang + sd * 1.2) * fl, py + Math.sin(ang + sd * 1.2) * fl); ctx.stroke(); });
+        }
+      };
+      const sway = Math.sin(ph * 0.7) * 0.12;
+      [[-1.75, 0.2], [-2.2, 0.22], [-2.65, 0.2]].forEach(([a, ln]) => gill(L * 0.22, -H * 0.28, a + sway, L * ln));
+      // 몸
+      ctx.beginPath(); ctx.ellipse(L * 0.02, w * 0.2, L * 0.22, H * 0.3, 0, 0, TAU);
+      ctx.fillStyle = grad(-H * 0.3, H * 0.3, 0.75);
+      finish(() => { if (sp.spots) dots([[-0.1, -0.12], [0.02, -0.18], [0.12, -0.1], [-0.02, -0.04]].map(([x, y]) => [L * x, H * y]), L * 0.014); });
+      // 큰 머리
+      ctx.beginPath(); ctx.ellipse(L * 0.3, -H * 0.04, L * 0.17, H * 0.4, 0, 0, TAU);
+      ctx.fillStyle = grad(-H * 0.4, H * 0.36, 0.7);
+      finish();
+      // 이쪽 아가미 (머리 위에 겹쳐 보인다)
+      [[-2.35, 0.21], [-2.95, 0.22], [2.75, 0.17]].forEach(([a, ln]) => gill(L * 0.18, -H * 0.06, a - sway, L * ln));
+      // 활짝 웃는 넓은 입 + 발그레한 볼
+      ctx.strokeStyle = 'rgba(131,24,67,0.75)'; ctx.lineWidth = Math.max(0.8, L * 0.013);
+      ctx.beginPath(); ctx.moveTo(L * 0.46, H * 0.06); ctx.quadraticCurveTo(L * 0.36, H * 0.26, L * 0.22, H * 0.12); ctx.stroke();
+      ctx.fillStyle = 'rgba(244,63,94,0.35)';
+      ctx.beginPath(); ctx.ellipse(L * 0.26, H * 0.08, L * 0.035, H * 0.06, 0, 0, TAU); ctx.fill();
+      creatureEye(ctx, L * 0.38, -H * 0.12, er * 0.62, o);
+      // 이쪽 다리
+      leg(L * 0.12, H * 0.12, 0.2 + Math.sin(ph * 1.2 + 1.5) * 0.4, top);
+      leg(-L * 0.12, H * 0.12, 0.3 - Math.sin(ph * 1.2 + 1.5) * 0.4, top);
+      break;
+    }
+    case 'croc': {
+      // 악어: 긴 주둥이에 삐죽 나온 하얀 이빨(웃는 얼굴), 등의 울퉁불퉁 돌기, 굽이치는 긴 꼬리, 짧은 네 다리
+      const tailPts = [];
+      for (let i = 0; i <= 12; i++) { const q = i / 12; tailPts.push([-L * (0.1 + q * 0.4), Math.sin(ph - q * 2.4) * H * 0.35 * q]); }
+      const legC = mixColor(top, '#000000', 0.2);
+      const leg = (x, y, a, color) => {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+        taperStroke(ctx, [[0, 0], [L * 0.02, H * 0.3], [L * 0.05, H * 0.48]], L * 0.045, L * 0.035, color);
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.ellipse(L * 0.07, H * 0.5, L * 0.035, H * 0.08, 0, 0, TAU); ctx.fill();
+        ctx.restore();
+      };
+      leg(L * 0.12, H * 0.08, -0.5 + Math.sin(ph * 1.2) * 0.5, legC);
+      leg(-L * 0.12, H * 0.08, -0.5 - Math.sin(ph * 1.2) * 0.5, legC);
+      // 꼬리 (위쪽 돌기 포함)
+      ctx.fillStyle = top;
+      ctx.beginPath(); ctx.moveTo(-L * 0.06, -H * 0.36);
+      tailPts.forEach(([x, y], i) => ctx.lineTo(x, y - H * 0.36 * (1 - i / 12)));
+      for (let i = tailPts.length - 1; i >= 0; i--) { const [x, y] = tailPts[i]; ctx.lineTo(x, y + H * 0.3 * (1 - i / 12)); }
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = spots;
+      tailPts.forEach(([x, y], i) => { if (i % 2 || i > 10) return; const hh = H * 0.36 * (1 - i / 12); ctx.beginPath(); ctx.moveTo(x - L * 0.018, y - hh); ctx.lineTo(x, y - hh - H * 0.14 * (1 - i / 14)); ctx.lineTo(x + L * 0.018, y - hh); ctx.closePath(); ctx.fill(); });
+      // 몸
+      ctx.beginPath(); ctx.ellipse(L * 0.02, 0, L * 0.2, H * 0.44, 0, 0, TAU);
+      ctx.fillStyle = grad(-H * 0.1, H * 0.7, 0.85);
+      finish(() => {
+        ctx.fillStyle = spots;
+        for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.ellipse(L * (-0.12 + i * 0.06), -H * 0.36, L * 0.022, H * 0.1, 0, 0, TAU); ctx.fill(); }
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = Math.max(0.6, L * 0.006);
+        for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(L * (-0.12 + i * 0.065), H * 0.12); ctx.lineTo(L * (-0.12 + i * 0.065), H * 0.42); ctx.stroke(); }   // 배 비늘 줄
+      });
+      // 머리 + 긴 주둥이 (위턱)
+      const headPath = () => {
+        ctx.beginPath();
+        ctx.moveTo(L * 0.14, -H * 0.38);
+        ctx.quadraticCurveTo(L * 0.26, -H * 0.52, L * 0.32, -H * 0.3);
+        ctx.quadraticCurveTo(L * 0.42, -H * 0.24, L * 0.49, -H * 0.18);
+        ctx.quadraticCurveTo(L * 0.54, -H * 0.06, L * 0.49, H * 0.04);
+        ctx.lineTo(L * 0.2, H * 0.1);
+        ctx.quadraticCurveTo(L * 0.12, H * 0.1, L * 0.12, -H * 0.1);
+        ctx.closePath();
+      };
+      // 아래턱
+      ctx.beginPath();
+      ctx.moveTo(L * 0.16, H * 0.08); ctx.lineTo(L * 0.47, H * 0.06);
+      ctx.quadraticCurveTo(L * 0.49, H * 0.2, L * 0.4, H * 0.24);
+      ctx.quadraticCurveTo(L * 0.24, H * 0.34, L * 0.14, H * 0.24);
+      ctx.closePath();
+      ctx.fillStyle = belly; ctx.fill();
+      headPath();
+      ctx.fillStyle = grad(-H * 0.05, H * 0.5, 0.9);
+      finish();
+      // 하얀 이빨 (위·아래로 삐죽)
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 6; i++) {
+        const tx = L * (0.24 + i * 0.04), ty = H * (0.09 - i * 0.008), dn2 = i % 2 === 0;
+        ctx.beginPath(); ctx.moveTo(tx - L * 0.011, ty); ctx.lineTo(tx + L * 0.011, ty); ctx.lineTo(tx, ty + (dn2 ? H * 0.11 : -H * 0.09)); ctx.closePath(); ctx.fill();
+      }
+      // 웃는 입꼬리
+      ctx.strokeStyle = 'rgba(20,40,10,0.6)'; ctx.lineWidth = Math.max(0.8, L * 0.01);
+      ctx.beginPath(); ctx.moveTo(L * 0.2, H * 0.1); ctx.quadraticCurveTo(L * 0.16, H * 0.06, L * 0.15, -H * 0.02); ctx.stroke();
+      ctx.fillStyle = 'rgba(20,40,10,0.6)';
+      ctx.beginPath(); ctx.arc(L * 0.48, -H * 0.13, Math.max(0.6, L * 0.007), 0, TAU); ctx.fill();   // 콧구멍
+      // 이쪽 다리
+      leg(L * 0.1, H * 0.18, 0.2 + Math.sin(ph * 1.2 + 1.5) * 0.5, top);
+      leg(-L * 0.14, H * 0.18, 0.2 - Math.sin(ph * 1.2 + 1.5) * 0.5, top);
+      // 머리 위로 볼록 솟은 눈
+      ctx.fillStyle = top;
+      ctx.beginPath(); ctx.arc(L * 0.27, -H * 0.42, er * 1.9, 0, TAU); ctx.fill();
+      creatureEye(ctx, L * 0.28, -H * 0.44, er * 1.05, o);
+      break;
+    }
+    case 'ray': {
+      // 가오리: 위에서 비스듬히 본 마름모 몸, 양 날개를 위아래로 펄럭이며 미끄러지듯 헤엄, 가는 채찍 꼬리
+      const flap = Math.sin(ph * 0.8) * H * 0.12;
+      // 채찍 꼬리
+      const tail = [];
+      for (let i = 0; i <= 10; i++) { const q = i / 10; tail.push([-L * (0.16 + q * 0.42), Math.sin(ph * 0.8 - q * 3) * H * 0.12 * q]); }
+      taperStroke(ctx, tail, L * 0.03, L * 0.008, fin);
+      ctx.fillStyle = fin;
+      const [sx, sy] = tail[3];
+      ctx.beginPath(); ctx.moveTo(sx, sy - H * 0.02); ctx.lineTo(sx - L * 0.06, sy - H * 0.1); ctx.lineTo(sx - L * 0.03, sy); ctx.closePath(); ctx.fill();   // 꼬리 가시
+      // 먼 쪽(위) 날개
+      const wing = (sign, tipDy, color) => {
+        ctx.beginPath();
+        ctx.moveTo(L * 0.34, 0);
+        ctx.bezierCurveTo(L * 0.28, sign * H * 0.32, L * 0.12, sign * H * 0.56 + tipDy, L * 0.0, sign * H * 0.6 + tipDy);
+        ctx.bezierCurveTo(-L * 0.1, sign * H * 0.48 + tipDy * 0.5, -L * 0.2, sign * H * 0.16, -L * 0.22, 0);
+        ctx.closePath();
+        if (color) ctx.fillStyle = color;
+      };
+      const edge = mixColor(top, '#0f172a', 0.45);
+      wing(-1, flap, mixColor(top, '#000000', 0.06)); ctx.fill();
+      ctx.strokeStyle = edge; ctx.lineWidth = Math.max(0.8, L * 0.008); ctx.stroke();
+      wing(1, flap, null);
+      ctx.fillStyle = grad(-H * 0.4, H * 1.1, 0.9);
+      ctx.save(); ctx.strokeStyle = edge; ctx.lineWidth = Math.max(0.8, L * 0.008); ctx.stroke(); ctx.restore();
+      finish(() => {
+        if (sp.spots) dots([[0.04, 0.2], [-0.08, 0.3], [0.14, 0.1], [-0.02, 0.42], [0.08, 0.32]].map(([x, y]) => [L * x, H * y]), L * 0.016);
+      });
+      // 가운데 볼록한 몸통
+      ctx.beginPath(); ctx.ellipse(L * 0.08, 0, L * 0.24, H * 0.2, 0, 0, TAU);
+      ctx.fillStyle = grad(-H * 0.2, H * 0.2, 0.9);
+      finish(() => { if (sp.spots) dots([[0.0, -0.06], [0.12, 0.02], [-0.08, 0.05]].map(([x, y]) => [L * x, H * y]), L * 0.014); });
+      // 눈 두 개 (위쪽 눈은 조금 작게) + 앞쪽 웃는 입
+      creatureEye(ctx, L * 0.2, -H * 0.1, er * 0.5, o);
+      creatureEye(ctx, L * 0.22, H * 0.08, er * 0.62, o);
+      smile(ctx, L * 0.31, H * 0.02, er * 0.5);
       break;
     }
     case 'otter': {

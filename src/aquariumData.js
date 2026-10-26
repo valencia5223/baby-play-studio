@@ -145,6 +145,28 @@ export const FISH_SPECIES = [
     top: '#f8fafc', belly: '#ffffff', patches: '#ef4444',
     tail: { color: 'rgba(255,255,255,0.8)', len: 0.4, spread: 0.5 }, fin: 'rgba(255,255,255,0.75)'
   },
+  {
+    id: 'catfish', name: '메기', price: 180, len: 82, hRatio: 0.26, shape: 'normal', eyeK: 0.32, desc: '긴 수염으로 더듬더듬',
+    speed: 0.5, growMul: 0.85, school: false, zone: 'bottom', bottomFeeder: true, nocturnal: true, bigMouth: true,
+    top: '#4b5135', belly: '#d6d3c4', mottle: '#1c1f12', barbels: 'rgba(41,45,28,0.85)',
+    tail: { color: 'rgba(75,81,53,0.9)', len: 0.26, spread: 0.34, solid: true }, fin: 'rgba(75,81,53,0.8)'
+  },
+  // 민물 친구 (바다 친구처럼 따로 그림: drawCreature 의 softshell·axolotl·croc)
+  {
+    id: 'softshell', name: '자라', price: 260, len: 66, hRatio: 0.44, shape: 'softshell', desc: '대롱 코로 숨을 쉬어요', crawl: true, swim: true,
+    speed: 0.45, growMul: 0.8, school: false, zone: 'bottom',
+    top: '#6b7d4a', belly: '#e8dcb5', spots: '#3f4a2a', fin: '#7c8b55', accent: '#8a9a5b', tail: {}
+  },
+  {
+    id: 'axolotl', name: '우파루파', price: 320, len: 60, hRatio: 0.36, shape: 'axolotl', desc: '방긋 웃는 분홍 친구', crawl: true, swim: true, upright: true,
+    speed: 0.45, growMul: 0.9, school: false, zone: 'bottom',
+    top: '#f9a8d4', belly: '#fdf2f8', spots: 'rgba(219,39,119,0.35)', fin: 'rgba(251,207,232,0.8)', accent: '#e11d74', tail: {}
+  },
+  {
+    id: 'croc', name: '악어', price: 480, len: 124, hRatio: 0.24, shape: 'croc', desc: '이빨이 삐죽, 그래도 순해요', upright: true,
+    speed: 0.55, growMul: 0.75, school: false, zone: 'mid',
+    top: '#4d8a1f', belly: '#ecfccb', spots: '#2f5a12', fin: '#3f6f17', accent: '#a3e635', tail: {}
+  },
   // ── 새 바다 물고기 ──
   {
     id: 'damsel', name: '파랑 자리돔', price: 100, len: 36, hRatio: 0.46, shape: 'normal', desc: '새파랗게 반짝반짝', sea: true,
@@ -170,6 +192,18 @@ export const FISH_SPECIES = [
     top: '#1e3a8a', belly: '#e2e8f0',
     bands: [{ color: 'rgba(250,204,21,0.85)', y: 0.02, from: 0.55, to: 0.95, w: 0.06 }],
     tail: { color: 'rgba(30,58,138,0.9)', len: 0.34, spread: 0.6, fork: true, solid: true }, fin: 'rgba(250,204,21,0.75)'
+  },
+  {
+    id: 'salmon', name: '연어', price: 160, len: 76, hRatio: 0.28, shape: 'normal', eyeK: 0.38, desc: '고향 냇물로 돌아가요', sea: true,
+    speed: 1.15, growMul: 0.9, school: true, zone: 'mid',
+    top: '#475569', belly: '#f8fafc', spots: '#1e293b',
+    bands: [{ color: 'rgba(251,113,133,0.55)', y: 0.08, from: 0.12, to: 0.92, w: 0.22 }],
+    tail: { color: 'rgba(71,85,105,0.85)', len: 0.32, spread: 0.52, fork: true }, fin: 'rgba(100,116,139,0.7)'
+  },
+  {
+    id: 'ray', name: '가오리', price: 360, len: 84, hRatio: 0.6, shape: 'ray', desc: '날개를 펄럭펄럭', sea: true, upright: true,
+    speed: 0.6, growMul: 0.85, school: false, zone: 'bottom', bottomFeeder: true,
+    top: '#6b8fb5', belly: '#dbe7f3', spots: 'rgba(226,232,240,0.85)', fin: '#56789e', tail: {}
   },
   // ── 바다 친구 ── 물고기와 똑같이 밥 먹고·아프고·이름 짓고·자란다 (sea: 상점에서 바다 친구로 묶어 보여줌)
   //  shape 가 바다 친구 이름이면 drawFish 가 drawCreature 로 따로 그린다
@@ -310,7 +344,7 @@ export const TANKS = {
 };
 export const TANK_IDS = ['fresh', 'sea'];
 // 냇물·연못·강에 사는 친구 (나머지는 모두 바다)
-const FRESH_IDS = new Set(['neon', 'guppy', 'danio', 'goldfish', 'platy', 'cory', 'pleco', 'betta', 'angel', 'discus', 'crayfish', 'frog', 'turtle', 'shrimp', 'medaka', 'minnow', 'cherrybarb', 'carp']);
+const FRESH_IDS = new Set(['neon', 'guppy', 'danio', 'goldfish', 'platy', 'cory', 'pleco', 'betta', 'angel', 'discus', 'crayfish', 'frog', 'turtle', 'shrimp', 'medaka', 'minnow', 'cherrybarb', 'carp', 'catfish', 'softshell', 'axolotl', 'croc']);
 export const habitatOf = (spId) => (FRESH_IDS.has(spId) ? 'fresh' : 'sea');
 // 개체를 부를 때 쓰는 종류 정보: 올챙이처럼 어릴 때 이름이 따로 있으면(babyName) 다 크기 전까지는 그 이름으로 부른다
 const BABY_VIEW = Object.fromEntries(FISH_SPECIES.filter(f => f.babyName).map(f => [f.id, { ...f, name: f.babyName }]));
@@ -367,7 +401,10 @@ const BREED = {
   otter: { type: 'live', storesSperm: false, brood: [1, 2] },
   sharkMom: { type: 'live', storesSperm: false, brood: [1, 2] },
   penguin: { type: 'egg', storesSperm: false, brood: [1, 2] },
-  turtle: { type: 'egg', storesSperm: false, brood: [2, 4] }
+  turtle: { type: 'egg', storesSperm: false, brood: [2, 4] },
+  softshell: { type: 'egg', storesSperm: false, brood: [2, 4] },
+  croc: { type: 'egg', storesSperm: false, brood: [1, 3] },
+  ray: { type: 'live', storesSperm: false, brood: [1, 2] }
 };
 const BREED_DEFAULT = { type: 'egg', storesSperm: false, brood: [3, 6] };
 export const breedOf = (spId) => BREED[spId] || BREED_DEFAULT;
