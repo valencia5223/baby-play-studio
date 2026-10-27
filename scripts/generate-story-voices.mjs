@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import { collectStoryLines } from '../src/storyData.js';
+import { collectBirthdayLines } from '../src/birthdayData.js';   // 🎂 생일 파티 안내도 같은 여성 목소리로
 import { voiceKey, formatSpokenKoreanText } from '../src/voiceLines.js';
 
 const VOICE_NAME = 'ko-KR-SunHiNeural';
@@ -32,7 +33,7 @@ async function synth(text) {
 }
 
 const byKey = new Map();
-collectStoryLines().forEach(l => byKey.set(voiceKey(l), formatSpokenKoreanText(l)));
+[...collectStoryLines(), ...collectBirthdayLines()].forEach(l => byKey.set(voiceKey(l), formatSpokenKoreanText(l)));
 fs.mkdirSync(outDir, { recursive: true });
 const todo = [...byKey].filter(([key]) => !fs.existsSync(path.join(outDir, `${key}.mp3`)));
 console.log(`그림책 문장 ${byKey.size}개 / 새로 생성 ${todo.length}개 (${VOICE_NAME})`);

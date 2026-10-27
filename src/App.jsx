@@ -37,6 +37,7 @@ import LottoGacha from './LottoGacha.jsx';
 import PaintMotion from './PaintMotion.jsx';
 import StoryBook from './StoryBook.jsx';
 import PhoneCall from './PhoneCall.jsx';
+import BirthdayParty from './BirthdayParty.jsx';
 import STORY_VOICE_INDEX from './storyVoiceIndex.json';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
@@ -4325,7 +4326,7 @@ export default function App() {
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav className="bps-nav" style={{
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px',
+          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px',
           padding: '10px 12px', background: '#fffcf8', borderBottom: '1px solid #f3e8dc',
           flexShrink: 0
         }}>
@@ -4339,6 +4340,7 @@ export default function App() {
             // { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
             { id: 'puzzle', icon: '🧩', label: '아기 퍼즐', sub: '조각 맞추기', pastel: '#ddd2fa', soft: '#f1ecfd', ink: '#55399e' },
             { id: 'paint', icon: '🎨', label: '무지개 물감', sub: '터치 감각 미술', pastel: '#ffe0b2', soft: '#fff2df', ink: '#9a5b0d' },
+            { id: 'birthday', icon: '🎂', label: '생일 파티', sub: '촛불 후~ 불기', pastel: '#fecdd3', soft: '#ffe4e6', ink: '#9f1239' },
             // 📞 전화 놀이는 잠시 메뉴에서만 뺐다 (PhoneCall.jsx·Supabase baby-call/baby-voice 는 그대로, 아래 줄을 되살리면 다시 보인다)
             // { id: 'phone', icon: '📞', label: '전화 놀이', sub: '친구와 통화해요', pastel: '#c4f0de', soft: '#e3f8ef', ink: '#1f6f55' },
             // 🎵 동요 재생·🎰 로또 뽑기는 맨 위 헤더 버튼으로 옮겼다
@@ -4348,7 +4350,7 @@ export default function App() {
               <button key={tab.id} onClick={() => {
                 // 이전 화면의 음성과 예약된 음성(다음 문제 안내 등)을 모두 끊는다
                 audioEngine.interruptVoice();
-                if (tab.id === 'phone' && songPlayerOn) stopSongPlayer();   // 통화할 땐 동요를 끈다 (마이크에 섞이지 않게)
+                if ((tab.id === 'phone' || tab.id === 'birthday') && songPlayerOn) stopSongPlayer();   // 통화할 땐 동요를 끈다 (마이크에 섞이지 않게)
                 if (tab.id === 'puzzle' && !puzzleCompleted) {
                   speakNaturalKorean(VOICE.puzzleStart(puzzleTheme));
                 }
@@ -4379,7 +4381,7 @@ export default function App() {
         {/* 캔버스 영역 (스크롤 메뉴와 비스크롤 고정 메뉴 분기) */}
         <div style={{
           flex: 1,
-          padding: activeTab === 'paint' || activeTab === 'story' || activeTab === 'phone' ? '0.6rem 1rem' : '1.2rem 1.6rem',
+          padding: ['paint', 'story', 'phone', 'birthday'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
           position: 'relative',
           background: '#fffdfa',
           overflowY: isScrollableTab ? 'auto' : 'hidden',
@@ -4651,6 +4653,7 @@ export default function App() {
           {/* ===== 🎰 로또 캡슐 뽑기 (LottoGacha.jsx, 어른용) ===== */}
           {activeTab === 'lotto' && <LottoGacha audio={audioEngine} />}
           {activeTab === 'phone' && <PhoneCall audio={audioEngine} />}
+          {activeTab === 'birthday' && <BirthdayParty audio={audioEngine} />}
           {activeTab === 'story' && (
             <StoryBook
               audio={audioEngine}

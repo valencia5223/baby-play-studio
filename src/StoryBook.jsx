@@ -286,7 +286,7 @@ function drawBg(ctx, W, H, t, bg) {
 
 // ─────────────────────────────── 유나 ───────────────────────────────
 // 원점은 발밑 가운데, S 는 키. pose 에 따라 팔과 손에 든 물건이 바뀐다
-function drawYuna(ctx, pose, S, t, night) {
+export function drawYuna(ctx, pose, S, t, night) {
   const r = S * 0.2;                         // 머리 반지름
   const hy = -S + r;                         // 머리 가운데
   const skin = '#ffe0c7', hair = '#3b2a20', cheek = 'rgba(251,113,133,0.45)';
