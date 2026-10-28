@@ -6,7 +6,7 @@
 //  - 안내 문장은 그림책 여성 목소리 MP3 (public/story-voice, scripts/generate-story-voices.mjs)
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
-import { BDAY_CHARS, BDAY_BY_ID, BDAY_BEAT, BDAY_MELODY, BDAY_BASS, NOTE_HZ, bdayLyrics, bdayIntro, bdayBlow, BDAY_DONE } from './birthdayData.js';
+import { BDAY_CHARS, BDAY_BY_ID, BDAY_BEAT, BDAY_MELODY, BDAY_BASS, NOTE_HZ, bdayLyrics, BDAY_MP3, BDAY_MP3_LINES, bdayIntro, bdayBlow, BDAY_DONE } from './birthdayData.js';
 import { drawFish } from './AquariumGame.jsx';
 import { drawAnimal } from './FarmGame.jsx';
 import { drawYuna } from './StoryBook.jsx';
@@ -237,15 +237,28 @@ export default function BirthdayParty() {
     setPhase('song');
     const rec = useFamily ? await dbGet(id) : null;
     if (runRef.current !== run) return;
-    const url = rec && rec.blob ? URL.createObjectURL(rec.blob) : melodyUrl();
     const lines = bdayLyrics(BDAY_BY_ID[id]);
-    const offset = rec && rec.offset ? rec.offset : 0;   // 녹음은 반주 시작과 맞춰 저장
-    play(url, () => { if (rec) URL.revokeObjectURL(url); if (runRef.current === run) askBlow(id, run); }, (sec) => {
+    const next = () => { if (runRef.current === run) askBlow(id, run); };
+    // 오르골(앱이 연주)·가족 녹음: 박자로 가사 맞춤
+    const playBeats = (url, offset, onDone) => play(url, onDone, (sec) => {
       const beat = (sec - offset) / BDAY_BEAT;
       const i = lines.findIndex(l => beat >= l.from && beat < l.to);
       setLineIdx(i);
       if (i >= 0) setLineProg((beat - lines[i].from) / (lines[i].to - lines[i].from));
     });
+    if (rec && rec.blob) {
+      const url = URL.createObjectURL(rec.blob);
+      playBeats(url, rec.offset || 0, () => { URL.revokeObjectURL(url); next(); });   // 녹음은 반주 시작과 맞춰 저장
+      return;
+    }
+    // 생일 노래 MP3: 초로 가사 맞춤, 못 불러오면 오르골로
+    play(BDAY_MP3, next, (sec) => {
+      const k = BDAY_MP3_LINES.findIndex(([a, b]) => sec >= a && sec < b);
+      setLineIdx(k >= 0 ? k % 4 : -1);
+      if (k >= 0) setLineProg((sec - BDAY_MP3_LINES[k][0]) / (BDAY_MP3_LINES[k][1] - BDAY_MP3_LINES[k][0]));
+    });
+    const a = player();
+    a.onerror = () => { if (runRef.current === run) playBeats(melodyUrl(), 0, next); };
   };
   const askBlow = (id, run) => {
     setLineIdx(4); setPhase('blow');
@@ -455,7 +468,7 @@ export default function BirthdayParty() {
         <button onClick={() => { runRef.current++; stopPlayer(); stopMic(); closeRecorder(); setHeroId(null); setPhase('pick'); }} style={btn('#f6efe7', '#5c5248')}>⬅️ 다른 친구</button>
         <div style={{ flex: 1, textAlign: 'center', fontFamily: JUA, fontSize: '1.4rem', color: hero.ink }}>{hero.name}의 생일 파티 🎉</div>
         {family[heroId] && (
-          <button onClick={() => setUseFamily(v => !v)} title="노래 고르기" style={btn(useFamily ? '#fbcfe8' : '#ede9fe', useFamily ? '#9d174d' : '#5b21b6')}>{useFamily ? '👩 가족 노래' : '🎵 오르골'}</button>
+          <button onClick={() => setUseFamily(v => !v)} title="노래 고르기" style={btn(useFamily ? '#fbcfe8' : '#ede9fe', useFamily ? '#9d174d' : '#5b21b6')}>{useFamily ? '👩 가족 노래' : '🎵 생일 노래'}</button>
         )}
         <button onClick={() => { runRef.current++; stopPlayer(); stopMic(); setRecNote(''); setRecUi('ready'); setLineIdx(-1); }} style={btn('#ffffff', '#9d174d')}>🎙️ 노래 녹음</button>
       </div>

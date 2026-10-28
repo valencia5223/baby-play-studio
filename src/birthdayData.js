@@ -28,7 +28,15 @@ export const bdayLyrics = (c) => [
   { text: '생일 축하합니다', from: 19, to: 26 }
 ];
 
-export const bdayIntro = (c) => `${c.name}의 생일 파티예요! 다 같이 생일 노래를 불러요!`;
+// 생일 노래 MP3 (public/birthday). 노래가 두 번 나오며, 줄마다 [시작, 끝) 초 — 소리 분석으로 맞춤.
+// 줄 번호는 i % 4 (위 가사 4줄을 두 번)
+export const BDAY_MP3 = '/birthday/birthday-song.mp3';
+export const BDAY_MP3_LINES = [
+  [7.1, 10.0], [10.0, 12.9], [12.9, 16.9], [16.9, 19.6],
+  [23.6, 26.6], [26.6, 29.5], [29.5, 33.5], [33.5, 36.3]
+];
+
+export const bdayIntro =(c) => `${c.name}의 생일 파티예요! 다 같이 생일 노래를 불러요!`;
 export const bdayBlow = (c) => `${c.call}, 생일 축하해! 이제 촛불을 후 불어 볼까?`;
 export const BDAY_DONE = '와아! 촛불을 다 껐어요! 짝짝짝, 생일 축하해요!';
 
