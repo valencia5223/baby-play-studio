@@ -6,12 +6,10 @@
 //  - 안내 문장은 그림책 여성 목소리 MP3 (public/story-voice, scripts/generate-story-voices.mjs)
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
-import { BDAY_CHARS, BDAY_BY_ID, BDAY_BEAT, BDAY_MELODY, BDAY_BASS, NOTE_HZ, bdayLyrics, BDAY_MP3, BDAY_MP3_LINES, bdayIntro, bdayBlow, BDAY_DONE } from './birthdayData.js';
+import { BDAY_CHARS, BDAY_BY_ID, BDAY_BEAT, BDAY_MELODY, BDAY_BASS, NOTE_HZ, bdayLyrics, bdayMp3Lyrics, BDAY_MP3, BDAY_MP3_LINES, bdayIntro, bdayBlow, BDAY_DONE } from './birthdayData.js';
 import { drawFish } from './AquariumGame.jsx';
-import { drawAnimal } from './FarmGame.jsx';
 import { drawYuna } from './StoryBook.jsx';
 import { FISH_BY_ID } from './aquariumData.js';
-import { FARM_SPECIES } from './farmData.js';
 import { voiceKey } from './voiceLines.js';
 import STORY_VOICE_INDEX from './storyVoiceIndex.json';
 
@@ -19,7 +17,6 @@ const TAU = Math.PI * 2;
 const JUA = "'Jua', 'Gowun Dodum', sans-serif";
 const STORY_KEYS = new Set(STORY_VOICE_INDEX);
 const lineUrl = (text) => { const k = voiceKey(text); return STORY_KEYS.has(k) ? `/story-voice/${k}.mp3` : null; };
-const PANDA = FARM_SPECIES.find(s => s.id === 'panda');
 const SONG_SEC = BDAY_MELODY.reduce((a, [, d]) => a + d, 0) * BDAY_BEAT;
 
 // ─────────────────────────────── 소리 만들기 ───────────────────────────────
@@ -154,6 +151,74 @@ function drawCake(ctx, cx, by, S, candles, lit, t, smokeT) {
   return xs.map(x => [x, top - S * 0.42]);
 }
 
+// 앞을 보고 앉은 판다: 흰 몸 + 검은 귀·눈 무늬·팔다리·어깨띠
+function drawPanda(ctx, S, t, happy) {
+  const BK = '#1f2328', WH = '#ffffff', LINE = '#d9d4cf';
+  const breathe = 1 + Math.sin(t * 2) * 0.012;
+  const blink = t % 4 < 0.12;
+  const oval = (x, y, rx, ry, rot = 0) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, TAU); };
+  ctx.save();
+  ctx.lineWidth = Math.max(1.5, S * 0.012); ctx.strokeStyle = LINE;
+  // 뒷다리 (앉아서 앞으로 뻗음)
+  ctx.fillStyle = BK;
+  [-1, 1].forEach(k => { oval(k * S * 0.22, -S * 0.07, S * 0.15, S * 0.11, k * 0.25); ctx.fill(); });
+  ctx.fillStyle = '#4b4f57';
+  [-1, 1].forEach(k => { oval(k * S * 0.25, -S * 0.06, S * 0.065, S * 0.06); ctx.fill(); });
+  // 몸통
+  const body = ctx.createRadialGradient(-S * 0.08, -S * 0.42, S * 0.05, 0, -S * 0.3, S * 0.42);
+  body.addColorStop(0, WH); body.addColorStop(1, '#ece8e3');
+  ctx.fillStyle = body;
+  oval(0, -S * 0.32, S * 0.36 * breathe, S * 0.34); ctx.fill(); ctx.stroke();
+  // 어깨띠 (목 뒤로 이어진 검은 띠)
+  ctx.fillStyle = BK;
+  ctx.beginPath();
+  ctx.moveTo(-S * 0.36, -S * 0.38);
+  ctx.quadraticCurveTo(0, -S * 0.66, S * 0.36, -S * 0.38);
+  ctx.lineTo(S * 0.3, -S * 0.5);
+  ctx.quadraticCurveTo(0, -S * 0.74, -S * 0.3, -S * 0.5);
+  ctx.closePath(); ctx.fill();
+  // 팔: 왼팔은 배 위, 오른팔은 기쁘면 흔들기
+  const arm = (k, ang) => {
+    ctx.save(); ctx.translate(k * S * 0.27, -S * 0.46); ctx.rotate(ang);
+    ctx.fillStyle = BK; ctx.beginPath(); ctx.roundRect(-S * 0.08, -S * 0.04, S * 0.16, S * 0.32, S * 0.08); ctx.fill();
+    ctx.restore();
+  };
+  arm(-1, 0.5);
+  arm(1, happy ? -2.4 + Math.sin(t * 10) * 0.35 : -0.5);
+  // 머리
+  const hy = -S * 0.78;
+  ctx.fillStyle = BK;
+  [-1, 1].forEach(k => { oval(k * S * 0.22, hy - S * 0.2, S * 0.095, S * 0.09); ctx.fill(); });
+  const head = ctx.createRadialGradient(-S * 0.08, hy - S * 0.1, S * 0.03, 0, hy, S * 0.34);
+  head.addColorStop(0, WH); head.addColorStop(1, '#efebe6');
+  ctx.fillStyle = head;
+  oval(0, hy, S * 0.31, S * 0.265); ctx.fill(); ctx.stroke();
+  // 눈 무늬 (바깥 아래로 처진 물방울)
+  ctx.fillStyle = BK;
+  [-1, 1].forEach(k => { oval(k * S * 0.12, hy + S * 0.01, S * 0.075, S * 0.105, k * -0.55); ctx.fill(); });
+  // 눈
+  [-1, 1].forEach(k => {
+    const ex = k * S * 0.115, ey = hy - S * 0.005;
+    if (blink) { ctx.strokeStyle = WH; ctx.lineWidth = S * 0.014; ctx.beginPath(); ctx.arc(ex, ey, S * 0.03, 0.2, Math.PI - 0.2); ctx.stroke(); }
+    else {
+      ctx.fillStyle = WH; oval(ex, ey, S * 0.035, S * 0.038); ctx.fill();
+      ctx.fillStyle = '#111'; oval(ex + k * S * 0.004, ey + S * 0.004, S * 0.024, S * 0.027); ctx.fill();
+      ctx.fillStyle = WH; oval(ex - S * 0.008, ey - S * 0.01, S * 0.009, S * 0.009); ctx.fill();
+    }
+  });
+  // 주둥이·코·입·볼
+  ctx.fillStyle = '#faf8f5'; oval(0, hy + S * 0.12, S * 0.11, S * 0.08); ctx.fill();
+  ctx.fillStyle = BK; oval(0, hy + S * 0.085, S * 0.042, S * 0.03); ctx.fill();
+  ctx.strokeStyle = BK; ctx.lineWidth = Math.max(1.5, S * 0.012); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, hy + S * 0.11); ctx.lineTo(0, hy + S * 0.14);
+  ctx.arc(-S * 0.03, hy + S * 0.14, S * 0.03, 0, Math.PI * 0.9);
+  ctx.moveTo(0, hy + S * 0.14); ctx.arc(S * 0.03, hy + S * 0.14, S * 0.03, Math.PI, Math.PI * 0.1, true);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(244,114,182,0.35)';
+  [-1, 1].forEach(k => { oval(k * S * 0.21, hy + S * 0.1, S * 0.05, S * 0.03); ctx.fill(); });
+  ctx.restore();
+}
+
 function drawHero(ctx, id, x, y, S, t, happy) {
   ctx.save(); ctx.translate(x, y);
   const hop = happy ? -Math.abs(Math.sin(t * 6)) * S * 0.12 : 0;
@@ -162,15 +227,15 @@ function drawHero(ctx, id, x, y, S, t, happy) {
     ctx.translate(0, -S * 0.82 + Math.sin(t * 1.6) * S * 0.04 + hop);   // 촛불 위로 둥실
     if (sp) drawFish(ctx, sp, S * 1.15, { phase: t * 4, growth: 1, happy: true, detail: true, gloss: true, lit: 0.6 });
   } else if (id === 'panda') {
-    ctx.translate(-S * 0.22, hop);   // 판다는 머리가 오른쪽으로 나와서 몸을 왼쪽으로 조금
-    if (PANDA) drawAnimal(ctx, PANDA, S * 0.95, { phase: t * 2, moving: 0, growth: 1, t, wag: happy, blink: t % 4 < 0.12 });
+    ctx.translate(0, hop);
+    drawPanda(ctx, S, t, happy);
   } else {
     ctx.translate(0, hop);
     drawYuna(ctx, happy ? 'stretch' : 'stand', S * 1.05, t, false);
   }
   // 고깔모자
-  const hatY = id === 'shark' ? -S * 0.2   /* 상어는 위에서 이미 몸 높이로 옮겨 둠 */ : id === 'panda' ? -S * 0.98 + hop : -S * 1.12 + hop;
-  const hatX = id === 'shark' ? S * 0.26 : id === 'panda' ? S * 0.1 : 0;
+  const hatY = id === 'shark' ? -S * 0.2   /* 상어는 위에서 이미 몸 높이로 옮겨 둠 */ : id === 'panda' ? -S * 1.0 + hop : -S * 1.12 + hop;
+  const hatX = id === 'shark' ? S * 0.26 : id === 'panda' ? S * 0.04 : 0;
   ctx.fillStyle = '#a78bfa';
   ctx.beginPath(); ctx.moveTo(hatX - S * 0.11, hatY); ctx.lineTo(hatX + S * 0.11, hatY); ctx.lineTo(hatX, hatY - S * 0.26); ctx.closePath(); ctx.fill();
   ctx.fillStyle = '#fde047'; [0.3, 0.6].forEach(q => { ctx.beginPath(); ctx.arc(hatX + (q - 0.45) * S * 0.08, hatY - S * 0.26 * q, S * 0.018, 0, TAU); ctx.fill(); });
@@ -184,6 +249,8 @@ export default function BirthdayParty() {
   const [phase, setPhase] = useState('pick');            // pick | intro | song | blow | done
   const [lineIdx, setLineIdx] = useState(-1);            // 지금 부르는 가사 줄
   const [lineProg, setLineProg] = useState(0);           // 그 줄의 진행 (0~1)
+  const [mp3Lyrics, setMp3Lyrics] = useState(false);    // 생일 노래 MP3 가사(1절 한국어 + 2절 영어)를 쓰는지
+  const tickRef = useRef(null);                          // 매 화면 재생 위치를 받아 가사를 칠하는 함수
   const [useFamily, setUseFamily] = useState(true);      // 녹음한 가족 노래가 있으면 그걸로
   const [family, setFamily] = useState({});              // { 주인공: true } 녹음이 있는지
   const [recUi, setRecUi] = useState(null);              // 녹음 창: null | 'ready' | 'rec' | 'review'
@@ -213,12 +280,12 @@ export default function BirthdayParty() {
 
   // ── 소리: <audio> 하나 ──
   const player = () => { if (!playerRef.current) { playerRef.current = new Audio(); playerRef.current.preload = 'auto'; } return playerRef.current; };
-  const stopPlayer = () => { const a = playerRef.current; if (a) { a.onended = a.onerror = a.ontimeupdate = null; try { a.pause(); } catch { /* 무시 */ } } };
+  const stopPlayer = () => { const a = playerRef.current; if (a) { a.onended = a.onerror = a.ontimeupdate = null; tickRef.current = null; try { a.pause(); } catch { /* 무시 */ } } };
   const play = (url, onEnd, onTime) => {
     const a = player();
-    a.onended = () => { a.onended = a.onerror = a.ontimeupdate = null; onEnd && onEnd(); };
-    a.onerror = () => { a.onended = a.onerror = a.ontimeupdate = null; onEnd && onEnd(); };
-    a.ontimeupdate = onTime ? () => onTime(a.currentTime) : null;
+    a.onended = () => { a.onended = a.onerror = a.ontimeupdate = null; tickRef.current = null; onEnd && onEnd(); };
+    a.onerror = () => { a.onended = a.onerror = a.ontimeupdate = null; tickRef.current = null; onEnd && onEnd(); };
+    tickRef.current = onTime || null;   // timeupdate 는 0.25초마다라 끊겨 보여서, 그림 루프에서 매 화면 읽는다
     a.src = url; a.volume = 1; a.muted = false;
     const p = a.play(); if (p && p.catch) p.catch(() => { a.onended = a.onerror = null; setTimeout(() => onEnd && onEnd(), 300); });
   };
@@ -229,7 +296,7 @@ export default function BirthdayParty() {
     const run = ++runRef.current;
     const c = BDAY_BY_ID[id];
     stopPlayer(); stopMic();
-    setHeroId(id); setPhase('intro'); setLineIdx(-1); setLineProg(0); setMicNote('');
+    setHeroId(id); setPhase('intro'); setLineIdx(-1); setLineProg(0); setMicNote(''); setMp3Lyrics(false);
     litRef.current = Array(c.candles).fill(true); smokeRef.current = null; confettiRef.current = [];
     sayLine(bdayIntro(c), () => { if (runRef.current === run) singSong(id, run); });
   };
@@ -252,13 +319,14 @@ export default function BirthdayParty() {
       return;
     }
     // 생일 노래 MP3: 초로 가사 맞춤, 못 불러오면 오르골로
+    setMp3Lyrics(true);
     play(BDAY_MP3, next, (sec) => {
       const k = BDAY_MP3_LINES.findIndex(([a, b]) => sec >= a && sec < b);
-      setLineIdx(k >= 0 ? k % 4 : -1);
+      setLineIdx(k);
       if (k >= 0) setLineProg((sec - BDAY_MP3_LINES[k][0]) / (BDAY_MP3_LINES[k][1] - BDAY_MP3_LINES[k][0]));
     });
     const a = player();
-    a.onerror = () => { if (runRef.current === run) playBeats(melodyUrl(), 0, next); };
+    a.onerror = () => { if (runRef.current === run) { setMp3Lyrics(false); playBeats(melodyUrl(), 0, next); } };
   };
   const askBlow = (id, run) => {
     setLineIdx(4); setPhase('blow');
@@ -333,7 +401,7 @@ export default function BirthdayParty() {
     setRecUi('wait');
     // 터치 안에서 반주를 소리 없이 먼저 틀어 둔다 (아이패드는 마이크를 기다린 뒤에는 새로 틀 수 없을 때가 있음)
     const a = player();
-    a.onended = a.onerror = a.ontimeupdate = null;
+    a.onended = a.onerror = a.ontimeupdate = null; tickRef.current = null;
     a.src = melodyUrl(); a.muted = true;
     try { const p = a.play(); if (p && p.catch) p.catch(() => { }); } catch { /* 무시 */ }
     let stream = null;
@@ -368,9 +436,9 @@ export default function BirthdayParty() {
       setLineIdx(-1);
       const lines = bdayLyrics(hero);
       // 소리 없이 틀어 둔 반주를 처음으로 돌려 소리를 켠다
-      a.onended = () => { a.onended = a.onerror = a.ontimeupdate = null; setTimeout(() => stopRecording(false), 400); };
+      a.onended = () => { a.onended = a.onerror = a.ontimeupdate = null; tickRef.current = null; setTimeout(() => stopRecording(false), 400); };
       a.onerror = a.onended;
-      a.ontimeupdate = () => {
+      tickRef.current = () => {
         const beat = a.currentTime / BDAY_BEAT, i = lines.findIndex(l => beat >= l.from && beat < l.to);
         setLineIdx(i); if (i >= 0) setLineProg((beat - lines[i].from) / (lines[i].to - lines[i].from));
       };
@@ -412,6 +480,8 @@ export default function BirthdayParty() {
         if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
         const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         const t = (now - t0) / 1000; tRef.current = t;
+        const pl = playerRef.current;
+        if (tickRef.current && pl && !pl.paused) tickRef.current(pl.currentTime);
         drawRoom(ctx, W, H, t);
         const S = Math.min(W * 0.32, H * 0.42);
         const happy = phaseRef.current === 'done';
@@ -462,6 +532,7 @@ export default function BirthdayParty() {
 
   // ── 파티 ──
   const lines = bdayLyrics(hero);
+  const songLines = mp3Lyrics ? bdayMp3Lyrics(hero) : lines;
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flexShrink: 0 }}>
@@ -520,7 +591,7 @@ export default function BirthdayParty() {
             <button onClick={() => startParty(heroId)} style={btn('#f472b6')}>🔁 한 번 더</button>
             <button onClick={() => { runRef.current++; stopPlayer(); setHeroId(null); setPhase('pick'); }} style={btn('#a78bfa')}>🎂 다른 친구</button>
           </>
-          : <Karaoke lines={lines} idx={phase === 'song' ? lineIdx : -1} prog={lineProg} />}
+          : <Karaoke lines={songLines} idx={phase === 'song' ? lineIdx : -1} prog={lineProg} />}
       </div>
     </div>
   );

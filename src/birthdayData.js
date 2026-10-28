@@ -36,7 +36,16 @@ export const BDAY_MP3_LINES = [
   [23.6, 26.6], [26.6, 29.5], [29.5, 33.5], [33.5, 36.3]
 ];
 
-export const bdayIntro =(c) => `${c.name}의 생일 파티예요! 다 같이 생일 노래를 불러요!`;
+// MP3 가사 8줄: 1절 한국어, 2절 영어 (BDAY_MP3_LINES 와 같은 순서)
+export const bdayMp3Lyrics = (c) => [
+  ...bdayLyrics(c),
+  { text: 'Happy birthday to you' },
+  { text: 'Happy birthday to you' },
+  { text: `Happy birthday dear ${c.name}`, name: c.name },
+  { text: 'Happy birthday to you' }
+];
+
+export const bdayIntro = (c) => `${c.name}의 생일 파티예요! 다 같이 생일 노래를 불러요!`;
 export const bdayBlow = (c) => `${c.call}, 생일 축하해! 이제 촛불을 후 불어 볼까?`;
 export const BDAY_DONE = '와아! 촛불을 다 껐어요! 짝짝짝, 생일 축하해요!';
 
