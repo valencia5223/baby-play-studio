@@ -106,7 +106,7 @@ export const FARM_SPECIES = [
   {
     id: 'panda', name: '판다', price: 350, size: 82, shape: 'quad', desc: '대나무를 냠냠 먹어요',
     speed: 0.7, growMul: 0.85, napper: true, body: '#ffffff', belly: '#ffffff', accent: '#111827', legColor: '#111827',
-    ear: 'round', earColor: '#111827', tail: 'puff', legLen: 0.27, bodyLen: 1.0, headSize: 0.52, snout: 'dog', fat: 1.15, eyePatch: true,
+    ear: 'round', earColor: '#111827', tail: 'puff', legLen: 0.27, bodyLen: 1.0, headSize: 0.52, snout: 'dog', fat: 1.15, eyePatch: true, shoulderBand: true, pawColor: '#374151',
     gift: { icon: '🎋', name: '대나무', stars: 17, everySec: 200 }
   },
   {

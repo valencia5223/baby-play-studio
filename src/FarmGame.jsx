@@ -59,7 +59,12 @@ const ell = (ctx, x, y, rx, ry, rot = 0) => { ctx.beginPath(); ctx.ellipse(x, y,
 // 원점은 발이 닿는 땅, 오른쪽을 보는 모습. S 는 몸 크기 기준(px).
 // o: { phase(걸음), moving, growth, sleep, lie(0~1 엎드림), eat(0~1 고개 숙임), wag, mud, t }
 function drawEye(ctx, x, y, r, closed, ring) {
-  if (ring) { ctx.fillStyle = '#ffffff'; ell(ctx, x, y, r * 1.5, r * 1.5); ctx.fill(); }
+  if (closed && ring === 'small') {   // 판다: 검은 무늬 위에 감은 눈은 흰 선으로
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1, r * 0.4); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(x, y - r * 0.2, r, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    return;
+  }
+  if (ring) { const k = ring === 'small' ? 1.18 : 1.5; ctx.fillStyle = '#ffffff'; ell(ctx, x, y, r * k, r * k); ctx.fill(); }   // small: 판다 눈 무늬 안의 작은 흰자
   if (closed) {
     ctx.strokeStyle = '#1f2937'; ctx.lineWidth = Math.max(1, r * 0.45); ctx.lineCap = 'round';
     ctx.beginPath(); ctx.arc(x, y - r * 0.2, r, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
@@ -87,7 +92,7 @@ function drawQuad(ctx, sp, S, o) {
   const outline = 'rgba(60,40,20,0.28)';
   const hoofed = sp.snout === 'cow' || sp.snout === 'horse' || sp.darkFace;
   const legCol = sp.legColor || (sp.darkFace ? sp.accent : mixColor(sp.body, '#000000', 0.07));
-  const hoofCol = hoofed ? mixColor(sp.accent, '#000000', 0.25) : sp.snout === 'pig' ? sp.accent : sp.belly;
+  const hoofCol = sp.pawColor ? sp.pawColor : hoofed ? mixColor(sp.accent, '#000000', 0.25) : sp.snout === 'pig' ? sp.accent : sp.belly;
   const lw = S * 0.115, legLen = legL + bh * 0.34;
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
@@ -169,6 +174,15 @@ function drawQuad(ctx, sp, S, o) {
   if (sp.whiteSpots) {
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     [[-0.5, -0.55], [-0.2, -0.65], [0.1, -0.6], [0.4, -0.5], [-0.35, -0.3], [0.25, -0.3]].forEach(([qx, qy]) => { ell(ctx, bw * qx, by + bh * qy, S * 0.025, S * 0.025); ctx.fill(); });
+  }
+  if (sp.shoulderBand) {
+    // 판다: 앞다리에서 어깨 위로 이어지는 검은 띠
+    ctx.fillStyle = sp.accent;
+    ctx.beginPath();
+    ctx.moveTo(bw * 0.12, by - bh * 1.1); ctx.lineTo(bw * 0.62, by - bh * 1.1);
+    ctx.quadraticCurveTo(bw * 0.7, by, bw * 0.62, by + bh * 1.1); ctx.lineTo(bw * 0.2, by + bh * 1.1);
+    ctx.quadraticCurveTo(bw * 0.32, by, bw * 0.12, by - bh * 1.1);
+    ctx.closePath(); ctx.fill();
   }
   drawMud(ctx, o.mud || 0, S, by, bw, bh);
   ctx.restore();
@@ -285,8 +299,8 @@ function drawQuad(ctx, sp, S, o) {
     ctx.beginPath(); ctx.moveTo(hx + hs * 0.55, hy + hs * 0.7); ctx.lineTo(hx + hs * 0.95, hy + hs * 0.7); ctx.lineTo(hx + hs * 0.7, hy + hs * 1.35); ctx.closePath(); ctx.fill();
   }
   // 눈·볼
-  if (sp.eyePatch) { ctx.fillStyle = sp.accent; ell(ctx, hx + hs * 0.3, hy - hs * 0.12, hs * 0.32, hs * 0.26, -0.4); ctx.fill(); }
-  drawEye(ctx, hx + hs * 0.32, hy - hs * 0.15, hs * 0.2, o.sleep || o.blink, sp.darkFace || sp.eyeRing || sp.eyePatch);
+  if (sp.eyePatch) { ctx.fillStyle = sp.accent; ell(ctx, hx + hs * 0.3, hy - hs * 0.02, hs * 0.3, hs * 0.42, 0.55); ctx.fill(); }   // 판다: 아래로 처진 물방울 눈 무늬
+  drawEye(ctx, hx + hs * 0.34, hy - hs * 0.12, hs * (sp.eyePatch ? 0.17 : 0.2), o.sleep || o.blink, sp.eyePatch ? 'small' : (sp.darkFace || sp.eyeRing));
   if (!sp.darkFace && sp.snout !== 'pig') { ctx.fillStyle = 'rgba(251,113,133,0.4)'; ell(ctx, hx + hs * 0.08, hy + hs * 0.38, hs * 0.22, hs * 0.14); ctx.fill(); }
 
   // 앞쪽 귀 (머리 위에 덮이는 귀)
