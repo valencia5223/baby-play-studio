@@ -188,6 +188,8 @@ export default function BirthdayParty() {
   const [family, setFamily] = useState({});              // { 주인공: true } 녹음이 있는지
   const [recUi, setRecUi] = useState(null);              // 녹음 창: null | 'ready' | 'rec' | 'review'
   const [micNote, setMicNote] = useState('');
+  const [micLevel, setMicLevel] = useState(0);           // 입김 크기 (0~1, 1 이면 꺼짐, -1 이면 마이크 멈춤)
+  const [recNote, setRecNote] = useState('');            // 녹음 창 안내·오류
   const canvasRef = useRef(null);
   const playerRef = useRef(null);
   const litRef = useRef([]);
@@ -217,7 +219,7 @@ export default function BirthdayParty() {
     a.onended = () => { a.onended = a.onerror = a.ontimeupdate = null; onEnd && onEnd(); };
     a.onerror = () => { a.onended = a.onerror = a.ontimeupdate = null; onEnd && onEnd(); };
     a.ontimeupdate = onTime ? () => onTime(a.currentTime) : null;
-    a.src = url; a.volume = 1;
+    a.src = url; a.volume = 1; a.muted = false;
     const p = a.play(); if (p && p.catch) p.catch(() => { a.onended = a.onerror = null; setTimeout(() => onEnd && onEnd(), 300); });
   };
   const sayLine = (text, onEnd) => { const u = lineUrl(text); if (u) play(u, onEnd); else setTimeout(() => onEnd && onEnd(), 1500); };
@@ -229,8 +231,6 @@ export default function BirthdayParty() {
     stopPlayer(); stopMic();
     setHeroId(id); setPhase('intro'); setLineIdx(-1); setLineProg(0); setMicNote('');
     litRef.current = Array(c.candles).fill(true); smokeRef.current = null; confettiRef.current = [];
-    // 터치 안에서: 소리 플레이어와 녹음 엔진을 깨워 둔다 (아이폰)
-    try { if (!capCtxRef.current) { const AC = window.AudioContext || window.webkitAudioContext; capCtxRef.current = new AC(); } capCtxRef.current.resume().catch(() => { }); } catch { /* 무시 */ }
     sayLine(bdayIntro(c), () => { if (runRef.current === run) singSong(id, run); });
   };
   const singSong = async (id, run) => {
@@ -268,32 +268,44 @@ export default function BirthdayParty() {
   };
 
   // ── "후~" 불기: 마이크 소리가 크게 0.25초 넘게 이어지면 ──
+  // 아이패드: 마이크를 켜기 전에 만든 오디오 엔진에는 무음만 들어오는 문제가 있어, 마이크를 켠 뒤 새로 만든다.
+  // 주변 소리 크기를 먼저 재고 그보다 확 커지면 "후~" 로 본다.
   const startMic = async (run) => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setMicNote('촛불을 톡 눌러서 꺼 주세요'); return; }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
       if (runRef.current !== run || phaseRef.current !== 'blow') { stream.getTracks().forEach(t => t.stop()); return; }
-      const ctx = capCtxRef.current; await ctx.resume().catch(() => { });
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AC();
+      try { await ctx.resume(); } catch { /* 무시 */ }
       const src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser();
       an.fftSize = 1024; src.connect(an);
       const data = new Float32Array(an.fftSize);
-      let loud = 0;
+      let loud = 0, n = 0, floor = 0.01;
       const timer = setInterval(() => {
+        if (ctx.state !== 'running') { ctx.resume().catch(() => { }); setMicLevel(-1); return; }
         an.getFloatTimeDomainData(data);
         let s = 0; for (let i = 0; i < data.length; i++) s += data[i] * data[i];
         const rms = Math.sqrt(s / data.length);
-        loud = rms > 0.09 ? loud + 1 : Math.max(0, loud - 1);
-        if (loud >= 4) blowOut(true);
+        n++;
+        if (n <= 6) { floor = Math.max(floor, rms); return; }          // 처음 0.36초: 주변 소리
+        if (rms < floor * 1.5) floor = floor * 0.95 + rms * 0.05;     // 조용할 때 천천히 따라감
+        const th = Math.max(0.035, floor * 3.5);
+        setMicLevel(Math.min(1, rms / th));
+        loud = rms > th ? loud + 1 : Math.max(0, loud - 1);
+        if (loud >= 3) blowOut(true);
       }, 60);
-      micRef.current = { stream, src, timer };
+      micRef.current = { stream, src, ctx, timer };
       setMicNote('후~ 불어 보세요! (촛불을 눌러도 돼요)');
     } catch { setMicNote('촛불을 톡 눌러서 꺼 주세요'); }
   };
   function stopMic() {
     const m = micRef.current; micRef.current = null;
+    setMicLevel(0);
     if (!m) return;
     clearInterval(m.timer);
     try { m.src.disconnect(); } catch { /* 무시 */ }
+    try { m.ctx.close(); } catch { /* 무시 */ }
     m.stream.getTracks().forEach(t => t.stop());
   }
 
@@ -301,10 +313,33 @@ export default function BirthdayParty() {
   const startRecording = async () => {
     if (!heroId) return;
     stopPlayer();
+    setRecNote('');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      setRecNote('이 브라우저에서는 녹음할 수 없어요. iPad 설정에서 iPadOS를 최신으로 업데이트해 주세요.'); return;
+    }
+    setRecUi('wait');
+    // 터치 안에서 반주를 소리 없이 먼저 틀어 둔다 (아이패드는 마이크를 기다린 뒤에는 새로 틀 수 없을 때가 있음)
+    const a = player();
+    a.onended = a.onerror = a.ontimeupdate = null;
+    a.src = melodyUrl(); a.muted = true;
+    try { const p = a.play(); if (p && p.catch) p.catch(() => { }); } catch { /* 무시 */ }
+    let stream = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } });
-      const mime = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', ''].find(m => !m || (window.MediaRecorder && MediaRecorder.isTypeSupported(m)));
-      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    } catch (e) {
+      stopPlayer(); a.muted = false; setRecUi('ready');
+      setRecNote(e && e.name === 'NotAllowedError'
+        ? '마이크가 막혀 있어요. 설정 › Safari › 마이크 에서 "허용"으로 바꾼 뒤 다시 눌러 주세요.'
+        : `마이크를 켤 수 없어요 (${(e && e.name) || '오류'})`);
+      return;
+    }
+    try {
+      // 아이패드(Safari)는 mp4 를 먼저
+      const isApple = /iPad|iPhone|Macintosh/.test(navigator.userAgent) && !/Chrome|CriOS|Edg/.test(navigator.userAgent);
+      const order = isApple ? ['audio/mp4', 'audio/aac', 'audio/webm;codecs=opus', 'audio/webm'] : ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+      const mime = order.find(m => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '';
+      let mr;
+      try { mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); } catch { mr = new MediaRecorder(stream); }
       const chunks = [];
       mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
       mr.onstop = () => {
@@ -315,15 +350,28 @@ export default function BirthdayParty() {
         setRecUi('review');
       };
       recRef.current = { mr, stream, chunks };
-      mr.start();
+      mr.start(1000);
       setRecUi('rec');
       setLineIdx(-1);
       const lines = bdayLyrics(hero);
-      play(melodyUrl(), () => { setTimeout(() => stopRecording(false), 400); }, (sec) => {
-        const beat = sec / BDAY_BEAT, i = lines.findIndex(l => beat >= l.from && beat < l.to);
+      // 소리 없이 틀어 둔 반주를 처음으로 돌려 소리를 켠다
+      a.onended = () => { a.onended = a.onerror = a.ontimeupdate = null; setTimeout(() => stopRecording(false), 400); };
+      a.onerror = a.onended;
+      a.ontimeupdate = () => {
+        const beat = a.currentTime / BDAY_BEAT, i = lines.findIndex(l => beat >= l.from && beat < l.to);
         setLineIdx(i); if (i >= 0) setLineProg((beat - lines[i].from) / (lines[i].to - lines[i].from));
-      });
-    } catch { setRecUi('ready'); setMicNote('마이크를 허락해야 녹음할 수 있어요'); }
+      };
+      try { a.currentTime = 0; } catch { /* 무시 */ }
+      a.muted = false; a.volume = 1;
+      if (a.paused) {
+        const p = a.play();
+        if (p && p.catch) p.catch(() => setRecNote('반주가 안 나오면 그냥 불러 주세요. 다 부르고 ■ 그만을 눌러요.'));
+      }
+    } catch (e) {
+      try { stream.getTracks().forEach(t => t.stop()); } catch { /* 무시 */ }
+      stopPlayer(); a.muted = false; recRef.current = null; setRecUi('ready');
+      setRecNote(`이 기기에서 녹음을 시작하지 못했어요 (${(e && e.name) || '오류'})`);
+    }
   };
   function stopRecording(cancel) {
     const r = recRef.current; if (!r) return;
@@ -409,18 +457,25 @@ export default function BirthdayParty() {
         {family[heroId] && (
           <button onClick={() => setUseFamily(v => !v)} title="노래 고르기" style={btn(useFamily ? '#fbcfe8' : '#ede9fe', useFamily ? '#9d174d' : '#5b21b6')}>{useFamily ? '👩 가족 노래' : '🎵 오르골'}</button>
         )}
-        <button onClick={() => { runRef.current++; stopPlayer(); stopMic(); setRecUi('ready'); setLineIdx(-1); }} style={btn('#ffffff', '#9d174d')}>🎙️ 노래 녹음</button>
+        <button onClick={() => { runRef.current++; stopPlayer(); stopMic(); setRecNote(''); setRecUi('ready'); setLineIdx(-1); }} style={btn('#ffffff', '#9d174d')}>🎙️ 노래 녹음</button>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, position: 'relative', borderRadius: '26px', overflow: 'hidden', boxShadow: '0 16px 30px -18px rgba(157,23,77,0.5)' }}>
         <canvas ref={canvasRef} onPointerDown={onCanvasDown} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none', cursor: phase === 'blow' ? 'pointer' : 'default' }} />
         {phase === 'blow' && <div style={{ position: 'absolute', left: 0, right: 0, top: '12px', textAlign: 'center', fontFamily: JUA, fontSize: '1.5rem', color: '#9d174d', textShadow: '0 2px 0 #fff' }}>🌬️ {micNote || '후~ 불어 보세요!'}</div>}
+        {phase === 'blow' && micLevel !== 0 && (
+          <div style={{ position: 'absolute', left: '50%', top: '52px', width: '220px', marginLeft: '-110px', height: '14px', borderRadius: '7px', background: 'rgba(255,255,255,0.8)', overflow: 'hidden', boxShadow: '0 0 0 2px #fbcfe8' }}>
+            <div style={{ height: '100%', width: `${Math.max(0, micLevel) * 100}%`, background: micLevel >= 1 ? '#f43f5e' : '#f9a8d4', transition: 'width 0.06s' }} />
+          </div>
+        )}
         {phase === 'done' && <div style={{ position: 'absolute', left: 0, right: 0, top: '12px', textAlign: 'center', fontFamily: JUA, fontSize: '2rem', color: '#db2777', textShadow: '0 3px 0 #fff' }}>🎉 생일 축하해요! 🎉</div>}
 
         {/* 가족 노래 녹음 창 */}
         {recUi && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(253,242,248,0.94)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '16px', textAlign: 'center' }}>
             <div style={{ fontFamily: JUA, fontSize: '1.5rem', color: '#9d174d' }}>🎙️ {hero.name}에게 불러 줄 생일 노래</div>
+            {recNote && <div style={{ fontWeight: 800, color: '#be123c', background: '#fff1f2', borderRadius: '14px', padding: '8px 14px', lineHeight: 1.5, maxWidth: '520px' }}>{recNote}</div>}
+            {recUi === 'wait' && <div style={{ fontFamily: JUA, fontSize: '1.2rem', color: '#6b7280' }}>🎤 마이크를 켜는 중... (허용을 눌러 주세요)</div>}
             {recUi === 'ready' && <>
               <div style={{ fontWeight: 800, color: '#6b7280', lineHeight: 1.6 }}>시작을 누르면 오르골 반주가 나와요. 반주에 맞춰 같이 불러 주세요.<br />노래는 이 기기에만 저장돼요.</div>
               <div style={{ display: 'flex', gap: '10px' }}>
