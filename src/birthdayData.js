@@ -4,6 +4,8 @@
 export const BDAY_CHARS = [
   { id: 'shark', name: '아기상어', call: '아기상어야', candles: 3, color: '#fde68a', ink: '#92400e' },
   { id: 'panda', name: '판다', call: '판다야', candles: 3, color: '#e5e7eb', ink: '#1f2937' },
+  { id: 'lion', name: '사자', call: '사자야', candles: 4, color: '#fed7aa', ink: '#9a3412' },
+  { id: 'cat', name: '고양이', call: '고양아', candles: 3, color: '#fde2c4', ink: '#9a5b13' },
   { id: 'yuna', name: '유나', call: '유나야', candles: 2, color: '#fbcfe8', ink: '#9d174d' }
 ];
 export const BDAY_BY_ID = Object.fromEntries(BDAY_CHARS.map(c => [c.id, c]));

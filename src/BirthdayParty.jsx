@@ -219,6 +219,127 @@ function drawPanda(ctx, S, t, happy) {
   ctx.restore();
 }
 
+// ── 앞을 보고 앉은 동물 공통: 뒷다리·몸·배·팔 (머리는 각자) ──
+function sitBody(ctx, S, t, happy, c) {
+  const oval = (x, y, rx, ry, rot = 0) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, TAU); };
+  const breathe = 1 + Math.sin(t * 2) * 0.012;
+  ctx.lineWidth = Math.max(1.5, S * 0.012); ctx.strokeStyle = c.line;
+  ctx.fillStyle = c.dark;
+  [-1, 1].forEach(k => { oval(k * S * 0.22, -S * 0.07, S * 0.15, S * 0.11, k * 0.25); ctx.fill(); });
+  ctx.fillStyle = c.paw;
+  [-1, 1].forEach(k => { oval(k * S * 0.26, -S * 0.05, S * 0.07, S * 0.055); ctx.fill(); });
+  const g = ctx.createRadialGradient(-S * 0.08, -S * 0.42, S * 0.05, 0, -S * 0.3, S * 0.42);
+  g.addColorStop(0, c.body); g.addColorStop(1, c.dark);
+  ctx.fillStyle = g; oval(0, -S * 0.32, S * 0.36 * breathe, S * 0.34); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = c.belly; oval(0, -S * 0.3, S * 0.2, S * 0.24); ctx.fill();
+  if (c.stripes) {
+    ctx.strokeStyle = c.stripes; ctx.lineWidth = S * 0.03; ctx.lineCap = 'round';
+    [-1, 1].forEach(k => [0, 1].forEach(i => { ctx.beginPath(); ctx.arc(k * S * 0.3, -S * (0.3 + i * 0.12), S * 0.07, k > 0 ? 2.4 : -0.7, k > 0 ? 3.9 : 0.8); ctx.stroke(); }));
+  }
+  const arm = (k, ang) => {
+    ctx.save(); ctx.translate(k * S * 0.27, -S * 0.46); ctx.rotate(ang);
+    ctx.fillStyle = c.arm || c.body; ctx.beginPath(); ctx.roundRect(-S * 0.075, -S * 0.04, S * 0.15, S * 0.3, S * 0.075); ctx.fill();
+    ctx.strokeStyle = c.line; ctx.lineWidth = Math.max(1, S * 0.008); ctx.stroke();
+    ctx.fillStyle = c.paw; oval(0, S * 0.235, S * 0.065, S * 0.055); ctx.fill();
+    ctx.restore();
+  };
+  arm(-1, 0.5);
+  arm(1, happy ? -2.4 + Math.sin(t * 10) * 0.35 : -0.5);
+}
+function friendlyEyes(ctx, S, hy, t, gap, iris) {
+  const blink = t % 4.3 < 0.12;
+  [-1, 1].forEach(k => {
+    const ex = k * S * gap, ey = hy - S * 0.01;
+    if (blink) { ctx.strokeStyle = '#3b2412'; ctx.lineWidth = S * 0.014; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(ex, ey - S * 0.01, S * 0.03, 0.2, Math.PI - 0.2); ctx.stroke(); return; }
+    if (iris) {
+      ctx.fillStyle = iris; ctx.beginPath(); ctx.ellipse(ex, ey, S * 0.045, S * 0.05, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(ex, ey, S * 0.022, S * 0.042, 0, 0, TAU); ctx.fill();
+    } else {
+      ctx.fillStyle = '#2a1a0e'; ctx.beginPath(); ctx.ellipse(ex, ey, S * 0.034, S * 0.04, 0, 0, TAU); ctx.fill();
+    }
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ex - S * 0.012, ey - S * 0.016, S * 0.012, 0, TAU); ctx.fill();
+  });
+}
+function smileMouth(ctx, S, y, col) {
+  ctx.strokeStyle = col; ctx.lineWidth = Math.max(1.5, S * 0.012); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, y - S * 0.03); ctx.lineTo(0, y);
+  ctx.arc(-S * 0.03, y, S * 0.03, 0, Math.PI * 0.9);
+  ctx.moveTo(0, y); ctx.arc(S * 0.03, y, S * 0.03, Math.PI, Math.PI * 0.1, true);
+  ctx.stroke();
+}
+
+// 사자: 황금빛 몸 + 머리 둘레 풍성한 갈기 + 끝이 복슬한 꼬리
+function drawLion(ctx, S, t, happy) {
+  ctx.save();
+  const sw = Math.sin(t * 2.2) * S * 0.04;
+  ctx.strokeStyle = '#e3a04a'; ctx.lineWidth = S * 0.05; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(S * 0.25, -S * 0.12); ctx.bezierCurveTo(S * 0.55, -S * 0.1, S * 0.55, -S * 0.4, S * 0.48 + sw, -S * 0.55); ctx.stroke();
+  ctx.fillStyle = '#b4561c'; ctx.beginPath(); ctx.ellipse(S * 0.48 + sw, -S * 0.6, S * 0.06, S * 0.08, 0.2, 0, TAU); ctx.fill();
+  sitBody(ctx, S, t, happy, { body: '#f6c46e', dark: '#e3a04a', belly: '#fde8bd', paw: '#fde3b0', line: '#d9a35a' });
+  const hy = -S * 0.8;
+  // 갈기
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * TAU + Math.sin(t * 1.5) * 0.02;
+    ctx.fillStyle = i % 2 ? '#c2611f' : '#d97a2b';
+    ctx.beginPath(); ctx.arc(Math.cos(a) * S * 0.31, hy + Math.sin(a) * S * 0.29, S * 0.12, 0, TAU); ctx.fill();
+  }
+  ctx.fillStyle = '#c96a24'; ctx.beginPath(); ctx.ellipse(0, hy, S * 0.34, S * 0.32, 0, 0, TAU); ctx.fill();
+  // 귀
+  [-1, 1].forEach(k => {
+    ctx.fillStyle = '#f2b75b'; ctx.beginPath(); ctx.arc(k * S * 0.19, hy - S * 0.2, S * 0.07, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#e59a8a'; ctx.beginPath(); ctx.arc(k * S * 0.19, hy - S * 0.195, S * 0.035, 0, TAU); ctx.fill();
+  });
+  // 얼굴
+  const g = ctx.createRadialGradient(-S * 0.06, hy - S * 0.08, S * 0.03, 0, hy, S * 0.3);
+  g.addColorStop(0, '#fbd68e'); g.addColorStop(1, '#f0b55c');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, hy + S * 0.01, S * 0.25, S * 0.235, 0, 0, TAU); ctx.fill();
+  friendlyEyes(ctx, S, hy - S * 0.02, t, 0.095);
+  // 주둥이·코·입·수염 점·볼
+  ctx.fillStyle = '#fff3d6';
+  [-1, 1].forEach(k => { ctx.beginPath(); ctx.ellipse(k * S * 0.045, hy + S * 0.105, S * 0.06, S * 0.05, 0, 0, TAU); ctx.fill(); });
+  ctx.fillStyle = '#6b3416'; ctx.beginPath(); ctx.moveTo(-S * 0.04, hy + S * 0.05); ctx.lineTo(S * 0.04, hy + S * 0.05); ctx.lineTo(0, hy + S * 0.09); ctx.closePath(); ctx.fill();
+  smileMouth(ctx, S, hy + S * 0.12, '#6b3416');
+  ctx.fillStyle = '#b07a40'; [-1, 1].forEach(k => [0, 1, 2].forEach(i => { ctx.beginPath(); ctx.arc(k * S * (0.04 + i * 0.022), hy + S * (0.1 + (i % 2) * 0.018), S * 0.006, 0, TAU); ctx.fill(); }));
+  ctx.fillStyle = 'rgba(244,114,182,0.3)'; [-1, 1].forEach(k => { ctx.beginPath(); ctx.ellipse(k * S * 0.17, hy + S * 0.08, S * 0.045, S * 0.028, 0, 0, TAU); ctx.fill(); });
+  ctx.restore();
+}
+
+// 고양이: 치즈 줄무늬 + 뾰족 귀 + 흰 가슴 + 수염 + 말려 올라간 꼬리
+function drawCat(ctx, S, t, happy) {
+  ctx.save();
+  const sw = Math.sin(t * 2.6) * S * 0.05;
+  ctx.strokeStyle = '#ea9a4c'; ctx.lineWidth = S * 0.07; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(S * 0.24, -S * 0.1); ctx.bezierCurveTo(S * 0.6, -S * 0.08, S * 0.58, -S * 0.5, S * 0.42 + sw, -S * 0.62); ctx.stroke();
+  ctx.strokeStyle = '#c96f28'; ctx.lineWidth = S * 0.072; ctx.lineCap = 'butt'; ctx.setLineDash([S * 0.03, S * 0.07]);
+  ctx.stroke(); ctx.setLineDash([]);
+  sitBody(ctx, S, t, happy, { body: '#f8b46a', dark: '#e9964a', belly: '#fff8ef', paw: '#fffaf3', line: '#dc9a5a', stripes: '#d27a32' });
+  const hy = -S * 0.78;
+  // 귀
+  [-1, 1].forEach(k => {
+    ctx.fillStyle = '#f2a557';
+    ctx.beginPath(); ctx.moveTo(k * S * 0.08, hy - S * 0.2); ctx.lineTo(k * S * 0.25, hy - S * 0.36); ctx.lineTo(k * S * 0.28, hy - S * 0.08); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#f9b6c4';
+    ctx.beginPath(); ctx.moveTo(k * S * 0.13, hy - S * 0.19); ctx.lineTo(k * S * 0.24, hy - S * 0.3); ctx.lineTo(k * S * 0.25, hy - S * 0.12); ctx.closePath(); ctx.fill();
+  });
+  const g = ctx.createRadialGradient(-S * 0.07, hy - S * 0.08, S * 0.03, 0, hy, S * 0.33);
+  g.addColorStop(0, '#fcc98a'); g.addColorStop(1, '#ef9f52');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, hy, S * 0.29, S * 0.245, 0, 0, TAU); ctx.fill();
+  ctx.strokeStyle = '#dc9a5a'; ctx.lineWidth = Math.max(1.5, S * 0.012); ctx.stroke();
+  // 이마 줄무늬
+  ctx.strokeStyle = '#d27a32'; ctx.lineWidth = S * 0.024; ctx.lineCap = 'round';
+  [-0.05, 0, 0.05].forEach((q, i) => { ctx.beginPath(); ctx.moveTo(q * S, hy - S * 0.22); ctx.lineTo(q * S * 0.8, hy - S * (i === 1 ? 0.12 : 0.15)); ctx.stroke(); });
+  // 흰 입 둘레·눈·코·입
+  ctx.fillStyle = '#fff8ef'; ctx.beginPath(); ctx.ellipse(0, hy + S * 0.11, S * 0.13, S * 0.09, 0, 0, TAU); ctx.fill();
+  friendlyEyes(ctx, S, hy - S * 0.01, t, 0.11, '#9ccc4a');
+  ctx.fillStyle = '#f47c96'; ctx.beginPath(); ctx.moveTo(-S * 0.03, hy + S * 0.06); ctx.lineTo(S * 0.03, hy + S * 0.06); ctx.lineTo(0, hy + S * 0.09); ctx.closePath(); ctx.fill();
+  smileMouth(ctx, S, hy + S * 0.12, '#7a3e1a');
+  // 수염
+  ctx.strokeStyle = 'rgba(90,60,40,0.55)'; ctx.lineWidth = Math.max(1, S * 0.006);
+  [-1, 1].forEach(k => [-0.02, 0.01, 0.04].forEach(q => { ctx.beginPath(); ctx.moveTo(k * S * 0.11, hy + S * (0.1 + q * 0.5)); ctx.lineTo(k * S * 0.32, hy + S * (0.08 + q * 1.6)); ctx.stroke(); }));
+  ctx.fillStyle = 'rgba(244,114,182,0.35)'; [-1, 1].forEach(k => { ctx.beginPath(); ctx.ellipse(k * S * 0.19, hy + S * 0.07, S * 0.045, S * 0.028, 0, 0, TAU); ctx.fill(); });
+  ctx.restore();
+}
+
 function drawHero(ctx, id, x, y, S, t, happy) {
   ctx.save(); ctx.translate(x, y);
   const hop = happy ? -Math.abs(Math.sin(t * 6)) * S * 0.12 : 0;
@@ -226,15 +347,16 @@ function drawHero(ctx, id, x, y, S, t, happy) {
     const sp = FISH_BY_ID.shark;
     ctx.translate(0, -S * 0.82 + Math.sin(t * 1.6) * S * 0.04 + hop);   // 촛불 위로 둥실
     if (sp) drawFish(ctx, sp, S * 1.15, { phase: t * 4, growth: 1, happy: true, detail: true, gloss: true, lit: 0.6 });
-  } else if (id === 'panda') {
+  } else if (id === 'panda' || id === 'lion' || id === 'cat') {
     ctx.translate(0, hop);
-    drawPanda(ctx, S, t, happy);
+    ({ panda: drawPanda, lion: drawLion, cat: drawCat })[id](ctx, S, t, happy);
   } else {
     ctx.translate(0, hop);
     drawYuna(ctx, happy ? 'stretch' : 'stand', S * 1.05, t, false);
   }
   // 고깔모자
-  const hatY = id === 'shark' ? -S * 0.2   /* 상어는 위에서 이미 몸 높이로 옮겨 둠 */ : id === 'panda' ? -S * 1.0 + hop : -S * 1.12 + hop;
+  const HAT_Y = { panda: 1.0, lion: 1.08, cat: 0.98, yuna: 1.12 };
+  const hatY = id === 'shark' ? -S * 0.2   /* 상어는 위에서 이미 몸 높이로 옮겨 둠 */ : -S * (HAT_Y[id] || 1.12) + hop;
   const hatX = id === 'shark' ? S * 0.26 : id === 'panda' ? S * 0.04 : 0;
   ctx.fillStyle = '#a78bfa';
   ctx.beginPath(); ctx.moveTo(hatX - S * 0.11, hatY); ctx.lineTo(hatX + S * 0.11, hatY); ctx.lineTo(hatX, hatY - S * 0.26); ctx.closePath(); ctx.fill();
