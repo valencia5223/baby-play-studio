@@ -38,6 +38,7 @@ import PaintMotion from './PaintMotion.jsx';
 import StoryBook from './StoryBook.jsx';
 import PhoneCall from './PhoneCall.jsx';
 import BirthdayParty from './BirthdayParty.jsx';
+import KitchenGame from './KitchenGame.jsx';
 import STORY_VOICE_INDEX from './storyVoiceIndex.json';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
@@ -647,6 +648,29 @@ class BabySoundEngine {
       osc3.start(now);
       osc3.stop(now + 0.2);
     }
+  }
+
+  // 🔪 짧은 잡음 효과음 (요리 놀이의 통통 썰기·지글지글·쓱쓱): 대역 필터를 거친 화이트 노이즈
+  playNoise(duration = 0.12, gainVal = 0.4, filterFreq = 1200, q = 0.8) {
+    if (this.muted) return;
+    const build = (ctx, out, now) => this._buildNoise(ctx, out, now, duration, gainVal, filterFreq, q);
+    if (this.elementMode) { this._renderPlay(`n${duration}|${gainVal}|${filterFreq}|${q}`, duration + 0.06, build); return; }
+    this.init();
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => { });
+      build(this.ctx, this.out(), (this.ctx.currentTime || 0) + 0.005);
+    } catch (e) { }
+  }
+  _buildNoise(ctx, out, now, duration, gainVal, filterFreq, q) {
+    const n = Math.ceil(ctx.sampleRate * duration), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = filterFreq; f.Q.value = q;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(gainVal, now); g.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    src.connect(f); f.connect(g); g.connect(out);
+    src.start(now); src.stop(now + duration + 0.02);
   }
 
   playPopSound() {
@@ -4255,6 +4279,19 @@ export default function App() {
           </div>
         )}
         <div className="bps-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* 📸 생생 카드 (동물·과일·탈것 고르기, 탭 줄 대신 맨 위에) */}
+          <button onClick={() => {
+            audioEngine.interruptVoice();
+            setActiveTab('cards');
+            audioEngine.playFreq(520, 'sine', 0.15);
+          }} title="동물·과일·탈것 생생 카드" style={{
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '0 18px', height: '48px', borderRadius: '24px', whiteSpace: 'nowrap',
+            fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontWeight: 400, fontSize: '1.05rem', cursor: 'pointer',
+            border: 'none', background: (activeTab === 'cards' || isCardTab) ? '#fca5a5' : '#ffe8e8', color: (activeTab === 'cards' || isCardTab) ? '#5f1414' : '#9b2c2c',
+            boxShadow: (activeTab === 'cards' || isCardTab) ? '0 8px 18px -8px rgba(185,28,28,0.55)' : 'none'
+          }}>
+            📸 생생 카드
+          </button>
           {/* 🎵 동요 재생 (탭 줄 대신 맨 위에. 노래가 나오는 중에는 미니 플레이어의 곡 제목을 누르면 같은 화면) */}
           {!songPlayerOn && <button onClick={() => {
             audioEngine.interruptVoice();
@@ -4332,7 +4369,8 @@ export default function App() {
         }}>
           {[
             // 파스텔 테마: pastel = 고른 메뉴 바탕, soft = 그림 동그라미, ink = 글자
-            { id: 'cards', icon: '📸', label: '생생 카드', sub: '동물·과일·탈것', pastel: '#ffc9c9', soft: '#ffe8e8', ink: '#9b2c2c' },
+            // 📸 생생 카드는 맨 위 헤더 버튼으로 옮겼다
+            { id: 'kitchen', icon: '🍳', label: '요리 놀이', sub: '동물 친구 식당', pastel: '#ffc9c9', soft: '#ffe8e8', ink: '#9b2c2c' },
             { id: 'ocean', icon: '🐠', label: '내 어항', sub: '물고기 키우기', pastel: '#b9e3f5', soft: '#e3f4fb', ink: '#1d5f7a' },
             { id: 'farm', icon: '🐮', label: '내 목장', sub: '동물 키우기', pastel: '#c8ebc0', soft: '#e8f7e4', ink: '#2f6b25' },
             { id: 'garden', icon: '🌱', label: '텃밭 가꾸기', sub: '심고 물 주고 수확', pastel: '#e3eeb4', soft: '#f3f8de', ink: '#5a6b16' },
@@ -4345,7 +4383,7 @@ export default function App() {
             // { id: 'phone', icon: '📞', label: '전화 놀이', sub: '친구와 통화해요', pastel: '#c4f0de', soft: '#e3f8ef', ink: '#1f6f55' },
             // 🎵 동요 재생·🎰 로또 뽑기는 맨 위 헤더 버튼으로 옮겼다
           ].map(tab => {
-            const isActive = activeTab === tab.id || (tab.id === 'cards' && isCardTab);
+            const isActive = activeTab === tab.id;
             return (
               <button key={tab.id} onClick={() => {
                 // 이전 화면의 음성과 예약된 음성(다음 문제 안내 등)을 모두 끊는다
@@ -4381,7 +4419,7 @@ export default function App() {
         {/* 캔버스 영역 (스크롤 메뉴와 비스크롤 고정 메뉴 분기) */}
         <div style={{
           flex: 1,
-          padding: ['paint', 'story', 'phone', 'birthday'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
+          padding: ['paint', 'story', 'phone', 'birthday', 'kitchen'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
           position: 'relative',
           background: '#fffdfa',
           overflowY: isScrollableTab ? 'auto' : 'hidden',
@@ -4654,6 +4692,8 @@ export default function App() {
           {activeTab === 'lotto' && <LottoGacha audio={audioEngine} />}
           {activeTab === 'phone' && <PhoneCall audio={audioEngine} />}
           {activeTab === 'birthday' && <BirthdayParty audio={audioEngine} />}
+          {/* ===== 🍳 요리 놀이: 동물 친구 식당 (KitchenGame.jsx) ===== */}
+          {activeTab === 'kitchen' && <KitchenGame audio={audioEngine} speak={speakNaturalKorean} />}
           {activeTab === 'story' && (
             <StoryBook
               audio={audioEngine}

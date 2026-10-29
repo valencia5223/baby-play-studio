@@ -1,6 +1,7 @@
 import { FISH_SPECIES, STAGE_NAMES, breedOf } from './aquariumData.js';
 import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID, CROPS } from './farmData.js';
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
+import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -180,6 +181,25 @@ export const VOICE = {
   trainNeedMore: () => '별이 조금 더 필요해요!',
   trainBuy: () => '와아! 멋지게 바뀌었어요!',
 
+  // 🍳 요리 놀이 (동물 친구 식당, KitchenGame.jsx)
+  kitchenArrive: (g) => `딸랑딸랑! ${g.name} 손님이 왔어요! 무엇을 만들어 줄까요?`,
+  kitchenMenu: (m) => ({
+    sandwich: '샌드위치를 만들어요! 빵 위에 재료를 콕콕 올려 보세요!',
+    pizza: '피자를 만들어요! 빨간 소스를 쓱쓱 발라 보세요!',
+    skewer: '과일 꼬치를 만들어요! 과일을 콕 눌러서 썰어 보세요!'
+  })[m.id],
+  kitchenIng: (id) => `${INGREDIENTS[id].name}!`,
+  kitchenFav: (g) => `와아! ${INGREDIENTS[g.fav].name}! ${attachJosa(g.name, '이/가')} 제일 좋아하는 거예요!`,
+  kitchenFull: () => '와아, 가득 찼어요!',
+  kitchenBread: () => '빵을 덮어요. 샌드위치 완성!',
+  kitchenTopping: () => '이제 맛있는 재료를 올려 보세요!',
+  kitchenBake: () => '오븐에 넣고 구워요. 지글지글!',
+  kitchenDing: () => '띵! 피자가 다 구워졌어요!',
+  kitchenStick: () => '이제 과일을 꼬치에 끼워 보세요!',
+  kitchenServe: () => '다 만들었어요! 손님에게 갖다 주세요!',
+  kitchenYum: (g) => `냠냠! 정말 맛있어요! ${attachJosa(g.name, '이/가')} 고맙대요!`,
+  kitchenYumFav: (g) => `냠냠! 좋아하는 ${INGREDIENTS[g.fav].name}까지! ${attachJosa(g.name, '이/가')} 엄청 행복하대요!`,
+
   // 📸 동물 · 탈것 · 바다생물 소리 / 🍎 과일
   itemSound: (item) => `${item.name}! ${item.soundText}`,
   tasty: (item) => `맛있는 ${item.name}!`,
@@ -236,6 +256,10 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   PASSENGERS.forEach(id => lines.push(VOICE.trainAlight(FARM_BY_ID[id])));
   for (let n = 1; n <= 12; n++) lines.push(VOICE.trainCount(n));
   Object.values(CARGO_COLORS).forEach(c => lines.push(VOICE.trainBox(c), VOICE.trainBoxOk(c), VOICE.trainBoxNoCar(c)));
+  KITCHEN_GUESTS.forEach(g => lines.push(VOICE.kitchenArrive(g), VOICE.kitchenFav(g), VOICE.kitchenYum(g), VOICE.kitchenYumFav(g)));
+  KITCHEN_MENUS.forEach(m => lines.push(VOICE.kitchenMenu(m)));
+  Object.keys(INGREDIENTS).forEach(id => lines.push(VOICE.kitchenIng(id)));
+  lines.push(VOICE.kitchenFull(), VOICE.kitchenBread(), VOICE.kitchenTopping(), VOICE.kitchenBake(), VOICE.kitchenDing(), VOICE.kitchenStick(), VOICE.kitchenServe());
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
   fruits.forEach(i => lines.push(VOICE.tasty(i)));
   animals.forEach(i => lines.push(VOICE.quiz(i.name, false)));
