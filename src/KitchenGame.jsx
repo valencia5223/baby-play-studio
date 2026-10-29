@@ -59,7 +59,7 @@ function stamp(ctx, key, ref, box, fn, x, y, size, rot = 0, alpha = 1) {
 
 // ═══════════════ 샌드위치 층 (옆에서 본 모습, 폭 u, 가운데 0) ═══════════════
 // th = 쌓을 때 차지하는 높이 (u 배)
-const LAYER_TH = { breadBottom: 0.13, cheese: 0.035, ham: 0.045, lettuce: 0.045, tomato: 0.055, egg: 0.06, carrot: 0.045, honey: 0.025, bamboo: 0.045, meat: 0.09, fish: 0.085, pepperoni: 0.04, pepper: 0.05, mushroom: 0.05, corn: 0.05, olive: 0.045, strawberry: 0.06, banana: 0.055, kiwi: 0.055, orange: 0.055 };
+const LAYER_TH = { breadBottom: 0.13, cheese: 0.035, ham: 0.045, lettuce: 0.045, tomato: 0.055, egg: 0.06, carrot: 0.045, honey: 0.025, bamboo: 0.045, meat: 0.09, fish: 0.085, acorn: 0.06, apple: 0.05, pepperoni: 0.04, pepper: 0.05, mushroom: 0.05, corn: 0.05, olive: 0.045, strawberry: 0.06, banana: 0.055, kiwi: 0.055, orange: 0.055 };
 function lyBreadBottom(c, u) {
   const w = 0.5 * u, h = 0.13 * u;
   shadowOn(c, u * 0.04, u * 0.02);
@@ -310,7 +310,32 @@ function tpMeat(c, u, v = 0) {
   gloss(c, -u * 0.22, -u * 0.25, u * 0.3, u * 0.18, 0.55);
 }
 function tpFish(c, u) { fishShape(c, u * 1.7); }
-const TOP_FN = { cheese: tpCheese, pepperoni: tpPepperoni, pepper: tpPepper, mushroom: tpMushroom, corn: tpCorn, olive: tpOlive, carrot: tpCarrot, honey: tpHoney, bamboo: tpBamboo, meat: tpMeat, fish: tpFish };
+// 도토리 한 알 (옆모습)
+function acornShape(c, u) {
+  c.fillStyle = rg(c, -u * 0.2, u * 0.05, 0, 0, u * 0.15, u * 0.6, [[0, '#d9a066'], [0.5, '#b0702f'], [1, '#7a4416']]);
+  c.beginPath(); c.moveTo(-u * 0.42, -u * 0.1); c.bezierCurveTo(-u * 0.45, u * 0.45, -u * 0.1, u * 0.72, 0, u * 0.78); c.bezierCurveTo(u * 0.1, u * 0.72, u * 0.45, u * 0.45, u * 0.42, -u * 0.1); c.closePath(); c.fill();
+  gloss(c, -u * 0.18, u * 0.15, u * 0.1, u * 0.2, 0.55);
+  c.fillStyle = lg(c, 0, -u * 0.45, 0, 0, [[0, '#9a7a4e'], [1, '#6b5030']]);
+  ell(c, 0, -u * 0.15, u * 0.5, u * 0.26); c.fill();
+  c.save(); ell(c, 0, -u * 0.15, u * 0.5, u * 0.26); c.clip();
+  c.strokeStyle = 'rgba(60,40,20,0.45)'; c.lineWidth = u * 0.03;
+  for (let i = -5; i <= 5; i++) { c.beginPath(); c.moveTo(i * u * 0.1 - u * 0.15, -u * 0.45); c.lineTo(i * u * 0.1 + u * 0.15, 0); c.stroke(); c.beginPath(); c.moveTo(i * u * 0.1 + u * 0.15, -u * 0.45); c.lineTo(i * u * 0.1 - u * 0.15, 0); c.stroke(); }
+  c.restore();
+  c.strokeStyle = '#5a3c1e'; c.lineWidth = u * 0.07; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -u * 0.38); c.quadraticCurveTo(u * 0.04, -u * 0.5, u * 0.12, -u * 0.55); c.stroke();
+}
+function tpAcorn(c, u, v = 0) { c.rotate((v - 1) * 0.5); acornShape(c, u * 0.85); }
+// 사과 한 조각 (반달 모양, 빨간 껍질 + 하얀 속 + 씨)
+function appleWedge(c, u) {
+  c.fillStyle = lg(c, 0, -u * 0.5, 0, u * 0.3, [[0, '#e0283a'], [1, '#a5101f']]);
+  c.beginPath(); c.moveTo(-u * 0.8, 0); c.quadraticCurveTo(0, -u * 0.95, u * 0.8, 0); c.closePath(); c.fill();
+  c.fillStyle = lg(c, 0, -u * 0.4, 0, u * 0.1, [[0, '#fff7dc'], [1, '#f1e1aa']]);
+  c.beginPath(); c.moveTo(-u * 0.72, u * 0.02); c.quadraticCurveTo(0, -u * 0.78, u * 0.72, u * 0.02); c.lineTo(u * 0.72, u * 0.1); c.lineTo(-u * 0.72, u * 0.1); c.closePath(); c.fill();
+  c.fillStyle = 'rgba(200,170,90,0.35)'; ell(c, 0, -u * 0.05, u * 0.3, u * 0.1); c.fill();
+  c.fillStyle = '#4a2a10'; [-1, 1].forEach(k => { ell(c, k * u * 0.1, -u * 0.06, u * 0.05, u * 0.08, k * 0.4); c.fill(); });
+  gloss(c, -u * 0.3, -u * 0.35, u * 0.2, u * 0.06, 0.6, -0.4);
+}
+function tpApple(c, u, v = 0) { c.rotate(v * 1.3); appleWedge(c, u); }
+const TOP_FN = { cheese: tpCheese, pepperoni: tpPepperoni, pepper: tpPepper, mushroom: tpMushroom, corn: tpCorn, olive: tpOlive, carrot: tpCarrot, honey: tpHoney, bamboo: tpBamboo, meat: tpMeat, fish: tpFish, acorn: tpAcorn, apple: tpApple };
 
 // ═══════════════ 과일 조각 (꼬치·피자용, 반지름 u) ═══════════════
 function pcStrawberry(c, u) {
@@ -507,7 +532,54 @@ function whEgg(c, u) {
   });
 }
 const whKiwiCut = (c, u) => { c.save(); c.translate(-u * 0.28, -u * 0.2); whKiwi(c, u * 0.75); c.restore(); c.save(); c.translate(u * 0.32, u * 0.28); shadowOn(c, u * 0.1, u * 0.05); pcKiwi(c, u * 0.62); shadowOff(c); c.restore(); };
-const WHOLE_FN = { strawberry: whStrawberry, banana: whBanana, kiwi: whKiwiCut, orange: whOrange, carrot: whCarrot, honey: whHoney, bamboo: whBamboo, meat: whMeat, fish: whFish, cheese: whCheese, ham: whHam, lettuce: whLettuce, tomato: whTomato, egg: whEgg };
+function whAcorn(c, u) {
+  [[-0.38, 0.22, -0.35], [0.38, 0.25, 0.3], [0, -0.3, 0]].forEach(([x, y, a]) => { c.save(); c.translate(x * u, y * u); c.rotate(a); shadowOn(c, u * 0.08, u * 0.04); acornShape(c, u * 0.68); shadowOff(c); c.restore(); });
+}
+// 소시지: 통 소시지 하나 + 동그랗게 썬 조각 둘
+function whPepperoni(c, u) {
+  c.save(); c.rotate(-0.45); c.translate(-u * 0.1, -u * 0.15);
+  shadowOn(c, u * 0.12, u * 0.06);
+  c.fillStyle = lg(c, 0, -u * 0.2, 0, u * 0.2, [[0, '#d9543c'], [0.45, '#b4301e'], [1, '#6e160b']]);
+  c.beginPath(); c.roundRect(-u * 0.75, -u * 0.19, u * 1.5, u * 0.38, u * 0.19); c.fill(); shadowOff(c);
+  c.save(); c.clip(); speckle(c, 181, 40, -u * 0.75, -u * 0.19, u * 0.75, u * 0.19, u * 0.01, u * 0.025, ['rgba(255,210,190,0.45)', 'rgba(90,15,5,0.35)']); c.restore();
+  gloss(c, -u * 0.1, -u * 0.09, u * 0.5, u * 0.05, 0.6);
+  c.strokeStyle = '#7a4a26'; c.lineWidth = u * 0.04; c.lineCap = 'round';
+  [-1, 1].forEach(k => { c.beginPath(); c.moveTo(k * u * 0.75, 0); c.lineTo(k * u * 0.86, k * u * 0.03); c.stroke(); });
+  c.restore();
+  [[0.35, 0.45, 0], [-0.1, 0.55, 1]].forEach(([x, y, v]) => { c.save(); c.translate(x * u, y * u); shadowOn(c, u * 0.06, u * 0.03); tpPepperoni(c, u * 0.3, v); shadowOff(c); c.restore(); });
+}
+function whApple(c, u) {
+  c.save(); c.translate(-u * 0.15, -u * 0.08);
+  shadowOn(c, u * 0.12, u * 0.06);
+  c.fillStyle = rg(c, -u * 0.25, -u * 0.25, u * 0.05, 0, 0, u * 0.75, [[0, '#ff6b6b'], [0.45, '#e11d2e'], [1, '#8f0d18']]);
+  c.beginPath(); c.moveTo(0, -u * 0.5);
+  c.bezierCurveTo(u * 0.35, -u * 0.72, u * 0.82, -u * 0.45, u * 0.7, u * 0.1); c.bezierCurveTo(u * 0.6, u * 0.6, u * 0.2, u * 0.75, 0, u * 0.6);
+  c.bezierCurveTo(-u * 0.2, u * 0.75, -u * 0.6, u * 0.6, -u * 0.7, u * 0.1); c.bezierCurveTo(-u * 0.82, -u * 0.45, -u * 0.35, -u * 0.72, 0, -u * 0.5); c.fill(); shadowOff(c);
+  c.save(); c.clip(); speckle(c, 171, 40, -u * 0.7, -u * 0.6, u * 0.7, u * 0.7, u * 0.008, u * 0.018, ['rgba(255,220,160,0.45)']); c.restore();
+  gloss(c, -u * 0.32, -u * 0.25, u * 0.18, u * 0.1, 0.75, -0.5);
+  c.strokeStyle = '#5a3a1a'; c.lineWidth = u * 0.06; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -u * 0.48); c.quadraticCurveTo(u * 0.02, -u * 0.68, u * 0.1, -u * 0.78); c.stroke();
+  c.save(); c.translate(u * 0.1, -u * 0.66); c.rotate(-0.5); leafShape(c, u * 0.4, u * 0.11); c.restore();
+  c.restore();
+  c.save(); c.translate(u * 0.45, u * 0.5); c.rotate(-0.3); shadowOn(c, u * 0.08, u * 0.04); appleWedge(c, u * 0.42); shadowOff(c); c.restore();
+}
+// 옥수수: 껍질이 벌어진 옥수수 한 자루
+function whCorn(c, u) {
+  c.save(); c.rotate(0.5);
+  shadowOn(c, u * 0.12, u * 0.06);
+  [[-1, 0.35], [1, -0.3]].forEach(([k, a]) => { c.save(); c.translate(0, u * 0.55); c.rotate(Math.PI + k * 0.35 + a * 0.2); leafShape(c, u * 0.95, u * 0.2); c.restore(); });
+  c.fillStyle = '#e8a908'; c.beginPath(); c.roundRect(-u * 0.27, -u * 0.8, u * 0.54, u * 1.45, u * 0.27); c.fill(); shadowOff(c);
+  c.save(); c.beginPath(); c.roundRect(-u * 0.27, -u * 0.8, u * 0.54, u * 1.45, u * 0.27); c.clip();
+  for (let row = 0; row < 13; row++) for (let col = -2; col <= 2; col++) {
+    const x = col * u * 0.105 + (row % 2) * u * 0.05, y = -u * 0.74 + row * u * 0.11, sh = 1 - Math.abs(col) * 0.18;
+    c.fillStyle = rg(c, x - u * 0.02, y - u * 0.02, 0, x, y, u * 0.07, [[0, '#fff3a0'], [0.6, '#fcd226'], [1, '#d99a05']]);
+    ell(c, x, y, u * 0.048 * sh, u * 0.05); c.fill();
+  }
+  c.restore();
+  gloss(c, -u * 0.1, -u * 0.3, u * 0.06, u * 0.35, 0.5);
+  [[-1, -0.25], [1, 0.3]].forEach(([k, a]) => { c.save(); c.translate(k * u * 0.05, u * 0.62); c.rotate(-Math.PI / 2 + k * 0.5 + a); leafShape(c, u * 0.7, u * 0.17); c.restore(); });
+  c.restore();
+}
+const WHOLE_FN = { corn: whCorn, acorn: whAcorn, apple: whApple, pepperoni: whPepperoni, strawberry: whStrawberry, banana: whBanana, kiwi: whKiwiCut, orange: whOrange, carrot: whCarrot, honey: whHoney, bamboo: whBamboo, meat: whMeat, fish: whFish, cheese: whCheese, ham: whHam, lettuce: whLettuce, tomato: whTomato, egg: whEgg };
 // 재료 칸 그림: 통째 그림이 있으면 그것, 없으면 토핑 그림 몇 개
 function iconFn(id) {
   if (WHOLE_FN[id]) return WHOLE_FN[id];
@@ -725,7 +797,157 @@ function drawBear(ctx, S, t, happy, mouth = 0) {
   ctx.fillStyle = 'rgba(244,114,182,0.3)'; [-1, 1].forEach(k => { ell(ctx, k * S * 0.2, hy + S * 0.08, S * 0.045, S * 0.028); ctx.fill(); });
   ctx.restore();
 }
-const GUEST_FN = { rabbit: drawRabbit, bear: drawBear, panda: drawPanda, lion: drawLion, cat: drawCat };
+const lw = (S, k = 0.01) => Math.max(1.5, S * k);
+const blush = (ctx, S, hy, dx = 0.18, a = 0.32) => { ctx.fillStyle = `rgba(244,114,182,${a})`; [-1, 1].forEach(k => { ell(ctx, k * S * dx, hy + S * 0.075, S * 0.045, S * 0.028); ctx.fill(); }); };
+// 강아지: 늘어진 갈색 귀 + 흰 주둥이 + 흔드는 꼬리
+function drawDog(ctx, S, t, happy, mouth = 0) {
+  ctx.save();
+  const wag = Math.sin(t * (happy ? 14 : 5)) * 0.35;
+  ctx.save(); ctx.translate(S * 0.26, -S * 0.14); ctx.rotate(-0.9 + wag);
+  ctx.fillStyle = '#c98b4c'; ell(ctx, 0, -S * 0.13, S * 0.045, S * 0.14); ctx.fill(); ctx.restore();
+  sitBody(ctx, S, t, happy, { body: '#e6b47c', dark: '#c98b4c', belly: '#fff6e8', paw: '#fff6e8', line: '#b07a40' });
+  const hy = -S * 0.78;
+  ctx.fillStyle = rg(ctx, -S * 0.07, hy - S * 0.1, S * 0.03, 0, hy, S * 0.32, [[0, '#f2c792'], [1, '#d99c5b']]);
+  ell(ctx, 0, hy, S * 0.27, S * 0.25); ctx.fill(); ctx.strokeStyle = '#b07a40'; ctx.lineWidth = lw(S); ctx.stroke();
+  // 한쪽 눈 얼룩
+  ctx.fillStyle = 'rgba(140,85,40,0.55)'; ell(ctx, S * 0.1, hy - S * 0.04, S * 0.08, S * 0.07, 0.3); ctx.fill();
+  [-1, 1].forEach(k => {
+    ctx.save(); ctx.translate(k * S * 0.22, hy - S * 0.13); ctx.rotate(k * (0.25 + Math.sin(t * 2 + k) * 0.05));
+    ctx.fillStyle = lg(ctx, 0, 0, 0, S * 0.3, [[0, '#8a5328'], [1, '#6b3d1a']]); ell(ctx, 0, S * 0.13, S * 0.085, S * 0.17); ctx.fill();
+    ctx.restore();
+  });
+  ctx.fillStyle = '#fff6e8'; ell(ctx, 0, hy + S * 0.1, S * 0.13, S * 0.095); ctx.fill();
+  friendlyEyes(ctx, S, hy - S * 0.02, t, 0.1);
+  ctx.fillStyle = '#2b1a10'; ell(ctx, 0, hy + S * 0.055, S * 0.05, S * 0.035); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.6)'; ell(ctx, -S * 0.015, hy + S * 0.045, S * 0.014, S * 0.009); ctx.fill();
+  smileMouth(ctx, S, hy + S * 0.125, '#2b1a10', mouth);
+  if (happy && mouth < 0.05) { ctx.fillStyle = '#f472b6'; ctx.beginPath(); ctx.roundRect(-S * 0.022, hy + S * 0.13, S * 0.044, S * 0.05, S * 0.02); ctx.fill(); }
+  blush(ctx, S, hy, 0.19, 0.28);
+  ctx.restore();
+}
+// 원숭이: 동그란 귀 + 하트 모양 얼굴 + 말린 꼬리
+function drawMonkey(ctx, S, t, happy, mouth = 0) {
+  ctx.save();
+  const sw = Math.sin(t * 2) * S * 0.03;
+  ctx.strokeStyle = '#7a4a26'; ctx.lineWidth = S * 0.045; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(S * 0.25, -S * 0.1); ctx.bezierCurveTo(S * 0.6, -S * 0.1, S * 0.62, -S * 0.5, S * 0.45 + sw, -S * 0.52); ctx.arc(S * 0.45 + sw, -S * 0.46, S * 0.06, -Math.PI / 2, Math.PI * 0.9, true); ctx.stroke();
+  sitBody(ctx, S, t, happy, { body: '#94603a', dark: '#6e4224', belly: '#f0d2ad', paw: '#e8c39b', line: '#5a3418' });
+  const hy = -S * 0.78;
+  [-1, 1].forEach(k => {
+    ctx.fillStyle = '#7a4a26'; ell(ctx, k * S * 0.29, hy, S * 0.1, S * 0.1); ctx.fill();
+    ctx.fillStyle = '#f0c9a0'; ell(ctx, k * S * 0.29, hy, S * 0.058, S * 0.058); ctx.fill();
+  });
+  ctx.fillStyle = rg(ctx, -S * 0.07, hy - S * 0.1, S * 0.03, 0, hy, S * 0.32, [[0, '#a8724a'], [1, '#6e4224']]);
+  ell(ctx, 0, hy, S * 0.27, S * 0.26); ctx.fill(); ctx.strokeStyle = '#5a3418'; ctx.lineWidth = lw(S); ctx.stroke();
+  ctx.fillStyle = '#f3d3b0';
+  [-1, 1].forEach(k => { ell(ctx, k * S * 0.085, hy - S * 0.03, S * 0.1, S * 0.1); ctx.fill(); });
+  ell(ctx, 0, hy + S * 0.09, S * 0.17, S * 0.12); ctx.fill();
+  friendlyEyes(ctx, S, hy - S * 0.03, t, 0.085);
+  ctx.fillStyle = '#5a3418'; [-1, 1].forEach(k => { ell(ctx, k * S * 0.018, hy + S * 0.055, S * 0.011, S * 0.008); ctx.fill(); });
+  smileMouth(ctx, S, hy + S * 0.12, '#5a3418', mouth);
+  blush(ctx, S, hy, 0.16, 0.3);
+  ctx.restore();
+}
+// 생쥐: 커다란 둥근 분홍 귀 + 가는 꼬리 + 수염
+function drawMouse(ctx, S, t, happy, mouth = 0) {
+  ctx.save();
+  ctx.strokeStyle = '#f2a6b4'; ctx.lineWidth = S * 0.02; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(S * 0.25, -S * 0.08); ctx.bezierCurveTo(S * 0.55, -S * 0.02, S * 0.62, -S * 0.3, S * 0.5 + Math.sin(t * 2.4) * S * 0.04, -S * 0.42); ctx.stroke();
+  sitBody(ctx, S, t, happy, { body: '#c9ced6', dark: '#9aa1ac', belly: '#f4f5f7', paw: '#f8c6d0', line: '#858c97' });
+  const hy = -S * 0.76;
+  [-1, 1].forEach(k => {
+    ctx.fillStyle = '#b3b9c3'; ell(ctx, k * S * 0.23, hy - S * 0.18, S * 0.16, S * 0.15); ctx.fill();
+    ctx.strokeStyle = '#858c97'; ctx.lineWidth = lw(S, 0.008); ctx.stroke();
+    ctx.fillStyle = rg(ctx, k * S * 0.23, hy - S * 0.18, 0, k * S * 0.23, hy - S * 0.18, S * 0.11, [[0, '#fbd0d9'], [1, '#f2a6b4']]); ell(ctx, k * S * 0.23, hy - S * 0.175, S * 0.105, S * 0.1); ctx.fill();
+  });
+  ctx.fillStyle = rg(ctx, -S * 0.07, hy - S * 0.1, S * 0.03, 0, hy, S * 0.3, [[0, '#dde1e7'], [1, '#a3aab5']]);
+  ell(ctx, 0, hy, S * 0.25, S * 0.23); ctx.fill(); ctx.strokeStyle = '#858c97'; ctx.lineWidth = lw(S); ctx.stroke();
+  ctx.fillStyle = '#f4f5f7'; ell(ctx, 0, hy + S * 0.1, S * 0.11, S * 0.08); ctx.fill();
+  friendlyEyes(ctx, S, hy - S * 0.01, t, 0.09);
+  ctx.fillStyle = '#f47c96'; ell(ctx, 0, hy + S * 0.06, S * 0.03, S * 0.024); ctx.fill();
+  smileMouth(ctx, S, hy + S * 0.115, '#6b5560', mouth);
+  ctx.strokeStyle = 'rgba(90,90,100,0.5)'; ctx.lineWidth = Math.max(1, S * 0.005);
+  [-1, 1].forEach(k => [-0.015, 0.015].forEach(q => { ctx.beginPath(); ctx.moveTo(k * S * 0.08, hy + S * (0.08 + q)); ctx.lineTo(k * S * 0.28, hy + S * (0.06 + q * 2.5)); ctx.stroke(); }));
+  blush(ctx, S, hy, 0.16, 0.38);
+  ctx.restore();
+}
+// 다람쥐: 등 뒤로 크게 말린 복슬 꼬리 + 뾰족 귀 + 크림색 배
+function drawSquirrel(ctx, S, t, happy, mouth = 0) {
+  ctx.save();
+  const sw = Math.sin(t * 1.8) * 0.05;
+  // 꼬리: 등 뒤로 S자로 올라가는 복슬복슬한 털 뭉치 (원을 겹쳐 그림)
+  ctx.save(); ctx.translate(S * 0.2, -S * 0.12); ctx.rotate(sw);
+  const tailPt = (k) => { const a = k * 3.6; return [S * (0.22 + Math.sin(a) * 0.16 + k * 0.08), -S * (k * 0.78 + Math.sin(k * 3) * 0.04), S * (0.1 + k * 0.1)]; };
+  [['#9a4f18', 1.12], ['#cf7a34', 1], ['#e9a05a', 0.62]].forEach(([col, m], li) => {
+    ctx.fillStyle = col;
+    for (let i = 0; i <= 18; i++) { const [x, y, r] = tailPt(i / 18); ell(ctx, x - (li === 2 ? r * 0.25 : 0), y - (li === 2 ? r * 0.2 : 0), r * m, r * m); ctx.fill(); }
+  });
+  ctx.strokeStyle = 'rgba(255,230,190,0.55)'; ctx.lineWidth = S * 0.012; ctx.lineCap = 'round';
+  for (let i = 2; i <= 17; i += 3) { const [x, y, r] = tailPt(i / 18); ctx.beginPath(); ctx.moveTo(x - r * 0.4, y); ctx.quadraticCurveTo(x, y - r * 0.5, x + r * 0.3, y - r * 0.2); ctx.stroke(); }
+  ctx.restore();
+  sitBody(ctx, S, t, happy, { body: '#d98a46', dark: '#a9601f', belly: '#fbe7c8', paw: '#f6d7aa', line: '#8f4f1a' });
+  const hy = -S * 0.78;
+  [-1, 1].forEach(k => {
+    ctx.fillStyle = '#c4732e'; ctx.beginPath(); ctx.moveTo(k * S * 0.08, hy - S * 0.18); ctx.lineTo(k * S * 0.2, hy - S * 0.36); ctx.lineTo(k * S * 0.25, hy - S * 0.12); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#7a3e12'; ctx.beginPath(); ctx.moveTo(k * S * 0.18, hy - S * 0.33); ctx.lineTo(k * S * 0.2, hy - S * 0.41); ctx.lineTo(k * S * 0.23, hy - S * 0.31); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#f6c2a4'; ctx.beginPath(); ctx.moveTo(k * S * 0.12, hy - S * 0.18); ctx.lineTo(k * S * 0.195, hy - S * 0.3); ctx.lineTo(k * S * 0.22, hy - S * 0.15); ctx.closePath(); ctx.fill();
+  });
+  ctx.fillStyle = rg(ctx, -S * 0.07, hy - S * 0.1, S * 0.03, 0, hy, S * 0.3, [[0, '#eba465'], [1, '#b8692a']]);
+  ell(ctx, 0, hy, S * 0.25, S * 0.23); ctx.fill(); ctx.strokeStyle = '#8f4f1a'; ctx.lineWidth = lw(S); ctx.stroke();
+  // 볼주머니
+  ctx.fillStyle = '#fbe7c8'; [-1, 1].forEach(k => { ell(ctx, k * S * 0.08, hy + S * 0.1, S * 0.09, S * 0.075); ctx.fill(); });
+  friendlyEyes(ctx, S, hy - S * 0.02, t, 0.095);
+  ctx.fillStyle = '#4a2410'; ell(ctx, 0, hy + S * 0.055, S * 0.026, S * 0.02); ctx.fill();
+  smileMouth(ctx, S, hy + S * 0.11, '#4a2410', mouth);
+  if (mouth < 0.05) { ctx.fillStyle = '#fff'; ctx.fillRect(-S * 0.015, hy + S * 0.12, S * 0.03, S * 0.025); }
+  blush(ctx, S, hy, 0.17, 0.3);
+  ctx.restore();
+}
+// 돼지: 분홍 몸 + 접힌 세모 귀 + 커다란 코 + 꼬불 꼬리
+function drawPig(ctx, S, t, happy, mouth = 0) {
+  ctx.save();
+  ctx.strokeStyle = '#f39aae'; ctx.lineWidth = S * 0.025; ctx.lineCap = 'round';
+  ctx.beginPath(); const tx = S * 0.36, ty = -S * 0.2; ctx.moveTo(S * 0.3, -S * 0.15);
+  for (let i = 0; i <= 24; i++) { const a = i / 24 * TAU * 1.5 + t * 2; ctx.lineTo(tx + i * S * 0.004 + Math.cos(a) * S * 0.04, ty + Math.sin(a) * S * 0.04); }
+  ctx.stroke();
+  sitBody(ctx, S, t, happy, { body: '#ffc7d2', dark: '#f39aae', belly: '#ffe1e7', paw: '#e88aa0', line: '#d97c92' });
+  const hy = -S * 0.78;
+  ctx.fillStyle = rg(ctx, -S * 0.07, hy - S * 0.1, S * 0.03, 0, hy, S * 0.33, [[0, '#ffd8e0'], [1, '#f5a3b5']]);
+  ell(ctx, 0, hy, S * 0.29, S * 0.26); ctx.fill(); ctx.strokeStyle = '#d97c92'; ctx.lineWidth = lw(S); ctx.stroke();
+  [-1, 1].forEach(k => {
+    ctx.save(); ctx.translate(k * S * 0.17, hy - S * 0.2); ctx.rotate(k * 0.35);
+    ctx.fillStyle = '#f5a3b5'; ctx.beginPath(); ctx.moveTo(-S * 0.08, S * 0.04); ctx.lineTo(k * S * 0.03, -S * 0.12); ctx.lineTo(S * 0.08, S * 0.04); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#d97c92'; ctx.lineWidth = lw(S, 0.008); ctx.stroke();
+    ctx.restore();
+  });
+  friendlyEyes(ctx, S, hy - S * 0.05, t, 0.11);
+  ctx.fillStyle = rg(ctx, -S * 0.02, hy + S * 0.04, 0, 0, hy + S * 0.06, S * 0.11, [[0, '#ffc2cf'], [1, '#ef8fa6']]);
+  ell(ctx, 0, hy + S * 0.06, S * 0.1, S * 0.07); ctx.fill(); ctx.strokeStyle = '#d97c92'; ctx.lineWidth = lw(S, 0.008); ctx.stroke();
+  ctx.fillStyle = '#b5546d'; [-1, 1].forEach(k => { ell(ctx, k * S * 0.035, hy + S * 0.06, S * 0.018, S * 0.026); ctx.fill(); });
+  smileMouth(ctx, S, hy + S * 0.16, '#a04460', mouth);
+  blush(ctx, S, hy, 0.19, 0.4);
+  ctx.restore();
+}
+// 병아리: 노란 솜털 + 작은 주황 부리 + 머리 위 깃털 한 가닥
+function drawChick(ctx, S, t, happy, mouth = 0) {
+  ctx.save();
+  sitBody(ctx, S, t, happy, { body: '#ffe066', dark: '#f5c518', belly: '#fff3b0', paw: '#f59e0b', line: '#d9a406', arm: '#fcd34d' });
+  const hy = -S * 0.78;
+  ctx.strokeStyle = '#f5c518'; ctx.lineWidth = S * 0.025; ctx.lineCap = 'round';
+  [-0.4, 0, 0.4].forEach(a => { ctx.beginPath(); ctx.moveTo(0, hy - S * 0.22); ctx.quadraticCurveTo(a * S * 0.15, hy - S * 0.35, a * S * 0.25 + S * 0.02, hy - S * 0.33); ctx.stroke(); });
+  ctx.fillStyle = rg(ctx, -S * 0.07, hy - S * 0.1, S * 0.03, 0, hy, S * 0.3, [[0, '#fff1a0'], [1, '#f7c92a']]);
+  ell(ctx, 0, hy, S * 0.26, S * 0.24); ctx.fill(); ctx.strokeStyle = '#d9a406'; ctx.lineWidth = lw(S); ctx.stroke();
+  friendlyEyes(ctx, S, hy - S * 0.03, t, 0.1);
+  // 부리 (먹을 때 위아래로 벌어진다)
+  const op = mouth > 0.05 ? mouth * S * 0.05 : 0, by = hy + S * 0.06;
+  ctx.fillStyle = '#f59e0b'; ctx.strokeStyle = '#c2700a'; ctx.lineWidth = Math.max(1, S * 0.006);
+  ctx.beginPath(); ctx.moveTo(-S * 0.055, by); ctx.lineTo(S * 0.055, by); ctx.lineTo(0, by - S * 0.05); ctx.closePath(); ctx.fill(); ctx.stroke();
+  if (op) { ctx.fillStyle = '#7f1d1d'; ctx.beginPath(); ctx.moveTo(-S * 0.045, by); ctx.lineTo(S * 0.045, by); ctx.lineTo(0, by + op); ctx.closePath(); ctx.fill(); }
+  ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.moveTo(-S * 0.045, by + op); ctx.lineTo(S * 0.045, by + op); ctx.lineTo(0, by + op + S * 0.04); ctx.closePath(); ctx.fill(); ctx.stroke();
+  blush(ctx, S, hy, 0.16, 0.35);
+  ctx.restore();
+}
+const GUEST_FN = { rabbit: drawRabbit, bear: drawBear, panda: drawPanda, lion: drawLion, cat: drawCat, dog: drawDog, monkey: drawMonkey, mouse: drawMouse, squirrel: drawSquirrel, pig: drawPig, chick: drawChick };
 
 // ═══════════════ 배경 ═══════════════
 function layout(W, H) {
@@ -855,7 +1077,7 @@ export default function KitchenGame({ audio, speak }) {
   const trayIds = () => {
     const g = G.current, fav = guest().fav;
     if (g.phase !== 'cook') return [];
-    if ((g.menu === 'sandwich' && g.step === 'stack') || (g.menu === 'pizza' && g.step === 'top') || (g.menu === 'skewer' && g.step === 'stick')) return [...MENU_BY_ID[g.menu].items, fav];
+    if ((g.menu === 'sandwich' && g.step === 'stack') || (g.menu === 'pizza' && g.step === 'top') || (g.menu === 'skewer' && g.step === 'stick')) return [...new Set([...MENU_BY_ID[g.menu].items, fav])];   // 좋아하는 재료가 이미 메뉴에 있으면(치즈·바나나 등) 한 칸만
     return [];
   };
 

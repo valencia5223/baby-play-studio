@@ -6,7 +6,13 @@ export const KITCHEN_GUESTS = [
   { id: 'bear', name: '곰', fav: 'honey' },
   { id: 'panda', name: '판다', fav: 'bamboo' },
   { id: 'lion', name: '사자', fav: 'meat' },
-  { id: 'cat', name: '고양이', fav: 'fish' }
+  { id: 'cat', name: '고양이', fav: 'fish' },
+  { id: 'dog', name: '강아지', fav: 'pepperoni' },
+  { id: 'monkey', name: '원숭이', fav: 'banana' },
+  { id: 'mouse', name: '생쥐', fav: 'cheese' },
+  { id: 'squirrel', name: '다람쥐', fav: 'acorn' },
+  { id: 'pig', name: '돼지', fav: 'apple' },
+  { id: 'chick', name: '병아리', fav: 'corn' }
 ];
 export const GUEST_BY_ID = Object.fromEntries(KITCHEN_GUESTS.map(g => [g.id, g]));
 
@@ -15,7 +21,8 @@ export const INGREDIENTS = {
   pepperoni: { name: '소시지' }, pepper: { name: '피망' }, mushroom: { name: '버섯' }, corn: { name: '옥수수' }, olive: { name: '올리브' },
   strawberry: { name: '딸기' }, banana: { name: '바나나' }, kiwi: { name: '키위' }, orange: { name: '귤' },
   // 손님이 좋아하는 재료 (모든 메뉴에 하나씩 더 나온다)
-  carrot: { name: '당근' }, honey: { name: '꿀' }, bamboo: { name: '대나무 잎' }, meat: { name: '고기' }, fish: { name: '생선' }
+  carrot: { name: '당근' }, honey: { name: '꿀' }, bamboo: { name: '대나무 잎' }, meat: { name: '고기' }, fish: { name: '생선' },
+  acorn: { name: '도토리' }, apple: { name: '사과' }
 };
 
 export const KITCHEN_MENUS = [
