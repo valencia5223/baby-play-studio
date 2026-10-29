@@ -186,8 +186,21 @@ export const VOICE = {
   kitchenMenu: (m) => ({
     sandwich: '샌드위치를 만들어요! 빵 위에 재료를 콕콕 올려 보세요!',
     pizza: '피자를 만들어요! 빨간 소스를 쓱쓱 발라 보세요!',
-    skewer: '과일 꼬치를 만들어요! 과일을 콕 눌러서 썰어 보세요!'
+    skewer: '과일 꼬치를 만들어요! 과일을 콕 눌러서 썰어 보세요!',
+    pancake: '팬케이크를 만들어요! 팬을 콕 눌러서 반죽을 부어 보세요!',
+    cake: '케이크를 만들어요! 하얀 생크림을 쓱쓱 발라 보세요!',
+    kimbap: '김밥을 만들어요! 김 위에 밥을 쓱쓱 펴 보세요!',
+    icecream: '아이스크림을 만들어요! 좋아하는 맛을 콕콕 올려 보세요!'
   })[m.id],
+  kitchenPour: () => '주르륵! 반죽을 부어요!',
+  kitchenFlip: () => '보글보글! 톡 눌러서 뒤집어 보세요!',
+  kitchenFlipped: () => '휙! 뒤집었어요!',
+  kitchenOneMore: () => '한 장 더 만들어요!',
+  kitchenCandle: () => '초를 꽂아요! 반짝반짝!',
+  kitchenBlow: () => '후우! 촛불을 껐어요!',
+  kitchenFill: () => '이제 재료를 콕콕 올려 보세요!',
+  kitchenRoll: () => '돌돌돌 말아요!',
+  kitchenCut: () => '칼로 콕콕 썰어 보세요!',
   kitchenIng: (id) => `${INGREDIENTS[id].name}!`,
   kitchenFav: (g) => `와아! ${INGREDIENTS[g.fav].name}! ${attachJosa(g.name, '이/가')} 제일 좋아하는 거예요!`,
   kitchenFull: () => '와아, 가득 찼어요!',
@@ -259,7 +272,8 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   KITCHEN_GUESTS.forEach(g => lines.push(VOICE.kitchenArrive(g), VOICE.kitchenFav(g), VOICE.kitchenYum(g), VOICE.kitchenYumFav(g)));
   KITCHEN_MENUS.forEach(m => lines.push(VOICE.kitchenMenu(m)));
   Object.keys(INGREDIENTS).forEach(id => lines.push(VOICE.kitchenIng(id)));
-  lines.push(VOICE.kitchenFull(), VOICE.kitchenBread(), VOICE.kitchenTopping(), VOICE.kitchenBake(), VOICE.kitchenDing(), VOICE.kitchenStick(), VOICE.kitchenServe());
+  lines.push(VOICE.kitchenFull(), VOICE.kitchenBread(), VOICE.kitchenTopping(), VOICE.kitchenBake(), VOICE.kitchenDing(), VOICE.kitchenStick(), VOICE.kitchenServe(),
+    VOICE.kitchenPour(), VOICE.kitchenFlip(), VOICE.kitchenFlipped(), VOICE.kitchenOneMore(), VOICE.kitchenCandle(), VOICE.kitchenBlow(), VOICE.kitchenFill(), VOICE.kitchenRoll(), VOICE.kitchenCut());
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
   fruits.forEach(i => lines.push(VOICE.tasty(i)));
   animals.forEach(i => lines.push(VOICE.quiz(i.name, false)));
