@@ -9,6 +9,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { KITCHEN_GUESTS, GUEST_BY_ID, INGREDIENTS, KITCHEN_MENUS, MENU_BY_ID, SANDWICH_MAX, SKEWER_SLOTS, PIZZA_MAX, ICE_FLAVORS, ICE_MAX, PANCAKE_COUNT, KIMBAP_MAX, KIMBAP_SLICES, DECO_MAX } from './kitchenData.js';
 import { drawPanda, drawLion, drawCat, sitBody, friendlyEyes, smileMouth } from './BirthdayParty.jsx';
+import { BDAY_MP3, BDAY_MP3_LINES, bdayLyrics } from './birthdayData.js';
+// 생일 노래 MP3 에서 트는 구간 (1절: 가사는 7.1초~19.6초, 앞 반주 조금 포함)
+const SONG_FROM = 5.0, SONG_TO = 20.3;
 import { VOICE } from './voiceLines.js';
 
 const TAU = Math.PI * 2;
@@ -1522,7 +1525,7 @@ export default function KitchenGame({ audio, speak }) {
   // 게임 상태는 매 화면 바뀌므로 React 상태가 아닌 ref 에 두고(처음 effect 에서 만듦), 버튼에 필요한 것만 ui 로 옮긴다(sync)
   const G = useRef(null);
   const [ui, setUi] = useState({ phase: 'arrive', menu: null, step: null, n: 0, land: true, guest: KITCHEN_GUESTS[0].id });
-  const sync = () => { const g = G.current, st = g.st; setUi({ phase: g.phase, menu: g.menu, step: g.step, sub: st.pan ? st.pan.state : null, n: st.layers.length + st.toppings.length + st.skewer.length + st.scoops.length + st.syrup, land: g.L ? g.L.land : true, guest: g.order[g.gi] }); };
+  const sync = () => { const g = G.current, st = g.st; setUi({ phase: g.phase, menu: g.menu, step: g.step, sub: st.pan ? st.pan.state : null, n: st.layers.length + st.toppings.length + st.skewer.length + st.scoops.length + st.syrup, land: g.L ? g.L.land : true, guest: g.order[g.gi], lyric: g.lyric || null }); };
   const later = (fn, ms) => { const g = G.current; const id = setTimeout(() => { g.timers = g.timers.filter(x => x !== id); fn(); }, ms); g.timers.push(id); };
   const say = (text) => { if (speak && text) speak(text); };
   const guest = () => GUEST_BY_ID[G.current.order[G.current.gi]];
@@ -1752,18 +1755,23 @@ export default function KitchenGame({ audio, speak }) {
     sync();
   };
   const startEat = () => {
-    const g = G.current; g.phase = 'eat'; g.phaseT = g.t; g.bites = [];
-    // 케이크는 먼저 촛불을 후 분다
-    const blow = g.menu === 'cake' && g.st.candles.some(c => c.lit);
-    g.biteAt = blow ? [1.9, 2.9, 3.9] : [0.7, 1.7, 2.7]; g.blowAt = blow ? 0.9 : null;
-    g.biteAt.forEach((at, k) => later(() => {
+    const g = G.current; g.phase = 'eat'; g.phaseT = g.t; g.bites = []; g.blowAt = null; g.song = null; g.biteAt = [];
+    // 케이크(촛불 켜짐): 생일 축하 노래 1절 → 끝나면 촛불을 후 불고 → 냠냠
+    if (g.menu === 'cake' && g.st.candles.some(c => c.lit)) { g.song = { t0: g.t + 0.3, done: false }; later(() => { if (G.current.phase === 'eat') playSong(); }, 300); }
+    else scheduleBites(0);
+    sync();
+  };
+  // delay 초 뒤부터 세 입 먹고 끝
+  const scheduleBites = (delay) => {
+    const g = G.current, now = g.t - g.phaseT;
+    g.biteAt = [0.7, 1.7, 2.7].map(x => now + delay + x);
+    [0.7, 1.7, 2.7].forEach((x, k) => later(() => {
       if (G.current.phase !== 'eat') return;
       g.bites.push(k); audio.playNoise(0.09, 0.5, 1800, 0.9); audio.playYum();
       const L = g.L, sc = L.S * 0.35 / L.R;
       const cols = CRUMBS[g.menu] || ['#e9c48f', '#86d057', '#fcd34d'];
       crumbs(L.serveX + L.R * sc * (0.5 - k * 0.5), L.serveY - L.R * sc * 0.4, 10, cols);
-    }, at * 1000));
-    if (blow) later(() => { audio.playNoise(0.7, 0.35, 900, 0.5); say(VOICE.kitchenBlow()); }, 400);
+    }, (delay + x) * 1000));
     later(() => {
       if (G.current.phase !== 'eat') return;
       g.phase = 'end'; g.happyUntil = g.t + 999; g.phaseT = g.t;
@@ -1771,12 +1779,33 @@ export default function KitchenGame({ audio, speak }) {
       audio.playFanfare();
       say(g.st.hasFav ? VOICE.kitchenYumFav(guest()) : VOICE.kitchenYum(guest()));
       sync();
-    }, (g.biteAt[2] + 0.8) * 1000);
+    }, (delay + 3.5) * 1000);
+  };
+  // 노래가 끝나면: 촛불 후~ (그림 루프가 blowAt 에 불을 끄고 연기를 낸다) → 먹기
+  const afterSong = () => {
+    const g = G.current; if (!g.song || g.song.done) return;
+    g.song.done = true; g.lyric = null;
+    const a = songRef.current; if (a) { try { a.pause(); } catch { /* 무시 */ } }
+    g.blowAt = g.t - g.phaseT + 0.9;
+    later(() => { if (G.current.phase === 'eat') { audio.playNoise(0.7, 0.35, 900, 0.5); say(VOICE.kitchenBlow()); } }, 400);
+    scheduleBites(1.2);
     sync();
   };
-  const again = () => { const g = G.current; g.phase = 'menu'; g.menu = null; g.step = null; g.st = newCook(); g.bites = []; g.happyUntil = 0; g.fly = []; sync(); };
-  const nextGuest = () => { const g = G.current; g.timers.forEach(clearTimeout); g.timers = []; g.gi = (g.gi + 1) % g.order.length; if (g.gi === 0) g.order = shuffle(g.order); arrive(); };
-  const backToMenu = () => { const g = G.current; g.timers.forEach(clearTimeout); g.timers = []; again(); };
+  // 생일 노래: 넣어 둔 MP3(public/birthday) 1절만. 소리를 껐거나 못 틀면 가사만 같은 시간 동안 보여 준다
+  const songRef = useRef(null);
+  const stopSong = () => { const a = songRef.current; if (a) { try { a.pause(); } catch { /* 무시 */ } } const g = G.current; if (g && g.lyric) { g.lyric = null; sync(); } };
+  const playSong = () => {
+    if (audio.muted) return;
+    if (!songRef.current) songRef.current = new Audio();
+    const a = songRef.current;
+    a.onloadedmetadata = () => { if (a.currentTime < SONG_FROM - 0.5) a.currentTime = SONG_FROM; };
+    a.src = `${BDAY_MP3}#t=${SONG_FROM}`; a.volume = 0;
+    const p = a.play(); if (p && p.catch) p.catch(() => {});
+  };
+  useEffect(() => () => { const a = songRef.current; if (a) { try { a.pause(); } catch { /* 무시 */ } } }, []);
+  const again = () => { stopSong(); const g = G.current; g.phase = 'menu'; g.menu = null; g.step = null; g.st = newCook(); g.bites = []; g.happyUntil = 0; g.fly = []; sync(); };
+  const nextGuest = () => { stopSong(); const g = G.current; g.timers.forEach(clearTimeout); g.timers = []; g.gi = (g.gi + 1) % g.order.length; if (g.gi === 0) g.order = shuffle(g.order); arrive(); };
+  const backToMenu = () => { stopSong(); const g = G.current; g.timers.forEach(clearTimeout); g.timers = []; again(); };
 
   // 소스 바르기
   const paintSauce = (x, y) => {
@@ -1876,7 +1905,19 @@ export default function KitchenGame({ audio, speak }) {
         let mouth = 0;
         if (g.phase === 'eat') {
           const e = t - g.phaseT;
-          if (g.blowAt != null && e > 0.3 && e < g.blowAt + 0.3) mouth = 0.35;
+          if (g.blowAt != null && e > g.blowAt - 0.6 && e < g.blowAt + 0.3) mouth = 0.35;
+          if (g.song && !g.song.done && t >= g.song.t0) {
+            const a = songRef.current, live = !!(a && a.src && !a.paused && a.currentTime >= SONG_FROM - 0.5);
+            const sec = live ? a.currentTime : SONG_FROM + (t - g.song.t0);
+            if (live) a.volume = clamp01(Math.min((sec - SONG_FROM) / 0.5, (SONG_TO - sec) / 0.7));
+            const k = BDAY_MP3_LINES.slice(0, 4).findIndex(([s0, s1]) => sec >= s0 && sec < s1);
+            const text = k >= 0 ? `🎵 ${bdayLyrics(gu)[k].text} 🎵` : '🎵 🎵 🎵';
+            if (text !== g.lyric) { g.lyric = text; sync(); }
+            g.happyUntil = t + 0.2;
+            if (k >= 0) mouth = Math.max(mouth, 0.22 * Math.abs(Math.sin(sec * 4)));
+            if (Math.random() < 0.04) g.parts.push({ kind: 'note', x: L.gx + (Math.random() - 0.5) * L.S * 1.2, y: L.gy - L.S * 1.0, vx: (Math.random() - 0.5) * 20, vy: -45, born: t, life: 2, col: ['#f472b6', '#8b5cf6', '#f59e0b', '#22c55e'][Math.floor(Math.random() * 4)], ch: Math.random() < 0.5 ? '♪' : '♫' });
+            if (sec >= SONG_TO || (a && a.ended)) afterSong();
+          }
           g.biteAt.forEach(at => { const k = (e - (at - 0.4)) / 0.5; if (k > 0 && k < 1) mouth = Math.max(mouth, Math.sin(k * Math.PI)); const ch = e - at; if (ch > 0.1 && ch < 0.7) mouth = Math.max(mouth, 0.25 * Math.abs(Math.sin(ch * 18))); });
         }
         const happy = t < g.happyUntil;
@@ -2077,6 +2118,7 @@ export default function KitchenGame({ audio, speak }) {
           if (p.kind === 'crumb') { p.vy += 500 * dt; ctx.fillStyle = p.col; ctx.globalAlpha = a; ell(ctx, p.x, p.y, p.r, p.r * 0.8); ctx.fill(); }
           else if (p.kind === 'star') { ctx.globalAlpha = a; ctx.fillStyle = '#fde047'; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(e * 5); ctx.beginPath(); for (let i = 0; i < 10; i++) { const rr = i % 2 ? 3 : 8; ctx.lineTo(Math.cos(i / 10 * TAU) * rr, Math.sin(i / 10 * TAU) * rr); } ctx.fill(); ctx.restore(); }
           else if (p.kind === 'heart') { ctx.globalAlpha = a; drawHeart(ctx, p.x + Math.sin(e * 4) * 10, p.y, 16, '#f472b6'); }
+          else if (p.kind === 'note') { ctx.globalAlpha = a; ctx.fillStyle = p.col; ctx.font = `bold ${Math.round(L.S * 0.16)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText(p.ch, p.x + Math.sin(e * 4) * 8, p.y); }
           else if (p.kind === 'smoke') { ctx.globalAlpha = a * 0.45; ctx.fillStyle = '#9ca3af'; ell(ctx, p.x + Math.sin(e * 5) * 4, p.y, p.r * (1 + e * 1.5), p.r * (1 + e * 1.5)); ctx.fill(); }
           else if (p.kind === 'steam') { ctx.globalAlpha = a * 0.22; ctx.fillStyle = '#ffffff'; ell(ctx, p.x, p.y, p.r * (1 + e), p.r * (1 + e)); ctx.fill(); }
           ctx.globalAlpha = 1;
@@ -2112,7 +2154,7 @@ export default function KitchenGame({ audio, speak }) {
     'kimbap:rice': '🍚 손가락으로 쓱쓱 밥을 펴요', 'kimbap:fill': '🥕 재료를 콕! 눌러서 올려요', 'kimbap:roll': '🌀 돌돌돌 말아요', 'kimbap:cut': '🔪 김밥을 콕! 눌러서 썰어요',
     'icecream:scoop': '🍦 좋아하는 맛을 콕! 눌러서 쌓아요'
   };
-  const hint = ui.phase === 'cook' ? (HINT[`${ui.menu}:${ui.step}:${ui.sub}`] || HINT[`${ui.menu}:${ui.step}`]) : ui.phase === 'serve' ? (ui.land ? '👈 접시를 손님에게 갖다 주세요!' : '👆 접시를 손님에게 갖다 주세요!') : ui.phase === 'eat' || ui.phase === 'carry' ? '😋 냠냠 먹는 중...' : null;
+  const hint = ui.phase === 'cook' ? (HINT[`${ui.menu}:${ui.step}:${ui.sub}`] || HINT[`${ui.menu}:${ui.step}`]) : ui.phase === 'serve' ? (ui.land ? '👈 접시를 손님에게 갖다 주세요!' : '👆 접시를 손님에게 갖다 주세요!') : ui.phase === 'eat' || ui.phase === 'carry' ? (ui.lyric || '😋 냠냠 먹는 중...') : null;
   const workArea = ui.land ? { left: '34%', right: '1.5%', top: '6%', bottom: '6%' } : { left: '3%', right: '3%', top: '39%', bottom: '3%' };
 
   return (
