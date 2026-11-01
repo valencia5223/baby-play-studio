@@ -7,7 +7,8 @@
 //  - 음성은 남성 아나운서 MP3 (VOICE.kitchen*, npm run voices)
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
-import { KITCHEN_GUESTS, GUEST_BY_ID, INGREDIENTS, KITCHEN_MENUS, MENU_BY_ID, SANDWICH_MAX, SKEWER_SLOTS, PIZZA_MAX, ICE_FLAVORS, ICE_MAX, PANCAKE_COUNT, KIMBAP_MAX, KIMBAP_SLICES, DECO_MAX, JUICE_MAX, COOKIE_CUTTERS, COOKIE_MAX, RB_MAX, RB_PRESS, DONUT_GLAZES } from './kitchenData.js';
+import { KITCHEN_GUESTS, GUEST_BY_ID, INGREDIENTS, KITCHEN_MENUS, MENU_BY_ID, SANDWICH_MAX, SKEWER_SLOTS, PIZZA_MAX, ICE_FLAVORS, ICE_MAX, PANCAKE_COUNT, KIMBAP_MAX, KIMBAP_SLICES, DECO_MAX, JUICE_MAX, COOKIE_CUTTERS, COOKIE_MAX, RB_MAX, RB_PRESS, DONUT_GLAZES,
+  OMU_SAUCES, COTTON_MAX, MANDU_MAX, MANDU_PLEATS, HOTDOG_ROLLS, BURGER_MAX } from './kitchenData.js';
 import { drawPanda, drawLion, drawCat, sitBody, friendlyEyes, smileMouth } from './BirthdayParty.jsx';
 import { BDAY_MP3, BDAY_MP3_LINES, bdayLyrics } from './birthdayData.js';
 // 생일 노래 MP3 에서 트는 구간 (1절: 가사는 7.1초~19.6초, 앞 반주 조금 포함)
@@ -817,6 +818,16 @@ function drawFood(ctx, menu, st, x, y, R, t, opts) {
   else if (menu === 'riceball') drawRiceball(ctx, { ...st, shapeK: 1, nori: 1, press: RB_PRESS }, x, y, R, t, opts);
   else if (menu === 'ramen') drawRamenBowl(ctx, st, x, y, R, t, opts);
   else if (menu === 'donut') drawDonuts(ctx, st, x, y, R, t, opts);
+  else if (menu === 'omurice') drawOmurice(ctx, st, x, y, R, t, opts);
+  else if (menu === 'hotdog') drawHotdog(ctx, st, x, y, R, t, opts);
+  else if (menu === 'cupcake') drawCupcakes(ctx, st, x, y, R, t, opts);
+  else if (menu === 'cotton') drawCottonCandy(ctx, st, x, y, R, t, opts);
+  else if (menu === 'mandu') drawManduPlate(ctx, st, x, y, R, t, opts);
+  else if (menu === 'tteokbokki') drawTteokbokki(ctx, st, x, y, R, t, opts);
+  else if (menu === 'burger') drawBurger(ctx, st, x, y, R, t, opts);
+  else if (menu === 'spaghetti') drawSpaghetti(ctx, st, x, y, R, t, { ...opts, fork: true });
+  else if (menu === 'curry') drawCurryPlate(ctx, st, x, y, R, t, opts);
+  else if (menu === 'coffee') drawCoffeeCup(ctx, st, x, y + R * 0.6, R * 1.15, t);
 }
 // 먹을 때 남겨 두는 그릇
 function drawDish(ctx, menu, x, y, R) {
@@ -832,6 +843,13 @@ function drawDish(ctx, menu, x, y, R) {
   else if (menu === 'riceball') drawPlate(ctx, x, rbBase(y, R) + R * 0.04, R * 1.2);
   else if (menu === 'ramen') drawBowlShell(ctx, x, y, R, true);
   else if (menu === 'donut') drawRoundPlate(ctx, x, y, R * 1.12);
+  else if (menu === 'omurice' || menu === 'curry') drawOvalPlate(ctx, x, y, R * 1.3, R * 0.95);
+  else if (menu === 'hotdog') drawOvalPlate(ctx, x, y, R * 1.35, R * 0.75);
+  else if (menu === 'cupcake') drawPlate(ctx, x, y + R * 0.48, R * 1.35);
+  else if (menu === 'mandu') drawSteamer(ctx, x, y, R * 1.1);
+  else if (menu === 'tteokbokki') drawRoundPlate(ctx, x, y, R * 1.1);
+  else if (menu === 'burger') drawPlate(ctx, x, burgerGeom(x, y, R).plateY, R * 1.1);
+  else if (menu === 'spaghetti') drawRoundPlate(ctx, x, y, R * 1.12);
 }
 
 // ═══════════════ 새 재료 (팬케이크·케이크·김밥·아이스크림) ═══════════════
@@ -1673,6 +1691,559 @@ Object.assign(WHOLE_FN, {
   glChoco: whGlaze('glChoco'), glStrawberry: whGlaze('glStrawberry'), glVanilla: whGlaze('glVanilla')
 });
 
+// ═══════════════ 새 요리 2 (오므라이스·핫도그·컵케이크·솜사탕·만두·떡볶이·햄버거·스파게티·카레라이스·커피) ═══════════════
+const hexA = (h, a) => rgbStr(hexRgb(h), a);
+const shadeHex = (h, k) => rgbStr(shade(hexRgb(h), k));
+function drawOvalPlate(ctx, x, y, rx, ry) {
+  ctx.save(); shadowOn(ctx, rx * 0.08, rx * 0.03, 'rgba(60,40,20,0.3)');
+  ctx.fillStyle = rg(ctx, x - rx * 0.3, y - ry * 0.3, 0, x, y, rx, [[0, '#ffffff'], [0.8, '#f1ede6'], [1, '#d9d3c9']]); ell(ctx, x, y, rx, ry); ctx.fill(); shadowOff(ctx);
+  ctx.strokeStyle = 'rgba(160,150,135,0.35)'; ctx.lineWidth = Math.max(1, rx * 0.012); ell(ctx, x, y, rx * 0.78, ry * 0.78); ctx.stroke();
+  ctx.strokeStyle = 'rgba(244,114,182,0.4)'; ctx.lineWidth = rx * 0.02; ell(ctx, x, y, rx * 0.92, ry * 0.92); ctx.stroke();
+  ctx.restore();
+}
+
+// ── 짜서 그리기 (케첩·머스터드·마요네즈·크림): 손가락이 지나간 길을 그대로 소스로 ──
+const SAUCE = { ketchup: ['#b5121b', '#e8343e', 0.055], mustard: ['#d39a00', '#ffd84a', 0.05], mayo: ['#e2d9b8', '#fffdf3', 0.05], creamWhite: ['#e6dccb', '#ffffff', 0.15], creamPink: ['#ee7fa6', '#ffd1e1', 0.15], creamChoco: ['#4e2812', '#8e5634', 0.15] };
+const SAUCE_IDS = Object.keys(SAUCE), CREAM_IDS = ['creamWhite', 'creamPink', 'creamChoco'];
+function drawStrokes(ctx, strokes, x, y, R) {
+  (strokes || []).forEach(s => {
+    const [dark, light, w] = SAUCE[s.id] || SAUCE.ketchup, pts = s.pts; if (!pts || !pts.length) return;
+    const path = () => { ctx.beginPath(); pts.forEach(([ux, uy], i) => (i ? ctx.lineTo(x + ux * R, y + uy * R) : ctx.moveTo(x + ux * R, y + uy * R))); if (pts.length === 1) ctx.lineTo(x + pts[0][0] * R + 0.5, y + pts[0][1] * R); };
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    shadowOn(ctx, R * 0.03, R * 0.015, 'rgba(60,20,10,0.3)'); path(); ctx.strokeStyle = dark; ctx.lineWidth = R * w; ctx.stroke(); shadowOff(ctx);
+    path(); ctx.strokeStyle = light; ctx.lineWidth = R * w * 0.62; ctx.stroke();
+    if (CREAM_IDS.includes(s.id)) { ctx.setLineDash([R * w * 0.22, R * w * 0.3]); path(); ctx.strokeStyle = hexA(dark, 0.45); ctx.lineWidth = R * w * 0.85; ctx.stroke(); ctx.setLineDash([]); }
+    ctx.translate(-R * w * 0.12, -R * w * 0.16); path(); ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = R * w * 0.16; ctx.stroke();
+    ctx.restore();
+  });
+}
+// 짜는 병 (케첩·머스터드·마요네즈)
+function whBottle(col, cap) {
+  return (c, u) => {
+    c.save(); c.rotate(0.25); shadowOn(c, u * 0.1, u * 0.05);
+    c.fillStyle = lg(c, -u * 0.38, 0, u * 0.38, 0, [[0, shadeHex(col, -0.25)], [0.45, col], [1, shadeHex(col, -0.35)]]);
+    c.beginPath(); c.roundRect(-u * 0.36, -u * 0.45, u * 0.72, u * 1.3, u * 0.2); c.fill(); shadowOff(c);
+    c.fillStyle = cap; c.beginPath(); c.moveTo(-u * 0.3, -u * 0.43); c.lineTo(u * 0.3, -u * 0.43); c.lineTo(u * 0.1, -u * 0.72); c.lineTo(-u * 0.1, -u * 0.72); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-u * 0.05, -u * 0.72); c.lineTo(u * 0.05, -u * 0.72); c.lineTo(u * 0.02, -u * 0.92); c.lineTo(-u * 0.02, -u * 0.92); c.closePath(); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.85)'; c.beginPath(); c.roundRect(-u * 0.27, -u * 0.05, u * 0.54, u * 0.4, u * 0.06); c.fill();
+    c.fillStyle = col; ell(c, 0, u * 0.15, u * 0.12, u * 0.12); c.fill();
+    gloss(c, -u * 0.2, -u * 0.2, u * 0.06, u * 0.25, 0.6);
+    c.restore();
+  };
+}
+// 짤주머니 (크림)
+function whPipingBag(col) {
+  return (c, u) => {
+    c.save(); c.rotate(0.5); shadowOn(c, u * 0.1, u * 0.05);
+    c.fillStyle = lg(c, -u * 0.5, 0, u * 0.5, 0, [[0, 'rgba(225,235,245,0.95)'], [0.5, 'rgba(255,255,255,0.95)'], [1, 'rgba(200,215,230,0.95)']]);
+    c.beginPath(); c.moveTo(-u * 0.5, -u * 0.75); c.quadraticCurveTo(0, -u * 0.95, u * 0.5, -u * 0.75); c.lineTo(u * 0.08, u * 0.6); c.lineTo(-u * 0.08, u * 0.6); c.closePath(); c.fill(); shadowOff(c);
+    c.save(); c.clip(); c.fillStyle = col; c.beginPath(); c.moveTo(-u * 0.42, -u * 0.35); c.lineTo(u * 0.42, -u * 0.35); c.lineTo(u * 0.08, u * 0.6); c.lineTo(-u * 0.08, u * 0.6); c.closePath(); c.fill(); c.restore();
+    c.fillStyle = '#cbd5e1'; c.beginPath(); c.moveTo(-u * 0.1, u * 0.55); c.lineTo(u * 0.1, u * 0.55); c.lineTo(u * 0.04, u * 0.82); c.lineTo(-u * 0.04, u * 0.82); c.closePath(); c.fill();
+    gloss(c, -u * 0.25, -u * 0.5, u * 0.08, u * 0.3, 0.6);
+    c.restore();
+  };
+}
+
+// ── 오므라이스 (위에서) ──
+function drawOmurice(ctx, st, x, y, R, t, opts = {}) {
+  if (!opts.noPlate) drawOvalPlate(ctx, x, y, R * 1.3, R * 0.95);
+  const rx = R * 0.92, ry = R * 0.6;
+  ctx.save(); shadowOn(ctx, R * 0.06, R * 0.03);
+  ctx.fillStyle = rg(ctx, x - rx * 0.3, y - ry * 0.4, 0, x, y, rx, [[0, '#f6a35c'], [0.7, '#e0763a'], [1, '#c4582a']]); ell(ctx, x, y, rx, ry); ctx.fill(); shadowOff(ctx);
+  ctx.save(); ell(ctx, x, y, rx, ry); ctx.clip();
+  speckle(ctx, 611, 140, x - rx, y - ry, x + rx, y + ry, R * 0.012, R * 0.03, ['rgba(255,240,210,0.75)', 'rgba(150,60,20,0.35)', 'rgba(255,200,140,0.6)']);
+  const r = rng(613);
+  (st.layers || []).forEach((l, i) => { for (let k = 0; k < 3; k++) { const a = r() * TAU, d = Math.sqrt(r()) * 0.8; drawDeco(ctx, l.id, x + Math.cos(a) * d * rx, y + Math.sin(a) * d * ry, R * 0.1, r() * TAU, (i + k) % 3); } });
+  ctx.restore(); ctx.restore();
+  const eg = st.egg || 0;
+  if (eg > 0) {
+    const erx = R * 0.98, ery = R * 0.64;
+    ctx.save(); ctx.beginPath(); ctx.rect(x - erx - 4, y - ery - 4, (erx * 2 + 8) * easeOut(eg), ery * 2 + 8); ctx.clip();
+    shadowOn(ctx, R * 0.08, R * 0.04);
+    ctx.beginPath(); for (let i = 0; i <= 48; i++) { const a = i / 48 * TAU, w = 1 + 0.03 * Math.sin(a * 5 + 1); ctx.lineTo(x + Math.cos(a) * erx * w, y + Math.sin(a) * ery * w); } ctx.closePath();
+    ctx.fillStyle = rg(ctx, x - erx * 0.3, y - ery * 0.5, 0, x, y, erx * 1.05, [[0, '#fff3a8'], [0.55, '#ffd84d'], [0.9, '#f2b632'], [1, '#d99a1e']]); ctx.fill(); shadowOff(ctx);
+    ctx.strokeStyle = 'rgba(210,150,30,0.35)'; ctx.lineWidth = R * 0.02;
+    [[-0.5, 0.1], [0, -0.25], [0.45, 0.2]].forEach(([qx, qy]) => { ctx.beginPath(); ctx.arc(x + qx * erx, y + qy * ery, R * 0.25, 0.3, 1.6); ctx.stroke(); });
+    gloss(ctx, x - erx * 0.35, y - ery * 0.45, erx * 0.35, ery * 0.12, 0.6, -0.15);
+    ctx.restore();
+  }
+  drawStrokes(ctx, st.strokes, x, y, R);
+}
+
+// ── 핫도그 (위에서) ──
+function drawSausage(ctx, x, y, hl, hr, k, marks, rot = 0) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); shadowOn(ctx, hr * 0.4, hr * 0.2);
+  ctx.fillStyle = lg(ctx, 0, -hr, 0, hr, [[0, mixHex('#f7b3a8', '#d97a46', k)], [0.5, mixHex('#e88a80', '#b04a20', k)], [1, mixHex('#c96a62', '#6e2a0e', k)]]);
+  ctx.beginPath(); ctx.roundRect(-hl, -hr, hl * 2, hr * 2, hr); ctx.fill(); shadowOff(ctx);
+  ctx.strokeStyle = `rgba(60,20,5,${0.55 * k})`; ctx.lineWidth = hr * 0.22; ctx.lineCap = 'round';
+  for (let i = 0; i < Math.min(marks, 3) * 2; i++) { const xx = -hl * 0.7 + i * hl * 1.4 / 5; ctx.beginPath(); ctx.moveTo(xx - hr * 0.3, -hr * 0.6); ctx.lineTo(xx + hr * 0.3, hr * 0.6); ctx.stroke(); }
+  gloss(ctx, -hl * 0.2, -hr * 0.45, hl * 0.6, hr * 0.18, 0.55);
+  ctx.restore();
+}
+function drawGrillPan(ctx, x, y, w, h, hot) {
+  ctx.save();
+  if (hot) { ctx.fillStyle = rg(ctx, x, y, 0, x, y, w * 0.7, [[0, 'rgba(255,120,40,0.35)'], [1, 'rgba(255,120,40,0)']]); ell(ctx, x, y, w * 0.7, h * 0.9); ctx.fill(); }
+  shadowOn(ctx, w * 0.06, w * 0.03, 'rgba(30,20,10,0.4)');
+  ctx.fillStyle = lg(ctx, x - w / 2, y - h / 2, x + w / 2, y + h / 2, [[0, '#4b5563'], [1, '#111827']]); ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, h * 0.12); ctx.fill(); shadowOff(ctx);
+  ctx.fillStyle = '#1f2937'; ctx.beginPath(); ctx.roundRect(x + w / 2 - 2, y - h * 0.08, w * 0.3, h * 0.16, h * 0.08); ctx.fill();
+  ctx.strokeStyle = 'rgba(120,130,145,0.6)'; ctx.lineWidth = h * 0.04;
+  for (let i = 1; i < 8; i++) { const xx = x - w / 2 + i * w / 8; ctx.beginPath(); ctx.moveTo(xx, y - h / 2 + h * 0.08); ctx.lineTo(xx, y + h / 2 - h * 0.08); ctx.stroke(); }
+  ctx.restore();
+}
+function drawHotdog(ctx, st, x, y, R, t, opts = {}) {
+  if (!opts.noPlate) drawOvalPlate(ctx, x, y, R * 1.35, R * 0.75);
+  const bw = R * 1.05, bh = R * 0.42;
+  ctx.save(); shadowOn(ctx, R * 0.06, R * 0.03);
+  ctx.fillStyle = lg(ctx, 0, y - bh, 0, y + bh, [[0, '#eeb064'], [0.5, '#d08a3c'], [1, '#a8622a']]);
+  ctx.beginPath(); ctx.roundRect(x - bw, y - bh, bw * 2, bh * 2, bh); ctx.fill(); shadowOff(ctx);
+  ctx.fillStyle = lg(ctx, 0, y - bh * 0.55, 0, y + bh * 0.55, [[0, '#fbe6bd'], [1, '#ecc98c']]); ctx.beginPath(); ctx.roundRect(x - bw * 0.9, y - bh * 0.55, bw * 1.8, bh * 1.1, bh * 0.5); ctx.fill();
+  gloss(ctx, x - bw * 0.3, y - bh * 0.8, bw * 0.45, bh * 0.08, 0.5);
+  ctx.restore();
+  drawSausage(ctx, x, y, R * 0.98, R * 0.17, 1, 3);
+  (st.toppings || []).forEach(p => drawDeco(ctx, p.id, x + p.x * R, y + p.y * R, R * 0.13, p.rot, p.v));
+  drawStrokes(ctx, st.strokes, x, y, R);
+}
+
+// ── 컵케이크 (옆에서, 세 개) ──
+const LINER = ['#f9a8d4', '#93c5fd', '#fde047'];
+const cupcakePos = (x, y, R, i) => [x + (i - 1) * R * 0.78, y + R * 0.42];
+function drawCupcakes(ctx, st, x, y, R, t, opts = {}) {
+  if (opts.tin) {
+    ctx.save(); shadowOn(ctx, R * 0.08, R * 0.03, 'rgba(40,30,20,0.35)');
+    ctx.fillStyle = lg(ctx, 0, y + R * 0.1, 0, y + R * 0.55, [[0, '#cbd5e1'], [1, '#64748b']]); ctx.beginPath(); ctx.roundRect(x - R * 1.3, y + R * 0.12, R * 2.6, R * 0.42, R * 0.06); ctx.fill(); shadowOff(ctx);
+    ctx.restore();
+  } else if (!opts.noPlate) drawPlate(ctx, x, y + R * 0.48, R * 1.35);
+  const rise = st.bake == null ? 1 : st.bake, fill = st.batter == null ? 1 : st.batter;
+  for (let i = 0; i < 3; i++) {
+    const [cx, b] = cupcakePos(x, y, R, i), hw0 = R * 0.2, hw1 = R * 0.29, h = R * 0.4, top = b - h;
+    if (fill > 0) {
+      const domeH = (R * 0.02 + R * 0.2 * rise) * fill;
+      ctx.fillStyle = rg(ctx, cx - R * 0.1, top - domeH, 0, cx, top, R * 0.35, [[0, mixHex('#fbe3b0', '#f2c27c', rise)], [1, mixHex('#e9c890', '#b8702e', rise)]]);
+      ctx.beginPath(); ctx.ellipse(cx, top + R * 0.03, hw1 * 1.04, domeH + R * 0.04, 0, Math.PI, 0); ctx.closePath(); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.ellipse(cx, top + R * 0.03, hw1 * 1.04, domeH + R * 0.04, 0, Math.PI, 0); ctx.closePath(); ctx.clip();
+      speckle(ctx, 621 + i, 20, cx - hw1, top - domeH - R * 0.05, cx + hw1, top + R * 0.03, R * 0.006, R * 0.016, [`rgba(120,60,15,${0.1 + rise * 0.2})`, 'rgba(255,240,210,0.4)']); ctx.restore();
+    }
+    ctx.save(); shadowOn(ctx, R * 0.05, R * 0.02);
+    ctx.fillStyle = lg(ctx, cx - hw1, 0, cx + hw1, 0, [[0, shadeHex(LINER[i], -0.2)], [0.5, LINER[i]], [1, shadeHex(LINER[i], -0.25)]]);
+    ctx.beginPath(); ctx.moveTo(cx - hw1, top); ctx.lineTo(cx + hw1, top); ctx.lineTo(cx + hw0, b); ctx.lineTo(cx - hw0, b); ctx.closePath(); ctx.fill(); shadowOff(ctx);
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = Math.max(1, R * 0.012);
+    for (let k = 1; k < 7; k++) { const q = k / 7; ctx.beginPath(); ctx.moveTo(cx - hw1 + q * hw1 * 2, top); ctx.lineTo(cx - hw0 + q * hw0 * 2, b); ctx.stroke(); }
+    ctx.restore();
+  }
+  drawStrokes(ctx, st.strokes, x, y, R);
+  (st.toppings || []).forEach(p => { const [cx, b] = cupcakePos(x, y, R, p.ci); drawDeco(ctx, p.id, cx + p.x * R * 0.26, b - R * 0.62 + p.y * R * 0.12, R * (p.id === 'sprinkles' ? 0.16 : 0.11), p.rot, p.v); });
+}
+
+// ── 솜사탕 ──
+const SUGAR = { sugarPink: '#f9a8d4', sugarBlue: '#93c5fd', sugarYellow: '#fde68a', sugarPurple: '#c4b5fd' };
+function cottonFn(cols) {
+  return (c, u) => {
+    const r = rng(631);
+    for (let i = 0; i < 48; i++) {
+      const a = r() * TAU, d = Math.sqrt(r()) * u * 0.62, br = u * (0.22 + r() * 0.18), col = cols[i % cols.length], px = Math.cos(a) * d, py = Math.sin(a) * d * 0.9;
+      c.fillStyle = rg(c, px - br * 0.3, py - br * 0.3, 0, px, py, br, [[0, 'rgba(255,255,255,0.85)'], [0.5, hexA(col, 0.9)], [1, hexA(col, 0)]]); ell(c, px, py, br, br); c.fill();
+    }
+    c.strokeStyle = 'rgba(255,255,255,0.55)'; c.lineWidth = u * 0.012;
+    for (let i = 0; i < 34; i++) { const a = r() * TAU, d = r() * u * 0.7; c.beginPath(); c.arc(Math.cos(a) * d * 0.4, Math.sin(a) * d * 0.4, d, a, a + 0.6 + r()); c.stroke(); }
+  };
+}
+const cottonCols = (st) => { const c = (st.layers || []).map(l => SUGAR[l.id] || kbCol(l.id)[0]); return c.length ? c : ['#f9a8d4']; };
+function drawCottonCandy(ctx, st, x, y, R, t, opts = {}) {
+  const size = 0.12 + 0.88 * clamp01(st.cotton == null ? 1 : st.cotton), cy = y - R * 0.38, cols = cottonCols(st);
+  if (opts.machine) {
+    const ty = y + R * 0.5;
+    ctx.save();
+    ctx.fillStyle = '#9aa3af'; ell(ctx, x, ty, R * 1.0, R * 0.26); ctx.fill();
+    ctx.fillStyle = rg(ctx, x, ty, 0, x, ty, R, [[0, '#e5e7eb'], [1, '#6b7280']]); ell(ctx, x, ty, R * 0.92, R * 0.22); ctx.fill();
+    if (opts.spinning) { ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = R * 0.01; for (let i = 0; i < 10; i++) { const a = i / 10 * TAU + t * 12; ctx.beginPath(); ctx.ellipse(x, ty, R * 0.5, R * 0.12, 0, a, a + 0.5); ctx.stroke(); } }
+    ctx.fillStyle = '#d1d5db'; ell(ctx, x, ty, R * 0.14, R * 0.05); ctx.fill();
+    ctx.restore();
+  }
+  // 막대
+  const sb = opts.machine ? y + R * 0.5 : y + R * 0.75;
+  ctx.save(); ctx.strokeStyle = '#f5e6c8'; ctx.lineWidth = R * 0.05; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, sb); ctx.lineTo(x, cy); ctx.stroke(); ctx.restore();
+  if (!opts.machine && !opts.noPlate) {
+    ctx.save(); shadowOn(ctx, R * 0.06, R * 0.02);
+    ctx.fillStyle = lg(ctx, x - R * 0.2, 0, x + R * 0.2, 0, [[0, '#f472b6'], [0.5, '#fbcfe8'], [1, '#db2777']]);
+    ctx.beginPath(); ctx.moveTo(x - R * 0.22, y + R * 0.55); ctx.lineTo(x + R * 0.22, y + R * 0.55); ctx.lineTo(x + R * 0.16, y + R * 0.85); ctx.lineTo(x - R * 0.16, y + R * 0.85); ctx.closePath(); ctx.fill(); shadowOff(ctx);
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'; for (let i = -2; i <= 2; i++) { ell(ctx, x + i * R * 0.08, y + R * 0.7, R * 0.02, R * 0.02); ctx.fill(); }
+    ctx.restore();
+  }
+  stamp(ctx, `cc:${cols.join(',')}`, 120, 2.6, cottonFn(cols), x, cy, R * 0.9 * size, opts.ang || 0);
+  (st.toppings || []).forEach(p => drawDeco(ctx, p.id, x + p.x * R * 0.7 * size, cy + p.y * R * 0.7 * size, R * 0.13, p.rot, p.v));
+  if (opts.spinning) { ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = R * 0.008; for (let i = 0; i < 6; i++) { const a = t * 9 + i; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * R * 0.6, y + R * 0.48); ctx.quadraticCurveTo(x + Math.cos(a) * R * 0.5, y, x + Math.cos(a + 1) * R * 0.5 * size, cy + R * 0.3 * size); ctx.stroke(); } ctx.restore(); }
+}
+
+// ── 만두 ──
+function drawDough(ctx, x, y, r, flat) {
+  ctx.save(); shadowOn(ctx, r * (0.2 - flat * 0.12), r * (0.1 - flat * 0.06));
+  ctx.fillStyle = rg(ctx, x - r * 0.3, y - r * 0.3, 0, x, y, r, [[0, '#fffdf6'], [0.7, '#f6efe0'], [1, flat < 0.5 ? '#ddd0b6' : '#ebe0cb']]);
+  ell(ctx, x, y, r, r * (0.92 + 0.08 * flat)); ctx.fill(); shadowOff(ctx);
+  ctx.save(); ell(ctx, x, y, r, r); ctx.clip(); speckle(ctx, 651, 30, x - r, y - r, x + r, y + r, r * 0.01, r * 0.03, ['rgba(255,255,255,0.9)', 'rgba(200,185,160,0.3)']); ctx.restore();
+  if (flat < 0.6) gloss(ctx, x - r * 0.3, y - r * 0.35, r * 0.3, r * 0.15, 0.5 - flat * 0.5);
+  ctx.restore();
+}
+function drawRollingPin(ctx, x, y, R) {
+  ctx.save(); ctx.translate(x, y); shadowOn(ctx, R * 0.08, R * 0.04);
+  ctx.fillStyle = lg(ctx, 0, -R * 0.1, 0, R * 0.1, [[0, '#f0c98a'], [0.5, '#d9a35c'], [1, '#a8723a']]); ctx.beginPath(); ctx.roundRect(-R * 0.6, -R * 0.1, R * 1.2, R * 0.2, R * 0.1); ctx.fill();
+  ctx.fillStyle = '#8a5a2b'; [-1, 1].forEach(k => { ctx.beginPath(); ctx.roundRect(k > 0 ? R * 0.6 : -R * 0.9, -R * 0.05, R * 0.3, R * 0.1, R * 0.05); ctx.fill(); });
+  shadowOff(ctx); ctx.restore();
+}
+// 반달 만두 (위에서, 접힌 곧은 쪽이 위, 둥근 쪽에 주름)
+function drawManduShape(ctx, x, y, r, pleats, shine = 0) {
+  ctx.save(); shadowOn(ctx, r * 0.12, r * 0.06);
+  const ry = r * 0.78;
+  ctx.beginPath(); ctx.moveTo(x - r, y);
+  for (let i = 0; i <= 40; i++) { const a = i / 40 * Math.PI, w = 1 + (pleats ? 0.035 * Math.abs(Math.sin(a * 6.5)) : 0); ctx.lineTo(x - Math.cos(a) * r * w, y + Math.sin(a) * ry * w); }
+  ctx.quadraticCurveTo(x, y - r * 0.12, x - r, y); ctx.closePath();
+  ctx.fillStyle = rg(ctx, x - r * 0.2, y + ry * 0.2, 0, x, y + ry * 0.3, r, [[0, mixHex('#fffaf0', '#fffdf8', shine)], [0.75, '#efe5d0'], [1, '#d8c9ab']]); ctx.fill(); shadowOff(ctx);
+  ctx.fillStyle = 'rgba(170,140,100,0.16)'; ell(ctx, x, y + ry * 0.35, r * 0.55, ry * 0.3); ctx.fill();
+  ctx.strokeStyle = 'rgba(160,135,100,0.55)'; ctx.lineWidth = r * 0.04; ctx.lineCap = 'round';
+  for (let k = 0; k < (pleats || 0); k++) { const a = (k + 1) / 6.5 * Math.PI, ex = x - Math.cos(a) * r * 0.98, ey = y + Math.sin(a) * ry * 0.98; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.quadraticCurveTo(x - Math.cos(a + 0.15) * r * 0.8, y + Math.sin(a + 0.15) * ry * 0.8, x - Math.cos(a) * r * 0.66, y + Math.sin(a) * ry * 0.66); ctx.stroke(); }
+  gloss(ctx, x - r * 0.25, y + ry * 0.2, r * 0.3, ry * 0.1, 0.35 + shine * 0.4);
+  ctx.restore();
+}
+function drawSteamer(ctx, x, y, r) {
+  ctx.save(); shadowOn(ctx, r * 0.1, r * 0.04, 'rgba(60,40,20,0.35)');
+  ctx.fillStyle = lg(ctx, x - r, y - r, x + r, y + r, [[0, '#d9b47a'], [1, '#a57a3e']]); ell(ctx, x, y, r, r); ctx.fill(); shadowOff(ctx);
+  ctx.fillStyle = '#e9cf9c'; ell(ctx, x, y, r * 0.88, r * 0.88); ctx.fill();
+  ctx.save(); ell(ctx, x, y, r * 0.88, r * 0.88); ctx.clip(); ctx.strokeStyle = 'rgba(150,110,50,0.35)'; ctx.lineWidth = Math.max(1, r * 0.012);
+  for (let i = -10; i <= 10; i++) { ctx.beginPath(); ctx.moveTo(x + i * r * 0.1, y - r); ctx.lineTo(x + i * r * 0.1, y + r); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x - r, y + i * r * 0.1); ctx.lineTo(x + r, y + i * r * 0.1); ctx.stroke(); }
+  ctx.restore();
+  ctx.fillStyle = 'rgba(255,255,255,0.75)'; ell(ctx, x, y, r * 0.78, r * 0.78); ctx.fill();
+  ctx.restore();
+}
+function drawManduPlate(ctx, st, x, y, R, t, opts = {}) {
+  if (!opts.noPlate) drawSteamer(ctx, x, y, R * 1.1);
+  [[-0.38, -0.32], [0.4, -0.25], [0, 0.32]].forEach(([dx, dy]) => drawManduShape(ctx, x + dx * R, y + dy * R, R * 0.36, 5, 1));
+}
+
+// ── 떡볶이 ──
+function tpTteok(c, u, v = 0) {
+  c.rotate((v - 1) * 0.6); shadowOn(c, u * 0.1, u * 0.05);
+  c.fillStyle = lg(c, 0, -u * 0.25, 0, u * 0.25, [[0, '#fff0ea'], [0.45, '#ffb4a2'], [1, '#d9503a']]); c.beginPath(); c.roundRect(-u * 0.75, -u * 0.24, u * 1.5, u * 0.48, u * 0.24); c.fill(); shadowOff(c);
+  c.strokeStyle = 'rgba(150,30,15,0.55)'; c.lineWidth = u * 0.05; c.stroke();
+  c.fillStyle = 'rgba(250,215,200,0.8)'; ell(c, u * 0.66, 0, u * 0.08, u * 0.2); c.fill();
+  gloss(c, -u * 0.1, -u * 0.1, u * 0.45, u * 0.06, 0.6);
+}
+function tpEomuk(c, u, v = 0) {
+  c.rotate(v * 1.1); shadowOn(c, u * 0.1, u * 0.05);
+  c.beginPath(); for (let i = 0; i <= 20; i++) { const q = i / 20; c.lineTo(-u * 0.7 + q * u * 1.4, -u * 0.32 + Math.sin(q * 9) * u * 0.06); } for (let i = 20; i >= 0; i--) { const q = i / 20; c.lineTo(-u * 0.7 + q * u * 1.4, u * 0.32 + Math.sin(q * 9 + 1) * u * 0.06); } c.closePath();
+  c.fillStyle = lg(c, 0, -u * 0.35, 0, u * 0.35, [[0, '#f0b26a'], [1, '#c0702e']]); c.fill(); shadowOff(c);
+  c.fillStyle = 'rgba(200,40,20,0.45)'; c.fill();
+  gloss(c, -u * 0.2, -u * 0.12, u * 0.35, u * 0.06, 0.5);
+}
+function whTteok(c, u) {
+  [[-0.3, -0.1], [0.05, 0.12], [0.35, -0.15]].forEach(([x, y], i) => {
+    c.save(); c.translate(x * u, y * u); c.rotate(-0.4 + i * 0.2); shadowOn(c, u * 0.08, u * 0.04);
+    c.fillStyle = lg(c, 0, -u * 0.13, 0, u * 0.13, [[0, '#ffffff'], [1, '#e7e1d4']]); c.beginPath(); c.roundRect(-u * 0.6, -u * 0.12, u * 1.2, u * 0.24, u * 0.12); c.fill(); shadowOff(c);
+    gloss(c, 0, -u * 0.05, u * 0.4, u * 0.03, 0.7); c.restore();
+  });
+}
+function whEomuk(c, u) {
+  [[-0.15, -0.15, -0.2], [0.15, 0.15, 0.2]].forEach(([x, y, a]) => {
+    c.save(); c.translate(x * u, y * u); c.rotate(a); shadowOn(c, u * 0.08, u * 0.04);
+    c.fillStyle = lg(c, 0, -u * 0.4, 0, u * 0.4, [[0, '#f5c27e'], [1, '#c9803a']]); c.beginPath(); c.roundRect(-u * 0.6, -u * 0.38, u * 1.2, u * 0.76, u * 0.08); c.fill(); shadowOff(c);
+    speckle(c, 661, 14, -u * 0.55, -u * 0.35, u * 0.55, u * 0.35, u * 0.02, u * 0.04, ['rgba(140,80,30,0.35)']); c.restore();
+  });
+}
+function drawTteokSauce(ctx, st, x, y, r, t, o = {}) {
+  const k = st.sauceK == null ? 1 : st.sauceK;
+  ctx.save(); ell(ctx, x, y, r, r); ctx.clip();
+  const wr = r * (0.3 + 0.7 * easeOut(Math.min(1, (o.water == null ? 1 : o.water))));
+  ctx.fillStyle = rg(ctx, x - r * 0.2, y - r * 0.2, 0, x, y, wr, [[0, mixHex('#e2eef3', '#f05a3c', k)], [1, mixHex('#b9d4de', '#a8221a', k)]]); ell(ctx, x, y, wr, wr); ctx.fill();
+  const ang = o.ang || 0;
+  (st.toppings || []).forEach(p => { const a = Math.atan2(p.y, p.x) + ang, d = Math.hypot(p.x, p.y); drawDeco(ctx, p.id, x + Math.cos(a) * d * r * 0.75, y + Math.sin(a) * d * r * 0.75, r * 0.27, p.rot + ang, p.v); });
+  const n = Math.round((o.boil || 0) * 12);
+  for (let i = 0; i < n; i++) { const ph = (t * 1.5 + i * 0.37) % 1, rr = rng(700 + i * 31 + Math.floor(t * 1.5 + i * 0.37)), a = rr() * TAU, d = Math.sqrt(rr()) * r * 0.8, br = r * (0.03 + 0.05 * ph); ctx.strokeStyle = `rgba(255,190,170,${0.8 * (1 - ph)})`; ctx.lineWidth = Math.max(1, r * 0.012); ell(ctx, x + Math.cos(a) * d, y + Math.sin(a) * d, br, br); ctx.stroke(); }
+  gloss(ctx, x - r * 0.35, y - r * 0.4, r * 0.3, r * 0.1, 0.3, -0.5);
+  ctx.restore();
+}
+function drawTteokbokki(ctx, st, x, y, R, t, opts = {}) {
+  if (!opts.noPlate) drawRoundPlate(ctx, x, y, R * 1.1);
+  drawTteokSauce(ctx, { ...st, sauceK: 1 }, x, y, R * 0.82, t, {});
+}
+
+// ── 햄버거 (옆에서) ──
+function lyBunBottom(c, u) {
+  const w = 0.5 * u, h = 0.13 * u;
+  shadowOn(c, u * 0.04, u * 0.02);
+  c.fillStyle = lg(c, 0, -h / 2, 0, h / 2, [[0, '#f3d29a'], [0.3, '#d99a4e'], [1, '#a8622a']]);
+  c.beginPath(); c.moveTo(-w, -h / 2); c.lineTo(w, -h / 2); c.lineTo(w, 0); c.quadraticCurveTo(w, h / 2, w - h * 0.7, h / 2); c.lineTo(-w + h * 0.7, h / 2); c.quadraticCurveTo(-w, h / 2, -w, 0); c.closePath(); c.fill(); shadowOff(c);
+  c.fillStyle = lg(c, 0, -h / 2, 0, -h * 0.15, [[0, '#fdebc6'], [1, '#efd39c']]); c.fillRect(-w + u * 0.01, -h / 2, 2 * w - u * 0.02, h * 0.32);
+}
+function lyPatty(c, u) {
+  const w = 0.53 * u, h = 0.11 * u, r = rng(671);
+  shadowOn(c, u * 0.04, u * 0.02);
+  c.beginPath(); c.moveTo(-w, 0);
+  for (let i = 0; i <= 30; i++) { const q = i / 30; c.lineTo(-w + q * 2 * w, -h / 2 + (r() - 0.5) * h * 0.2); }
+  c.quadraticCurveTo(w + h * 0.3, 0, w, h / 2); for (let i = 30; i >= 0; i--) { const q = i / 30; c.lineTo(-w + q * 2 * w, h / 2 + (r() - 0.5) * h * 0.15); }
+  c.quadraticCurveTo(-w - h * 0.3, 0, -w, -h / 2); c.closePath();
+  c.fillStyle = lg(c, 0, -h / 2, 0, h / 2, [[0, '#8a4a22'], [0.5, '#5a2a10'], [1, '#2e1405']]); c.fill(); shadowOff(c);
+  speckle(c, 673, 50, -w, -h / 2, w, h / 2, u * 0.003, u * 0.008, ['rgba(160,90,40,0.6)', 'rgba(30,10,0,0.5)']);
+  gloss(c, -w * 0.2, -h * 0.25, w * 0.5, h * 0.08, 0.35);
+}
+function lyBunTop(c, u) {
+  const w = 0.52 * u, r = rng(675);
+  shadowOn(c, u * 0.04, u * 0.02);
+  c.fillStyle = lg(c, 0, -u * 0.2, 0, u * 0.06, [[0, '#f6c27a'], [0.45, '#d98a3c'], [1, '#a8581f']]);
+  c.beginPath(); c.moveTo(-w, u * 0.06); c.bezierCurveTo(-w - u * 0.02, -u * 0.1, -w * 0.6, -u * 0.21, 0, -u * 0.21); c.bezierCurveTo(w * 0.6, -u * 0.21, w + u * 0.02, -u * 0.1, w, u * 0.06); c.closePath(); c.fill(); shadowOff(c);
+  c.fillStyle = '#fbe6bd'; c.fillRect(-w + u * 0.015, u * 0.03, 2 * w - u * 0.03, u * 0.03);
+  for (let i = 0; i < 26; i++) { const a = Math.PI + r() * Math.PI, d = r(); const sx = Math.cos(a) * w * 0.85 * d, sy = -u * 0.03 - Math.abs(Math.sin(a)) * u * 0.16 * Math.sqrt(1 - d * d * 0.6); c.fillStyle = '#fff6dc'; ell(c, sx, sy, u * 0.012, u * 0.006, r() * 3); c.fill(); }
+  gloss(c, -w * 0.3, -u * 0.15, w * 0.35, u * 0.03, 0.55, -0.1);
+}
+Object.assign(LAYER_FN, { bunBottom: lyBunBottom, patty: lyPatty, bunTop: lyBunTop });
+Object.assign(LAYER_TH, { bunBottom: 0.13, patty: 0.11 });
+function burgerGeom(x, y, R) { return { w: R * 1.45, base: y + R * 0.55, plateY: y + R * 0.62 }; }
+function drawBurger(ctx, st, x, y, R, t, opts = {}) {
+  const { w, base, plateY } = burgerGeom(x, y, R);
+  if (!opts.noPlate) drawPlate(ctx, x, plateY, R * 1.1);
+  let top = base;
+  const put = (id, dx = 0, rot = 0) => { const th = (LAYER_TH[id] || 0.05) * w; drawLayer(ctx, id, x + dx * w, top - th / 2, w, rot); top -= th * 0.9; };
+  put('bunBottom');
+  if (st.patty) put('patty');
+  (st.layers || []).forEach(l => put(l.id, l.dx || 0, l.rot || 0));
+  if (st.topBread != null) { const off = (1 - easeOut(st.topBread)) * R * 1.4; drawLayer(ctx, 'bunTop', x, top - w * 0.05 - off, w, 0); }
+  return top;
+}
+function pattyTop(ctx, x, y, r, k) {
+  ctx.save(); shadowOn(ctx, r * 0.1, r * 0.05);
+  ctx.beginPath(); for (let i = 0; i <= 36; i++) { const a = i / 36 * TAU, w = 1 + 0.04 * Math.sin(a * 7) + 0.02 * Math.sin(a * 13); ctx.lineTo(x + Math.cos(a) * r * w, y + Math.sin(a) * r * w); } ctx.closePath();
+  ctx.fillStyle = rg(ctx, x - r * 0.2, y - r * 0.2, 0, x, y, r, [[0, mixHex('#f2a0a0', '#7a3f1c', k)], [0.7, mixHex('#e07a7a', '#5a2a10', k)], [1, mixHex('#c45a5a', '#3a1a08', k)]]); ctx.fill(); shadowOff(ctx);
+  ctx.save(); ctx.clip(); speckle(ctx, 677, 50, x - r, y - r, x + r, y + r, r * 0.02, r * 0.05, [mixHex('#fff0f0', '#a0582c', k), mixHex('#c04848', '#2e1405', k)]); ctx.restore();
+  if (k > 0.5) { ctx.strokeStyle = `rgba(30,10,0,${(k - 0.5) * 1.2})`; ctx.lineWidth = r * 0.1; ctx.lineCap = 'round'; for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(x - r * 0.6, y + i * r * 0.4 - r * 0.2); ctx.lineTo(x + r * 0.6, y + i * r * 0.4 + r * 0.2); ctx.stroke(); } }
+  gloss(ctx, x - r * 0.3, y - r * 0.35, r * 0.3, r * 0.12, 0.4);
+  ctx.restore();
+}
+
+// ── 스파게티 ──
+function pastaFn(c, u) {
+  const r = rng(641); c.lineCap = 'round';
+  for (let i = 0; i < 36; i++) {
+    const a0 = r() * TAU, rad = u * (0.15 + r() * 0.72), len = 2 + r() * 2.5;
+    c.beginPath(); for (let s = 0; s <= 40; s++) { const a = a0 + s / 40 * len, rr = rad * (1 - s / 40 * 0.25) + Math.sin(s * 0.5 + i) * u * 0.03; if (s) c.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else c.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    c.strokeStyle = 'rgba(170,120,40,0.5)'; c.lineWidth = u * 0.06; c.stroke();
+    c.strokeStyle = i % 3 ? '#f5dc98' : '#fbe9b8'; c.lineWidth = u * 0.04; c.stroke();
+  }
+}
+function meatball(ctx, x, y, r) {
+  ctx.save(); shadowOn(ctx, r * 0.3, r * 0.15);
+  ctx.fillStyle = rg(ctx, x - r * 0.3, y - r * 0.3, 0, x, y, r, [[0, '#b0683a'], [0.6, '#7a3f1c'], [1, '#4a230c']]); ell(ctx, x, y, r, r); ctx.fill(); shadowOff(ctx);
+  ctx.save(); ell(ctx, x, y, r, r); ctx.clip(); speckle(ctx, 681, 12, x - r, y - r, x + r, y + r, r * 0.06, r * 0.14, ['rgba(40,15,5,0.4)', 'rgba(200,130,80,0.3)']); ctx.restore();
+  gloss(ctx, x - r * 0.3, y - r * 0.35, r * 0.3, r * 0.15, 0.5); ctx.restore();
+}
+const SPA_SAUCES = ['sauceTomato', 'sauceCream'];
+function drawSpaghetti(ctx, st, x, y, R, t, opts = {}) {
+  if (!opts.noPlate) drawRoundPlate(ctx, x, y, R * 1.12);
+  stamp(ctx, 'sp:pasta', 120, 2.4, pastaFn, x, y, R * 0.8, st.twirl || 0);
+  if (st.sauce) {
+    const k = clamp01((t - (st.sauceT == null ? -99 : st.sauceT)) / 0.6), sr = R * 0.52 * easeOut(k), tom = st.sauce === 'sauceTomato';
+    ctx.save(); ctx.translate(x, y); ctx.rotate(st.twirl || 0);
+    ctx.beginPath(); for (let i = 0; i <= 40; i++) { const a = i / 40 * TAU, w = 1 + 0.12 * Math.sin(a * 5 + 1) + 0.06 * Math.sin(a * 11); ctx.lineTo(Math.cos(a) * sr * w, Math.sin(a) * sr * w); } ctx.closePath();
+    ctx.fillStyle = tom ? rg(ctx, -sr * 0.2, -sr * 0.2, 0, 0, 0, sr * 1.1, [[0, 'rgba(240,90,60,0.95)'], [1, 'rgba(170,30,20,0.92)']]) : rg(ctx, -sr * 0.2, -sr * 0.2, 0, 0, 0, sr * 1.1, [[0, 'rgba(255,252,240,0.96)'], [1, 'rgba(232,214,176,0.93)']]); ctx.fill();
+    ctx.save(); ctx.clip(); speckle(ctx, 683, 24, -sr, -sr, sr, sr, R * 0.01, R * (tom ? 0.04 : 0.012), tom ? ['rgba(255,150,110,0.6)', 'rgba(120,20,10,0.4)'] : ['rgba(60,60,40,0.6)', 'rgba(60,140,40,0.5)']); ctx.restore();
+    gloss(ctx, -sr * 0.3, -sr * 0.35, sr * 0.35, sr * 0.12, 0.5);
+    ctx.restore();
+  }
+  (st.toppings || []).forEach(p => { const a = Math.atan2(p.y, p.x) + (st.twirl || 0), d = Math.hypot(p.x, p.y), px = x + Math.cos(a) * d * R * 0.6, py = y + Math.sin(a) * d * R * 0.6; if (p.id === 'meat') meatball(ctx, px, py, R * 0.13); else drawDeco(ctx, p.id, px, py, R * 0.14, p.rot, p.v); });
+  if (opts.fork) drawFork(ctx, x, y, R, st.twirl || 0);
+}
+function drawFork(ctx, x, y, R, ang) {
+  ctx.save();
+  stamp(ctx, 'sp:pasta', 120, 2.4, pastaFn, x, y, R * 0.28, ang * 3);
+  shadowOn(ctx, R * 0.05, R * 0.03);
+  ctx.strokeStyle = lg(ctx, x, y, x + R * 0.9, y + R * 0.6, [[0, '#f1f5f9'], [1, '#94a3b8']]); ctx.lineWidth = R * 0.06; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x + R * 0.12, y + R * 0.08); ctx.lineTo(x + R * 0.95, y + R * 0.62); ctx.stroke(); shadowOff(ctx);
+  ctx.restore();
+}
+// 냄비 (위에서): 라면·스파게티·카레가 같이 쓴다
+function drawPotShell(ctx, x, y, R, t, fire) {
+  const pr = R * 0.95;
+  ctx.save();
+  if (fire) for (let i = 0; i < 22; i++) {
+    const a = i / 22 * TAU, f = 1 + Math.sin(t * 17 + i * 2.3) * 0.25, r0 = pr * 0.98, r1 = pr * (1.08 + 0.05 * f);
+    ctx.fillStyle = i % 2 ? 'rgba(96,165,250,0.85)' : 'rgba(59,130,246,0.75)';
+    ctx.beginPath(); ctx.moveTo(x + Math.cos(a - 0.08) * r0, y + Math.sin(a - 0.08) * r0); ctx.lineTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1); ctx.lineTo(x + Math.cos(a + 0.08) * r0, y + Math.sin(a + 0.08) * r0); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = lg(ctx, 0, y - pr * 0.1, 0, y + pr * 0.1, [[0, '#52525b'], [1, '#18181b']]);
+  [-1, 1].forEach(k => { ctx.beginPath(); ctx.roundRect(x + (k > 0 ? pr * 0.92 : -pr * 1.3), y - pr * 0.1, pr * 0.38, pr * 0.2, pr * 0.08); ctx.fill(); });
+  shadowOn(ctx, pr * 0.1, pr * 0.04, 'rgba(30,20,10,0.4)');
+  ctx.fillStyle = lg(ctx, x - pr, y - pr, x + pr, y + pr, [[0, '#f1f5f9'], [0.5, '#a1a9b5'], [1, '#64748b']]); ell(ctx, x, y, pr, pr); ctx.fill(); shadowOff(ctx);
+  ctx.fillStyle = rg(ctx, x + pr * 0.2, y + pr * 0.2, 0, x, y, pr * 0.9, [[0, '#d6dbe1'], [1, '#8f98a4']]); ell(ctx, x, y, pr * 0.9, pr * 0.9); ctx.fill();
+  ctx.restore();
+  return pr * 0.86;
+}
+// 끓는 물 + 마른 면 (스파게티 삶기)
+function drawPastaPot(ctx, st, x, y, R, t, k) {
+  const r = drawPotShell(ctx, x, y, R, t, true);
+  drawRamenSoup(ctx, { toppings: [] }, x, y, r, t, { water: 1, boil: 0.8 });
+  if (st.noodleT == null) return;
+  ctx.save(); ell(ctx, x, y, r, r); ctx.clip();
+  if (k < 1) { ctx.globalAlpha = 1 - k; ctx.strokeStyle = '#f0d58a'; ctx.lineWidth = R * 0.025; ctx.lineCap = 'round'; for (let i = 0; i < 18; i++) { const a = i / 18 * TAU + 0.2; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * r * 0.1, y + Math.sin(a) * r * 0.1); ctx.lineTo(x + Math.cos(a) * r * 1.2, y + Math.sin(a) * r * 1.2); ctx.stroke(); } ctx.globalAlpha = 1; }
+  if (k > 0) stamp(ctx, 'sp:pasta', 120, 2.4, pastaFn, x, y, r * 0.85, t * 0.3, k);
+  ctx.restore();
+}
+
+// ── 카레라이스 ──
+const CURRY_VEG = ['potato', 'carrot', 'onion'];
+const VEG_COL = { potato: ['#fbe7a8', '#e2b85a'], carrot: ['#ffa24a', '#e0601a'], onion: ['#fffaf0', '#e8d6bd'] };
+function whPotato(c, u) {
+  shadowOn(c, u * 0.1, u * 0.05);
+  c.fillStyle = rg(c, -u * 0.3, -u * 0.3, 0, 0, 0, u * 0.9, [[0, '#ecd09c'], [0.7, '#c9a065'], [1, '#9c7440']]); ell(c, 0, 0, u * 0.85, u * 0.62, 0.2); c.fill(); shadowOff(c);
+  c.fillStyle = 'rgba(110,75,35,0.6)'; [[-0.4, -0.1], [0.2, -0.25], [0.35, 0.2], [-0.1, 0.3]].forEach(([x, y]) => { ell(c, x * u, y * u, u * 0.05, u * 0.035); c.fill(); });
+  gloss(c, -u * 0.3, -u * 0.3, u * 0.3, u * 0.1, 0.3);
+}
+function whOnion(c, u) {
+  shadowOn(c, u * 0.1, u * 0.05);
+  c.beginPath(); c.moveTo(0, -u * 0.9); c.bezierCurveTo(u * 0.25, -u * 0.5, u * 0.85, -u * 0.35, u * 0.75, u * 0.25); c.bezierCurveTo(u * 0.65, u * 0.75, -u * 0.65, u * 0.75, -u * 0.75, u * 0.25); c.bezierCurveTo(-u * 0.85, -u * 0.35, -u * 0.25, -u * 0.5, 0, -u * 0.9); c.closePath();
+  c.fillStyle = rg(c, -u * 0.2, -u * 0.1, 0, 0, u * 0.1, u * 0.9, [[0, '#fff3e6'], [0.6, '#f2d3b3'], [1, '#c99a66']]); c.fill(); shadowOff(c);
+  c.strokeStyle = 'rgba(170,120,70,0.45)'; c.lineWidth = u * 0.03; [-0.4, 0, 0.4].forEach(q => { c.beginPath(); c.moveTo(0, -u * 0.8); c.quadraticCurveTo(q * u * 1.4, -u * 0.1, q * u * 0.6, u * 0.6); c.stroke(); });
+  c.strokeStyle = '#a3825a'; c.lineWidth = u * 0.025; [-0.1, 0, 0.1].forEach(q => { c.beginPath(); c.moveTo(q * u, u * 0.62); c.lineTo(q * u * 1.6, u * 0.8); c.stroke(); });
+}
+function vegCube(ctx, id, x, y, s, rot) {
+  const [a, b] = VEG_COL[id] || kbCol(id);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); shadowOn(ctx, s * 0.3, s * 0.15);
+  ctx.fillStyle = b; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2 + s * 0.15, s, s, s * 0.25); ctx.fill(); shadowOff(ctx);
+  ctx.fillStyle = a; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2, s, s * 0.9, s * 0.25); ctx.fill();
+  gloss(ctx, -s * 0.15, -s * 0.2, s * 0.25, s * 0.08, 0.5); ctx.restore();
+}
+const cubeSpots = (n, seed) => { const r = rng(seed), out = []; for (let i = 0; i < n; i++) { const a = r() * TAU, d = 0.2 + Math.sqrt(r()) * 0.6; out.push([Math.cos(a) * d, Math.sin(a) * d, r() * TAU]); } return out; };
+function drawCurryIn(ctx, st, x, y, r, t, o = {}) {
+  const k = clamp01(st.stir || 0), ang = o.ang || 0;
+  ctx.save(); ell(ctx, x, y, r, r); ctx.clip();
+  ctx.fillStyle = rg(ctx, x - r * 0.2, y - r * 0.2, 0, x, y, r, [[0, mixHex('#f0c060', '#d9922c', k)], [1, mixHex('#c88a2a', '#8a4a10', k)]]); ell(ctx, x, y, r, r); ctx.fill();
+  const veg = st.veg || [];
+  cubeSpots(veg.length * 3, 691).forEach(([px, py, rot], i) => { const a = Math.atan2(py, px) + ang, d = Math.hypot(px, py); vegCube(ctx, veg[i % veg.length], x + Math.cos(a) * d * r * 0.8, y + Math.sin(a) * d * r * 0.8, r * 0.13, rot + ang); });
+  (st.toppings || []).forEach(p => { const a = Math.atan2(p.y, p.x) + ang, d = Math.hypot(p.x, p.y); drawDeco(ctx, p.id, x + Math.cos(a) * d * r * 0.7, y + Math.sin(a) * d * r * 0.7, r * 0.18, p.rot + ang, p.v); });
+  ctx.fillStyle = `rgba(160,90,20,${0.25 * k})`; ell(ctx, x, y, r, r); ctx.fill();
+  const n = Math.round((o.boil || 0) * 10);
+  for (let i = 0; i < n; i++) { const ph = (t * 1.2 + i * 0.37) % 1, rr = rng(720 + i * 31 + Math.floor(t * 1.2 + i * 0.37)), a = rr() * TAU, d = Math.sqrt(rr()) * r * 0.8, br = r * (0.03 + 0.05 * ph); ctx.strokeStyle = `rgba(255,220,150,${0.8 * (1 - ph)})`; ctx.lineWidth = Math.max(1, r * 0.012); ell(ctx, x + Math.cos(a) * d, y + Math.sin(a) * d, br, br); ctx.stroke(); }
+  gloss(ctx, x - r * 0.35, y - r * 0.4, r * 0.3, r * 0.1, 0.35, -0.5);
+  ctx.restore();
+}
+function drawCurryPlate(ctx, st, x, y, R, t, opts = {}) {
+  if (!opts.noPlate) drawOvalPlate(ctx, x, y, R * 1.3, R * 0.95);
+  // 밥
+  const rx = x - R * 0.45;
+  ctx.save(); shadowOn(ctx, R * 0.06, R * 0.03); ctx.fillStyle = rg(ctx, rx - R * 0.15, y - R * 0.2, 0, rx, y, R * 0.6, [[0, '#ffffff'], [1, '#e9e4d8']]); ell(ctx, rx, y, R * 0.55, R * 0.5); ctx.fill(); shadowOff(ctx);
+  ctx.save(); ell(ctx, rx, y, R * 0.55, R * 0.5); ctx.clip(); ctx.globalAlpha = 0.6; const rs = riceStamp(), cell = R * 0.3; for (let gx = -R * 0.6; gx < R * 0.6; gx += cell * 0.7) for (let gy = -R * 0.55; gy < R * 0.55; gy += cell * 0.7) ctx.drawImage(rs, rx + gx - cell / 2, y + gy - cell / 2, cell, cell); ctx.restore();
+  ctx.restore();
+  // 카레
+  ctx.save(); ctx.beginPath(); for (let i = 0; i <= 40; i++) { const a = i / 40 * TAU, w = 1 + 0.05 * Math.sin(a * 4); ctx.lineTo(x + R * 0.28 + Math.cos(a) * R * 0.72 * w, y + R * 0.02 + Math.sin(a) * R * 0.6 * w); } ctx.closePath(); ctx.clip();
+  drawCurryIn(ctx, { ...st, stir: 1 }, x + R * 0.28, y + R * 0.02, R * 0.8, t, {});
+  ctx.restore();
+}
+
+// ── 커피 머신 (옆에서) ──
+function coffeeGeom(x, y, R) { const mx = x - R * 0.15; return { mx, top: y - R * 0.9, bot: y + R * 0.82, hw: R * 0.72, hopX: mx + R * 0.38, hopY: y - R * 0.9, btnX: mx + R * 0.42, btnY: y - R * 0.3, spX: mx - R * 0.18, spY: y - R * 0.12, cupX: mx - R * 0.18, cupY: y + R * 0.72, sideX: x + R * 1.05 }; }
+function drawCoffeeMachine(ctx, st, x, y, R, t, o = {}) {
+  const g = coffeeGeom(x, y, R);
+  ctx.save();
+  // 몸통
+  shadowOn(ctx, R * 0.12, R * 0.05, 'rgba(40,30,20,0.35)');
+  ctx.fillStyle = lg(ctx, g.mx - g.hw, 0, g.mx + g.hw, 0, [[0, '#9ca3af'], [0.35, '#f3f4f6'], [0.7, '#d1d5db'], [1, '#6b7280']]);
+  ctx.beginPath(); ctx.roundRect(g.mx - g.hw, g.top, g.hw * 2, R * 0.62, R * 0.1); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(g.mx + g.hw * 0.35, g.top, g.hw * 0.65, g.bot - g.top, R * 0.1); ctx.fill();
+  ctx.fillStyle = lg(ctx, g.mx - g.hw, 0, g.mx + g.hw, 0, [[0, '#7f1d1d'], [0.5, '#dc2626'], [1, '#7f1d1d']]); ctx.beginPath(); ctx.roundRect(g.mx - g.hw, g.bot - R * 0.12, g.hw * 2, R * 0.14, R * 0.05); ctx.fill(); shadowOff(ctx);
+  ctx.fillStyle = '#dc2626'; ctx.fillRect(g.mx - g.hw, g.top + R * 0.5, g.hw * 2, R * 0.05);
+  // 받침 망
+  ctx.fillStyle = '#374151'; ctx.beginPath(); ctx.roundRect(g.mx - g.hw * 0.9, g.bot - R * 0.16, g.hw * 1.25, R * 0.05, R * 0.02); ctx.fill();
+  ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = Math.max(1, R * 0.01); for (let i = 0; i < 9; i++) { const xx = g.mx - g.hw * 0.85 + i * g.hw * 0.14; ctx.beginPath(); ctx.moveTo(xx, g.bot - R * 0.16); ctx.lineTo(xx, g.bot - R * 0.11); ctx.stroke(); }
+  // 원두 통
+  const hb = g.hopY, ht = g.hopY - R * 0.42, beans = st.beans == null ? 1 : st.beans, shake = o.grinding ? Math.sin(t * 50) * R * 0.01 : 0;
+  ctx.save(); ctx.translate(shake, 0);
+  const hop = () => { ctx.beginPath(); ctx.moveTo(g.hopX - R * 0.26, ht); ctx.lineTo(g.hopX + R * 0.26, ht); ctx.lineTo(g.hopX + R * 0.1, hb); ctx.lineTo(g.hopX - R * 0.1, hb); ctx.closePath(); };
+  hop(); ctx.fillStyle = 'rgba(220,235,245,0.5)'; ctx.fill();
+  ctx.save(); hop(); ctx.clip(); const lvl = hb - (hb - ht) * 0.85 * beans, r = rng(731);
+  for (let i = 0; i < 60; i++) { const bx = g.hopX + (r() - 0.5) * R * 0.5, by = lvl + r() * (hb - lvl) + (o.grinding ? Math.sin(t * 30 + i) * R * 0.01 : 0); ctx.fillStyle = r() > 0.5 ? '#5a3018' : '#3b1d0b'; ell(ctx, bx, by, R * 0.03, R * 0.022, r() * 3); ctx.fill(); }
+  ctx.restore();
+  hop(); ctx.strokeStyle = 'rgba(150,170,190,0.9)'; ctx.lineWidth = R * 0.015; ctx.stroke();
+  ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.roundRect(g.hopX - R * 0.28, ht - R * 0.06, R * 0.56, R * 0.07, R * 0.03); ctx.fill();
+  ctx.restore();
+  // 압력계
+  const gx = g.mx - R * 0.35, gy = g.top + R * 0.25;
+  ctx.fillStyle = '#e5e7eb'; ell(ctx, gx, gy, R * 0.13, R * 0.13); ctx.fill(); ctx.strokeStyle = '#4b5563'; ctx.lineWidth = R * 0.025; ctx.stroke();
+  const na = -2.3 + (o.pressure || 0) * 2.6 + (o.pressure ? Math.sin(t * 20) * 0.05 : 0);
+  ctx.strokeStyle = '#dc2626'; ctx.lineWidth = R * 0.015; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx + Math.cos(na) * R * 0.1, gy + Math.sin(na) * R * 0.1); ctx.stroke();
+  // 추출 버튼
+  const ready = o.btnReady, pulse = ready ? 1 + Math.sin(t * 6) * 0.08 : 1;
+  if (ready) { ctx.fillStyle = 'rgba(34,197,94,0.3)'; ell(ctx, g.btnX, g.btnY, R * 0.2 * pulse, R * 0.2 * pulse); ctx.fill(); }
+  ctx.fillStyle = rg(ctx, g.btnX - R * 0.04, g.btnY - R * 0.04, 0, g.btnX, g.btnY, R * 0.13, [[0, ready ? '#86efac' : '#d1d5db'], [1, ready ? '#16a34a' : '#6b7280']]); ell(ctx, g.btnX, g.btnY, R * 0.13, R * 0.13); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = `${Math.round(R * 0.12)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('☕', g.btnX, g.btnY + 1);
+  // 추출구 + 포터필터
+  ctx.fillStyle = lg(ctx, 0, g.spY - R * 0.22, 0, g.spY, [[0, '#4b5563'], [1, '#1f2937']]); ctx.beginPath(); ctx.roundRect(g.spX - R * 0.2, g.spY - R * 0.3, R * 0.4, R * 0.16, R * 0.04); ctx.fill();
+  ctx.fillStyle = lg(ctx, 0, g.spY - R * 0.15, 0, g.spY, [[0, '#e5e7eb'], [1, '#6b7280']]); ctx.beginPath(); ctx.roundRect(g.spX - R * 0.17, g.spY - R * 0.15, R * 0.34, R * 0.1, R * 0.03); ctx.fill();
+  ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.roundRect(g.spX - R * 0.62, g.spY - R * 0.13, R * 0.46, R * 0.07, R * 0.035); ctx.fill();
+  ctx.fillStyle = '#9ca3af'; [-1, 1].forEach(k => { ctx.beginPath(); ctx.roundRect(g.spX + k * R * 0.05 - R * 0.015, g.spY - R * 0.05, R * 0.03, R * 0.05, R * 0.01); ctx.fill(); });
+  ctx.restore();
+  return g;
+}
+// 유리 머그 (옆에서): yb = 바닥, s = 크기
+function drawCoffeeCup(ctx, st, x, yb, s, t) {
+  const hw = s * 0.34, h = s * 0.78, top = yb - h, fk = st.fillK == null ? 1 : st.fillK, mk = st.milk == null ? 0 : clamp01((t - st.milk) / 0.8);
+  ctx.save();
+  ctx.save(); shadowOn(ctx, s * 0.06, s * 0.02, 'rgba(60,40,20,0.3)'); ctx.fillStyle = lg(ctx, 0, yb - s * 0.02, 0, yb + s * 0.08, [[0, '#ffffff'], [1, '#d6d3d1']]); ell(ctx, x, yb + s * 0.03, s * 0.6, s * 0.09); ctx.fill(); ctx.restore();
+  ctx.strokeStyle = 'rgba(200,220,235,0.9)'; ctx.lineWidth = s * 0.07; ctx.beginPath(); ctx.arc(x + hw + s * 0.02, top + h * 0.45, s * 0.17, -1.2, 1.2); ctx.stroke();
+  const cup = () => { ctx.beginPath(); ctx.moveTo(x - hw, top); ctx.lineTo(x - hw * 0.94, yb - s * 0.06); ctx.quadraticCurveTo(x - hw * 0.92, yb, x - hw * 0.8, yb); ctx.lineTo(x + hw * 0.8, yb); ctx.quadraticCurveTo(x + hw * 0.92, yb, x + hw * 0.94, yb - s * 0.06); ctx.lineTo(x + hw, top); ctx.closePath(); };
+  cup(); ctx.fillStyle = 'rgba(235,245,252,0.45)'; ctx.fill();
+  ctx.save(); cup(); ctx.clip();
+  const dk = st.drinkK == null ? 1 : st.drinkK, inner = yb - s * 0.05, eh = h * 0.32 * fk * dk, mh = h * 0.45 * mk * dk, ly = inner - eh - mh;
+  if (eh > 0.5) {
+    ctx.fillStyle = lg(ctx, 0, inner - eh - mh, 0, inner, mk > 0 ? [[0, '#f3e5cc'], [0.35, '#d9b48a'], [0.65, '#8a5530'], [1, '#3b1f0e']] : [[0, '#7a4423'], [1, '#2e1608']]);
+    ctx.fillRect(x - hw, ly, hw * 2, inner - ly + s * 0.1);
+    const nIce = Math.min(3, st.ice || 0);
+    for (let i = 0; i < nIce; i++) { const ix = x + (i - 1) * hw * 0.55, iy = ly + s * 0.08 + (i % 2) * s * 0.12; ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = s * 0.01; ctx.beginPath(); ctx.roundRect(ix - s * 0.08, iy - s * 0.08, s * 0.16, s * 0.15, s * 0.03); ctx.fill(); ctx.stroke(); }
+    ctx.fillStyle = mk > 0 ? '#f6ead6' : '#c4844a'; ell(ctx, x, ly, hw * 0.98, s * 0.05); ctx.fill();
+    if (mk > 0.5) { ctx.globalAlpha = (mk - 0.5) * 2; drawHeart(ctx, x, ly + s * 0.005, s * 0.07, '#9a6034'); ctx.globalAlpha = 1; }
+    else if (!mk) { ctx.strokeStyle = 'rgba(230,180,120,0.6)'; ctx.lineWidth = s * 0.01; ctx.beginPath(); ctx.ellipse(x, ly, hw * 0.5, s * 0.02, 0, 0, TAU); ctx.stroke(); }
+  }
+  ctx.restore();
+  cup(); ctx.strokeStyle = 'rgba(180,205,225,0.9)'; ctx.lineWidth = s * 0.02; ctx.stroke();
+  ell(ctx, x, top, hw, s * 0.045); ctx.strokeStyle = 'rgba(210,230,245,0.95)'; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.beginPath(); ctx.roundRect(x - hw + s * 0.05, top + s * 0.08, s * 0.05, h * 0.7, s * 0.025); ctx.fill();
+  // 휘핑크림·시럽·장식
+  let ty = ly;
+  if (st.whip && dk > 0.6) {
+    ty = Math.min(ty, top + s * 0.02);
+    ctx.save(); shadowOn(ctx, s * 0.04, s * 0.02);
+    [[0, 1], [-0.02, 0.8], [0.02, 0.6], [0, 0.4]].forEach(([dx, k], i) => { ctx.fillStyle = rg(ctx, x - hw * 0.3, ty - s * 0.1 * i, 0, x, ty - s * 0.1 * i, hw * k, [[0, '#ffffff'], [1, '#ece6da']]); ell(ctx, x + dx * s, ty - s * 0.08 * i - s * 0.02, hw * 1.02 * k, s * 0.08); ctx.fill(); });
+    ctx.restore(); ty -= s * 0.28;
+  }
+  if (st.syrup) { ctx.save(); ctx.strokeStyle = '#c2700a'; ctx.lineWidth = s * 0.025; ctx.lineCap = 'round'; ctx.beginPath(); for (let i = 0; i <= 8; i++) { const xx = x - hw * 0.7 + i * hw * 1.4 / 8, yy = (st.whip ? ty + s * 0.18 : ty) + (i % 2 ? s * 0.04 : -s * 0.02); if (i) ctx.lineTo(xx, yy); else ctx.moveTo(xx, yy); } ctx.stroke(); ctx.restore(); }
+  (st.toppings || []).forEach((p, i) => drawDeco(ctx, p.id, x + p.x * hw * 0.6, (st.whip ? ty + s * 0.12 : ty - s * 0.03) - (i % 2) * s * 0.03, s * 0.09, p.rot, p.v));
+  ctx.restore();
+}
+// 재료 칸 그림 (커피·카레·떡볶이·솜사탕 등)
+function whMilk(c, u) {
+  shadowOn(c, u * 0.1, u * 0.05);
+  c.fillStyle = lg(c, -u * 0.45, 0, u * 0.45, 0, [[0, '#e2e8f0'], [0.5, '#ffffff'], [1, '#cbd5e1']]); c.beginPath(); c.moveTo(-u * 0.42, -u * 0.35); c.lineTo(0, -u * 0.75); c.lineTo(u * 0.42, -u * 0.35); c.lineTo(u * 0.42, u * 0.85); c.lineTo(-u * 0.42, u * 0.85); c.closePath(); c.fill(); shadowOff(c);
+  c.fillStyle = '#3b82f6'; c.fillRect(-u * 0.42, u * 0.05, u * 0.84, u * 0.35); c.fillStyle = '#fff'; c.font = `bold ${Math.round(u * 0.26)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('우유', 0, u * 0.23);
+}
+function whIceCubes(c, u) { [[-0.3, 0.15], [0.3, 0.2], [0, -0.25]].forEach(([x, y], i) => { c.save(); c.translate(x * u, y * u); c.rotate(i * 0.4 - 0.3); shadowOn(c, u * 0.08, u * 0.04); c.fillStyle = lg(c, -u * 0.3, -u * 0.3, u * 0.3, u * 0.3, [[0, 'rgba(224,242,254,0.95)'], [1, 'rgba(147,197,253,0.85)']]); c.beginPath(); c.roundRect(-u * 0.3, -u * 0.3, u * 0.6, u * 0.6, u * 0.1); c.fill(); shadowOff(c); c.strokeStyle = 'rgba(255,255,255,0.9)'; c.lineWidth = u * 0.04; c.beginPath(); c.moveTo(-u * 0.2, -u * 0.15); c.lineTo(-u * 0.2, u * 0.15); c.stroke(); c.restore(); }); }
+function whWhip(c, u) {
+  shadowOn(c, u * 0.1, u * 0.05);
+  [[0, 0.45, 0.6], [0, 0.15, 0.48], [0, -0.12, 0.36], [0, -0.36, 0.22]].forEach(([x, y, r]) => { c.fillStyle = rg(c, -u * 0.15, y * u - u * 0.1, 0, 0, y * u, r * u, [[0, '#ffffff'], [1, '#e7e1d4']]); ell(c, x, y * u, r * u, r * u * 0.6); c.fill(); });
+  shadowOff(c); c.fillStyle = '#ffffff'; c.beginPath(); c.moveTo(-u * 0.08, -u * 0.45); c.quadraticCurveTo(0, -u * 0.75, u * 0.12, -u * 0.6); c.quadraticCurveTo(u * 0.02, -u * 0.5, u * 0.08, -u * 0.42); c.closePath(); c.fill();
+}
+function whSyrup(c, u) {
+  c.save(); c.rotate(0.2); shadowOn(c, u * 0.1, u * 0.05);
+  c.fillStyle = lg(c, -u * 0.35, 0, u * 0.35, 0, [[0, '#9a4a08'], [0.5, '#e08a1a'], [1, '#7a3a06']]); c.beginPath(); c.roundRect(-u * 0.32, -u * 0.35, u * 0.64, u * 1.2, u * 0.12); c.fill(); shadowOff(c);
+  c.fillStyle = '#111827'; c.beginPath(); c.roundRect(-u * 0.12, -u * 0.6, u * 0.24, u * 0.28, u * 0.05); c.fill(); c.beginPath(); c.moveTo(u * 0.05, -u * 0.6); c.lineTo(u * 0.3, -u * 0.75); c.lineTo(u * 0.3, -u * 0.68); c.lineTo(u * 0.08, -u * 0.52); c.fill();
+  c.fillStyle = 'rgba(255,255,255,0.85)'; c.beginPath(); c.roundRect(-u * 0.25, 0, u * 0.5, u * 0.35, u * 0.05); c.fill();
+  gloss(c, -u * 0.18, -u * 0.15, u * 0.05, u * 0.2, 0.6); c.restore();
+}
+function whSugar(col) { return (c, u) => { shadowOn(c, u * 0.1, u * 0.05); c.fillStyle = lg(c, -u * 0.6, 0, u * 0.6, 0, [[0, '#e5e7eb'], [0.5, '#ffffff'], [1, '#cbd5e1']]); ell(c, 0, u * 0.15, u * 0.85, u * 0.6); c.fill(); shadowOff(c); c.fillStyle = col; ell(c, 0, u * 0.05, u * 0.65, u * 0.38); c.fill(); c.save(); ell(c, 0, u * 0.05, u * 0.65, u * 0.38); c.clip(); speckle(c, 741, 60, -u * 0.7, -u * 0.4, u * 0.7, u * 0.45, u * 0.02, u * 0.04, ['rgba(255,255,255,0.8)', 'rgba(0,0,0,0.08)']); c.restore(); }; }
+function whSauceBowl(col, hi) { return (c, u) => { shadowOn(c, u * 0.1, u * 0.05); c.fillStyle = lg(c, 0, -u * 0.4, 0, u * 0.7, [[0, '#ffffff'], [1, '#d6d3d1']]); ell(c, 0, u * 0.1, u * 0.9, u * 0.66); c.fill(); shadowOff(c); c.fillStyle = rg(c, -u * 0.2, -u * 0.1, 0, 0, u * 0.05, u * 0.75, [[0, hi], [1, col]]); ell(c, 0, u * 0.05, u * 0.72, u * 0.5); c.fill(); gloss(c, -u * 0.3, -u * 0.12, u * 0.18, u * 0.07, 0.7); }; }
+Object.assign(TOP_FN, { tteok: tpTteok, eomuk: tpEomuk });
+Object.assign(WHOLE_FN, {
+  ketchup: whBottle('#d01c24', '#f8fafc'), mustard: whBottle('#f2b705', '#dc2626'), mayo: whBottle('#fffbe6', '#3b82f6'),
+  creamWhite: whPipingBag('#ffffff'), creamPink: whPipingBag('#f9a8c8'), creamChoco: whPipingBag('#7a4426'),
+  sugarPink: whSugar(SUGAR.sugarPink), sugarBlue: whSugar(SUGAR.sugarBlue), sugarYellow: whSugar(SUGAR.sugarYellow), sugarPurple: whSugar(SUGAR.sugarPurple),
+  tteok: whTteok, eomuk: whEomuk, potato: whPotato, onion: whOnion,
+  sauceTomato: whSauceBowl('#b5231a', '#f05a3c'), sauceCream: whSauceBowl('#e8d6b0', '#fffcf0'),
+  milk: whMilk, ice: whIceCubes, whip: whWhip, syrup: whSyrup
+});
+
 // ═══════════════ 손님 ═══════════════
 function drawRabbit(ctx, S, t, happy, mouth = 0) {
   ctx.save();
@@ -2051,14 +2622,15 @@ function trayTiles(L, ids) {
   const span = L.trayX1 - L.trayX0, s = Math.min(L.tileMax, span / n * 0.9), gap = (span - s * n) / (n + 1);
   return ids.map((id, i) => ({ id, x: L.trayX0 + gap + s / 2 + i * (s + gap), y: L.trayY - s * 0.05, s }));
 }
-function drawTile(ctx, tile, fav, t, pressed) {
+function drawTile(ctx, tile, fav, t, pressed, selected) {
   const { x, y, s } = tile;
   ctx.save();
-  const bob = pressed ? 0.94 : 1;
+  const bob = pressed ? 0.94 : selected ? 1.06 : 1;
   ctx.translate(x, y); ctx.scale(bob, bob);
   shadowOn(ctx, s * 0.1, s * 0.05, 'rgba(70,40,10,0.3)');
-  ctx.fillStyle = '#fffdf8'; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2, s, s, s * 0.22); ctx.fill(); shadowOff(ctx);
-  if (fav) { ctx.strokeStyle = '#f472b6'; ctx.lineWidth = s * 0.04; ctx.stroke(); }
+  ctx.fillStyle = selected ? '#fff3c4' : '#fffdf8'; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2, s, s, s * 0.22); ctx.fill(); shadowOff(ctx);
+  if (selected) { ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = s * 0.06; ctx.stroke(); }
+  else if (fav) { ctx.strokeStyle = '#f472b6'; ctx.lineWidth = s * 0.04; ctx.stroke(); }
   drawIcon(ctx, tile.id, 0, -s * 0.08, s * 0.3);
   ctx.fillStyle = '#6b4a2b'; ctx.font = `${Math.round(s * 0.17)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(INGREDIENTS[tile.id].name, 0, s * 0.36);
@@ -2092,21 +2664,33 @@ function decoSpot(id, ux, uy, dropped) {
 const makeGame = () => ({ order: shuffle(KITCHEN_GUESTS.map(g => g.id)), gi: 0, phase: 'arrive', menu: null, step: null, phaseT: 0, t: 0, st: newCook(), fly: [], parts: [], drag: null, paint: false, knife: null, happyUntil: 0, bites: [], tiles: [], L: null, lastRub: 0, timers: [] });
 const newCook = () => ({ layers: [], topBread: null, toppings: [], sauceCv: null, sauceFull: 0, cov: new Set(), bake: 0, skewer: [], fruits: [], hasFav: false, favSaid: false,
   cakes: 0, pan: null, syrup: 0, rub: null, candles: [], scoops: [], cut: 0,
-  fillK: null, press: 0, shapeK: 0, nori: 0, noodleT: null, fryK: 0, glaze: [null, null, null], glazeT: [], glazeN: 0 });
+  fillK: null, press: 0, shapeK: 0, nori: 0, noodleT: null, fryK: 0, glaze: [null, null, null], glazeT: [], glazeN: 0,
+  strokes: [], stir: 0, egg: 0, grill: 0, batter: null, cotton: 0, pleat: 0, sauceK: 0, sauce: null, sauceT: null, patty: false, twirl: 0, veg: [], cutVeg: [], beans: 1, milk: null, ice: 0, whip: 0, drinkK: null });
 // 손님 앞 음식 크기·높이, 먹을 때 부스러기 색, 먹는 방향
-const SERVE_SC = { sandwich: 0.3, pizza: 0.27, skewer: 0.4, pancake: 0.3, cake: 0.28, kimbap: 0.3, icecream: 0.17, juice: 0.24, cookie: 0.27, riceball: 0.3, ramen: 0.27, donut: 0.27 };
-const SERVE_DY = { sandwich: 0.5, skewer: 0.25, pizza: -0.2, pancake: 0.55, cake: 0.55, kimbap: 0.2, icecream: 1.25, juice: 0.62, cookie: -0.2, riceball: 0.5, ramen: -0.2, donut: -0.2 };
+const SERVE_SC = { sandwich: 0.3, pizza: 0.27, skewer: 0.4, pancake: 0.3, cake: 0.28, kimbap: 0.3, icecream: 0.17, juice: 0.24, cookie: 0.27, riceball: 0.3, ramen: 0.27, donut: 0.27,
+  omurice: 0.25, hotdog: 0.27, cupcake: 0.28, cotton: 0.2, mandu: 0.27, tteokbokki: 0.27, burger: 0.3, spaghetti: 0.26, curry: 0.25, coffee: 0.3 };
+const SERVE_DY = { sandwich: 0.5, skewer: 0.25, pizza: -0.2, pancake: 0.55, cake: 0.55, kimbap: 0.2, icecream: 1.25, juice: 0.62, cookie: -0.2, riceball: 0.5, ramen: -0.2, donut: -0.2,
+  omurice: -0.2, hotdog: -0.1, cupcake: 0.5, cotton: 0.85, mandu: -0.2, tteokbokki: -0.2, burger: 0.6, spaghetti: -0.2, curry: -0.2, coffee: 0.65 };
 const CRUMBS = { pizza: ['#e9b46a', '#d33a22', '#fcd34d'], skewer: ['#e11d48', '#84cc16', '#fbbf24'], pancake: ['#d08a3c', '#f0cf96', '#f59e0b'], cake: ['#ffffff', '#f2cd88', '#e11d48'], kimbap: ['#ffffff', '#1d281d', '#fde047'], icecream: ['#fffdf0', '#f9a8bf', '#d9a066'],
-  cookie: ['#e3a35a', '#b8702e', '#5a3010'], riceball: ['#ffffff', '#1d281d', '#f6a3b0'], ramen: ['#f3d68a', '#e8742a', '#4caf50'], donut: ['#c9772f', '#f9a8d4', '#6b3a1e'] };
-const BITE_FROM_TOP = { pizza: true, icecream: true, cookie: true, ramen: true, donut: true };
+  cookie: ['#e3a35a', '#b8702e', '#5a3010'], riceball: ['#ffffff', '#1d281d', '#f6a3b0'], ramen: ['#f3d68a', '#e8742a', '#4caf50'], donut: ['#c9772f', '#f9a8d4', '#6b3a1e'],
+  omurice: ['#ffd84d', '#c8102e', '#e0763a'], hotdog: ['#d08a3c', '#b04a20', '#e8343e'], cupcake: ['#ffffff', '#f2c27c', '#f9a8d4'], cotton: ['#f9a8d4', '#93c5fd', '#ffffff'], mandu: ['#fffaf0', '#efe5d0', '#8a4a22'],
+  tteokbokki: ['#e0402e', '#ffffff', '#f0b26a'], burger: ['#d99a4e', '#5a2a10', '#86d057'], spaghetti: ['#f5dc98', '#e8452c', '#ffffff'], curry: ['#d9922c', '#ffffff', '#ffa24a'] };
+const BITE_FROM_TOP = { pizza: true, icecream: true, cookie: true, ramen: true, donut: true, omurice: true, hotdog: true, cotton: true, mandu: true, tteokbokki: true, spaghetti: true, curry: true };
 const DISH_NEW = ['juice', 'cookie', 'riceball', 'ramen', 'donut'];
+const DISH_NEW2 = ['omurice', 'hotdog', 'cupcake', 'cotton', 'mandu', 'tteokbokki', 'burger', 'spaghetti', 'curry', 'coffee'];
+// 손가락으로 그리는 단계, 빙글빙글 문지르는 단계 (값 = 다 채우려면 문질러야 하는 길이, R 배)
+const DRAW_STEPS = { 'omurice:draw': true, 'hotdog:draw': true, 'cupcake:cream': true };
+const STIR_STEPS = { 'cotton:spin': 18, 'mandu:roll': 6, 'tteokbokki:stir': 12, 'spaghetti:twirl': 10, 'curry:stir': 12 };
+const STROKE_MAX = 2500;   // 그림 점 최대 수
+const tteokPanAt = (x, y, R) => ({ x: x + R * 0.25, y, r: R * 0.85, ir: R * 0.85 * 0.86 });
+const tteokPan = (L) => tteokPanAt(L.cx, L.cy, L.R);
 
 export default function KitchenGame({ audio, speak }) {
   const canvasRef = useRef(null);
   // 게임 상태는 매 화면 바뀌므로 React 상태가 아닌 ref 에 두고(처음 effect 에서 만듦), 버튼에 필요한 것만 ui 로 옮긴다(sync)
   const G = useRef(null);
   const [ui, setUi] = useState({ phase: 'arrive', menu: null, step: null, n: 0, land: true, guest: KITCHEN_GUESTS[0].id });
-  const sync = () => { const g = G.current, st = g.st; setUi({ phase: g.phase, menu: g.menu, step: g.step, sub: st.pan ? st.pan.state : null, n: st.layers.length + st.toppings.length + st.skewer.length + st.scoops.length + st.syrup + (st.noodleT != null ? 1 : 0) + st.glaze.filter(Boolean).length, land: g.L ? g.L.land : true, guest: g.order[g.gi], lyric: g.lyric || null }); };
+  const sync = () => { const g = G.current, st = g.st; setUi({ phase: g.phase, menu: g.menu, step: g.step, sub: st.pan ? st.pan.state : null, n: st.layers.length + st.toppings.length + st.skewer.length + st.scoops.length + st.syrup + (st.noodleT != null ? 1 : 0) + st.glaze.filter(Boolean).length + st.strokes.length + (st.sauce ? 1 : 0) + st.ice + st.whip + (st.milk != null ? 1 : 0), land: g.L ? g.L.land : true, guest: g.order[g.gi], lyric: g.lyric || null }); };
   const later = (fn, ms) => { const g = G.current; const id = setTimeout(() => { g.timers = g.timers.filter(x => x !== id); fn(); }, ms); g.timers.push(id); };
   const say = (text) => { if (speak && text) speak(text); };
   const guest = () => GUEST_BY_ID[G.current.order[G.current.gi]];
@@ -2137,6 +2721,17 @@ export default function KitchenGame({ audio, speak }) {
     if (id === 'riceball') g.step = 'fill';
     if (id === 'ramen') g.step = 'water';
     if (id === 'donut') g.step = 'fry';
+    if (id === 'omurice') g.step = 'fill';
+    if (id === 'hotdog') g.step = 'grill';
+    if (id === 'cupcake') { g.step = 'batter'; g.st.batter = 0; }
+    if (id === 'cotton') g.step = 'sugar';
+    if (id === 'mandu') g.step = 'roll';
+    if (id === 'tteokbokki') g.step = 'sauce';
+    if (id === 'burger') g.step = 'grill';
+    if (id === 'spaghetti') g.step = 'boil';
+    if (id === 'curry') { g.step = 'cut'; g.st.cutVeg = CURRY_VEG.map((v, i) => ({ id: v, i, cutT: null })); }
+    if (id === 'coffee') { g.step = 'cup'; g.st.fillK = 0; }
+    g.sauce = null; g.stirP = null; g.drawing = false; g.stirAng = 0;
     audio.playPopSound();
     say(VOICE.kitchenMenu(MENU_BY_ID[id]));
     sync();
@@ -2145,7 +2740,9 @@ export default function KitchenGame({ audio, speak }) {
     const g = G.current, fav = guest().fav;
     if (g.phase !== 'cook') return [];
     if (`${g.menu}:${g.step}` === 'cookie:cut') return COOKIE_CUTTERS;
-    if (['sandwich:stack', 'pizza:top', 'skewer:stick', 'pancake:top', 'cake:deco', 'kimbap:fill', 'icecream:scoop', 'juice:fill', 'cookie:deco', 'riceball:fill', 'ramen:add', 'donut:glaze'].includes(`${g.menu}:${g.step}`)) return [...new Set([...MENU_BY_ID[g.menu].items, fav])];   // 좋아하는 재료가 이미 메뉴에 있으면(치즈·바나나 등) 한 칸만
+    if (`${g.menu}:${g.step}` === 'omurice:draw') return OMU_SAUCES;
+    if (['sandwich:stack', 'pizza:top', 'skewer:stick', 'pancake:top', 'cake:deco', 'kimbap:fill', 'icecream:scoop', 'juice:fill', 'cookie:deco', 'riceball:fill', 'ramen:add', 'donut:glaze',
+      'omurice:fill', 'hotdog:draw', 'cupcake:cream', 'cotton:sugar', 'mandu:fill', 'tteokbokki:add', 'burger:stack', 'spaghetti:top', 'curry:pot', 'coffee:add'].includes(`${g.menu}:${g.step}`)) return [...new Set([...MENU_BY_ID[g.menu].items, fav])];   // 좋아하는 재료가 이미 메뉴에 있으면(치즈·바나나 등) 한 칸만
     return [];
   };
 
@@ -2155,6 +2752,8 @@ export default function KitchenGame({ audio, speak }) {
     if (!L) return;
     const land = (fn) => (k) => { fn(k); audio.playSnap(); sparkle(k.tx, k.ty, 6); sync(); };
     const pending = g.fly.length;
+    // 그리는 단계에서 소스·크림을 누르면 그 색으로 바꿔 든다 (넣지 않음)
+    if (SAUCE_IDS.includes(id) && DRAW_STEPS[`${g.menu}:${g.step}`]) { g.sauce = id; audio.playFreq(700, 'sine', 0.08, 0.3); say(VOICE.kitchenIng(id)); sync(); return; }
     if (g.menu === 'sandwich') {
       if (st.layers.length + pending >= SANDWICH_MAX) { audio.playFreq(220, 'sine', 0.15, 0.3); say(VOICE.kitchenFull()); return; }
       const geo = sandwichGeom(L.cx, L.cy, L.R);
@@ -2248,6 +2847,49 @@ export default function KitchenGame({ audio, speak }) {
         const [dx, dy] = donutAt(L.cx, L.cy, L.R, di);
         g.fly.push({ id, kind: 'icon', x0: fx, y0: fy, tx: dx + p.x * L.R * 0.36, ty: dy + p.y * L.R * 0.36, t0: g.t, dur: 0.4, done: land(() => st.toppings.push(p)) });
       }
+    } else if (DISH_NEW2.includes(g.menu)) {
+      const full = () => { audio.playFreq(220, 'sine', 0.15, 0.3); say(VOICE.kitchenFull()); };
+      const fly = (tx, ty, fn, dur = 0.42) => g.fly.push({ id, kind: 'icon', x0: fx, y0: fy, tx, ty, t0: g.t, dur, done: land(fn) });
+      const rnd = (k = 1) => (Math.random() - 0.5) * k;
+      const deco = (extra = {}) => ({ id, x: 0, y: 0, rot: rnd(1.2), v: Math.floor(Math.random() * 3), ...extra });
+      if (st.toppings.length + pending >= DECO_MAX) { full(); return; }
+      if (g.menu === 'omurice') {
+        if (st.layers.length + pending >= 8) { full(); return; }
+        fly(L.cx + rnd(1.2) * L.R, L.cy + rnd(0.7) * L.R, () => st.layers.push({ id }));
+      } else if (g.menu === 'hotdog') {
+        const p = deco({ x: rnd(1.4), y: rnd(0.3) }); fly(L.cx + p.x * L.R, L.cy + p.y * L.R, () => st.toppings.push(p));
+      } else if (g.menu === 'cupcake') {
+        const p = deco({ ci: Math.floor(Math.random() * 3), x: rnd(1), y: rnd(1) }), [cx, b] = cupcakePos(L.cx, L.cy, L.R, p.ci);
+        fly(cx + p.x * L.R * 0.26, b - L.R * 0.62 + p.y * L.R * 0.12, () => st.toppings.push(p));
+      } else if (g.menu === 'cotton') {
+        if (SUGAR[id]) {
+          if (st.layers.length + pending >= COTTON_MAX) { full(); return; }
+          fly(L.cx, L.cy + L.R * 0.5, () => { st.layers.push({ id }); audio.playNoise(0.4, 0.2, 3000, 0.5); });
+        } else { const a = Math.random() * TAU, p = deco({ x: Math.cos(a) * 0.5, y: Math.sin(a) * 0.5 }); fly(L.cx + p.x * L.R * 0.6, L.cy - L.R * 0.38 + p.y * L.R * 0.6, () => st.toppings.push(p)); }
+      } else if (g.menu === 'mandu') {
+        const i = st.layers.length + pending; if (i >= MANDU_MAX) { full(); return; }
+        const [ox, oy] = RB_SPOTS[i % RB_SPOTS.length]; fly(L.cx + ox * L.R * 0.9, L.cy + oy * L.R * 0.9, () => st.layers.push({ id }));
+      } else if (g.menu === 'tteokbokki') {
+        const g2 = tteokPan(L), p = decoSpot(id, (fx - g2.x) / g2.ir, (fy - g2.y) / g2.ir, dropped);
+        fly(g2.x + p.x * g2.ir * 0.75, g2.y + p.y * g2.ir * 0.75, () => { st.toppings.push(p); audio.playNoise(0.2, 0.25, 700, 0.6); });
+      } else if (g.menu === 'burger') {
+        const n = st.layers.length + pending; if (n >= BURGER_MAX) { full(); return; }
+        const bg = burgerGeom(L.cx, L.cy, L.R);
+        fly(L.cx, bg.base - bg.w * (0.25 + n * 0.05), () => st.layers.push({ id, dx: rnd(0.04), rot: rnd(0.03) }));
+      } else if (g.menu === 'spaghetti') {
+        if (SPA_SAUCES.includes(id)) fly(L.cx, L.cy, () => { st.sauce = id; st.sauceT = g.t; audio.playNoise(0.6, 0.25, 500, 0.6); });
+        else { const p = decoSpot(id, (fx - L.cx) / (L.R * 0.6), (fy - L.cy) / (L.R * 0.6), dropped); fly(L.cx + p.x * L.R * 0.6, L.cy + p.y * L.R * 0.6, () => st.toppings.push(p)); }
+      } else if (g.menu === 'curry') {
+        const r = L.R * 0.95 * 0.86, p = decoSpot(id, (fx - L.cx) / r, (fy - L.cy) / r, dropped);
+        fly(L.cx + p.x * r * 0.7, L.cy + p.y * r * 0.7, () => { st.toppings.push(p); audio.playNoise(0.2, 0.25, 700, 0.6); });
+      } else if (g.menu === 'coffee') {
+        const cg = coffeeGeom(L.cx, L.cy, L.R), tx = cg.cupX, ty = cg.cupY - L.R * 0.5;
+        if (id === 'milk') fly(tx, ty, () => { if (st.milk == null) st.milk = g.t; audio.playNoise(0.8, 0.2, 1500, 0.5); });
+        else if (id === 'ice') fly(tx, ty, () => { st.ice = Math.min(3, st.ice + 1); audio.playFreq(1800, 'sine', 0.06, 0.3); });
+        else if (id === 'whip') fly(tx, ty, () => { st.whip = 1; audio.playNoise(0.5, 0.25, 2500, 0.5); });
+        else if (id === 'syrup') fly(tx, ty, () => { st.syrup = 1; });
+        else { const p = deco({ x: rnd(1.2) }); fly(tx + p.x * L.R * 0.15, ty, () => st.toppings.push(p)); }
+      }
     }
     if (id === gu.fav) { st.hasFav = true; if (!st.favSaid) { st.favSaid = true; g.happyUntil = g.t + 2.6; say(VOICE.kitchenFav(gu)); return; } }
     say(VOICE.kitchenIng(id));
@@ -2274,7 +2916,8 @@ export default function KitchenGame({ audio, speak }) {
   const finishSkewer = () => { const g = G.current; if (g.menu === 'skewer' && g.step === 'stick' && g.st.skewer.length >= 2) finishCooking(); };
   const finishSimple = () => {
     const g = G.current, k = `${g.menu}:${g.step}`;
-    if (k === 'pancake:top' || (k === 'icecream:scoop' && g.st.scoops.length) || k === 'cookie:deco' || k === 'ramen:add' || k === 'donut:glaze') finishCooking();
+    if (k === 'pancake:top' || (k === 'icecream:scoop' && g.st.scoops.length) || k === 'cookie:deco' || k === 'ramen:add' || k === 'donut:glaze'
+      || k === 'omurice:draw' || k === 'hotdog:draw' || k === 'cupcake:cream' || k === 'coffee:add') finishCooking();
   };
   // ── 주스·쿠키·주먹밥·라면·도넛: 단계 시작 (시간이 지나면 넘어가는 것은 그림 루프의 dishTick) ──
   const startStep = (menu, from, to, voice) => {
@@ -2296,6 +2939,105 @@ export default function KitchenGame({ audio, speak }) {
   };
   const pourWater = () => { if (startStep('ramen', 'water', 'pour', VOICE.kitchenWater())) audio.playNoise(1.0, 0.2, 1800, 0.4); };
   const startFry = () => { if (startStep('donut', 'fry', 'frying', VOICE.kitchenFry())) audio.playNoise(0.5, 0.25, 4000, 0.6); };
+  // ── 오므라이스·핫도그·컵케이크·솜사탕·만두·떡볶이·햄버거·스파게티·카레라이스·커피 ──
+  const toDraw = (sauce) => { const g = G.current; g.sauce = sauce; say(VOICE.kitchenDraw()); sync(); };
+  const coverEgg = () => { if (startStep('omurice', 'fill', 'egg', VOICE.kitchenEggCover())) audio.playNoise(0.6, 0.2, 900, 0.5); };
+  const rollSausage = () => {
+    const g = G.current, st = g.st; if (g.menu !== 'hotdog' || g.step !== 'grill' || g.t - (g.tapT || 0) < 0.3) return;
+    g.tapT = g.t; st.grill++; audio.playNoise(0.4, 0.2, 5000, 0.6); audio.playFreq(200, 'sine', 0.1, 0.3);
+    if (st.grill >= HOTDOG_ROLLS) { g.step = 'grilled'; g.stepT = g.t; later(() => { if (g.menu === 'hotdog' && g.step === 'grilled') { g.step = 'draw'; sparkle(g.L.cx, g.L.cy, 12); audio.playSnap(); toDraw('ketchup'); } }, 900); sync(); }
+  };
+  const pourBatter = () => { if (startStep('cupcake', 'batter', 'pourBatter', VOICE.kitchenPour())) audio.playNoise(0.9, 0.18, 700, 0.5); };
+  const startCupcakeBake = () => { if (startStep('cupcake', 'filled', 'toOven', VOICE.kitchenBake())) audio.playFreq(330, 'square', 0.08, 0.2); };
+  const startSpin = () => { if (G.current.st.layers.length) startStep('cotton', 'sugar', 'spin', VOICE.kitchenSpin()); };
+  const foldMandu = () => { if (startStep('mandu', 'fill', 'fold', null)) audio.playFreq(300, 'sine', 0.12, 0.4); };
+  const pleatMandu = () => {
+    const g = G.current, st = g.st; if (g.menu !== 'mandu' || g.step !== 'pleat' || g.t - (g.tapT || 0) < 0.22) return;
+    g.tapT = g.t; st.pleat++; audio.playFreq(500 + st.pleat * 60, 'sine', 0.08, 0.4); audio.playNoise(0.08, 0.2, 1500, 0.6);
+    sparkle(g.L.cx - Math.cos((st.pleat) / 6.5 * Math.PI) * g.L.R * 0.75, g.L.cy + Math.sin(st.pleat / 6.5 * Math.PI) * g.L.R * 0.58, 4);
+    if (st.pleat >= MANDU_PLEATS) { g.step = 'steam'; g.stepT = g.t + 0.3; later(() => say(VOICE.kitchenSteam()), 300); sync(); }
+  };
+  const pourTteokSauce = () => { if (startStep('tteokbokki', 'sauce', 'pourSauce', null)) audio.playNoise(1.0, 0.2, 600, 0.5); };
+  const startStir = () => { const g = G.current; if ((g.menu === 'tteokbokki' && g.step === 'add') || (g.menu === 'curry' && g.step === 'pot')) startStep(g.menu, g.step, 'stir', VOICE.kitchenStir()); };
+  const tapPatty = () => {
+    const g = G.current; if (g.menu !== 'burger') return;
+    if (g.step === 'grill') { if (startStep('burger', 'grill', 'sizzle', null)) audio.playNoise(0.5, 0.25, 5000, 0.6); }
+    else if (g.step === 'ready') { startStep('burger', 'ready', 'flip', VOICE.kitchenFlipped()); audio.playFreq(500, 'sine', 0.15, 0.3); later(() => audio.playFreq(800, 'sine', 0.12, 0.3), 120); }
+  };
+  const coverBun = () => { const g = G.current; if (startStep('burger', 'stack', 'cover', VOICE.kitchenBun())) { g.st.topBread = 0; later(() => audio.playFreq(160, 'sine', 0.15, 0.5), 450); later(finishCooking, 1600); } };
+  const dropPasta = () => { const g = G.current; if (startStep('spaghetti', 'boil', 'cookPasta', VOICE.kitchenPasta())) { g.st.noodleT = g.t; audio.playNoise(0.4, 0.3, 900, 0.6); } };
+  const startTwirl = () => startStep('spaghetti', 'top', 'twirl', VOICE.kitchenTwirl());
+  const cutVeg = (v) => {
+    const g = G.current, L = g.L; if (v.cutT != null) return;
+    v.cutT = g.t; g.knife = { x: L.cx + (v.i - 1) * L.R * 0.75, y: L.cy, t0: g.t };
+    later(() => { audio.playNoise(0.07, 0.8, 2600, 1.2); audio.playFreq(120, 'triangle', 0.08, 0.5); }, 140);
+    later(() => { audio.playNoise(0.07, 0.8, 2600, 1.2); audio.playFreq(110, 'triangle', 0.08, 0.5); }, 380);
+    say(VOICE.kitchenIng(v.id));
+    if (g.st.cutVeg.every(q => q.cutT != null)) later(() => { if (g.menu === 'curry' && g.step === 'cut') { g.st.veg = CURRY_VEG.slice(); g.step = 'toPot'; g.stepT = g.t; audio.playNoise(0.5, 0.3, 800, 0.6); sync(); } }, 1300);
+  };
+  const tapCoffee = (x, y) => {
+    const g = G.current, L = g.L, cg = coffeeGeom(L.cx, L.cy, L.R);
+    if (g.step === 'cup' && Math.hypot(x - cg.sideX, y - (cg.cupY - L.R * 0.3)) < L.R * 0.5) { if (startStep('coffee', 'cup', 'cupIn', null)) audio.playFreq(600, 'sine', 0.08, 0.3); }
+    else if (g.step === 'beans' && Math.abs(x - cg.hopX) < L.R * 0.35 && y > cg.hopY - L.R * 0.55 && y < cg.hopY + L.R * 0.1) { if (startStep('coffee', 'beans', 'grind', VOICE.kitchenGrind())) for (let i = 0; i < 6; i++) later(() => audio.playNoise(0.25, 0.25, 1800 + i * 100, 0.9), i * 250); }
+    else if (g.step === 'brewReady' && Math.hypot(x - cg.btnX, y - cg.btnY) < L.R * 0.3) { if (startStep('coffee', 'brewReady', 'brew', VOICE.kitchenBrew())) { audio.playFreq(900, 'sine', 0.1, 0.3); later(() => audio.playNoise(2.4, 0.15, 1200, 0.4), 300); } }
+  };
+  // 빙글빙글 문지르기 (솜사탕·밀대·젓기·포크): 문지른 길이만큼 st.stir 가 차고, 가운데를 도는 각도는 g.stirAng
+  const stirMove = (x, y) => {
+    const g = G.current, L = g.L, st = g.st, p = g.stirP, len = STIR_STEPS[`${g.menu}:${g.step}`]; if (!p || !len) return;
+    const d = Math.hypot(x - p.x, y - p.y); if (d < 1) return;
+    const a0 = Math.atan2(p.y - L.cy, p.x - L.cx), a1 = Math.atan2(y - L.cy, x - L.cx); let da = a1 - a0; if (da > Math.PI) da -= TAU; if (da < -Math.PI) da += TAU;
+    g.stirAng += da; st.stir = Math.min(1, st.stir + d / (L.R * len)); g.stirP = { x, y, t: g.t };
+    if (g.menu === 'cotton') st.cotton = st.stir;
+    if (g.menu === 'spaghetti') st.twirl = g.stirAng;
+    if (g.t - g.lastRub > 0.14) { g.lastRub = g.t; audio.playNoise(0.14, 0.18, g.menu === 'cotton' ? 3000 : g.menu === 'mandu' ? 400 : 900, 0.7); }
+  };
+  // 손가락으로 그리기 (케첩·크림)
+  const drawMove = (x, y) => {
+    const g = G.current, L = g.L, st = g.st, s = st.strokes[st.strokes.length - 1]; if (!g.drawing || !s) return;
+    const ux = (x - L.cx) / L.R, uy = (y - L.cy) / L.R, q = s.pts[s.pts.length - 1];
+    if (Math.hypot(ux - q[0], uy - q[1]) < 0.02 || st.strokes.reduce((n, k) => n + k.pts.length, 0) > STROKE_MAX) return;
+    s.pts.push([ux, uy]);
+    if (g.t - g.lastRub > 0.12) { g.lastRub = g.t; audio.playNoise(0.12, 0.15, CREAM_IDS.includes(s.id) ? 700 : 1600, 0.6); }
+  };
+  const dishTick2 = () => {
+    const g = G.current, st = g.st, t = g.t, e = t - (g.stepT || 0);
+    if (g.phase !== 'cook') return;
+    const sizzle = (f, gap = 0.35) => { if (Math.floor(e / gap) !== g.sizzleN) { g.sizzleN = Math.floor(e / gap); f(); } };
+    const go = (step, voice) => { g.step = step; g.stepT = t; g.sizzleN = -1; if (voice) say(voice); sync(); };
+    const m = g.menu, s = g.step, stirLen = STIR_STEPS[`${m}:${s}`];
+    if (stirLen && st.stir >= 1) {
+      g.stirP = null;
+      if (m === 'mandu') { st.stir = 0; sparkle(g.L.cx, g.L.cy, 12); audio.playSnap(); go('fill', VOICE.kitchenFill()); }
+      else { st.stir = 1; finishCooking(); }
+      return;
+    }
+    if (m === 'omurice') { if (s === 'egg') { st.egg = clamp01(e / 0.9); if (e > 1.1) { st.egg = 1; go('draw'); toDraw('ketchup'); } } }
+    else if (m === 'cupcake') {
+      if (s === 'pourBatter') { st.batter = clamp01(e / 1.0); if (e > 1.1) { st.batter = 1; go('filled'); } }
+      else if (s === 'toOven' && e > 0.8) go('bake');
+      else if (s === 'bake') { st.bake = clamp01(e / 2.8); if (e > 2.8) { go('fromOven', VOICE.kitchenCupcakeDing()); audio.playXylophone(1760, 0.7); later(() => audio.playXylophone(2093, 0.6), 150); } else sizzle(() => audio.playNoise(0.3, 0.12, 5200, 0.6)); }
+      else if (s === 'fromOven' && e > 0.8) { go('cream'); g.sauce = 'creamWhite'; sync(); }
+    } else if (m === 'mandu') {
+      if (s === 'fold' && e > 0.9) { go('pleat', VOICE.kitchenFold()); audio.playSnap(); }
+      else if (s === 'steam' && e > 2.0) { g.step = 'steamed'; finishCooking(); }
+    } else if (m === 'tteokbokki') {
+      if (s === 'pourSauce') { st.sauceK = clamp01(e / 1.0); if (e > 1.1) { st.sauceK = 1; go('add', VOICE.kitchenSaucePour()); } }
+    } else if (m === 'burger') {
+      if (s === 'sizzle') { sizzle(() => audio.playNoise(0.3, 0.12, 5200, 0.6)); if (e > 1.8) { go('ready', VOICE.kitchenPattyFlip()); audio.playXylophone(1318.5, 0.4); } }
+      else if (s === 'flip' && e > 0.6) go('sizzle2');
+      else if (s === 'sizzle2') { sizzle(() => audio.playNoise(0.3, 0.12, 5200, 0.6)); if (e > 1.1) go('toBun'); }
+      else if (s === 'toBun' && e > 0.6) { st.patty = true; audio.playSnap(); go('stack', VOICE.kitchenTopping()); }
+    } else if (m === 'spaghetti') {
+      if (s === 'cookPasta' && e > 1.8) go('plate');
+      else if (s === 'plate' && e > 0.6) go('top', VOICE.kitchenPastaSauce());
+    } else if (m === 'curry') {
+      if (s === 'toPot' && e > 0.9) go('pot', VOICE.kitchenCurryPot());
+    } else if (m === 'coffee') {
+      if (s === 'cupIn' && e > 0.6) go('beans', VOICE.kitchenBeans());
+      else if (s === 'grind') { st.beans = 1 - clamp01(e / 1.6) * 0.5; if (e > 1.6) go('brewReady', VOICE.kitchenBrewBtn()); }
+      else if (s === 'brew') { st.fillK = clamp01((e - 0.3) / 2.2); if (e > 2.7) { st.fillK = 1; go('add', VOICE.kitchenCoffeeAdd()); } }
+    }
+  };
   // 시간이 지나면 다음 단계로 (그림 루프에서 매 프레임)
   const dishTick = () => {
     const g = G.current, st = g.st, t = g.t, e = t - (g.stepT || 0);
@@ -2540,6 +3282,18 @@ export default function KitchenGame({ audio, speak }) {
       if (g.menu === 'riceball' && g.step === 'press') { pressRice(); return; }
       if (g.menu === 'ramen' && g.step === 'water' && Math.hypot(x - L.cx, y - L.cy) < L.R * 1.3) { pourWater(); return; }
       if (g.menu === 'donut' && g.step === 'fry' && Math.hypot(x - L.cx, y - L.cy) < L.R * 1.3) { startFry(); return; }
+      const key = `${g.menu}:${g.step}`, near = (k) => Math.abs(x - L.cx) < L.R * k && Math.abs(y - L.cy) < L.R * k;
+      if (DRAW_STEPS[key] && g.sauce && near(1.5)) { g.drawing = true; g.st.strokes.push({ id: g.sauce, pts: [[(x - L.cx) / L.R, (y - L.cy) / L.R]] }); audio.playNoise(0.1, 0.2, 1500, 0.6); sync(); return; }
+      if (STIR_STEPS[key]) { g.stirP = { x, y, t: g.t }; return; }
+      if (key === 'hotdog:grill' && near(1.3)) { rollSausage(); return; }
+      if (key === 'cupcake:batter' && near(1.4)) { pourBatter(); return; }
+      if (key === 'cupcake:filled' && Math.abs(x - L.ovenX) < L.ovenS && Math.abs(y - L.ovenY) < L.ovenS) { startCupcakeBake(); return; }
+      if (key === 'mandu:pleat') { pleatMandu(); return; }
+      if (key === 'tteokbokki:sauce' && near(1.3)) { pourTteokSauce(); return; }
+      if ((key === 'burger:grill' || key === 'burger:ready') && near(1.3)) { tapPatty(); return; }
+      if (key === 'spaghetti:boil' && near(1.3)) { dropPasta(); return; }
+      if (key === 'curry:cut') { const v = g.st.cutVeg.filter(q => q.cutT == null).find(q => Math.hypot(x - (L.cx + (q.i - 1) * L.R * 0.75), y - L.cy) < L.R * 0.38); if (v) cutVeg(v); return; }
+      if (g.menu === 'coffee') { tapCoffee(x, y); return; }
       if (g.menu === 'skewer' && g.step === 'cut') {
         const f = g.st.fruits.filter(q => q.cutT == null).find(q => Math.hypot(x - (L.cx + (q.i - 1.5) * L.R * 0.55), y - L.cy) < L.R * 0.3);
         if (f) cutFruit(f);
@@ -2555,9 +3309,13 @@ export default function KitchenGame({ audio, speak }) {
     const g = G.current; if (!g) return; const [x, y] = pos(e);
     if (g.drag) { g.drag.x = x; g.drag.y = y; return; }
     if (g.paint) { if (g.menu === 'pizza') paintSauce(x, y); else paintRub(x, y); }
+    if (g.drawing) drawMove(x, y);
+    if (g.stirP) stirMove(x, y);
   };
   const onUp = () => {
     const g = G.current; if (!g) return; const d = g.drag; g.paint = false;
+    if (g.drawing) { g.drawing = false; sync(); }
+    g.stirP = null;
     if (!d) return;
     g.drag = null;
     const moved = Math.hypot(d.x - d.sx, d.y - d.sy) > 14;
@@ -2638,6 +3396,7 @@ export default function KitchenGame({ audio, speak }) {
           }
           const eaten = g.phase === 'end' ? 3 : g.bites.length;
           if (g.menu === 'juice') drawFood(ctx, 'juice', { ...st, fillK: 1 - eaten / 3 }, fx, fy, Rs, t);   // 주스는 베어 먹지 않고 쭉쭉 마셔서 줄어든다
+          else if (g.menu === 'coffee') drawFood(ctx, 'coffee', { ...st, drinkK: 1 - eaten / 3 }, fx, fy, Rs, t);
           else if (eaten === 0) drawFood(ctx, g.menu, st, fx, fy, Rs, t);
           else {
             // 먹은 만큼 오른쪽부터 베어 문 자국
@@ -2846,6 +3605,136 @@ export default function KitchenGame({ audio, speak }) {
                 if (g.step === 'fry') finger(L.cx + L.R * 0.75, L.cy + L.R * 0.75);
               }
             }
+          } else if (DISH_NEW2.includes(m)) {
+            dishTick2();
+            const s = g.step, e = t - (g.stepT || 0), serving = g.phase === 'serve', R = L.R, cx = L.cx, cy = L.cy;
+            const finger = (fx, fy) => { ctx.save(); ctx.font = `${Math.round(R * 0.3)}px sans-serif`; ctx.textAlign = 'center'; ctx.globalAlpha = 0.6 + Math.sin(t * 5) * 0.4; ctx.fillText('👆', fx, fy + Math.sin(t * 6) * R * 0.04); ctx.restore(); };
+            const circleHint = (r) => { if (!g.stirP) finger(cx + Math.cos(t * 3) * R * r, cy + Math.sin(t * 3) * R * r * 0.7 + R * 0.15); };
+            const spoon = (wood = true) => {
+              const p = g.stirP || { x: cx + Math.cos(t * 0.8) * R * 0.3, y: cy + Math.sin(t * 0.8) * R * 0.3 };
+              ctx.save(); shadowOn(ctx, R * 0.06, R * 0.03); ctx.lineCap = 'round';
+              ctx.strokeStyle = wood ? '#c99a5e' : '#cbd5e1'; ctx.lineWidth = R * 0.07; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + R * 0.7, p.y - R * 0.55); ctx.stroke();
+              ctx.fillStyle = wood ? '#d9ae74' : '#e2e8f0'; ell(ctx, p.x, p.y, R * 0.14, R * 0.1, -0.67); ctx.fill(); shadowOff(ctx); ctx.restore();
+            };
+            const steam = (x0, y0, w, n = 0.15) => { if (Math.random() < n) g.parts.push({ kind: 'steam', x: x0 + (Math.random() - 0.5) * w, y: y0, vx: (Math.random() - 0.5) * 10, vy: -40 - Math.random() * 20, born: t, life: 1.4, r: R * 0.06 }); };
+            // 오븐을 거쳐 가는 단계 (컵케이크)
+            const ovenScene = (drawAt) => {
+              const glow = s === 'bake' ? 0.6 + Math.sin(t * 8) * 0.1 : 0, ov = drawOven(ctx, L.ovenX, L.ovenY, L.ovenS, glow), wr = ov.wr * 0.75;
+              let px = cx, py = cy, pr = R;
+              if (s === 'toOven') { const k = easeOut(e / 0.8); px = cx + (ov.wx - cx) * k; py = cy + (ov.wy - cy) * k; pr = R + (wr - R) * k; }
+              else if (s === 'fromOven') { const k = easeOut(e / 0.8); px = ov.wx + (cx - ov.wx) * k; py = ov.wy + (cy - ov.wy) * k; pr = wr + (R - wr) * k; }
+              if (s === 'bake') { ctx.save(); ctx.beginPath(); ctx.roundRect(L.ovenX - L.ovenS * 0.82, L.ovenY - L.ovenS * 0.42, L.ovenS * 1.64, L.ovenS * 1.15, L.ovenS * 0.1); ctx.clip(); drawAt(ov.wx, ov.wy - wr * 0.2, wr); ctx.restore(); drawOvenGlass(ctx, L.ovenX, L.ovenY, L.ovenS, glow); }
+              else { drawOvenGlass(ctx, L.ovenX, L.ovenY, L.ovenS, 0); drawAt(px, py, pr); }
+              if (s === 'filled') finger(L.ovenX, L.ovenY + L.ovenS * 1.35);
+            };
+            if (serving) {
+              drawFood(ctx, m, st, cx, cy, R, t);
+              if (['tteokbokki', 'curry', 'mandu', 'spaghetti', 'coffee'].includes(m)) steam(cx, cy - R * 0.2, R * 1.2, 0.12);
+            } else if (m === 'omurice') {
+              drawOmurice(ctx, st, cx, cy, R, t);
+              if (s === 'draw' && !st.strokes.length) finger(cx + Math.cos(t * 2) * R * 0.5, cy + Math.sin(t * 4) * R * 0.25);
+            } else if (m === 'hotdog') {
+              if (s === 'grill' || s === 'grilled') {
+                drawGrillPan(ctx, cx, cy, R * 2.4, R * 1.0, true);
+                const rl = t - (g.tapT || -9) < 0.35 ? Math.sin((t - g.tapT) / 0.35 * Math.PI) : 0;
+                drawSausage(ctx, cx, cy - rl * R * 0.08, R * 0.9, R * 0.2, Math.min(1, st.grill / HOTDOG_ROLLS), st.grill, 0);
+                steam(cx, cy - R * 0.1, R * 1.4, 0.12);
+                if (s === 'grill' && t - (g.tapT || g.stepT || 0) > 1.0) finger(cx + R * 0.4, cy + R * 0.25);
+              } else { drawHotdog(ctx, st, cx, cy, R, t); if (s === 'draw' && !st.strokes.length) finger(cx + Math.cos(t * 2) * R * 0.6, cy + R * 0.1); }
+            } else if (m === 'cupcake') {
+              if (['filled', 'toOven', 'bake', 'fromOven'].includes(s)) ovenScene((x0, y0, r0) => drawCupcakes(ctx, st, x0, y0, r0, t, { tin: true }));
+              else {
+                drawCupcakes(ctx, st, cx, cy, R, t, { tin: s === 'batter' || s === 'pourBatter' });
+                if (s === 'pourBatter') { ctx.save(); ctx.strokeStyle = '#f3d9a3'; ctx.lineWidth = R * 0.05; ctx.lineCap = 'round'; const i = Math.min(2, Math.floor(e / 0.34)), [bx] = cupcakePos(cx, cy, R, i); ctx.beginPath(); ctx.moveTo(bx + R * 0.15, cy - R * 0.6); ctx.lineTo(bx, cy); ctx.stroke(); ctx.restore(); }
+                if (s === 'batter') finger(cx + R * 0.3, cy + R * 0.35);
+                if (s === 'cream' && !st.strokes.length) finger(cx + Math.cos(t * 2) * R * 0.7, cy - R * 0.1);
+              }
+            } else if (m === 'cotton') {
+              const spinning = !!(g.stirP && t - g.stirP.t < 0.25);
+              drawCottonCandy(ctx, st, cx, cy, R, t, { machine: true, spinning, ang: g.stirAng * 0.3 });
+              if (s === 'spin') circleHint(0.6);
+            } else if (m === 'mandu') {
+              drawBoard(ctx, cx, cy, R * 2.6, R * 1.75);
+              if (s === 'roll') {
+                drawDough(ctx, cx, cy, R * (0.3 + 0.45 * st.stir), st.stir);
+                const p = g.stirP || { x: cx + Math.sin(t * 2) * R * 0.2, y: cy + R * 0.05 };
+                drawRollingPin(ctx, p.x, p.y, R);
+                if (!g.stirP) finger(cx + Math.sin(t * 2) * R * 0.5, cy + R * 0.45);
+              } else if (s === 'fill') {
+                drawDough(ctx, cx, cy, R * 0.75, 1);
+                st.layers.forEach((l, i) => { const [ox, oy] = RB_SPOTS[i % RB_SPOTS.length]; drawDeco(ctx, l.id, cx + ox * R * 0.9, cy + oy * R * 0.9, R * 0.17, i * 0.7, i % 3); });
+              } else if (s === 'fold') {
+                const k = easeOut(clamp01(e / 0.8)), sy = 1 - 2 * k, r = R * 0.75;
+                ctx.save(); ctx.beginPath(); ctx.rect(cx - r * 1.2, cy, r * 2.4, r * 1.2); ctx.clip(); drawDough(ctx, cx, cy, r, 1); ctx.restore();
+                ctx.save(); ctx.translate(cx, cy); ctx.scale(1, Math.abs(sy) < 0.02 ? 0.02 : sy); ctx.beginPath(); ctx.rect(-r * 1.2, -r * 1.2, r * 2.4, r * 1.2); ctx.clip(); drawDough(ctx, 0, 0, r, 1);
+                if (sy > 0) st.layers.forEach((l, i) => { const [ox, oy] = RB_SPOTS[i % RB_SPOTS.length]; if (oy <= 0) drawDeco(ctx, l.id, ox * R * 0.9, oy * R * 0.9, R * 0.17, i * 0.7, i % 3); });
+                ctx.restore();
+              } else {
+                drawManduShape(ctx, cx, cy, R * 0.75, st.pleat, s === 'steam' ? clamp01(e / 2) : 0);
+                if (s === 'pleat' && t - (g.tapT || g.stepT || 0) > 1.0) { const a = (st.pleat + 1) / 6.5 * Math.PI; finger(cx - Math.cos(a) * R * 0.75, cy + Math.sin(a) * R * 0.58 + R * 0.15); }
+                if (s === 'steam') steam(cx, cy, R * 1.2, 0.35);
+              }
+            } else if (m === 'tteokbokki') {
+              const pan = tteokPan(L);
+              drawPan(ctx, pan.x, pan.y, pan.r, true);
+              drawTteokSauce(ctx, st, pan.x, pan.y, pan.ir, t, { boil: s === 'stir' ? 0.8 : s === 'add' ? 0.4 : 0, ang: g.stirAng * 0.4 });
+              if (s === 'pourSauce' && e < 0.95) { ctx.save(); ctx.strokeStyle = '#c8301e'; ctx.lineWidth = R * 0.08; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(pan.x + R * 0.9, pan.y - R * 1.3); ctx.quadraticCurveTo(pan.x + R * 0.4, pan.y - R * 1.0, pan.x + R * 0.1 + Math.sin(t * 25) * 2, pan.y); ctx.stroke(); ctx.restore(); }
+              if (s === 'sauce') finger(pan.x + R * 0.3, pan.y + R * 0.35);
+              if (s === 'stir') { spoon(); circleHint(0.45); steam(pan.x, pan.y - R * 0.2, R, 0.15); }
+            } else if (m === 'burger') {
+              const px = cx + R * 0.3, pr = R * 0.75;
+              if (['grill', 'sizzle', 'ready', 'flip', 'sizzle2'].includes(s)) {
+                drawPan(ctx, px, cy, pr, s !== 'grill');
+                let k = 0.15, sc = 1;
+                if (s === 'sizzle') k = 0.15 + clamp01(e / 1.8) * 0.1;
+                if (s === 'ready') sc = 1 + Math.sin(t * 9) * 0.02;
+                if (s === 'flip') { const q = clamp01(e / 0.6); sc = Math.max(0.05, Math.abs(Math.cos(q * Math.PI))); k = q < 0.5 ? 0.25 : 0.9; }
+                if (s === 'sizzle2') k = 0.9;
+                ctx.save(); ctx.translate(px, cy - (s === 'flip' ? Math.sin(clamp01(e / 0.6) * Math.PI) * R * 0.5 : 0)); ctx.scale(1, sc); pattyTop(ctx, 0, 0, pr * 0.62, k); ctx.restore();
+                if (s !== 'grill') steam(px, cy - R * 0.1, pr, 0.12);
+                if (s === 'grill' || s === 'ready') finger(px + R * 0.15, cy + R * 0.3);
+              } else {
+                const bg = burgerGeom(cx, cy, R);
+                if (s === 'cover') st.topBread = clamp01(e / 0.5);
+                drawBurger(ctx, st, cx, cy, R, t);
+                if (s === 'toBun') { const k = easeOut(clamp01(e / 0.6)); ctx.save(); ctx.translate(px + (cx - px) * k, cy + (bg.base - bg.w * 0.12 - cy) * k - Math.sin(k * Math.PI) * R * 0.5); ctx.scale(1 + k * 0.1, 1 - k * 0.6); pattyTop(ctx, 0, 0, pr * 0.62, 0.9); ctx.restore(); }
+              }
+            } else if (m === 'spaghetti') {
+              if (s === 'boil' || s === 'cookPasta') { drawPastaPot(ctx, st, cx, cy, R, t, s === 'cookPasta' ? clamp01(e / 1.6) : 0); steam(cx, cy - R * 0.2, R, 0.12); if (s === 'boil') finger(cx + R * 0.3, cy + R * 0.35); }
+              else { drawSpaghetti(ctx, st, cx, cy, R, t, { fork: s === 'twirl' }); if (s === 'twirl') circleHint(0.5); }
+            } else if (m === 'curry') {
+              if (s === 'cut') {
+                drawBoard(ctx, cx, cy, R * 2.6, R * 1.25);
+                st.cutVeg.forEach(v => {
+                  const vx = cx + (v.i - 1) * R * 0.75, ce = v.cutT == null ? -1 : t - v.cutT;
+                  if (ce < 0.4) drawWhole(ctx, v.id, vx, cy + (ce < 0 ? Math.sin(t * 2 + v.i) * 2 : 0), R * 0.28);
+                  else { const sp = Math.min(1, (ce - 0.4) * 4); cubeSpots(6, 811 + v.i).forEach(([dx, dy, rot]) => vegCube(ctx, v.id, vx + dx * R * 0.3 * (0.4 + sp * 0.6), cy + dy * R * 0.3 * (0.4 + sp * 0.6), R * 0.11, rot)); }
+                });
+                if (g.knife) { const ke = t - g.knife.t0; if (ke < 0.6) { const down = Math.abs(Math.sin(ke / 0.6 * Math.PI * 2)); drawKnife(ctx, g.knife.x + R * 0.05, g.knife.y - R * 0.45 + down * R * 0.3, R * 0.75, -0.35); } }
+                else { const v = st.cutVeg.find(q => q.cutT == null); if (v) finger(cx + (v.i - 1) * R * 0.75 + R * 0.1, cy + R * 0.35); }
+              } else {
+                const r = drawPotShell(ctx, cx, cy, R, t, true);
+                drawCurryIn(ctx, st, cx, cy, r, t, { boil: s === 'stir' ? 0.8 : 0.5, ang: g.stirAng * 0.4 });
+                steam(cx, cy - R * 0.2, R, 0.15);
+                if (s === 'stir') { spoon(); circleHint(0.45); }
+              }
+            } else if (m === 'coffee') {
+              const cg = drawCoffeeMachine(ctx, st, cx, cy, R, t, { grinding: s === 'grind', pressure: s === 'brew' ? 1 : 0, btnReady: s === 'brewReady' });
+              const yb = cg.bot - R * 0.16, cs = R * 0.62;
+              let cupX = cg.cupX; if (s === 'cup') cupX = cg.sideX; else if (s === 'cupIn') cupX = cg.sideX + (cg.cupX - cg.sideX) * easeOut(clamp01(e / 0.6));
+              if (s === 'brew' && e > 0.3 && e < 2.5) {
+                const fk = st.fillK, ly = yb - cs * 0.05 - cs * 0.78 * 0.32 * fk;
+                ctx.save(); ctx.strokeStyle = '#4a2410'; ctx.lineWidth = Math.max(1.5, R * 0.018); ctx.lineCap = 'round';
+                [-1, 1].forEach(k => { ctx.beginPath(); ctx.moveTo(cg.spX + k * R * 0.05, cg.spY); ctx.lineTo(cg.spX + k * R * 0.02 + Math.sin(t * 30 + k) * 1, ly); ctx.stroke(); });
+                ctx.restore();
+              }
+              if (s === 'grind') { const r = rng(Math.floor(t * 20)); ctx.fillStyle = '#4a2410'; for (let i = 0; i < 6; i++) { ell(ctx, cg.hopX + (r() - 0.5) * R * 0.1, cg.hopY + r() * R * 0.4, R * 0.012, R * 0.012); ctx.fill(); } }
+              drawCoffeeCup(ctx, st, cupX, yb, cs, t);
+              if (s === 'add' || s === 'brew') steam(cupX, yb - cs * 0.8, cs * 0.5, 0.1);
+              if (s === 'cup') finger(cg.sideX + R * 0.1, yb + R * 0.05);
+              if (s === 'beans') finger(cg.hopX + R * 0.1, cg.hopY + R * 0.05);
+              if (s === 'brewReady') finger(cg.btnX + R * 0.1, cg.btnY + R * 0.3);
+            }
           }
           // 서빙 안내 화살표
           if (g.phase === 'serve' && !g.drag) {
@@ -2861,7 +3750,7 @@ export default function KitchenGame({ audio, speak }) {
         // 재료 칸
         const ids = trayIds();
         g.tiles = trayTiles(L, ids);
-        g.tiles.forEach(tile => drawTile(ctx, tile, tile.id === gu.fav, t, g.drag && g.drag.id === tile.id));
+        g.tiles.forEach(tile => drawTile(ctx, tile, tile.id === gu.fav, t, g.drag && g.drag.id === tile.id, tile.id === g.sauce && !!DRAW_STEPS[`${g.menu}:${g.step}`]));
         // 날아가는 재료
         g.fly = g.fly.filter(f => {
           const k = (t - f.t0) / f.dur; if (k < 0) return true;
@@ -2911,6 +3800,17 @@ export default function KitchenGame({ audio, speak }) {
     if (ui.menu === 'riceball' && ui.step === 'fill') action = <button onClick={startPress} style={btn('#16a34a')}>✊ 꾹꾹 뭉치기</button>;
     if (ui.menu === 'ramen' && ui.step === 'add' && ui.n > 0) action = <button onClick={finishSimple} style={btn('#ef4444')}>🍜 라면 완성!</button>;
     if (ui.menu === 'donut' && ui.step === 'glaze' && ui.n > 0) action = <button onClick={finishSimple} style={btn('#ec4899')}>🍩 도넛 완성!</button>;
+    const k = `${ui.menu}:${ui.step}`;
+    if (k === 'omurice:fill') action = <button onClick={coverEgg} style={btn('#f59e0b')}>🥚 달걀 덮기</button>;
+    if (k === 'omurice:draw' || k === 'hotdog:draw') action = <button onClick={finishSimple} style={btn('#ef4444')}>✨ 완성!</button>;
+    if (k === 'cupcake:filled') action = <button onClick={startCupcakeBake} style={btn('#ef4444')}>🔥 오븐에 굽기</button>;
+    if (k === 'cupcake:cream') action = <button onClick={finishSimple} style={btn('#ec4899')}>🧁 컵케이크 완성!</button>;
+    if (k === 'cotton:sugar' && ui.n > 0) action = <button onClick={startSpin} style={btn('#ec4899')}>🌀 빙글빙글 돌리기</button>;
+    if (k === 'mandu:fill') action = <button onClick={foldMandu} style={btn('#16a34a')}>🥟 반으로 접기</button>;
+    if ((k === 'tteokbokki:add' || k === 'curry:pot') && ui.n > 0) action = <button onClick={startStir} style={btn('#ef4444')}>🥄 휘휘 젓기</button>;
+    if (k === 'burger:stack') action = <button onClick={coverBun} style={btn('#f59e0b')}>🍔 빵 덮어서 완성!</button>;
+    if (k === 'spaghetti:top') action = <button onClick={startTwirl} style={btn('#ef4444')}>🍴 돌돌 말기</button>;
+    if (k === 'coffee:add') action = <button onClick={finishSimple} style={btn('#92400e')}>☕ 커피 완성!</button>;
   }
   const HINT = {
     'sandwich:stack': '🥪 재료를 콕! 눌러서 빵 위에 올려요', 'sandwich:cover': '🍞 빵을 덮어요',
@@ -2925,7 +3825,17 @@ export default function KitchenGame({ audio, speak }) {
     'cookie:cut': '⭐ 모양을 콕! 눌러서 쿠키를 찍어요', 'cookie:toOven': '🔥 오븐에 쏙!', 'cookie:bake': '🔥 노릇노릇 굽는 중...', 'cookie:fromOven': '✨ 다 구워졌어요!', 'cookie:deco': '🍫 재료를 콕! 눌러서 꾸며요',
     'riceball:fill': '🐟 재료를 콕! 눌러서 밥 속에 넣어요', 'riceball:press': '✊ 주먹밥을 콕콕 눌러서 꾹꾹 뭉쳐요', 'riceball:wrap': '🍙 김으로 감싸요', 'riceball:wrapped': '🍙 김으로 감싸요',
     'ramen:water': '👆 냄비를 콕! 눌러서 물을 부어요', 'ramen:pour': '💧 쏴아~', 'ramen:boil': '🔥 보글보글 끓는 중...', 'ramen:add': '🍜 라면이랑 재료를 콕! 넣어요',
-    'donut:fry': '👆 기름을 콕! 눌러서 도넛을 튀겨요', 'donut:frying': '🔥 지글지글 튀기는 중...', 'donut:toPlate': '✨ 노릇노릇!', 'donut:glaze': '🍩 초코·딸기를 콕! 눌러서 옷을 입혀요'
+    'donut:fry': '👆 기름을 콕! 눌러서 도넛을 튀겨요', 'donut:frying': '🔥 지글지글 튀기는 중...', 'donut:toPlate': '✨ 노릇노릇!', 'donut:glaze': '🍩 초코·딸기를 콕! 눌러서 옷을 입혀요',
+    'omurice:fill': '🥕 재료를 콕! 눌러서 볶음밥에 넣어요', 'omurice:egg': '🥚 달걀 이불을 덮어요', 'omurice:draw': '❤️ 손가락으로 쓱쓱 케첩 그림을 그려요',
+    'hotdog:grill': '🌭 소시지를 콕콕 눌러서 데굴데굴 구워요', 'hotdog:grilled': '✨ 다 구워졌어요!', 'hotdog:draw': '🌭 손가락으로 쓱쓱 소스를 뿌려요',
+    'cupcake:batter': '🥣 컵을 콕! 눌러서 반죽을 부어요', 'cupcake:pourBatter': '🥣 주르륵~', 'cupcake:filled': '🔥 오븐을 콕! 눌러서 구워요', 'cupcake:toOven': '🔥 오븐에 쏙!', 'cupcake:bake': '🔥 부풀어 오르는 중...', 'cupcake:fromOven': '✨ 다 구워졌어요!', 'cupcake:cream': '🧁 손가락으로 쓱쓱 크림을 짜요',
+    'cotton:sugar': '🍬 색깔 설탕을 콕! 넣어요', 'cotton:spin': '🌀 손가락으로 빙글빙글 돌려요',
+    'mandu:roll': '🥟 손가락으로 쓱쓱 반죽을 밀어요', 'mandu:fill': '🥕 재료를 콕! 눌러서 올려요', 'mandu:fold': '🥟 반으로 접어요', 'mandu:pleat': '👆 가장자리를 콕콕 눌러서 주름을 잡아요', 'mandu:steam': '♨️ 모락모락 찌는 중...', 'mandu:steamed': '♨️ 모락모락 찌는 중...',
+    'tteokbokki:sauce': '👆 팬을 콕! 눌러서 양념을 부어요', 'tteokbokki:pourSauce': '🌶️ 주르륵~', 'tteokbokki:add': '🍢 떡이랑 어묵을 콕! 넣어요', 'tteokbokki:stir': '🥄 손가락으로 빙글빙글 저어요',
+    'burger:grill': '👆 팬을 콕! 눌러서 고기를 구워요', 'burger:sizzle': '🔥 지글지글...', 'burger:ready': '👆 고기를 톡! 눌러서 뒤집어요', 'burger:flip': '✨ 휙!', 'burger:sizzle2': '🔥 지글지글...', 'burger:toBun': '✨ 빵 위에 쏙!', 'burger:stack': '🧀 재료를 콕! 눌러서 쌓아요', 'burger:cover': '🍔 빵을 덮어요',
+    'spaghetti:boil': '👆 냄비를 콕! 눌러서 면을 넣어요', 'spaghetti:cookPasta': '♨️ 보글보글 삶는 중...', 'spaghetti:plate': '✨ 접시에 담아요', 'spaghetti:top': '🍅 소스랑 재료를 콕! 올려요', 'spaghetti:twirl': '🍴 손가락으로 빙글빙글 돌돌 말아요',
+    'curry:cut': '🔪 채소를 콕! 눌러서 썰어요', 'curry:toPot': '✨ 냄비에 퐁당!', 'curry:pot': '🍖 재료를 콕! 넣어요', 'curry:stir': '🥄 손가락으로 빙글빙글 저어요',
+    'coffee:cup': '👆 컵을 콕! 눌러서 머신에 놓아요', 'coffee:cupIn': '☕ 쏙!', 'coffee:beans': '👆 원두 통을 콕! 눌러서 갈아요', 'coffee:grind': '⚙️ 드르륵 드르륵...', 'coffee:brewReady': '👆 커다란 버튼을 콕!', 'coffee:brew': '☕ 쪼르르~ 커피가 나와요', 'coffee:add': '🥛 우유랑 맛있는 걸 넣어요'
   };
   const hint = ui.phase === 'cook' ? (HINT[`${ui.menu}:${ui.step}:${ui.sub}`] || HINT[`${ui.menu}:${ui.step}`]) : ui.phase === 'serve' ? (ui.land ? '👈 접시를 손님에게 갖다 주세요!' : '👆 접시를 손님에게 갖다 주세요!') : ui.phase === 'eat' || ui.phase === 'carry' ? (ui.lyric || '😋 냠냠 먹는 중...') : null;
   const workArea = ui.land ? { left: '34%', right: '1.5%', top: '6%', bottom: '6%' } : { left: '3%', right: '3%', top: '39%', bottom: '3%' };
@@ -2945,9 +3855,9 @@ export default function KitchenGame({ audio, speak }) {
           <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.88)', borderRadius: '18px', padding: '6px 16px', fontFamily: JUA, fontSize: '1.25rem', color: '#7c2d12', boxShadow: '0 4px 12px -6px rgba(0,0,0,0.3)' }}>{hint}</span>
         </div>}
         {ui.phase === 'menu' && (
-          <div style={{ position: 'absolute', ...workArea, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '12px' }}>
-            <div style={{ textAlign: 'center', fontFamily: JUA, fontSize: '1.6rem', color: '#7c2d12', textShadow: '0 2px 0 #fff' }}>무엇을 만들어 줄까요?</div>
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${ui.land ? 6 : 4}, 1fr)`, gap: '8px' }}>
+          <div style={{ position: 'absolute', ...workArea, display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', padding: '4px 2px' }}>
+            <div style={{ marginTop: 'auto', textAlign: 'center', fontFamily: JUA, fontSize: '1.5rem', color: '#7c2d12', textShadow: '0 2px 0 #fff' }}>무엇을 만들어 줄까요?</div>
+            <div style={{ marginBottom: 'auto', display: 'grid', gridTemplateColumns: `repeat(${ui.land ? 6 : 5}, 1fr)`, gap: '8px' }}>
               {KITCHEN_MENUS.map(m => (
                 <button key={m.id} onClick={() => chooseMenu(m.id)} style={{ border: 'none', borderRadius: '20px', padding: '4px 2px 6px', background: 'rgba(255,253,248,0.95)', cursor: 'pointer', touchAction: 'manipulation', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 0, boxShadow: '0 14px 26px -16px rgba(120,60,20,0.7)' }}>
                   <MenuIcon menu={m.id} />
@@ -2990,7 +3900,20 @@ const SAMPLE = {
   ramen: () => ({ ...newCook(), noodleT: -99, toppings: [{ id: 'egg', x: 0.35, y: -0.3, rot: 0, v: 0 }, { id: 'greenOnion', x: -0.4, y: -0.2, rot: 0, v: 0 }, { id: 'ham', x: -0.1, y: 0.45, rot: 0, v: 0 }, { id: 'mushroom', x: 0.45, y: 0.3, rot: 0, v: 0 }] }),
   donut: () => ({ ...newCook(), fryK: 1, glaze: ['glChoco', 'glStrawberry', 'glVanilla'], toppings: [{ id: 'sprinkles', di: 1, x: 0.6, y: 0, rot: 0, v: 0 }, { id: 'sprinkles', di: 2, x: -0.5, y: 0.3, rot: 0, v: 2 }] })
 };
-const ICON_POS = { sandwich: [0.52, 48], pizza: [0.5, 44], skewer: [0.45, 46], pancake: [0.42, 50], cake: [0.56, 50], kimbap: [0.5, 54], icecream: [0.5, 38], juice: [0.48, 42], cookie: [0.5, 44], riceball: [0.45, 48], ramen: [0.5, 46], donut: [0.5, 44] };
+const SAMPLE_STROKE = (pts) => pts.map(([x, y]) => [x, y]);
+Object.assign(SAMPLE, {
+  omurice: () => ({ ...newCook(), layers: [{ id: 'ham' }, { id: 'carrot' }], egg: 1, strokes: [{ id: 'ketchup', pts: SAMPLE_STROKE(Array.from({ length: 30 }, (_, i) => { const a = i / 29 * TAU; return [16 * Math.sin(a) ** 3 / 40, -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a)) / 40]; })) }] }),
+  hotdog: () => ({ ...newCook(), strokes: [{ id: 'ketchup', pts: Array.from({ length: 12 }, (_, i) => [-0.8 + i * 0.145, i % 2 ? 0.12 : -0.12]) }, { id: 'mustard', pts: Array.from({ length: 12 }, (_, i) => [-0.75 + i * 0.145, i % 2 ? -0.1 : 0.1]) }] }),
+  cupcake: () => ({ ...newCook(), bake: 1, strokes: [0, 1, 2].map(i => ({ id: CREAM_IDS[i], pts: Array.from({ length: 16 }, (_, k) => { const a = k * 0.9; return [(i - 1) * 0.78 + Math.cos(a) * 0.2 * (1 - k / 20), -0.15 - k * 0.012 + Math.sin(a) * 0.05]; }) })), toppings: [{ id: 'cherry', ci: 1, x: 0, y: -1, rot: 0, v: 0 }] }),
+  cotton: () => ({ ...newCook(), layers: [{ id: 'sugarPink' }, { id: 'sugarBlue' }], cotton: 1 }),
+  mandu: () => newCook(),
+  tteokbokki: () => ({ ...newCook(), toppings: [[-0.4, -0.2, 'tteok'], [0.3, -0.35, 'tteok'], [0.1, 0.35, 'tteok'], [-0.3, 0.4, 'eomuk'], [0.45, 0.15, 'egg'], [-0.05, -0.05, 'greenOnion']].map(([x, y, id], i) => ({ id, x, y, rot: i, v: i % 3 })) }),
+  burger: () => ({ ...newCook(), patty: true, layers: [{ id: 'cheese' }, { id: 'lettuce' }, { id: 'tomato' }], topBread: 1 }),
+  spaghetti: () => ({ ...newCook(), sauce: 'sauceTomato', toppings: [{ id: 'meat', x: 0.3, y: -0.2, rot: 0, v: 0 }, { id: 'meat', x: -0.35, y: 0.2, rot: 0, v: 0 }] }),
+  curry: () => ({ ...newCook(), veg: CURRY_VEG.slice() }),
+  coffee: () => ({ ...newCook(), milk: -99, whip: 1, syrup: 1 })
+});
+const ICON_POS = { omurice: [0.5, 40], hotdog: [0.5, 44], cupcake: [0.48, 46], cotton: [0.45, 40], mandu: [0.5, 44], tteokbokki: [0.5, 42], burger: [0.48, 48], spaghetti: [0.5, 42], curry: [0.5, 40], coffee: [0.5, 50], sandwich: [0.52, 48], pizza: [0.5, 44], skewer: [0.45, 46], pancake: [0.42, 50], cake: [0.56, 50], kimbap: [0.5, 54], icecream: [0.5, 38], juice: [0.48, 42], cookie: [0.5, 44], riceball: [0.45, 48], ramen: [0.5, 46], donut: [0.5, 44] };
 function MenuIcon({ menu }) {
   const ref = useRef(null);
   useEffect(() => {

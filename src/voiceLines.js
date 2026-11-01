@@ -195,8 +195,37 @@ export const VOICE = {
     cookie: '쿠키를 만들어요! 좋아하는 모양을 콕콕 찍어 보세요!',
     riceball: '주먹밥을 만들어요! 밥 속에 맛있는 재료를 콕콕 넣어 보세요!',
     ramen: '라면을 만들어요! 냄비를 콕 눌러서 물을 부어 보세요!',
-    donut: '도넛을 만들어요! 기름을 콕 눌러서 도넛을 튀겨 보세요!'
+    donut: '도넛을 만들어요! 기름을 콕 눌러서 도넛을 튀겨 보세요!',
+    omurice: '오므라이스를 만들어요! 볶음밥에 재료를 콕콕 넣어 보세요!',
+    hotdog: '핫도그를 만들어요! 소시지를 콕콕 눌러서 데굴데굴 구워 보세요!',
+    cupcake: '컵케이크를 만들어요! 컵을 콕 눌러서 반죽을 부어 보세요!',
+    cotton: '솜사탕을 만들어요! 좋아하는 색깔 설탕을 콕 넣어 보세요!',
+    mandu: '만두를 만들어요! 밀대로 반죽을 쓱쓱 밀어 보세요!',
+    tteokbokki: '떡볶이를 만들어요! 팬을 콕 눌러서 빨간 양념을 부어 보세요!',
+    burger: '햄버거를 만들어요! 팬을 콕 눌러서 고기를 구워 보세요!',
+    spaghetti: '스파게티를 만들어요! 냄비를 콕 눌러서 면을 넣어 보세요!',
+    curry: '카레라이스를 만들어요! 채소를 콕콕 눌러서 썰어 보세요!',
+    coffee: '커피를 만들어요! 컵을 콕 눌러서 커피 머신에 놓아 보세요!'
   })[m.id],
+  kitchenEggCover: () => '폭신폭신 달걀 이불을 덮어요!',
+  kitchenDraw: () => '손가락으로 쓱쓱 그림을 그려 보세요!',
+  kitchenCupcakeDing: () => '띵! 컵케이크가 다 구워졌어요! 크림으로 쓱쓱 꾸며 보세요!',
+  kitchenSpin: () => '손가락으로 빙글빙글 돌려 보세요!',
+  kitchenFold: () => '반으로 접어요! 이제 가장자리를 콕콕 눌러 주름을 잡아 보세요!',
+  kitchenSteam: () => '모락모락! 찜기에 쪄요!',
+  kitchenSaucePour: () => '빨간 양념을 부어요! 맛있는 재료를 넣어 보세요!',
+  kitchenStir: () => '숟가락으로 휘휘 저어 보세요!',
+  kitchenPattyFlip: () => '지글지글! 톡 눌러서 고기를 뒤집어 보세요!',
+  kitchenBun: () => '빵을 덮어요. 햄버거 완성!',
+  kitchenPasta: () => '면을 퐁당 넣어요!',
+  kitchenPastaSauce: () => '이제 소스랑 재료를 골라 보세요!',
+  kitchenTwirl: () => '포크로 돌돌돌 말아 보세요!',
+  kitchenCurryPot: () => '냄비에 퐁당! 넣고 싶은 재료를 넣어 보세요!',
+  kitchenBeans: () => '원두 통을 콕 눌러서 갈아 보세요!',
+  kitchenGrind: () => '드르륵드르륵! 원두를 갈아요!',
+  kitchenBrewBtn: () => '이제 커다란 버튼을 콕 눌러 보세요!',
+  kitchenBrew: () => '쪼르르! 커피가 나와요!',
+  kitchenCoffeeAdd: () => '우유랑 맛있는 걸 넣어 보세요!',
   kitchenBlend: () => '윙윙윙! 믹서로 갈아요!',
   kitchenJuicePour: () => '쪼르륵! 컵에 따라요!',
   kitchenCookieDing: () => '띵! 쿠키가 다 구워졌어요! 예쁘게 꾸며 보세요!',
@@ -288,7 +317,9 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   Object.keys(INGREDIENTS).forEach(id => lines.push(VOICE.kitchenIng(id)));
   lines.push(VOICE.kitchenFull(), VOICE.kitchenBread(), VOICE.kitchenTopping(), VOICE.kitchenBake(), VOICE.kitchenDing(), VOICE.kitchenStick(), VOICE.kitchenServe(),
     VOICE.kitchenPour(), VOICE.kitchenFlip(), VOICE.kitchenFlipped(), VOICE.kitchenOneMore(), VOICE.kitchenCandle(), VOICE.kitchenBlow(), VOICE.kitchenFill(), VOICE.kitchenRoll(), VOICE.kitchenCut(),
-    VOICE.kitchenBlend(), VOICE.kitchenJuicePour(), VOICE.kitchenCookieDing(), VOICE.kitchenPress(), VOICE.kitchenWrap(), VOICE.kitchenWater(), VOICE.kitchenBoil(), VOICE.kitchenFry(), VOICE.kitchenGlaze());
+    VOICE.kitchenBlend(), VOICE.kitchenJuicePour(), VOICE.kitchenCookieDing(), VOICE.kitchenPress(), VOICE.kitchenWrap(), VOICE.kitchenWater(), VOICE.kitchenBoil(), VOICE.kitchenFry(), VOICE.kitchenGlaze(),
+    VOICE.kitchenEggCover(), VOICE.kitchenDraw(), VOICE.kitchenCupcakeDing(), VOICE.kitchenSpin(), VOICE.kitchenFold(), VOICE.kitchenSteam(), VOICE.kitchenSaucePour(), VOICE.kitchenStir(),
+    VOICE.kitchenPattyFlip(), VOICE.kitchenBun(), VOICE.kitchenPasta(), VOICE.kitchenPastaSauce(), VOICE.kitchenTwirl(), VOICE.kitchenCurryPot(), VOICE.kitchenBeans(), VOICE.kitchenGrind(), VOICE.kitchenBrewBtn(), VOICE.kitchenBrew(), VOICE.kitchenCoffeeAdd());
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
   fruits.forEach(i => lines.push(VOICE.tasty(i)));
   animals.forEach(i => lines.push(VOICE.quiz(i.name, false)));
