@@ -12,7 +12,12 @@ export const KITCHEN_GUESTS = [
   { id: 'mouse', name: '생쥐', fav: 'cheese' },
   { id: 'squirrel', name: '다람쥐', fav: 'acorn' },
   { id: 'pig', name: '돼지', fav: 'apple' },
-  { id: 'chick', name: '병아리', fav: 'corn' }
+  { id: 'chick', name: '병아리', fav: 'corn' },
+  { id: 'fox', name: '여우', fav: 'egg' },
+  { id: 'penguin', name: '펭귄', fav: 'fish' },
+  { id: 'elephant', name: '코끼리', fav: 'orange' },
+  { id: 'koala', name: '코알라', fav: 'lettuce' },
+  { id: 'hippo', name: '하마', fav: 'kiwi' }
 ];
 export const GUEST_BY_ID = Object.fromEntries(KITCHEN_GUESTS.map(g => [g.id, g]));
 
@@ -26,7 +31,11 @@ export const INGREDIENTS = {
   // 팬케이크·케이크·김밥·아이스크림
   butter: { name: '버터' }, blueberry: { name: '블루베리' }, choco: { name: '초콜릿' }, sprinkles: { name: '스프링클' }, cherry: { name: '체리' },
   danmuji: { name: '단무지' }, spinach: { name: '시금치' },
-  vanilla: { name: '바닐라' }, icStrawberry: { name: '딸기 맛' }, icChoco: { name: '초코 맛' }, icMelon: { name: '멜론 맛' }
+  vanilla: { name: '바닐라' }, icStrawberry: { name: '딸기 맛' }, icChoco: { name: '초코 맛' }, icMelon: { name: '멜론 맛' },
+  // 쿠키 모양 틀·라면·도넛 옷
+  cutStar: { name: '별' }, cutHeart: { name: '하트' }, cutFlower: { name: '꽃' }, cutBear: { name: '곰돌이' },
+  noodle: { name: '라면' }, greenOnion: { name: '파' },
+  glChoco: { name: '초코' }, glStrawberry: { name: '딸기' }, glVanilla: { name: '바닐라' }
 };
 
 export const KITCHEN_MENUS = [
@@ -40,14 +49,30 @@ export const KITCHEN_MENUS = [
   // 밥 쓱쓱 펴기 → 재료 올리기 → 돌돌 말기 → 콕콕 썰기
   { id: 'kimbap', name: '김밥', items: ['danmuji', 'spinach', 'ham', 'egg', 'carrot'] },
   // 맛 고르기(콘 위로 4개까지) + 스프링클·체리
-  { id: 'icecream', name: '아이스크림', items: ['vanilla', 'icStrawberry', 'icChoco', 'icMelon', 'sprinkles', 'cherry'] }
+  { id: 'icecream', name: '아이스크림', items: ['vanilla', 'icStrawberry', 'icChoco', 'icMelon', 'sprinkles', 'cherry'] },
+  // 과일 넣기 → 윙 갈기 → 컵에 따르기
+  { id: 'juice', name: '주스', items: ['strawberry', 'banana', 'kiwi', 'orange', 'blueberry', 'apple'] },
+  // 모양 틀로 찍기(COOKIE_CUTTERS) → 오븐에 굽기 → 꾸미기(items)
+  { id: 'cookie', name: '쿠키', items: ['choco', 'sprinkles', 'blueberry', 'strawberry', 'cherry'] },
+  // 밥 속에 재료 넣기 → 콕콕 눌러 뭉치기(세모) → 김 두르기
+  { id: 'riceball', name: '주먹밥', items: ['fish', 'ham', 'egg', 'corn', 'danmuji'] },
+  // 물 붓기 → 보글보글 끓이기 → 면·건더기 넣기
+  { id: 'ramen', name: '라면', items: ['noodle', 'egg', 'greenOnion', 'mushroom', 'ham'] },
+  // 기름에 튀기기 → 도넛 옷(DONUT_GLAZES) 입히기 + 스프링클
+  { id: 'donut', name: '도넛', items: ['glChoco', 'glStrawberry', 'glVanilla', 'sprinkles', 'choco'] }
 ];
 export const ICE_FLAVORS = ['vanilla', 'icStrawberry', 'icChoco', 'icMelon'];
 export const ICE_MAX = 4;         // 아이스크림 최대 몇 단
 export const PANCAKE_COUNT = 3;   // 굽는 팬케이크 장 수
 export const KIMBAP_MAX = 6;      // 김밥 재료 줄 수
 export const KIMBAP_SLICES = 8;   // 썰면 나오는 조각 수 (한 번 누를 때 2개씩)
-export const DECO_MAX = 40;       // 팬케이크·케이크 위 장식 최대 수
+export const DECO_MAX = 40;
+export const JUICE_MAX = 9;       // 믹서에 넣는 과일 수
+export const COOKIE_CUTTERS = ['cutStar', 'cutHeart', 'cutFlower', 'cutBear'];
+export const COOKIE_MAX = 6;      // 쿠키 판에 찍는 쿠키 수
+export const RB_MAX = 5;          // 주먹밥 속 재료 수
+export const RB_PRESS = 4;        // 몇 번 눌러야 세모로 뭉쳐지나
+export const DONUT_GLAZES = ['glChoco', 'glStrawberry', 'glVanilla'];       // 팬케이크·케이크 위 장식 최대 수
 export const MENU_BY_ID = Object.fromEntries(KITCHEN_MENUS.map(m => [m.id, m]));
 
 export const SANDWICH_MAX = 10;   // 샌드위치에 쌓는 재료 최대 수

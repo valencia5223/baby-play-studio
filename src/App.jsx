@@ -1230,7 +1230,8 @@ const musicModules = import.meta.glob('/public/music/*.mp3', { query: '?url', ea
 const LOCAL_NURSERY_SONGS = Object.keys(musicModules).map((filePath, i) => {
   const fileName = filePath.split('/').pop();
   const decodedFileName = decodeURIComponent(fileName);
-  const rawTitle = decodedFileName.replace(/\.mp3$/i, '').replace(/^\d+\s*/, '');
+  // 앞 번호와 뒤에 붙은 '(영문 제목)' 은 뺀다: '07 바나나차차 (Baby ver.) (...)' → '바나나차차'
+  const rawTitle = decodedFileName.replace(/\.mp3$/i, '').replace(/^\d+\s*/, '').replace(/\s*\(.*$/, '');
   return {
     id: `song_${i}_${fileName}`,
     fileName: decodedFileName,

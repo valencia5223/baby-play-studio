@@ -190,8 +190,22 @@ export const VOICE = {
     pancake: '팬케이크를 만들어요! 팬을 콕 눌러서 반죽을 부어 보세요!',
     cake: '케이크를 만들어요! 하얀 생크림을 쓱쓱 발라 보세요!',
     kimbap: '김밥을 만들어요! 김 위에 밥을 쓱쓱 펴 보세요!',
-    icecream: '아이스크림을 만들어요! 좋아하는 맛을 콕콕 올려 보세요!'
+    icecream: '아이스크림을 만들어요! 좋아하는 맛을 콕콕 올려 보세요!',
+    juice: '주스를 만들어요! 과일을 콕콕 믹서에 넣어 보세요!',
+    cookie: '쿠키를 만들어요! 좋아하는 모양을 콕콕 찍어 보세요!',
+    riceball: '주먹밥을 만들어요! 밥 속에 맛있는 재료를 콕콕 넣어 보세요!',
+    ramen: '라면을 만들어요! 냄비를 콕 눌러서 물을 부어 보세요!',
+    donut: '도넛을 만들어요! 기름을 콕 눌러서 도넛을 튀겨 보세요!'
   })[m.id],
+  kitchenBlend: () => '윙윙윙! 믹서로 갈아요!',
+  kitchenJuicePour: () => '쪼르륵! 컵에 따라요!',
+  kitchenCookieDing: () => '띵! 쿠키가 다 구워졌어요! 예쁘게 꾸며 보세요!',
+  kitchenPress: () => '콕콕 눌러서 꾹꾹 뭉쳐 보세요!',
+  kitchenWrap: () => '김으로 감싸요. 주먹밥 완성!',
+  kitchenWater: () => '쏴아! 물을 부어요!',
+  kitchenBoil: () => '보글보글 물이 끓어요! 라면이랑 재료를 넣어 보세요!',
+  kitchenFry: () => '지글지글! 도넛을 튀겨요!',
+  kitchenGlaze: () => '노릇노릇! 이제 맛있는 옷을 입혀 보세요!',
   kitchenPour: () => '주르륵! 반죽을 부어요!',
   kitchenFlip: () => '보글보글! 톡 눌러서 뒤집어 보세요!',
   kitchenFlipped: () => '휙! 뒤집었어요!',
@@ -273,7 +287,8 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   KITCHEN_MENUS.forEach(m => lines.push(VOICE.kitchenMenu(m)));
   Object.keys(INGREDIENTS).forEach(id => lines.push(VOICE.kitchenIng(id)));
   lines.push(VOICE.kitchenFull(), VOICE.kitchenBread(), VOICE.kitchenTopping(), VOICE.kitchenBake(), VOICE.kitchenDing(), VOICE.kitchenStick(), VOICE.kitchenServe(),
-    VOICE.kitchenPour(), VOICE.kitchenFlip(), VOICE.kitchenFlipped(), VOICE.kitchenOneMore(), VOICE.kitchenCandle(), VOICE.kitchenBlow(), VOICE.kitchenFill(), VOICE.kitchenRoll(), VOICE.kitchenCut());
+    VOICE.kitchenPour(), VOICE.kitchenFlip(), VOICE.kitchenFlipped(), VOICE.kitchenOneMore(), VOICE.kitchenCandle(), VOICE.kitchenBlow(), VOICE.kitchenFill(), VOICE.kitchenRoll(), VOICE.kitchenCut(),
+    VOICE.kitchenBlend(), VOICE.kitchenJuicePour(), VOICE.kitchenCookieDing(), VOICE.kitchenPress(), VOICE.kitchenWrap(), VOICE.kitchenWater(), VOICE.kitchenBoil(), VOICE.kitchenFry(), VOICE.kitchenGlaze());
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
   fruits.forEach(i => lines.push(VOICE.tasty(i)));
   animals.forEach(i => lines.push(VOICE.quiz(i.name, false)));
