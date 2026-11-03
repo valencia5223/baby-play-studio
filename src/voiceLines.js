@@ -184,6 +184,8 @@ export const VOICE = {
 
   // 🛒 동물 마을 가게 (ShopGame.jsx)
   shopOrder: (item, n) => `안녕하세요! ${item.name} ${KOR_COUNT[n]} 개 주세요!`,
+  shopOrder2: (a, b) => `안녕하세요! ${a.name} 한 개랑 ${b.name} 한 개 주세요!`,
+  shopFull: (a) => `${attachJosa(a.name, '은/는')} 다 담았어요! 다른 것도 찾아 볼까요?`,
   shopCount: (n) => ['', '하나!', '둘!', '셋!', '넷!', '다섯!'][n],
   shopWrong: (got, want) => `음, 그건 ${attachJosa(got.name, '이에요/예요')}. ${attachJosa(want.name, '을/를')} 찾아 주세요!`,
   shopFind: (want) => `${attachJosa(want.name, '이/가')} 어디 있을까요? 반짝반짝 빛나는 걸 눌러 보세요!`,
@@ -330,8 +332,8 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   Object.values(CARGO_COLORS).forEach(c => lines.push(VOICE.trainBox(c), VOICE.trainBoxOk(c), VOICE.trainBoxNoCar(c)));
   SHOP_GOODS.forEach(a => {
     for (let n = 1; n <= SHOP_MAX_N; n++) lines.push(VOICE.shopOrder(a, n));
-    lines.push(VOICE.shopFind(a));
-    SHOP_GOODS.forEach(b => { if (a.id !== b.id) lines.push(VOICE.shopWrong(a, b)); });
+    lines.push(VOICE.shopFind(a), VOICE.shopFull(a));
+    SHOP_GOODS.forEach(b => { if (a.id !== b.id) lines.push(VOICE.shopWrong(a, b), VOICE.shopOrder2(a, b)); });
   });
   for (let n = 1; n <= SHOP_MAX_N; n++) lines.push(VOICE.shopCount(n));
   lines.push(VOICE.shopCard(), VOICE.shopCardShort(), VOICE.shopCardOk(), VOICE.shopScan(), VOICE.shopScanShort(), VOICE.shopPay(), VOICE.shopPayShort(), VOICE.shopBye(), VOICE.shopPiggy());

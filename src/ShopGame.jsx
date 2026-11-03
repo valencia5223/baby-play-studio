@@ -2,6 +2,7 @@
 // 🛒 동물 마을 가게: 동물 손님이 와서 "사과 두 개 주세요!" 하면 선반에서 콕 눌러 바구니에 담아 주고,
 //    계산대에서 물건을 하나씩 콕 눌러 "삑!" 찍으면 영수증이 나오고 서랍이 "땡!" 열린다.
 //    손님이 놓고 간 동전을 콕 눌러 서랍에 넣는다 (물건 이름 + 1~3 세기를 담기·찍기·동전에서 세 번)
+//  - 손님 10명 중 2명쯤은 두 가지를 한 개씩 산다 ("사과 한 개랑 바나나 한 개 주세요!", shopData MULTI_RATE)
 //  - 손님마다 현금 또는 카드(반반): 카드면 단말기가 나와 카드를 콕 → 쏙 꽂혀 "결제 중" → 띵! → 카드를 콕 눌러 돌려준다
 //  - 캔버스 한 장 (왼쪽/위: 가게 카운터와 손님·바구니·계산대, 오른쪽/아래: 물건 상자가 놓인 선반 3×3)
 //  - 손님·음식 그림은 요리 놀이(KitchenGame.jsx)의 GUEST_FN·drawWhole 을 빌려 쓰고, 통째 토마토·사과·달걀만 여기서 그린다
@@ -407,20 +408,28 @@ export default function ShopGame({ audio, speak }) {
   const canvasRef = useRef(null);
   const G = useRef(null);
   const [ui, setUi] = useState({ phase: 'arrive', guest: KITCHEN_GUESTS[0].id, item: null, n: 0, got: 0, coins: 0, land: true });
-  const sync = () => { const g = G.current; setUi({ phase: g.phase, guest: g.order[g.gi], item: g.want ? g.want.item : null, n: g.want ? g.want.n : 0, got: g.basket.length, cardSt: g.card ? g.card.state : null, coins: g.coins, stock: g.stock.join(','), land: g.L ? g.L.land : true }); };
+  const sync = () => { const g = G.current; setUi({ phase: g.phase, guest: g.order[g.gi], item: g.want ? g.want.item : null, n: g.want ? g.want.n : 0, lines: g.want ? g.want.lines.map(l => l.item).join(',') : '', got: g.basket.length, cardSt: g.card ? g.card.state : null, coins: g.coins, stock: g.stock.join(','), land: g.L ? g.L.land : true }); };
   const later = (fn, ms) => { const g = G.current; const id = setTimeout(() => { g.timers = g.timers.filter(x => x !== id); fn(); }, ms); g.timers.push(id); };
   const say = (text) => { if (speak && text) speak(text); };
   const guest = () => GUEST_BY_ID[G.current.order[G.current.gi]];
   const talk = (sec) => { const g = G.current; g.mouthUntil = g.t + sec; };
 
   // ── 흐름: 손님 옴 → 주문 → 바구니에 담기 → 동전 받기 → 손님 감 ──
-  const sayOrder = () => { const g = G.current; if (!g.want) return; say(VOICE.shopOrder(GOOD_BY_ID[g.want.item], g.want.n)); talk(1.8); };
+  const sayOrder = () => {
+    const g = G.current, w = g.want; if (!w) return;
+    if (w.lines.length > 1) { say(VOICE.shopOrder2(GOOD_BY_ID[w.lines[0].item], GOOD_BY_ID[w.lines[1].item])); talk(2.6); }
+    else { say(VOICE.shopOrder(GOOD_BY_ID[w.item], w.n)); talk(1.8); }
+  };
+  // 이 물건을 몇 개 사나 / 바구니(+날아가는 중)에 몇 개 담겼나 / 아직 덜 담은 첫 물건
+  const needOf = (id) => { const l = G.current.want.lines.find(x => x.item === id); return l ? l.n : 0; };
+  const haveOf = (id) => { const g = G.current; return g.basket.filter(x => x === id).length + g.fly.filter(f => f.id === id).length; };
+  const nextWant = () => { const g = G.current, l = g.want.lines.find(x => haveOf(x.item) < x.n); return (l || g.want.lines[0]).item; };
   const arrive = () => {
     const g = G.current;
     g.phase = 'arrive'; g.phaseT = g.t; g.basket = []; g.fly = []; g.coinsOut = []; g.help = false; g.helpSaid = false; g.shake = null; g.happyUntil = 0;
     g.scanned = 0; g.scanFly = null; g.receiptT = null; g.card = null; g.payBy = Math.random() < 0.5 ? 'card' : 'cash'; if (g.drawerOpen) { g.drawerOpen = false; g.drawerT = g.t; } g.coinsIn = 0;
     g.want = makeOrder(guest().id, g.served, g.lastItem); g.lastItem = g.want.item;
-    g.stock = makeStock(g.want.item); g.stockT = g.t;   // 손님마다 선반 물건·자리가 바뀐다
+    g.stock = makeStock(g.want.lines.map(l => l.item)); g.stockT = g.t;   // 손님마다 선반 물건·자리가 바뀐다
     audio.playXylophone(1318.5, 0.5); setTimeout(() => audio.playXylophone(1046.5, 0.5), 160);
     later(() => { if (g.phase !== 'arrive') return; g.phase = 'shop'; g.lastAct = g.t; sayOrder(); sync(); }, 950);
     sync();
@@ -434,10 +443,14 @@ export default function ShopGame({ audio, speak }) {
   const pick = (cell) => {
     const g = G.current, want = g.want;
     g.lastAct = g.t;
-    if (cell.id !== want.item) {
+    const need = needOf(cell.id);
+    if (!need || haveOf(cell.id) >= need) {
       g.shake = { id: cell.id, t0: g.t }; g.help = true;
       audio.playFreq(260, 'triangle', 0.14, 0.35);
-      if (g.t - g.lastWrongSay > 1.8) { g.lastWrongSay = g.t; say(VOICE.shopWrong(GOOD_BY_ID[cell.id], GOOD_BY_ID[want.item])); talk(2.2); }
+      if (g.t - g.lastWrongSay > 1.8) {
+        g.lastWrongSay = g.t;
+        say(need ? VOICE.shopFull(GOOD_BY_ID[cell.id]) : VOICE.shopWrong(GOOD_BY_ID[cell.id], GOOD_BY_ID[nextWant()])); talk(2.2);
+      }
       return;
     }
     const slot = g.basket.length + g.fly.length;
@@ -626,7 +639,7 @@ export default function ShopGame({ audio, speak }) {
         // 가만히 있으면 찾을 물건이 반짝
         if (g.phase === 'shop' && !g.help && t - g.lastAct > 7) {
           g.help = true;
-          if (!g.helpSaid) { g.helpSaid = true; say(VOICE.shopFind(GOOD_BY_ID[want.item])); talk(2.5); }
+          if (!g.helpSaid) { g.helpSaid = true; say(VOICE.shopFind(GOOD_BY_ID[nextWant()])); talk(2.5); }
         }
 
         // 손님 (오는 중 / 가는 중 미끄러짐)
@@ -645,7 +658,7 @@ export default function ShopGame({ audio, speak }) {
         g.bubble = null;
         if ((g.phase === 'shop' || g.phase === 'scan' || g.phase === 'pay' || g.phase === 'card') && want) {
           const ir = L.S * (L.land ? 0.12 : 0.13), n = want.n, gap = ir * 2.5;
-          const bw = Math.max(n * gap + ir * 0.8, ir * 3), bh = ir * 3.2;
+          const bw = Math.max(n * gap + ir * 0.8, want.lines.length > 1 ? ir * 5.2 : ir * 3), bh = ir * 3.2;
           const bx = Math.min(gxNow + L.S * (L.land ? 0.42 : 0.5), (L.land ? L.split : W) - bw - 10), by = L.gy - L.S * (L.land ? 1.5 : 1.42);
           const popK = g.phase === 'scan' ? 1 : easeOut((t - g.phaseT) / 0.35);
           ctx.save(); ctx.translate(bx, by + bh / 2); ctx.scale(popK, popK); ctx.translate(-bx, -(by + bh / 2));
@@ -653,14 +666,15 @@ export default function ShopGame({ audio, speak }) {
           ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, bh * 0.35); ctx.fill();
           ctx.beginPath(); ctx.moveTo(bx + bh * 0.25, by + bh * 0.7); ctx.lineTo(bx - bh * 0.22, by + bh * 1.05); ctx.lineTo(bx + bh * 0.5, by + bh * 0.95); ctx.fill(); shadowOff(ctx);
           if (g.phase === 'shop' || g.phase === 'scan') {
-            const doneN = g.phase === 'scan' ? g.scanned : g.basket.length;
+            const icons = want.lines.flatMap(l => Array.from({ length: l.n }, (_, j) => ({ id: l.item, j })));
             for (let i = 0; i < n; i++) {
-              const cx = bx + bw / 2 + (i - (n - 1) / 2) * gap, cy = by + ir * 1.25, done = i < doneN;
-              drawGood(ctx, want.item, cx, cy, ir, 0, done ? 0.35 : 1);
+              const ic = icons[i], cx = bx + bw / 2 + (i - (n - 1) / 2) * gap, cy = by + ir * 1.25;
+              const done = g.phase === 'scan' ? i < g.scanned : ic.j < g.basket.filter(x => x === ic.id).length;
+              drawGood(ctx, ic.id, cx, cy, ir, 0, done ? 0.35 : 1);
               if (done) { ctx.fillStyle = '#22c55e'; ell(ctx, cx + ir * 0.55, cy + ir * 0.5, ir * 0.42, ir * 0.42); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = ir * 0.14; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx + ir * 0.36, cy + ir * 0.52); ctx.lineTo(cx + ir * 0.5, cy + ir * 0.68); ctx.lineTo(cx + ir * 0.76, cy + ir * 0.34); ctx.stroke(); }
             }
             ctx.fillStyle = '#9a3412'; ctx.font = `${Math.round(ir * 0.75)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(`${n}개`, bx + bw / 2, by + ir * 2.75);
+            ctx.fillText(want.lines.length > 1 ? want.lines.map(l => `${GOOD_BY_ID[l.item].name} ${l.n}`).join(' · ') : `${n}개`, bx + bw / 2, by + ir * 2.75);
           } else {
             const pulse = 1 + Math.sin(t * 6) * 0.08;
             drawHeart(ctx, bx + bw / 2, by + bh * 0.55, ir * 1.1 * pulse, '#f472b6');
@@ -772,7 +786,7 @@ export default function ShopGame({ audio, speak }) {
 
         // 선반 상자
         g.cells.forEach(cell => {
-          const target = g.phase === 'shop' && cell.id === want.item;
+          const target = g.phase === 'shop' && needOf(cell.id) > haveOf(cell.id);
           const glow = target && g.help ? 0.55 + 0.45 * Math.sin(t * 6) : 0;
           const sk = g.shake && g.shake.id === cell.id ? clamp01(1 - (t - g.shake.t0) / 0.5) : 0;
           const pr = g.press && g.press.id === cell.id ? clamp01(1 - (t - g.press.t0) / 0.2) : 0;
@@ -811,9 +825,10 @@ export default function ShopGame({ audio, speak }) {
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 화면 (캔버스 + 버튼) ──
-  const gu = GUEST_BY_ID[ui.guest], good = ui.item ? GOOD_BY_ID[ui.item] : null;
+  const gu = GUEST_BY_ID[ui.guest], good = ui.item ? GOOD_BY_ID[ui.item] : null, lineIds = ui.lines ? ui.lines.split(',') : [];
   const btn = (bg, color = '#ffffff') => ({ border: 'none', borderRadius: '24px', minHeight: '52px', padding: '0 20px', background: bg, color, fontFamily: JUA, fontSize: '1.15rem', cursor: 'pointer', touchAction: 'manipulation', boxShadow: '0 8px 18px -10px rgba(120,60,20,0.6)', whiteSpace: 'nowrap' });
-  const hint = ui.phase === 'shop' && good ? `${good.emoji} ${good.name} ${ui.n}개를 콕! 바구니에 담아요`
+  const hint = ui.phase === 'shop' && lineIds.length > 1 ? `${lineIds.map(id => `${GOOD_BY_ID[id].emoji} ${GOOD_BY_ID[id].name} 1개`).join(' + ')}를 콕! 담아요`
+    : ui.phase === 'shop' && good ? `${good.emoji} ${good.name} ${ui.n}개를 콕! 바구니에 담아요`
     : ui.phase === 'scan' ? '🧺 바구니를 콕! 계산대에서 삑~ 찍어요'
     : ui.phase === 'pay' ? '🪙 동전을 콕! 계산대 서랍에 넣어요'
     : ui.phase === 'card' ? (ui.cardSt === 'insert' || ui.cardSt === 'proc' ? '💳 결제하고 있어요...' : ui.cardSt === 'ok' ? '✅ 결제 완료!' : ui.cardSt === 'ready' || ui.cardSt === 'return' || ui.cardSt === 'gone' ? '💳 카드를 콕! 손님에게 돌려줘요' : '💳 카드를 콕! 단말기에 꽂아요')

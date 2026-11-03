@@ -30,20 +30,23 @@ const SHOP_FAV = { rabbit: 'carrot', monkey: 'banana', pig: 'apple', chick: 'cor
 export const SHOP_MAX_N = 3;    // 한 번에 사는 개수 최대
 export const PIGGY_FULL = 10;   // 동전이 이만큼 모일 때마다 저금통 축하
 
-// 처음 손님부터 1~3개 무작위 (served 는 지금 안 씀)
+export const MULTI_RATE = 0.2;   // 두 가지를 함께 사는 손님 비율 (한 가지 8 : 두 가지 2)
+
+// 주문: { lines: [{ item, n }], item: 첫 물건, n: 모두 몇 개 }
+//  한 가지 = 1~3개 무작위, 두 가지 = 각각 한 개씩 (예: 사과 한 개랑 바나나 한 개)
 export function makeOrder(guestId, served, lastItem) {
   const fav = SHOP_FAV[guestId];
-  let item = fav && fav !== lastItem && Math.random() < 0.5 ? fav : null;
-  while (!item || item === lastItem) item = SHOP_GOODS[Math.floor(Math.random() * SHOP_GOODS.length)].id;
-  return { item, n: 1 + Math.floor(Math.random() * SHOP_MAX_N) };
+  const pickOne = (avoid) => { let id = null; while (!id || avoid.includes(id)) id = SHOP_GOODS[Math.floor(Math.random() * SHOP_GOODS.length)].id; return id; };
+  const first = fav && fav !== lastItem && Math.random() < 0.5 ? fav : pickOne([lastItem]);
+  const lines = Math.random() < MULTI_RATE ? [{ item: first, n: 1 }, { item: pickOne([first]), n: 1 }] : [{ item: first, n: 1 + Math.floor(Math.random() * SHOP_MAX_N) }];
+  return { lines, item: first, n: lines.reduce((a, l) => a + l.n, 0) };
 }
 
-// 이번 손님 선반: 주문한 물건을 꼭 넣고 나머지는 무작위, 자리도 섞는다
-export function makeStock(item) {
-  const rest = SHOP_GOODS.map(g => g.id).filter(id => id !== item);
-  for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
-  const stock = rest.slice(0, SHELF_N - 1);
-  stock.splice(Math.floor(Math.random() * SHELF_N), 0, item);
+// 이번 손님 선반: 주문한 물건(들)을 꼭 넣고 나머지는 무작위, 자리도 섞는다
+export function makeStock(items) {
+  const rest = SHOP_GOODS.map(g => g.id).filter(id => !items.includes(id));
+  const stock = [...items, ...rest.sort(() => Math.random() - 0.5)].slice(0, SHELF_N);
+  for (let i = stock.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [stock[i], stock[j]] = [stock[j], stock[i]]; }
   return stock;
 }
 
