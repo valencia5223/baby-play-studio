@@ -2,6 +2,7 @@ import { FISH_SPECIES, STAGE_NAMES, breedOf } from './aquariumData.js';
 import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID, CROPS } from './farmData.js';
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
 import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
+import { SHOP_GOODS, SHOP_MAX_N } from './shopData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -181,6 +182,16 @@ export const VOICE = {
   trainNeedMore: () => '별이 조금 더 필요해요!',
   trainBuy: () => '와아! 멋지게 바뀌었어요!',
 
+  // 🛒 동물 마을 가게 (ShopGame.jsx)
+  shopOrder: (item, n) => `안녕하세요! ${item.name} ${KOR_COUNT[n]} 개 주세요!`,
+  shopCount: (n) => ['', '하나!', '둘!', '셋!', '넷!', '다섯!'][n],
+  shopWrong: (got, want) => `음, 그건 ${attachJosa(got.name, '이에요/예요')}. ${attachJosa(want.name, '을/를')} 찾아 주세요!`,
+  shopFind: (want) => `${attachJosa(want.name, '이/가')} 어디 있을까요? 반짝반짝 빛나는 걸 눌러 보세요!`,
+  shopPay: () => '와! 고맙습니다! 여기 동전이요! 동전을 콕 눌러서 받아 주세요!',
+  shopPayShort: () => '고맙습니다! 여기 동전이요!',
+  shopBye: () => '안녕히 가세요! 또 오세요!',
+  shopPiggy: () => '와아! 돼지 저금통에 동전이 열 개 더 모였어요! 최고예요!',
+
   // 🍳 요리 놀이 (동물 친구 식당, KitchenGame.jsx)
   kitchenArrive: (g) => `딸랑딸랑! ${g.name} 손님이 왔어요! 무엇을 만들어 줄까요?`,
   kitchenMenu: (m) => ({
@@ -312,6 +323,13 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   PASSENGERS.forEach(id => lines.push(VOICE.trainAlight(FARM_BY_ID[id])));
   for (let n = 1; n <= 12; n++) lines.push(VOICE.trainCount(n));
   Object.values(CARGO_COLORS).forEach(c => lines.push(VOICE.trainBox(c), VOICE.trainBoxOk(c), VOICE.trainBoxNoCar(c)));
+  SHOP_GOODS.forEach(a => {
+    for (let n = 1; n <= SHOP_MAX_N; n++) lines.push(VOICE.shopOrder(a, n));
+    lines.push(VOICE.shopFind(a));
+    SHOP_GOODS.forEach(b => { if (a.id !== b.id) lines.push(VOICE.shopWrong(a, b)); });
+  });
+  for (let n = 1; n <= SHOP_MAX_N; n++) lines.push(VOICE.shopCount(n));
+  lines.push(VOICE.shopPay(), VOICE.shopPayShort(), VOICE.shopBye(), VOICE.shopPiggy());
   KITCHEN_GUESTS.forEach(g => lines.push(VOICE.kitchenArrive(g), VOICE.kitchenFav(g), VOICE.kitchenYum(g), VOICE.kitchenYumFav(g)));
   KITCHEN_MENUS.forEach(m => lines.push(VOICE.kitchenMenu(m)));
   Object.keys(INGREDIENTS).forEach(id => lines.push(VOICE.kitchenIng(id)));

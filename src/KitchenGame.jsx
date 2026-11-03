@@ -591,7 +591,7 @@ function iconFn(id) {
 }
 const drawIcon = (ctx, id, x, y, r, rot = 0, alpha = 1) => stamp(ctx, `ic:${id}`, 110, 2.4, iconFn(id), x, y, r, rot, alpha);
 // 도마 위 통과일 (키위는 칸 그림과 달리 자르기 전 통째로)
-const drawWhole = (ctx, id, x, y, r) => stamp(ctx, `wh:${id}`, 110, 2.4, id === 'kiwi' ? whKiwi : WHOLE_FN[id], x, y, r);
+export const drawWhole = (ctx, id, x, y, r) => stamp(ctx, `wh:${id}`, 110, 2.4, id === 'kiwi' ? whKiwi : WHOLE_FN[id], x, y, r);
 const drawTop = (ctx, id, x, y, r, rot, v, baked) => {
   if (id === 'cheese') return stamp(ctx, `tp:${baked ? 'cb' : 'c'}:${v}`, 70, 3, (c, u) => (baked ? tpCheeseBaked : tpCheese)(c, u, v), x, y, r, rot);
   if (PIECE_FN[id]) return stamp(ctx, `pc:${id}`, 90, 2.4, PIECE_FN[id], x, y, r * 0.95, rot);
@@ -2560,7 +2560,7 @@ function drawHippo(ctx, S, t, happy, mouth = 0) {
   blush(ctx, S, hy + S * 0.04, 0.2, 0.35);
   ctx.restore();
 }
-const GUEST_FN = { rabbit: drawRabbit, bear: drawBear, panda: drawPanda, lion: drawLion, cat: drawCat, dog: drawDog, monkey: drawMonkey, mouse: drawMouse, squirrel: drawSquirrel, pig: drawPig, chick: drawChick, fox: drawFox, penguin: drawPenguin, elephant: drawElephant, koala: drawKoala, hippo: drawHippo };
+export const GUEST_FN = { rabbit: drawRabbit, bear: drawBear, panda: drawPanda, lion: drawLion, cat: drawCat, dog: drawDog, monkey: drawMonkey, mouse: drawMouse, squirrel: drawSquirrel, pig: drawPig, chick: drawChick, fox: drawFox, penguin: drawPenguin, elephant: drawElephant, koala: drawKoala, hippo: drawHippo };
 
 // ═══════════════ 배경 ═══════════════
 function layout(W, H) {
