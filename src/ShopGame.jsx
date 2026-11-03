@@ -1,7 +1,8 @@
 // ═════════════════════════════════════════════════════════════════════════════
 // 🛒 동물 마을 가게: 동물 손님이 와서 "사과 두 개 주세요!" 하면 선반에서 콕 눌러 바구니에 담아 주고,
-//    손님이 놓고 간 동전을 콕 눌러 돼지 저금통에 넣는다 (물건 이름 + 1~3 세기)
-//  - 캔버스 한 장 (왼쪽/위: 가게 카운터와 손님, 오른쪽/아래: 물건 상자가 놓인 선반 3×3)
+//    계산대에서 물건을 하나씩 콕 눌러 "삑!" 찍으면 영수증이 나오고 서랍이 "땡!" 열린다.
+//    손님이 놓고 간 동전을 콕 눌러 서랍에 넣는다 (물건 이름 + 1~3 세기를 담기·찍기·동전에서 세 번)
+//  - 캔버스 한 장 (왼쪽/위: 가게 카운터와 손님·바구니·계산대, 오른쪽/아래: 물건 상자가 놓인 선반 3×3)
 //  - 손님·음식 그림은 요리 놀이(KitchenGame.jsx)의 GUEST_FN·drawWhole 을 빌려 쓰고, 통째 토마토·사과·달걀만 여기서 그린다
 //  - 실패는 없다: 다른 물건을 누르면 상자가 흔들리며 "그건 ○○예요" 하고, 찾을 물건 상자가 반짝인다(가만히 있어도 7초 뒤 반짝)
 //  - 저장: localStorage bps_shop_v1 (모은 동전 수, shopData.js)
@@ -114,13 +115,13 @@ function layout(W, H) {
   const land = W >= H * 1.1;
   if (land) {
     const split = W * 0.4, S = Math.min(W * 0.17, H * 0.36), counterY = H * 0.6, d = H * 0.09;
-    return { land, split, W, H, S, gx: split * 0.3, counterY, gy: counterY + S * 0.1, d,
-      bx: split * 0.6, br: Math.min(split * 0.15, H * 0.1), px: split * 0.86, pr: Math.min(split * 0.1, H * 0.085),
+    return { land, split, W, H, S, gx: split * 0.21, counterY, gy: counterY + S * 0.1, d,
+      bx: split * 0.47, br: Math.min(split * 0.14, H * 0.1), px: split * 0.8, pr: Math.min(split * 0.18, H * 0.14),
       front: [0, 0, split, H], shelf: { x0: split + W * 0.015, x1: W * 0.985, y0: H * 0.12, y1: H * 0.985 } };
   }
   const split = H * 0.43, S = Math.min(W * 0.26, H * 0.18), counterY = split * 0.64, d = split * 0.13;
-  return { land, split, W, H, S, gx: W * 0.25, counterY, gy: counterY + S * 0.1, d,
-    bx: W * 0.53, br: Math.min(W * 0.11, split * 0.15), px: W * 0.81, pr: Math.min(W * 0.075, split * 0.12),
+  return { land, split, W, H, S, gx: W * 0.2, counterY, gy: counterY + S * 0.1, d,
+    bx: W * 0.45, br: Math.min(W * 0.1, split * 0.15), px: W * 0.79, pr: Math.min(W * 0.16, split * 0.24),
     front: [0, 0, W, split], shelf: { x0: W * 0.03, x1: W * 0.97, y0: split + H * 0.07, y1: H * 0.985 } };
 }
 function shelfCells(L, stock) {
@@ -273,9 +274,9 @@ function basketFront(ctx, x, y, r) {
   ctx.strokeStyle = 'rgba(255,230,180,0.6)'; ctx.lineWidth = r * 0.03; ctx.beginPath(); ctx.ellipse(x, top - r * 0.02, r * 0.97, r * 0.24, 0, 0.2, Math.PI - 0.2); ctx.stroke();
   ctx.restore();
 }
-function drawBasket(ctx, x, y, r, items) {
+function drawBasket(ctx, x, y, r, items, hide = -1) {
   basketBack(ctx, x, y, r);
-  items.forEach((id, i) => { const [dx, dy] = BASKET_SLOT[i]; drawGood(ctx, id, x + dx * r, y + dy * r, r * 0.4, dx * 0.4); });
+  items.forEach((id, i) => { if (i === hide) return; const [dx, dy] = BASKET_SLOT[i]; drawGood(ctx, id, x + dx * r, y + dy * r, r * 0.4, dx * 0.4); });
   basketFront(ctx, x, y, r);
 }
 
@@ -294,32 +295,73 @@ function drawCoin(ctx, x, y, r, flat = 0.55, spin = 0) {
   ctx.restore();
 }
 
-// 돼지 저금통 (앞모습, 위에 동전 구멍)
-function drawPiggy(ctx, x, y, r, hop) {
-  ctx.save(); ctx.translate(x, y - hop * r * 0.35); ctx.scale(1 + hop * 0.06, 1 - hop * 0.04);
-  ctx.fillStyle = 'rgba(80,40,30,0.2)'; ell(ctx, 0, r * 0.74 + hop * r * 0.35, r * 0.85, r * 0.12); ctx.fill();
-  // 다리
-  ctx.fillStyle = '#e5799c'; [-0.5, -0.18, 0.18, 0.5].forEach(q => { ctx.beginPath(); ctx.roundRect(q * r - r * 0.11, r * 0.4, r * 0.22, r * 0.32, r * 0.08); ctx.fill(); });
-  // 귀
-  [-1, 1].forEach(k => { ctx.fillStyle = '#f58fb0'; ctx.beginPath(); ctx.moveTo(k * r * 0.62, -r * 0.42); ctx.lineTo(k * r * 0.5, -r * 0.92); ctx.lineTo(k * r * 0.18, -r * 0.6); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#e0628a'; ctx.beginPath(); ctx.moveTo(k * r * 0.52, -r * 0.5); ctx.lineTo(k * r * 0.47, -r * 0.8); ctx.lineTo(k * r * 0.28, -r * 0.6); ctx.closePath(); ctx.fill(); });
-  // 몸
-  shadowOn(ctx, r * 0.15, r * 0.06);
-  ctx.fillStyle = rg(ctx, -r * 0.35, -r * 0.35, r * 0.05, 0, 0, r * 1.05, [[0, '#ffe2ea'], [0.5, '#f9a8c2'], [1, '#d9618c']]); ell(ctx, 0, 0, r, r * 0.76); ctx.fill(); shadowOff(ctx);
-  gloss(ctx, -r * 0.4, -r * 0.38, r * 0.28, r * 0.14, 0.75, -0.3);
-  // 동전 구멍
-  ctx.fillStyle = '#7a2a48'; ctx.beginPath(); ctx.roundRect(-r * 0.22, -r * 0.7, r * 0.44, r * 0.09, r * 0.04); ctx.fill();
-  // 눈·볼
-  [-1, 1].forEach(k => { ctx.fillStyle = '#3b1d2a'; ell(ctx, k * r * 0.3, -r * 0.18, r * 0.07, r * 0.085); ctx.fill(); ctx.fillStyle = '#fff'; ell(ctx, k * r * 0.3 - r * 0.02, -r * 0.21, r * 0.025, r * 0.025); ctx.fill(); ctx.fillStyle = 'rgba(244,63,94,0.25)'; ell(ctx, k * r * 0.52, r * 0.05, r * 0.12, r * 0.07); ctx.fill(); });
-  // 코
-  ctx.fillStyle = rg(ctx, -r * 0.08, r * 0.05, 0, 0, r * 0.12, r * 0.3, [[0, '#ffb3c8'], [1, '#ec6f97']]); ell(ctx, 0, r * 0.13, r * 0.28, r * 0.19); ctx.fill();
-  ctx.fillStyle = '#a3375c'; [-1, 1].forEach(k => { ell(ctx, k * r * 0.09, r * 0.13, r * 0.045, r * 0.07); ctx.fill(); });
+// 계산대 (앞모습): 몸통 윗면 왼쪽에 스캐너 유리, 오른쪽에 버튼, 기둥 위 화면, 뒤에서 올라오는 영수증, 앞쪽 돈 서랍
+//  base = 카운터에 닿는 아래쪽 y, R = 반폭. o = { flash 0~1, drawer 0~1, receipt 0~1, screen 글자, hop 0~1, coinsIn }
+const regScanPos = (x, base, R) => [x - R * 0.45, base - R * 0.72];
+const regDrawerPos = (x, base, R, k) => [x, base - R * 0.3 + k * R * 0.1];
+function drawRegister(ctx, x, base, R, t, o) {
+  ctx.save(); ctx.translate(x, base - (o.hop || 0) * R * 0.12);
+  ctx.fillStyle = 'rgba(60,30,10,0.22)'; ell(ctx, 0, R * 0.02, R * 1.05, R * 0.1); ctx.fill();
+  // 영수증 (뒤 왼쪽 틈에서 위로)
+  if (o.receipt > 0) {
+    const rh = o.receipt * R * 0.85, rw = R * 0.34, rx = -R * 0.72;
+    ctx.save(); shadowOn(ctx, 4, 1, 'rgba(0,0,0,0.15)'); ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.moveTo(rx, -R * 0.8); ctx.lineTo(rx, -R * 0.8 - rh);
+    for (let i = 0; i <= 6; i++) ctx.lineTo(rx + rw * i / 6, -R * 0.8 - rh + (i % 2 ? R * 0.03 : 0));
+    ctx.lineTo(rx + rw, -R * 0.8); ctx.closePath(); ctx.fill(); shadowOff(ctx);
+    ctx.fillStyle = 'rgba(100,100,110,0.55)';
+    for (let i = 0; i < 6; i++) { const ly = -R * 0.8 - rh + R * 0.1 + i * R * 0.11; if (ly > -R * 0.86) break; ctx.fillRect(rx + rw * 0.15, ly, rw * (i % 3 === 2 ? 0.4 : 0.7), R * 0.025); }
+    ctx.restore();
+  }
+  // 화면 기둥 + 화면
+  ctx.fillStyle = lg(ctx, R * 0.4, 0, R * 0.52, 0, [[0, '#6b7280'], [1, '#9ca3af']]); ctx.fillRect(R * 0.42, -R * 1.25, R * 0.1, R * 0.5);
+  shadowOn(ctx, R * 0.08, R * 0.03);
+  ctx.fillStyle = '#374151'; ctx.beginPath(); ctx.roundRect(R * 0.0, -R * 1.66, R * 0.95, R * 0.48, R * 0.08); ctx.fill(); shadowOff(ctx);
+  ctx.fillStyle = lg(ctx, 0, -R * 1.6, 0, -R * 1.24, [[0, '#d9fbe5'], [1, '#a7f3c5']]); ctx.beginPath(); ctx.roundRect(R * 0.06, -R * 1.6, R * 0.83, R * 0.36, R * 0.05); ctx.fill();
+  ctx.fillStyle = '#14532d'; ctx.font = `${Math.round(R * 0.24)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(o.screen || '', R * 0.475, -R * 1.41);
+  // 몸통 앞면
+  shadowOn(ctx, R * 0.12, R * 0.05);
+  ctx.fillStyle = lg(ctx, 0, -R * 0.66, 0, 0, [[0, '#fbf7ef'], [1, '#d8cfbf']]);
+  ctx.beginPath(); ctx.moveTo(-R * 0.9, -R * 0.64); ctx.lineTo(R * 0.9, -R * 0.64); ctx.lineTo(R, 0); ctx.lineTo(-R, 0); ctx.closePath(); ctx.fill(); shadowOff(ctx);
+  // 윗면
+  ctx.fillStyle = lg(ctx, 0, -R * 0.82, 0, -R * 0.64, [[0, '#ffffff'], [1, '#ece5d8']]);
+  ctx.beginPath(); ctx.moveTo(-R * 0.82, -R * 0.82); ctx.lineTo(R * 0.82, -R * 0.82); ctx.lineTo(R * 0.9, -R * 0.64); ctx.lineTo(-R * 0.9, -R * 0.64); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#4b5563'; ctx.fillRect(-R * 0.74, -R * 0.815, R * 0.38, R * 0.025);   // 영수증 틈
+  // 스캐너 유리 + 빨간 빛
+  ctx.fillStyle = '#1f2937'; ctx.beginPath(); ctx.moveTo(-R * 0.74, -R * 0.77); ctx.lineTo(-R * 0.1, -R * 0.77); ctx.lineTo(-R * 0.08, -R * 0.67); ctx.lineTo(-R * 0.8, -R * 0.67); ctx.closePath(); ctx.fill();
+  const fl = o.flash || 0, pulse = 0.5 + 0.5 * Math.sin(t * 8);
+  ctx.strokeStyle = `rgba(255,${Math.round(40 + 120 * fl)},${Math.round(40 + 120 * fl)},${0.55 + 0.25 * pulse + 0.2 * fl})`; ctx.lineWidth = R * (0.025 + 0.03 * fl);
+  ctx.beginPath(); ctx.moveTo(-R * 0.74, -R * 0.72); ctx.lineTo(-R * 0.12, -R * 0.72); ctx.stroke();
+  if (fl > 0) { ctx.save(); ctx.globalAlpha = fl * 0.6; ctx.fillStyle = rg(ctx, -R * 0.45, -R * 0.75, 0, -R * 0.45, -R * 0.75, R * 0.7, [[0, 'rgba(255,60,60,0.9)'], [1, 'rgba(255,60,60,0)']]); ell(ctx, -R * 0.45, -R * 0.75, R * 0.7, R * 0.45); ctx.fill(); ctx.restore(); }
+  // 버튼
+  const cols = ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6'];
+  for (let i = 0; i < 6; i++) { const bx = R * (0.06 + (i % 3) * 0.25), by = -R * (0.795 - Math.floor(i / 3) * 0.075); ctx.fillStyle = cols[i]; ctx.beginPath(); ctx.roundRect(bx, by, R * 0.2, R * 0.055, R * 0.02); ctx.fill(); }
+  // 앞면 장식 줄
+  ctx.fillStyle = '#ef4444'; ctx.fillRect(-R * 0.91, -R * 0.52, R * 1.82, R * 0.05);
+  // 돈 서랍 (열리면 앞으로 나오며 칸과 동전이 보인다)
+  const k = o.drawer || 0, dy = k * R * 0.22, ds = 1 + k * 0.08;
+  ctx.fillStyle = 'rgba(40,30,20,0.55)'; ctx.fillRect(-R * 0.82, -R * 0.38, R * 1.64, R * 0.32);
+  ctx.save(); ctx.translate(0, dy); ctx.scale(ds, ds);
+  if (k > 0.05) {
+    const th = k * R * 0.26;
+    ctx.fillStyle = lg(ctx, 0, -R * 0.36 - th, 0, -R * 0.36, [[0, '#374151'], [1, '#6b7280']]);
+    ctx.beginPath(); ctx.moveTo(-R * 0.8, -R * 0.36); ctx.lineTo(-R * 0.74, -R * 0.36 - th); ctx.lineTo(R * 0.74, -R * 0.36 - th); ctx.lineTo(R * 0.8, -R * 0.36); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#1f2937'; ctx.lineWidth = R * 0.02;
+    for (let i = 1; i < 4; i++) { const xx = -R * 0.8 + i * R * 0.4; ctx.beginPath(); ctx.moveTo(xx, -R * 0.36); ctx.lineTo(xx * 0.93, -R * 0.36 - th); ctx.stroke(); }
+    const nc = Math.min(o.coinsIn || 0, 8);
+    for (let i = 0; i < nc; i++) { const cx = -R * 0.6 + (i % 4) * R * 0.4, cy = -R * 0.36 - th * 0.45 - Math.floor(i / 4) * R * 0.04; ctx.fillStyle = '#b77d0a'; ell(ctx, cx, cy + R * 0.015, R * 0.13, R * 0.05); ctx.fill(); ctx.fillStyle = '#fbcd34'; ell(ctx, cx, cy, R * 0.13, R * 0.05); ctx.fill(); }
+  }
+  ctx.fillStyle = lg(ctx, 0, -R * 0.36, 0, -R * 0.06, [[0, '#ece6da'], [1, '#bfb5a2']]); ctx.beginPath(); ctx.roundRect(-R * 0.8, -R * 0.36, R * 1.6, R * 0.3, R * 0.04); ctx.fill();
+  ctx.fillStyle = '#9ca3af'; ctx.beginPath(); ctx.roundRect(-R * 0.18, -R * 0.24, R * 0.36, R * 0.06, R * 0.03); ctx.fill();
+  ctx.restore();
   ctx.restore();
 }
 
 // ─────────────────────────────── 화면 ───────────────────────────────
 const makeGame = () => ({ stock: SHOP_GOODS.slice(0, 9).map(g => g.id), stockT: -9, order: shuffle(KITCHEN_GUESTS.map(g => g.id)), gi: 0, phase: 'arrive', phaseT: 0, t: 0, want: null, lastItem: null, served: 0,
   basket: [], fly: [], coinsOut: [], parts: [], coins: loadShop().coins, help: false, helpSaid: false, lastAct: 0, lastWrongSay: -9, shake: null, press: null,
-  piggyT: -9, happyUntil: 0, mouthUntil: 0, L: null, cells: [], timers: [] });
+  regT: -9, scanned: 0, scanFly: null, beepT: -9, receiptT: null, drawerOpen: false, drawerT: -9, coinsIn: 0, bkPos: null, happyUntil: 0, mouthUntil: 0, L: null, cells: [], timers: [] });
 
 export default function ShopGame({ audio, speak }) {
   const canvasRef = useRef(null);
@@ -336,6 +378,7 @@ export default function ShopGame({ audio, speak }) {
   const arrive = () => {
     const g = G.current;
     g.phase = 'arrive'; g.phaseT = g.t; g.basket = []; g.fly = []; g.coinsOut = []; g.help = false; g.helpSaid = false; g.shake = null; g.happyUntil = 0;
+    g.scanned = 0; g.scanFly = null; g.receiptT = null; if (g.drawerOpen) { g.drawerOpen = false; g.drawerT = g.t; } g.coinsIn = 0;
     g.want = makeOrder(guest().id, g.served, g.lastItem); g.lastItem = g.want.item;
     g.stock = makeStock(g.want.item); g.stockT = g.t;   // 손님마다 선반 물건·자리가 바뀐다
     audio.playXylophone(1318.5, 0.5); setTimeout(() => audio.playXylophone(1046.5, 0.5), 160);
@@ -371,10 +414,43 @@ export default function ShopGame({ audio, speak }) {
     say(VOICE.shopCount(k));
     sparkle(L.bx, L.counterY - L.br * 0.5, 8);
     sync();
-    if (k >= g.want.n) later(startPay, 750);
+    if (k >= g.want.n) later(startScan, 750);
+  };
+  // 계산대: 바구니 물건을 하나씩 눌러 삑 → 다 찍으면 영수증 → 서랍 땡 → 동전
+  const startScan = () => {
+    const g = G.current; if (g.phase !== 'shop') return;
+    g.phase = 'scan'; g.phaseT = g.t; g.scanned = 0; g.help = false; g.lastAct = g.t;
+    say(g.served < 3 ? VOICE.shopScan() : VOICE.shopScanShort()); talk(g.served < 3 ? 2.6 : 1.2);
+    sync();
+  };
+  const scanOne = () => {
+    const g = G.current;
+    if (g.phase !== 'scan' || g.scanFly || g.scanned >= g.want.n) return;
+    g.lastAct = g.t;
+    g.scanFly = { idx: g.basket.length - 1 - g.scanned, t0: g.t, beeped: false };
+    audio.playPopSound();
+  };
+  const beep = () => {
+    const g = G.current, L = g.L;
+    g.scanned += 1; g.beepT = g.t;
+    audio.playFreq(1760, 'square', 0.11, 0.18);
+    say(VOICE.shopCount(g.scanned));
+    const [sx, sy] = regScanPos(L.px, L.counterY + L.d * 0.55, L.pr); sparkle(sx, sy, 5);
+    sync();
+  };
+  const checkout = () => {
+    const g = G.current; if (g.phase !== 'scan') return;
+    g.receiptT = g.t;
+    audio.playNoise(0.8, 0.12, 3500, 2);
+    later(() => {
+      g.drawerOpen = true; g.drawerT = g.t;
+      audio.playXylophone(2093, 0.6); setTimeout(() => audio.playXylophone(2637, 0.5), 90);
+      audio.playNoise(0.12, 0.25, 900);
+      later(startPay, 450);
+    }, 950);
   };
   const startPay = () => {
-    const g = G.current; if (g.phase !== 'shop') return;
+    const g = G.current; if (g.phase !== 'scan') return;
     g.phase = 'pay'; g.phaseT = g.t; g.happyUntil = g.t + 1.6; g.help = false;
     audio.playYum(); hearts(g.L.gx, g.L.gy - g.L.S * 1.0, 5);
     say(g.served < 3 ? VOICE.shopPay() : VOICE.shopPayShort()); talk(g.served < 3 ? 3.2 : 1.6);
@@ -390,21 +466,22 @@ export default function ShopGame({ audio, speak }) {
     const g = G.current, L = g.L;
     coin.state = 'done';
     g.coins += 1; saveShop({ version: 1, coins: g.coins });
-    g.piggyT = g.t;
+    g.regT = g.t; g.coinsIn += 1;
     audio.playXylophone(1567.98, 0.55); setTimeout(() => audio.playXylophone(2093, 0.45), 70);
     const got = g.coinsOut.filter(c => c.state === 'done').length;
     say(VOICE.shopCount(got));
-    sparkle(L.px, L.counterY + L.d * 0.5 - L.pr * 1.2, 6);
+    { const [dx, dy] = regDrawerPos(L.px, L.counterY + L.d * 0.55, L.pr, 1); sparkle(dx, dy, 6); }
     sync();
     if (got >= g.coinsOut.length) finishOrder();
   };
   const finishOrder = () => {
     const g = G.current; g.served += 1;
     const full = g.coins % PIGGY_FULL === 0;
-    let wait = 700;
+    let wait = 1000;
+    later(() => { g.drawerOpen = false; g.drawerT = g.t; audio.playFreq(330, 'triangle', 0.1, 0.4); audio.playNoise(0.1, 0.25, 700); }, 450);
     if (full) {
-      wait = 3600;
-      later(() => { audio.playFanfare(); say(VOICE.shopPiggy()); g.piggyT = g.t; const L = g.L; hearts(L.px, L.counterY - L.pr, 10); sparkle(L.px, L.counterY - L.pr, 16); }, 650);
+      wait = 3800;
+      later(() => { audio.playFanfare(); say(VOICE.shopPiggy()); g.regT = g.t; const L = g.L; hearts(L.px, L.counterY - L.pr, 10); sparkle(L.px, L.counterY - L.pr, 16); }, 900);
     }
     later(() => {
       g.phase = 'leave'; g.phaseT = g.t; g.happyUntil = g.t + 2;
@@ -423,6 +500,13 @@ export default function ShopGame({ audio, speak }) {
       const inGuest = Math.abs(x - L.gx) < L.S * 0.45 && y > L.gy - L.S * 1.2 && y < L.counterY;
       const b = g.bubble, inBubble = b && x > b.x0 && x < b.x1 && y > b.y0 && y < b.y1;
       if (inGuest || inBubble) { g.lastAct = g.t; sayOrder(); }
+      return;
+    }
+    if (g.phase === 'scan') {
+      const bk = g.bkPos, rx = L.px, rb = L.counterY + L.d * 0.55;
+      const inBasket = bk && Math.abs(x - bk.x) < L.br * 1.25 && y > bk.y - L.br * 1.5 && y < bk.y + L.br * 0.8;
+      const inReg = Math.abs(x - rx) < L.pr * 1.1 && y > rb - L.pr * 1.7 && y < rb + L.pr * 0.2;
+      if (inBasket || inReg) scanOne();
       return;
     }
     if (g.phase === 'pay') {
@@ -471,18 +555,19 @@ export default function ShopGame({ audio, speak }) {
 
         // 말풍선: 사고 싶은 물건 n개 (담은 만큼 ✔)
         g.bubble = null;
-        if ((g.phase === 'shop' || g.phase === 'pay') && want) {
+        if ((g.phase === 'shop' || g.phase === 'scan' || g.phase === 'pay') && want) {
           const ir = L.S * (L.land ? 0.12 : 0.13), n = want.n, gap = ir * 2.5;
           const bw = Math.max(n * gap + ir * 0.8, ir * 3), bh = ir * 3.2;
           const bx = Math.min(gxNow + L.S * (L.land ? 0.42 : 0.5), (L.land ? L.split : W) - bw - 10), by = L.gy - L.S * (L.land ? 1.5 : 1.42);
-          const popK = easeOut((t - g.phaseT) / 0.35);
+          const popK = g.phase === 'scan' ? 1 : easeOut((t - g.phaseT) / 0.35);
           ctx.save(); ctx.translate(bx, by + bh / 2); ctx.scale(popK, popK); ctx.translate(-bx, -(by + bh / 2));
           shadowOn(ctx, 12, 4, 'rgba(0,0,0,0.18)'); ctx.fillStyle = '#ffffff';
           ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, bh * 0.35); ctx.fill();
           ctx.beginPath(); ctx.moveTo(bx + bh * 0.25, by + bh * 0.7); ctx.lineTo(bx - bh * 0.22, by + bh * 1.05); ctx.lineTo(bx + bh * 0.5, by + bh * 0.95); ctx.fill(); shadowOff(ctx);
-          if (g.phase === 'shop') {
+          if (g.phase !== 'pay') {
+            const doneN = g.phase === 'scan' ? g.scanned : g.basket.length;
             for (let i = 0; i < n; i++) {
-              const cx = bx + bw / 2 + (i - (n - 1) / 2) * gap, cy = by + ir * 1.25, done = i < g.basket.length;
+              const cx = bx + bw / 2 + (i - (n - 1) / 2) * gap, cy = by + ir * 1.25, done = i < doneN;
               drawGood(ctx, want.item, cx, cy, ir, 0, done ? 0.35 : 1);
               if (done) { ctx.fillStyle = '#22c55e'; ell(ctx, cx + ir * 0.55, cy + ir * 0.5, ir * 0.42, ir * 0.42); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = ir * 0.14; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx + ir * 0.36, cy + ir * 0.52); ctx.lineTo(cx + ir * 0.5, cy + ir * 0.68); ctx.lineTo(cx + ir * 0.76, cy + ir * 0.34); ctx.stroke(); }
             }
@@ -496,18 +581,35 @@ export default function ShopGame({ audio, speak }) {
           g.bubble = { x0: bx - 10, x1: bx + bw + 10, y0: by - 10, y1: by + bh + 10 };
         }
 
-        // 돼지 저금통
-        const pBase = L.counterY + L.d * 0.55, py = pBase - L.pr * 0.72;
-        const pk = (t - g.piggyT) / 0.45, phop = pk > 0 && pk < 1 ? Math.sin(pk * Math.PI) : 0;
-        drawPiggy(ctx, L.px, py, L.pr, phop);
-        ctx.save(); ctx.fillStyle = '#9d174d'; ctx.font = `${Math.round(L.pr * 0.42)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(`${g.coins % PIGGY_FULL}/${PIGGY_FULL}`, L.px, pBase + L.d * 0.32); ctx.restore();
+        // 계산대
+        const pBase = L.counterY + L.d * 0.55;
+        const pk = (t - g.regT) / 0.45, phop = pk > 0 && pk < 1 ? Math.sin(pk * Math.PI) : 0;
+        const dk = clamp01((t - g.drawerT) / 0.3), drawerK = g.drawerOpen ? easeOut(dk) : 1 - easeOut(dk);
+        const screen = g.phase === 'scan' ? `삑 ${g.scanned}개` : g.phase === 'pay' ? `${g.coinsIn} / ${want.n}` : `🪙 ${g.coins}`;
+        drawRegister(ctx, L.px, pBase, L.pr, t, { flash: clamp01(1 - (t - g.beepT) / 0.35), drawer: drawerK, receipt: g.receiptT == null ? 0 : easeOut((t - g.receiptT) / 0.9), screen, hop: phop, coinsIn: g.coinsIn });
 
         // 바구니 (돈 낼 땐 손님이 들어 올리고, 갈 땐 같이 간다)
         let bxNow = L.bx, byNow = L.counterY + L.d * 0.45 - L.br * 0.55;
         if (g.phase === 'pay') byNow -= L.d * 0.9 * easeOut((t - g.phaseT) / 0.4);
         if (g.phase === 'leave') { byNow -= L.d * 0.9; bxNow += gxNow - L.gx - (L.bx - L.gx) * easeOut((t - g.phaseT) / 0.4) * 0.6; }
-        drawBasket(ctx, bxNow, byNow, L.br, g.basket);
+        g.bkPos = { x: bxNow, y: byNow };
+        const sf = g.scanFly;
+        drawBasket(ctx, bxNow, byNow, L.br, g.basket, sf ? sf.idx : -1);
+        // 찍는 중인 물건: 바구니 → 스캐너 위 (삑) → 바구니
+        if (sf) {
+          const e = t - sf.t0, [dx, dy] = BASKET_SLOT[sf.idx], hx = bxNow + dx * L.br, hy = byNow + dy * L.br;
+          const [sx, sy] = regScanPos(L.px, pBase, L.pr), tx = sx, ty = sy - L.br * 0.35;
+          let x, y;
+          if (e < 0.4) { const k = easeOut(e / 0.4); x = hx + (tx - hx) * k; y = hy + (ty - hy) * k - Math.sin(k * Math.PI) * L.br * 0.6; }
+          else if (e < 0.65) { x = tx + Math.sin((e - 0.4) * 40) * L.br * 0.03; y = ty; }
+          else { const k = easeOut((e - 0.65) / 0.4); x = tx + (hx - tx) * k; y = ty + (hy - ty) * k - Math.sin(k * Math.PI) * L.br * 0.6; }
+          if (e >= 0.42 && !sf.beeped) { sf.beeped = true; beep(); }
+          drawGood(ctx, g.basket[sf.idx], x, y, L.br * 0.45, dx * 0.4);
+          if (e >= 1.05) { g.scanFly = null; if (g.scanned >= want.n) later(checkout, 300); }
+        } else if (g.phase === 'scan' && g.scanned < want.n) {
+          ctx.save(); ctx.font = `${Math.round(L.br * 0.55)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('👆', bxNow + L.br * 0.35, byNow - L.br * 0.95 + Math.sin(t * 6) * L.br * 0.08); ctx.restore();
+        }
 
         // 동전
         const cr = Math.min(L.d * 0.36, L.br * 0.36);
@@ -526,9 +628,9 @@ export default function ShopGame({ audio, speak }) {
             ctx.save(); ctx.globalAlpha = 0.35 + bob * 0.3; ctx.fillStyle = '#fde047'; ell(ctx, tx, ty, cr * 1.5, cr * 0.95); ctx.fill(); ctx.restore();
             drawCoin(ctx, tx, ty, cr);
           } else if (c.state === 'fly') {
-            const k = (t - c.t1) / 0.55, sx0 = c.x, sy0 = c.y, ex = L.px, ey = py - L.pr * 0.72;
+            const k = (t - c.t1) / 0.55, sx0 = c.x, sy0 = c.y, [ex, ey] = regDrawerPos(L.px, pBase, L.pr, drawerK);
             const kk = easeOut(k);
-            drawCoin(ctx, sx0 + (ex - sx0) * kk, sy0 + (ey - sy0) * kk - Math.sin(clamp01(k) * Math.PI) * L.pr * 1.4, cr * (1 - 0.3 * kk), 0.55 + 0.45 * clamp01(k * 2), k * 10);
+            drawCoin(ctx, sx0 + (ex - sx0) * kk, sy0 + (ey - sy0) * kk - Math.sin(clamp01(k) * Math.PI) * L.pr * 0.9, cr * (1 - 0.3 * kk), 0.55 + 0.45 * clamp01(k * 2), k * 10);
             if (k >= 1) coinIn(c);
           }
         });
@@ -581,7 +683,8 @@ export default function ShopGame({ audio, speak }) {
   const gu = GUEST_BY_ID[ui.guest], good = ui.item ? GOOD_BY_ID[ui.item] : null;
   const btn = (bg, color = '#ffffff') => ({ border: 'none', borderRadius: '24px', minHeight: '52px', padding: '0 20px', background: bg, color, fontFamily: JUA, fontSize: '1.15rem', cursor: 'pointer', touchAction: 'manipulation', boxShadow: '0 8px 18px -10px rgba(120,60,20,0.6)', whiteSpace: 'nowrap' });
   const hint = ui.phase === 'shop' && good ? `${good.emoji} ${good.name} ${ui.n}개를 콕! 바구니에 담아요`
-    : ui.phase === 'pay' ? '🪙 동전을 콕! 눌러서 저금통에 넣어요'
+    : ui.phase === 'scan' ? '🧺 바구니를 콕! 계산대에서 삑~ 찍어요'
+    : ui.phase === 'pay' ? '🪙 동전을 콕! 계산대 서랍에 넣어요'
     : ui.phase === 'leave' ? '👋 안녕히 가세요~' : null;
   const workArea = ui.land ? { left: '41%', right: '1.5%' } : { left: '3%', right: '3%' };
 

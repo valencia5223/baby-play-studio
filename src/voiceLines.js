@@ -190,7 +190,9 @@ export const VOICE = {
   shopPay: () => '와! 고맙습니다! 여기 동전이요! 동전을 콕 눌러서 받아 주세요!',
   shopPayShort: () => '고맙습니다! 여기 동전이요!',
   shopBye: () => '안녕히 가세요! 또 오세요!',
-  shopPiggy: () => '와아! 돼지 저금통에 동전이 열 개 더 모였어요! 최고예요!',
+  shopScan: () => '계산해 주세요! 바구니를 콕 눌러서 삑 찍어 주세요!',
+  shopScanShort: () => '계산해 주세요!',
+  shopPiggy: () => '와아! 동전이 열 개 더 모였어요! 최고예요!',
 
   // 🍳 요리 놀이 (동물 친구 식당, KitchenGame.jsx)
   kitchenArrive: (g) => `딸랑딸랑! ${g.name} 손님이 왔어요! 무엇을 만들어 줄까요?`,
@@ -329,7 +331,7 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
     SHOP_GOODS.forEach(b => { if (a.id !== b.id) lines.push(VOICE.shopWrong(a, b)); });
   });
   for (let n = 1; n <= SHOP_MAX_N; n++) lines.push(VOICE.shopCount(n));
-  lines.push(VOICE.shopPay(), VOICE.shopPayShort(), VOICE.shopBye(), VOICE.shopPiggy());
+  lines.push(VOICE.shopScan(), VOICE.shopScanShort(), VOICE.shopPay(), VOICE.shopPayShort(), VOICE.shopBye(), VOICE.shopPiggy());
   KITCHEN_GUESTS.forEach(g => lines.push(VOICE.kitchenArrive(g), VOICE.kitchenFav(g), VOICE.kitchenYum(g), VOICE.kitchenYumFav(g)));
   KITCHEN_MENUS.forEach(m => lines.push(VOICE.kitchenMenu(m)));
   Object.keys(INGREDIENTS).forEach(id => lines.push(VOICE.kitchenIng(id)));
