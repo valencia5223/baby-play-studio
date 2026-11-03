@@ -2,6 +2,7 @@
 // 🛒 동물 마을 가게: 동물 손님이 와서 "사과 두 개 주세요!" 하면 선반에서 콕 눌러 바구니에 담아 주고,
 //    계산대에서 물건을 하나씩 콕 눌러 "삑!" 찍으면 영수증이 나오고 서랍이 "땡!" 열린다.
 //    손님이 놓고 간 동전을 콕 눌러 서랍에 넣는다 (물건 이름 + 1~3 세기를 담기·찍기·동전에서 세 번)
+//  - 손님마다 현금 또는 카드(반반): 카드면 단말기가 나와 카드를 콕 → 쏙 꽂혀 "결제 중" → 띵! → 카드를 콕 눌러 돌려준다
 //  - 캔버스 한 장 (왼쪽/위: 가게 카운터와 손님·바구니·계산대, 오른쪽/아래: 물건 상자가 놓인 선반 3×3)
 //  - 손님·음식 그림은 요리 놀이(KitchenGame.jsx)의 GUEST_FN·drawWhole 을 빌려 쓰고, 통째 토마토·사과·달걀만 여기서 그린다
 //  - 실패는 없다: 다른 물건을 누르면 상자가 흔들리며 "그건 ○○예요" 하고, 찾을 물건 상자가 반짝인다(가만히 있어도 7초 뒤 반짝)
@@ -295,6 +296,45 @@ function drawCoin(ctx, x, y, r, flat = 0.55, spin = 0) {
   ctx.restore();
 }
 
+// 💳 카드 (w = 가로 길이, flat < 1 이면 카운터에 누운 모습)
+const CARD_COLS = [['#60a5fa', '#1d4ed8'], ['#f472b6', '#be185d'], ['#34d399', '#047857'], ['#fbbf24', '#d97706'], ['#a78bfa', '#6d28d9']];
+function drawCard(ctx, x, y, w, rot, col, flat = 1, alpha = 1) {
+  const h = w * 0.63;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(1, flat); if (alpha < 1) ctx.globalAlpha *= alpha;
+  shadowOn(ctx, w * 0.08, w * 0.04);
+  ctx.fillStyle = lg(ctx, -w / 2, -h / 2, w / 2, h / 2, [[0, col[0]], [1, col[1]]]); ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, w * 0.07); ctx.fill(); shadowOff(ctx);
+  ctx.save(); ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, w * 0.07); ctx.clip();
+  ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.beginPath(); ctx.moveTo(-w / 2, h * 0.1); ctx.bezierCurveTo(-w * 0.1, -h * 0.2, w * 0.15, h * 0.5, w / 2, h * 0.05); ctx.lineTo(w / 2, h / 2); ctx.lineTo(-w / 2, h / 2); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = lg(ctx, -w * 0.36, -h * 0.2, -w * 0.18, h * 0.08, [[0, '#fff1b8'], [0.5, '#e8b931'], [1, '#b8860b']]); ctx.beginPath(); ctx.roundRect(-w * 0.37, -h * 0.2, w * 0.19, h * 0.27, w * 0.025); ctx.fill();
+  ctx.strokeStyle = 'rgba(120,80,0,0.45)'; ctx.lineWidth = Math.max(1, w * 0.008); ctx.beginPath(); ctx.moveTo(-w * 0.37, -h * 0.065); ctx.lineTo(-w * 0.18, -h * 0.065); ctx.moveTo(-w * 0.275, -h * 0.2); ctx.lineTo(-w * 0.275, h * 0.07); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  for (let gI = 0; gI < 4; gI++) for (let k = 0; k < 3; k++) { ell(ctx, -w * 0.38 + gI * w * 0.2 + k * w * 0.045, h * 0.27, w * 0.014, w * 0.014); ctx.fill(); }
+  drawHeart(ctx, w * 0.33, -h * 0.2, w * 0.1, 'rgba(255,255,255,0.92)');
+  gloss(ctx, -w * 0.15, -h * 0.3, w * 0.3, h * 0.08, 0.35, -0.1);
+  ctx.restore();
+}
+// 카드 단말기 (앞모습, 위에 카드 꽂는 틈) base = 아래 y, T = 폭, st = 'idle'|'proc'|'ok'
+const termSlotY = (base, T) => base - T * 1.5;
+function drawTerminal(ctx, x, base, T, t, st, k) {
+  if (k <= 0.01) return;
+  const w = T, h = T * 1.5;
+  ctx.save(); ctx.translate(x, base); ctx.scale(k, k);
+  ctx.fillStyle = 'rgba(30,20,10,0.22)'; ell(ctx, 0, 0, w * 0.6, w * 0.08); ctx.fill();
+  shadowOn(ctx, w * 0.12, w * 0.05);
+  ctx.fillStyle = lg(ctx, -w / 2, 0, w / 2, 0, [[0, '#334155'], [0.5, '#475569'], [1, '#1e293b']]); ctx.beginPath(); ctx.roundRect(-w / 2, -h, w, h, w * 0.14); ctx.fill(); shadowOff(ctx);
+  ctx.fillStyle = '#0b1220'; ctx.beginPath(); ctx.roundRect(-w * 0.38, -h - w * 0.01, w * 0.76, w * 0.06, w * 0.03); ctx.fill();
+  const sc = st === 'ok' ? ['#dcfce7', '#86efac'] : st === 'proc' ? ['#e0f2fe', '#7dd3fc'] : ['#f1f5f9', '#cbd5e1'];
+  ctx.fillStyle = lg(ctx, 0, -h * 0.86, 0, -h * 0.52, [[0, sc[0]], [1, sc[1]]]); ctx.beginPath(); ctx.roundRect(-w * 0.38, -h * 0.86, w * 0.76, h * 0.34, w * 0.06); ctx.fill();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (st === 'ok') { ctx.strokeStyle = '#16a34a'; ctx.lineWidth = w * 0.08; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-w * 0.14, -h * 0.69); ctx.lineTo(-w * 0.03, -h * 0.6); ctx.lineTo(w * 0.16, -h * 0.78); ctx.stroke(); }
+  else if (st === 'proc') { const nd = 1 + Math.floor(t * 4) % 3; for (let i = 0; i < 3; i++) { ctx.fillStyle = i < nd ? '#0369a1' : 'rgba(3,105,161,0.25)'; ell(ctx, (i - 1) * w * 0.17, -h * 0.69, w * 0.055, w * 0.055); ctx.fill(); } }
+  else { ctx.fillStyle = '#475569'; ctx.font = `${Math.round(w * 0.26)}px ${JUA}`; ctx.fillText('카드', 0, -h * 0.68); }
+  for (let i = 0; i < 9; i++) { const bx = (i % 3 - 1) * w * 0.24, by = -h * 0.4 + Math.floor(i / 3) * h * 0.11; ctx.fillStyle = i === 8 ? '#22c55e' : i === 6 ? '#ef4444' : '#cbd5e1'; ctx.beginPath(); ctx.roundRect(bx - w * 0.09, by - h * 0.035, w * 0.18, h * 0.07, w * 0.03); ctx.fill(); }
+  gloss(ctx, -w * 0.2, -h * 0.8, w * 0.15, h * 0.04, 0.4);
+  ctx.restore();
+}
+
 // 계산대 (앞모습): 몸통 윗면 왼쪽에 스캐너 유리, 오른쪽에 버튼, 기둥 위 화면, 뒤에서 올라오는 영수증, 앞쪽 돈 서랍
 //  base = 카운터에 닿는 아래쪽 y, R = 반폭. o = { flash 0~1, drawer 0~1, receipt 0~1, screen 글자, hop 0~1, coinsIn }
 const regScanPos = (x, base, R) => [x - R * 0.45, base - R * 0.72];
@@ -361,13 +401,13 @@ function drawRegister(ctx, x, base, R, t, o) {
 // ─────────────────────────────── 화면 ───────────────────────────────
 const makeGame = () => ({ stock: SHOP_GOODS.slice(0, 9).map(g => g.id), stockT: -9, order: shuffle(KITCHEN_GUESTS.map(g => g.id)), gi: 0, phase: 'arrive', phaseT: 0, t: 0, want: null, lastItem: null, served: 0,
   basket: [], fly: [], coinsOut: [], parts: [], coins: loadShop().coins, help: false, helpSaid: false, lastAct: 0, lastWrongSay: -9, shake: null, press: null,
-  regT: -9, scanned: 0, scanFly: null, beepT: -9, receiptT: null, drawerOpen: false, drawerT: -9, coinsIn: 0, bkPos: null, happyUntil: 0, mouthUntil: 0, L: null, cells: [], timers: [] });
+  regT: -9, scanned: 0, scanFly: null, beepT: -9, receiptT: null, drawerOpen: false, drawerT: -9, coinsIn: 0, bkPos: null, holdT: -9, payBy: 'cash', card: null, cardN: 0, termT: -9, happyUntil: 0, mouthUntil: 0, L: null, cells: [], timers: [] });
 
 export default function ShopGame({ audio, speak }) {
   const canvasRef = useRef(null);
   const G = useRef(null);
   const [ui, setUi] = useState({ phase: 'arrive', guest: KITCHEN_GUESTS[0].id, item: null, n: 0, got: 0, coins: 0, land: true });
-  const sync = () => { const g = G.current; setUi({ phase: g.phase, guest: g.order[g.gi], item: g.want ? g.want.item : null, n: g.want ? g.want.n : 0, got: g.basket.length, coins: g.coins, stock: g.stock.join(','), land: g.L ? g.L.land : true }); };
+  const sync = () => { const g = G.current; setUi({ phase: g.phase, guest: g.order[g.gi], item: g.want ? g.want.item : null, n: g.want ? g.want.n : 0, got: g.basket.length, cardSt: g.card ? g.card.state : null, coins: g.coins, stock: g.stock.join(','), land: g.L ? g.L.land : true }); };
   const later = (fn, ms) => { const g = G.current; const id = setTimeout(() => { g.timers = g.timers.filter(x => x !== id); fn(); }, ms); g.timers.push(id); };
   const say = (text) => { if (speak && text) speak(text); };
   const guest = () => GUEST_BY_ID[G.current.order[G.current.gi]];
@@ -378,7 +418,7 @@ export default function ShopGame({ audio, speak }) {
   const arrive = () => {
     const g = G.current;
     g.phase = 'arrive'; g.phaseT = g.t; g.basket = []; g.fly = []; g.coinsOut = []; g.help = false; g.helpSaid = false; g.shake = null; g.happyUntil = 0;
-    g.scanned = 0; g.scanFly = null; g.receiptT = null; if (g.drawerOpen) { g.drawerOpen = false; g.drawerT = g.t; } g.coinsIn = 0;
+    g.scanned = 0; g.scanFly = null; g.receiptT = null; g.card = null; g.payBy = Math.random() < 0.5 ? 'card' : 'cash'; if (g.drawerOpen) { g.drawerOpen = false; g.drawerT = g.t; } g.coinsIn = 0;
     g.want = makeOrder(guest().id, g.served, g.lastItem); g.lastItem = g.want.item;
     g.stock = makeStock(g.want.item); g.stockT = g.t;   // 손님마다 선반 물건·자리가 바뀐다
     audio.playXylophone(1318.5, 0.5); setTimeout(() => audio.playXylophone(1046.5, 0.5), 160);
@@ -440,6 +480,7 @@ export default function ShopGame({ audio, speak }) {
   };
   const checkout = () => {
     const g = G.current; if (g.phase !== 'scan') return;
+    if (g.payBy === 'card') { later(startCard, 250); return; }
     g.receiptT = g.t;
     audio.playNoise(0.8, 0.12, 3500, 2);
     later(() => {
@@ -451,10 +492,52 @@ export default function ShopGame({ audio, speak }) {
   };
   const startPay = () => {
     const g = G.current; if (g.phase !== 'scan') return;
-    g.phase = 'pay'; g.phaseT = g.t; g.happyUntil = g.t + 1.6; g.help = false;
+    g.phase = 'pay'; g.phaseT = g.t; g.holdT = g.t; g.happyUntil = g.t + 1.6; g.help = false;
     audio.playYum(); hearts(g.L.gx, g.L.gy - g.L.S * 1.0, 5);
     say(g.served < 3 ? VOICE.shopPay() : VOICE.shopPayShort()); talk(g.served < 3 ? 3.2 : 1.6);
     g.coinsOut = Array.from({ length: g.want.n }, (_, i) => ({ i, state: 'drop', t0: g.t + 0.6 + i * 0.3 }));
+    sync();
+  };
+  // 💳 카드 결제: 손님이 카드를 놓음 → 콕 → 단말기에 쏙 → 결제 중 → 띵 → 카드가 올라옴 → 콕 → 손님에게
+  const startCard = () => {
+    const g = G.current; if (g.phase !== 'scan') return;
+    g.phase = 'card'; g.phaseT = g.t; g.holdT = g.t; g.termT = g.t; g.happyUntil = g.t + 1.4; g.help = false;
+    g.card = { state: 'drop', t0: g.t + 0.6, col: CARD_COLS[g.gi % CARD_COLS.length] };
+    audio.playYum(); audio.playPopSound();
+    say(g.cardN < 2 ? VOICE.shopCard() : VOICE.shopCardShort()); talk(g.cardN < 2 ? 2.8 : 1.2);
+    g.cardN += 1;
+    sync();
+  };
+  const tapCard = () => {
+    const g = G.current, c = g.card; g.lastAct = g.t;
+    if (c.state === 'wait') { c.state = 'insert'; c.t1 = g.t; audio.playFreq(900, 'sine', 0.06, 0.3); sync(); }
+    else if (c.state === 'ready') { c.state = 'return'; c.t1 = g.t; audio.playPopSound(); sync(); }
+  };
+  const cardIn = () => {
+    const g = G.current, c = g.card;
+    c.state = 'proc'; c.t1 = g.t;
+    audio.playNoise(0.06, 0.3, 1500);
+    [350, 700, 1050].forEach(ms => later(() => audio.playFreq(1300, 'sine', 0.05, 0.25), ms));
+    later(() => {
+      c.state = 'ok'; c.t1 = g.t; g.regT = g.t; g.receiptT = g.t;
+      audio.playXylophone(1567.98, 0.6); setTimeout(() => audio.playXylophone(2093, 0.6), 160);
+      audio.playNoise(0.8, 0.12, 3500, 2);
+      say(VOICE.shopCardOk()); talk(1.2);
+      const L = g.L; sparkle(L.bx + L.br * 0.3, L.counterY - L.br * 0.2, 10);
+      sync();
+      later(() => { c.state = 'ready'; c.t1 = g.t; audio.playFreq(700, 'triangle', 0.08, 0.3); sync(); }, 1500);
+    }, 1400);
+    sync();
+  };
+  const cardBack = () => {
+    const g = G.current; g.card.state = 'gone';
+    g.happyUntil = g.t + 2; audio.playYum(); hearts(g.L.gx, g.L.gy - g.L.S, 6);
+    g.served += 1;
+    later(() => {
+      g.phase = 'leave'; g.phaseT = g.t; g.happyUntil = g.t + 2;
+      say(VOICE.shopBye()); talk(1.5); sync();
+      later(nextGuest, 1500);
+    }, 700);
     sync();
   };
   const takeCoin = (coin) => {
@@ -509,6 +592,11 @@ export default function ShopGame({ audio, speak }) {
       if (inBasket || inReg) scanOne();
       return;
     }
+    if (g.phase === 'card') {
+      const c = g.card;
+      if (c && (c.state === 'wait' || c.state === 'ready') && c.x != null && Math.hypot(x - c.x, y - c.y) < Math.max(L.br * 0.75, 50)) tapCard();
+      return;
+    }
     if (g.phase === 'pay') {
       let best = null, bd = 1e9;
       g.coinsOut.forEach(c => { if (c.state !== 'wait') return; const dd = Math.hypot(x - c.x, y - c.y); if (dd < Math.max(c.r * 1.9, 46) && dd < bd) { bd = dd; best = c; } });
@@ -555,7 +643,7 @@ export default function ShopGame({ audio, speak }) {
 
         // 말풍선: 사고 싶은 물건 n개 (담은 만큼 ✔)
         g.bubble = null;
-        if ((g.phase === 'shop' || g.phase === 'scan' || g.phase === 'pay') && want) {
+        if ((g.phase === 'shop' || g.phase === 'scan' || g.phase === 'pay' || g.phase === 'card') && want) {
           const ir = L.S * (L.land ? 0.12 : 0.13), n = want.n, gap = ir * 2.5;
           const bw = Math.max(n * gap + ir * 0.8, ir * 3), bh = ir * 3.2;
           const bx = Math.min(gxNow + L.S * (L.land ? 0.42 : 0.5), (L.land ? L.split : W) - bw - 10), by = L.gy - L.S * (L.land ? 1.5 : 1.42);
@@ -564,7 +652,7 @@ export default function ShopGame({ audio, speak }) {
           shadowOn(ctx, 12, 4, 'rgba(0,0,0,0.18)'); ctx.fillStyle = '#ffffff';
           ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, bh * 0.35); ctx.fill();
           ctx.beginPath(); ctx.moveTo(bx + bh * 0.25, by + bh * 0.7); ctx.lineTo(bx - bh * 0.22, by + bh * 1.05); ctx.lineTo(bx + bh * 0.5, by + bh * 0.95); ctx.fill(); shadowOff(ctx);
-          if (g.phase !== 'pay') {
+          if (g.phase === 'shop' || g.phase === 'scan') {
             const doneN = g.phase === 'scan' ? g.scanned : g.basket.length;
             for (let i = 0; i < n; i++) {
               const cx = bx + bw / 2 + (i - (n - 1) / 2) * gap, cy = by + ir * 1.25, done = i < doneN;
@@ -585,13 +673,17 @@ export default function ShopGame({ audio, speak }) {
         const pBase = L.counterY + L.d * 0.55;
         const pk = (t - g.regT) / 0.45, phop = pk > 0 && pk < 1 ? Math.sin(pk * Math.PI) : 0;
         const dk = clamp01((t - g.drawerT) / 0.3), drawerK = g.drawerOpen ? easeOut(dk) : 1 - easeOut(dk);
-        const screen = g.phase === 'scan' ? `삑 ${g.scanned}개` : g.phase === 'pay' ? `${g.coinsIn} / ${want.n}` : `🪙 ${g.coins}`;
+        const cst = g.card ? g.card.state : null;
+        const screen = g.phase === 'scan' ? `삑 ${g.scanned}개` : g.phase === 'pay' ? `${g.coinsIn} / ${want.n}` : g.phase === 'card' ? (cst === 'proc' ? '결제 중' : cst === 'ok' || cst === 'ready' || cst === 'return' || cst === 'gone' ? '완료!' : '💳 카드') : `🪙 ${g.coins}`;
         drawRegister(ctx, L.px, pBase, L.pr, t, { flash: clamp01(1 - (t - g.beepT) / 0.35), drawer: drawerK, receipt: g.receiptT == null ? 0 : easeOut((t - g.receiptT) / 0.9), screen, hop: phop, coinsIn: g.coinsIn });
 
         // 바구니 (돈 낼 땐 손님이 들어 올리고, 갈 땐 같이 간다)
         let bxNow = L.bx, byNow = L.counterY + L.d * 0.45 - L.br * 0.55;
-        if (g.phase === 'pay') byNow -= L.d * 0.9 * easeOut((t - g.phaseT) / 0.4);
-        if (g.phase === 'leave') { byNow -= L.d * 0.9; bxNow += gxNow - L.gx - (L.bx - L.gx) * easeOut((t - g.phaseT) / 0.4) * 0.6; }
+        if (g.phase === 'pay' || g.phase === 'card' || g.phase === 'leave') {
+          const hk = g.phase === 'leave' ? 1 : easeOut((t - g.holdT) / 0.45);
+          byNow -= L.d * 0.9 * hk; bxNow -= (L.bx - L.gx) * 0.45 * hk;
+          if (g.phase === 'leave') bxNow += gxNow - L.gx;
+        }
         g.bkPos = { x: bxNow, y: byNow };
         const sf = g.scanFly;
         drawBasket(ctx, bxNow, byNow, L.br, g.basket, sf ? sf.idx : -1);
@@ -637,6 +729,45 @@ export default function ShopGame({ audio, speak }) {
         if (g.phase === 'pay' && !g.coinsOut.some(c => c.state === 'fly')) {
           const w = g.coinsOut.find(c => c.state === 'wait');
           if (w) { ctx.save(); ctx.font = `${Math.round(cr * 1.6)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('👆', w.x + cr * 0.4, w.y + cr * 1.6 + Math.sin(t * 6) * cr * 0.2); ctx.restore(); }
+        }
+
+        // 💳 카드 단말기 + 카드
+        {
+          const T = L.br * 0.8, tX = L.bx + L.br * 0.36, tBase = L.counterY + L.d * 0.8, slotY = termSlotY(tBase, T), cw = L.br * 1.0;
+          const termK = g.phase === 'card' ? easeOut((t - g.termT) / 0.35) : g.phase === 'leave' && g.payBy === 'card' ? 1 - easeOut((t - g.phaseT) / 0.3) : 0;
+          const c = g.card, restX = L.bx - L.br * 0.65, restY = L.counterY + L.d * 0.55;
+          const hx = gxNow + L.S * 0.2, hy = L.counterY - L.S * 0.3;
+          const inPos = (vis) => [tX, slotY - vis * cw + cw / 2];
+          let front = null, behind = null;
+          if (c && g.phase === 'card') {
+            if (c.state === 'drop') {
+              const k = (t - c.t0) / 0.45;
+              if (k >= 0) { const kk = easeOut(k); front = [hx + (restX - hx) * kk, hy + (restY - hy) * k * k - Math.sin(clamp01(k) * Math.PI) * L.S * 0.12, 0.25 * (1 - clamp01(k)), 1 - 0.3 * clamp01(k)]; }
+              if (k >= 1) { c.state = 'wait'; audio.playFreq(1000, 'sine', 0.05, 0.2); sync(); }
+            } else if (c.state === 'wait') {
+              front = [restX, restY, 0, 0.7];
+            } else if (c.state === 'insert') {
+              const k = (t - c.t1) / 0.85;
+              if (k < 0.55) { const kk = easeOut(k / 0.55), [ex, ey] = inPos(1.08); behind = [restX + (ex - restX) * kk, restY + (ey - restY) * kk - Math.sin(kk * Math.PI) * L.br * 0.5, -Math.PI / 2 * kk, 0.7 + 0.3 * kk]; }
+              else { const kk = easeOut((k - 0.55) / 0.45), [ex, ey] = inPos(1.08 - 0.68 * kk); behind = [ex, ey, -Math.PI / 2, 1]; }
+              if (k >= 1) cardIn();
+            } else if (c.state === 'proc' || c.state === 'ok') {
+              const [ex, ey] = inPos(0.4); behind = [ex, ey, -Math.PI / 2, 1];
+            } else if (c.state === 'ready') {
+              const k = easeOut((t - c.t1) / 0.3), [ex, ey] = inPos(0.4 + 0.25 * k); behind = [ex, ey + Math.sin(t * 5) * cw * 0.03, -Math.PI / 2, 1];
+            } else if (c.state === 'return') {
+              const k = (t - c.t1) / 0.6, kk = easeOut(k), [sx, sy] = inPos(0.65);
+              front = [sx + (hx - sx) * kk, sy + (hy - sy) * kk - Math.sin(clamp01(k) * Math.PI) * L.br * 0.6, -Math.PI / 2 * (1 - kk), 1 - 0.3 * kk, 1 - clamp01((k - 0.75) / 0.25)];
+              if (k >= 1) cardBack();
+            }
+          }
+          if (behind) { drawCard(ctx, behind[0], behind[1], cw, behind[2], c.col, behind[3]); c.x = behind[0]; c.y = behind[1]; }
+          drawTerminal(ctx, tX, tBase, T, t, c && c.state === 'proc' ? 'proc' : c && (c.state === 'ok' || c.state === 'ready' || c.state === 'return' || c.state === 'gone') ? 'ok' : 'idle', termK);
+          if (front) { drawCard(ctx, front[0], front[1], cw, front[2], c.col, front[3], front[4] == null ? 1 : front[4]); c.x = front[0]; c.y = front[1]; }
+          if (c && g.phase === 'card' && (c.state === 'wait' || c.state === 'ready') && c.x != null) {
+            ctx.save(); ctx.font = `${Math.round(L.br * 0.5)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('👆', c.x + cw * 0.35, c.y + cw * (c.state === 'wait' ? 0.45 : 0.55) + Math.sin(t * 6) * cw * 0.08); ctx.restore();
+          }
         }
 
         // 선반 상자
@@ -685,6 +816,7 @@ export default function ShopGame({ audio, speak }) {
   const hint = ui.phase === 'shop' && good ? `${good.emoji} ${good.name} ${ui.n}개를 콕! 바구니에 담아요`
     : ui.phase === 'scan' ? '🧺 바구니를 콕! 계산대에서 삑~ 찍어요'
     : ui.phase === 'pay' ? '🪙 동전을 콕! 계산대 서랍에 넣어요'
+    : ui.phase === 'card' ? (ui.cardSt === 'insert' || ui.cardSt === 'proc' ? '💳 결제하고 있어요...' : ui.cardSt === 'ok' ? '✅ 결제 완료!' : ui.cardSt === 'ready' || ui.cardSt === 'return' || ui.cardSt === 'gone' ? '💳 카드를 콕! 손님에게 돌려줘요' : '💳 카드를 콕! 단말기에 꽂아요')
     : ui.phase === 'leave' ? '👋 안녕히 가세요~' : null;
   const workArea = ui.land ? { left: '41%', right: '1.5%' } : { left: '3%', right: '3%' };
 
