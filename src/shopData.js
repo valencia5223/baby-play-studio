@@ -30,13 +30,12 @@ const SHOP_FAV = { rabbit: 'carrot', monkey: 'banana', pig: 'apple', chick: 'cor
 export const SHOP_MAX_N = 3;    // 한 번에 사는 개수 최대
 export const PIGGY_FULL = 10;   // 동전이 이만큼 모일 때마다 저금통 축하
 
-// 처음 두 손님은 한 개, 그다음은 두 개까지, 다섯 손님 뒤로는 세 개까지
+// 처음 손님부터 1~3개 무작위 (served 는 지금 안 씀)
 export function makeOrder(guestId, served, lastItem) {
   const fav = SHOP_FAV[guestId];
   let item = fav && fav !== lastItem && Math.random() < 0.5 ? fav : null;
   while (!item || item === lastItem) item = SHOP_GOODS[Math.floor(Math.random() * SHOP_GOODS.length)].id;
-  const top = served < 2 ? 1 : served < 5 ? 2 : SHOP_MAX_N;
-  return { item, n: 1 + Math.floor(Math.random() * top) };
+  return { item, n: 1 + Math.floor(Math.random() * SHOP_MAX_N) };
 }
 
 // 이번 손님 선반: 주문한 물건을 꼭 넣고 나머지는 무작위, 자리도 섞는다
