@@ -250,14 +250,14 @@ function layout(W, H) {
       units: [0, 1, 2].map(u => ({ x0: W * (0.135 + u * 0.29), x1: W * (0.405 + u * 0.29) })),
       laneY: H * 0.8, laneD: H * 0.025, backY: H * 0.54, counterX: W * 0.45, counterY: H * 0.72, d: H * 0.065, caseCols: 6, caseRows: 1,
       gx: W * 0.685, bx: W * 0.79, br: Math.min(W * 0.055, H * 0.085), px: W * 0.915, pr: Math.min(W * 0.07, H * 0.11),
-      queueX: W * 0.35, doorX: W * 0.065, speed: 0.15 };
+      queueX: W * 0.35, doorX: W * 0.065, stackX: W * 0.152, speed: 0.15 };
   }
   return { land, W, H, S: Math.min(H * 0.15, W * 0.22), ceil: H * 0.035, signY: H * 0.072, shelfTop: H * 0.115, shelfBot: H * 0.44, wallBot: H * 0.45,
     door: { x0: W * 0.01, x1: W * 0.098, y0: H * 0.11 },
     units: [0, 1, 2].map(u => ({ x0: W * (0.108 + u * 0.298), x1: W * (0.393 + u * 0.298) })),
     laneY: H * 0.68, laneD: H * 0.02, backY: H * 0.48, counterX: W * 0.3, counterY: H * 0.65, d: H * 0.07, caseCols: 3, caseRows: 2,
     gx: W * 0.5, bx: W * 0.67, br: Math.min(W * 0.09, H * 0.065), px: W * 0.87, pr: Math.min(W * 0.11, H * 0.085),
-    queueX: W * 0.15, doorX: W * 0.054, speed: 0.2 };
+    queueX: W * 0.15, doorX: W * 0.054, stackX: W * 0.135, speed: 0.2 };
 }
 const rowH = (L) => (L.shelfBot - L.shelfTop) / 3;
 // 진열 칸: stock[i] → 진열대 floor(i/6), 그 안에서 2열 × 3층
@@ -480,15 +480,6 @@ function drawCounterFg(ctx, W, H, L) {
     c.fillStyle = 'rgba(255,255,255,0.9)'; shadowOn(c, 8, 0, 'rgba(253,186,116,1)'); c.fillRect(R.x0 + 6, R.y0 + 2, R.x1 - R.x0 - 12, 4); shadowOff(c);
     for (let row = 0; row < L.caseRows; row++) { const by = R.y0 + rh * (row + 1) - rh * 0.12; c.fillStyle = lg(c, 0, by, 0, by + rh * 0.06, [[0, '#e2e8f0'], [1, '#94a3b8']]); c.fillRect(R.x0, by, R.x1 - R.x0, rh * 0.06); }
     c.strokeStyle = 'rgba(51,65,85,0.25)'; c.lineWidth = 2; for (let k = 1; k < L.caseCols; k++) { const x = R.x0 + (R.x1 - R.x0) * k / L.caseCols; c.beginPath(); c.moveTo(x, R.y0); c.lineTo(x, R.y1); c.stroke(); }
-    // 바구니 더미 (문 옆 바닥, 빨간 장바구니)
-    const bx = L.land ? W * 0.07 : W * 0.09, by = H - (L.land ? H * 0.03 : H * 0.03), bw = L.land ? W * 0.075 : W * 0.15, bh = bw * 0.5;
-    for (let i = 3; i >= 0; i--) {
-      const y = by - i * bh * 0.22;
-      c.fillStyle = i ? '#dc2626' : '#ef4444'; shadowOn(c, 6, 2, 'rgba(0,0,0,0.2)');
-      c.beginPath(); c.moveTo(bx - bw / 2, y - bh); c.lineTo(bx + bw / 2, y - bh); c.lineTo(bx + bw * 0.4, y); c.lineTo(bx - bw * 0.4, y); c.closePath(); c.fill(); shadowOff(c);
-      c.fillStyle = 'rgba(255,255,255,0.25)'; c.fillRect(bx - bw / 2, y - bh, bw, bh * 0.08);
-      if (!i) { c.fillStyle = 'rgba(120,10,10,0.35)'; for (let k = 0; k < 4; k++) c.fillRect(bx - bw * 0.32 + k * bw * 0.18, y - bh * 0.72, bw * 0.1, bh * 0.45); }
-    }
     fgCache = { key, cv };
   }
   ctx.drawImage(fgCache.cv, 0, 0, W, H);
@@ -508,38 +499,62 @@ function drawCaseGlass(ctx, L) {
   ctx.fillText('카운터 간식', R.x0 + 4 + tw / 2, R.y0 - 8 - th / 2 + th * 0.05); ctx.restore();
 }
 
-// 바구니: 손잡이·안쪽(뒤) → 물건 → 앞면(앞)
-function basketBack(ctx, x, y, r) {
+// 빨간 플라스틱 장바구니: 손잡이·안쪽(뒤) → 물건 → 앞면(앞). 윗테두리 y - 0.3r, 바닥 y + 0.55r
+function basketBack(ctx, x, y, r, handle = true) {
   ctx.save(); ctx.lineCap = 'round';
-  ctx.strokeStyle = '#8a5528'; ctx.lineWidth = r * 0.13; ctx.beginPath(); ctx.ellipse(x, y - r * 0.3, r * 0.78, r * 0.95, 0, Math.PI, 0); ctx.stroke();
-  ctx.strokeStyle = '#c98a46'; ctx.lineWidth = r * 0.07; ctx.beginPath(); ctx.ellipse(x, y - r * 0.3, r * 0.78, r * 0.95, 0, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
-  ctx.fillStyle = rg(ctx, x, y - r * 0.3, 0, x, y - r * 0.3, r, [[0, '#4a2a10'], [1, '#7a4a22']]); ell(ctx, x, y - r * 0.3, r, r * 0.26); ctx.fill();
+  if (handle) {
+    ctx.strokeStyle = '#991b1b'; ctx.lineWidth = r * 0.12; ctx.beginPath(); ctx.ellipse(x, y - r * 0.3, r * 0.62, r * 0.85, 0, Math.PI * 1.02, Math.PI * 1.98); ctx.stroke();
+    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = r * 0.05; ctx.beginPath(); ctx.ellipse(x, y - r * 0.3, r * 0.62, r * 0.85, 0, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+    ctx.fillStyle = '#7f1d1d'; ctx.beginPath(); ctx.roundRect(x - r * 0.22, y - r * 1.2, r * 0.44, r * 0.12, r * 0.06); ctx.fill();
+  }
+  ctx.fillStyle = lg(ctx, 0, y - r * 0.56, 0, y - r * 0.04, [[0, '#7f1d1d'], [1, '#b91c1c']]); ell(ctx, x, y - r * 0.3, r, r * 0.26); ctx.fill();
   ctx.restore();
 }
 function basketFront(ctx, x, y, r) {
   const top = y - r * 0.3, bot = y + r * 0.55;
-  ctx.save(); shadowOn(ctx, r * 0.15, r * 0.06);
-  ctx.beginPath(); ctx.moveTo(x - r, top); ctx.lineTo(x - r * 0.8, bot - r * 0.08); ctx.quadraticCurveTo(x, bot + r * 0.12, x + r * 0.8, bot - r * 0.08); ctx.lineTo(x + r, top); ctx.ellipse(x, top, r, r * 0.26, 0, 0, Math.PI); ctx.closePath();
-  ctx.fillStyle = lg(ctx, 0, top, 0, bot, [[0, '#e3ac62'], [1, '#a5682f']]); ctx.fill(); shadowOff(ctx);
-  ctx.clip();
-  // 엮은 무늬
-  const rows = 5, rh = (bot - top + r * 0.2) / rows, cw = r * 0.26;
-  for (let i = 0; i < rows; i++) for (let k = -5; k <= 5; k++) {
-    const cx = x + k * cw + (i % 2) * cw / 2, cy = top + r * 0.1 + i * rh;
-    ctx.fillStyle = (k + i) % 2 ? 'rgba(255,225,170,0.35)' : 'rgba(110,60,20,0.22)';
-    ell(ctx, cx, cy, cw * 0.48, rh * 0.42); ctx.fill();
+  const shape = () => { ctx.beginPath(); ctx.moveTo(x - r, top); ctx.lineTo(x - r * 0.82, bot - r * 0.06); ctx.quadraticCurveTo(x - r * 0.8, bot, x - r * 0.72, bot); ctx.lineTo(x + r * 0.72, bot); ctx.quadraticCurveTo(x + r * 0.8, bot, x + r * 0.82, bot - r * 0.06); ctx.lineTo(x + r, top); ctx.ellipse(x, top, r, r * 0.26, 0, 0, Math.PI); ctx.closePath(); };
+  ctx.save(); shadowOn(ctx, r * 0.15, r * 0.06); shape();
+  ctx.fillStyle = lg(ctx, 0, top, 0, bot, [[0, '#f87171'], [0.45, '#ef4444'], [1, '#b91c1c']]); ctx.fill(); shadowOff(ctx);
+  shape(); ctx.clip();
+  // 구멍 (3줄)
+  for (let row = 0; row < 3; row++) {
+    const yy = top + r * 0.3 + row * r * 0.19, half = r * (0.9 - row * 0.04);
+    for (let k = -3; k <= 3; k++) {
+      const hx = x + k * half * 0.27;
+      ctx.fillStyle = 'rgba(110,15,15,0.6)'; ctx.beginPath(); ctx.roundRect(hx - r * 0.08, yy, r * 0.16, r * 0.1, r * 0.03); ctx.fill();
+      ctx.fillStyle = 'rgba(255,190,190,0.35)'; ctx.fillRect(hx - r * 0.07, yy + r * 0.085, r * 0.14, r * 0.015);
+    }
   }
-  ctx.fillStyle = lg(ctx, x - r, 0, x + r, 0, [[0, 'rgba(60,30,10,0.3)'], [0.35, 'rgba(0,0,0,0)'], [0.75, 'rgba(0,0,0,0)'], [1, 'rgba(60,30,10,0.3)']]); ctx.fillRect(x - r, top, r * 2, bot - top + r * 0.2);
+  ctx.fillStyle = 'rgba(127,29,29,0.35)'; ctx.fillRect(x - r, bot - r * 0.1, r * 2, r * 0.1);
+  ctx.fillStyle = lg(ctx, x - r, 0, x + r, 0, [[0, 'rgba(90,10,10,0.35)'], [0.3, 'rgba(0,0,0,0)'], [0.75, 'rgba(0,0,0,0)'], [1, 'rgba(90,10,10,0.35)']]); ctx.fillRect(x - r, top, r * 2, bot - top + r * 0.2);
   ctx.restore();
-  // 테두리
-  ctx.save(); ctx.strokeStyle = '#b8783a'; ctx.lineWidth = r * 0.1; ctx.beginPath(); ctx.ellipse(x, top, r, r * 0.26, 0, 0, Math.PI); ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,230,180,0.6)'; ctx.lineWidth = r * 0.03; ctx.beginPath(); ctx.ellipse(x, top - r * 0.02, r * 0.97, r * 0.24, 0, 0.2, Math.PI - 0.2); ctx.stroke();
+  // 윗테두리
+  ctx.save(); ctx.strokeStyle = '#dc2626'; ctx.lineWidth = r * 0.12; ctx.beginPath(); ctx.ellipse(x, top, r, r * 0.26, 0, 0, Math.PI); ctx.stroke();
+  ctx.strokeStyle = 'rgba(254,202,202,0.8)'; ctx.lineWidth = r * 0.035; ctx.beginPath(); ctx.ellipse(x, top - r * 0.03, r * 0.97, r * 0.24, 0, 0.2, Math.PI - 0.2); ctx.stroke();
   ctx.restore();
 }
 function drawBasket(ctx, x, y, r, items, hide = -1) {
   basketBack(ctx, x, y, r);
   items.forEach((id, i) => { if (i === hide) return; const [dx, dy] = BASKET_SLOT[i]; drawGood(ctx, id, x + dx * r, y + dy * r, r * 0.4, dx * 0.4); });
   basketFront(ctx, x, y, r);
+}
+// 문 옆 장바구니 더미 (n 개 겹쳐 쌓임)
+function drawBasketStack(ctx, x, y, r, n) {
+  for (let i = 0; i < n; i++) { const yy = y - i * r * 0.32; basketBack(ctx, x, yy, r, i === n - 1); basketFront(ctx, x, yy, r); }
+}
+// 계산을 마친 손님의 흰 비닐봉투 (산 물건이 위로 살짝 보인다)
+function drawBag(ctx, x, y, r, items) {
+  ctx.save(); ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(203,213,225,0.95)'; ctx.lineWidth = r * 0.08;
+  [-1, 1].forEach(k => { ctx.beginPath(); ctx.ellipse(x + k * r * 0.3, y - r * 0.45, r * 0.18, r * 0.42, 0, Math.PI, 0); ctx.stroke(); });
+  items.slice(0, 3).forEach((id, i) => drawGood(ctx, id, x + (i - (Math.min(items.length, 3) - 1) / 2) * r * 0.42, y - r * 0.42, r * 0.34, (i - 1) * 0.3));
+  const body = () => { ctx.beginPath(); ctx.moveTo(x - r * 0.62, y - r * 0.4); ctx.quadraticCurveTo(x, y - r * 0.28, x + r * 0.62, y - r * 0.4); ctx.lineTo(x + r * 0.72, y + r * 0.5); ctx.quadraticCurveTo(x, y + r * 0.66, x - r * 0.72, y + r * 0.5); ctx.closePath(); };
+  shadowOn(ctx, r * 0.12, r * 0.05); body(); ctx.fillStyle = lg(ctx, x - r, 0, x + r, 0, [[0, '#e2e8f0'], [0.4, '#ffffff'], [1, '#dbe1e8']]); ctx.fill(); shadowOff(ctx);
+  ctx.strokeStyle = 'rgba(148,163,184,0.7)'; ctx.lineWidth = r * 0.03; body(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(148,163,184,0.45)'; ctx.lineWidth = r * 0.025;
+  [[-0.3, 0.1], [0.25, -0.05], [0.05, 0.3]].forEach(([dx, dy]) => { ctx.beginPath(); ctx.moveTo(x + dx * r, y + dy * r); ctx.quadraticCurveTo(x + (dx + 0.08) * r, y + (dy + 0.12) * r, x + (dx + 0.02) * r, y + (dy + 0.25) * r); ctx.stroke(); });
+  ctx.fillStyle = '#16a34a'; ctx.font = `${Math.round(r * 0.3)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('동물마을', x, y + r * 0.18);
+  ctx.restore();
 }
 
 // 동전 (카운터 위에 비스듬히 누운 모습 / 날아갈 땐 세운 모습)
@@ -694,7 +709,7 @@ const makeGame = () => ({ stock: arrangeStore(), caseStock: arrangeCounter(), cu
   task: null, phase: 'none', phaseT: 0, t: 0, served: 0, fly: [], coinsOut: [], parts: [], coins: loadShop().coins,
   help: false, helpSaid: false, lastAct: 0, lastWrongSay: -9, shake: null, press: null, doorT: -9, doorUntil: -9,
   regT: -9, scanned: 0, scanFly: null, beepT: -9, receiptT: null, drawerOpen: false, drawerT: -9, coinsIn: 0, card: null, cardN: 0, termT: -9, payBy: 'cash',
-  bubble: null, L: null, cells: [], caseCells: [], timers: [] });
+  stackN: 5, bubble: null, L: null, cells: [], caseCells: [], timers: [] });
 
 export default function ShopGame({ audio, speak }) {
   const canvasRef = useRef(null);
@@ -717,7 +732,7 @@ export default function ShopGame({ audio, speak }) {
     const ids = KITCHEN_GUESTS.map(k => k.id).filter(id => id !== g.lastGuest && !g.custs.some(c => c.id === id));
     const id = ids[Math.floor(Math.random() * ids.length)]; g.lastGuest = id;
     const v = makeVisit(id);
-    const c = { uid: ++g.uid, id, steps: v.steps, step: 0, payBy: v.payBy, basket: [], askGot: [], want: v.ask, xf: L.doorX / L.W, txf: 0, yk: 0, tyk: 0, dep: Math.random(), dir: 1,
+    const c = { uid: ++g.uid, id, steps: v.steps, step: 0, payBy: v.payBy, basket: [], askGot: [], want: v.ask, hasBk: false, bag: false, xf: L.doorX / L.W, txf: 0, yk: 0, tyk: 0, dep: Math.random(), dir: 1,
       state: 'enter', t0: g.t, wt: 0, goal: null, happyUntil: 0, mouthUntil: 0, bkOn: false, bkBack: false, bkT: -9, px: L.doorX, py: L.laneY, sc: 1 };
     g.custs.push(c); openDoor();
     audio.playXylophone(1318.5, 0.5); setTimeout(() => audio.playXylophone(1046.5, 0.6), 230);   // 딩동
@@ -728,6 +743,7 @@ export default function ShopGame({ audio, speak }) {
   const walkTo = (c, x, goal, yk = 1) => { c.state = 'walk'; c.txf = x / G.current.L.W; c.tyk = yk; c.goal = goal; };
   const advance = (c) => {
     const g = G.current, L = g.L, s = c.steps[c.step];
+    if (!c.hasBk) { walkTo(c, L.stackX - L.S * 0.6 * 0.55, 'grab', 0.1); return; }
     if (s) { const cell = g.cells.find(k => k.id === s.item); walkTo(c, cell ? cell.x + (Math.random() - 0.5) * cell.w * 0.2 : L.queueX, 'self', 0); return; }
     if (!g.task) { g.task = { kind: 'counter', c }; walkTo(c, L.gx, 'counter'); } else walkTo(c, L.queueX, 'queue');
   };
@@ -737,6 +753,13 @@ export default function ShopGame({ audio, speak }) {
     else if (c.goal === 'queue') c.state = 'queue';
     else if (c.goal === 'counter') startCounter(c);
     else if (c.goal === 'door') { c.state = 'exit'; c.t0 = g.t; openDoor(); }
+    else if (c.goal === 'grab') {   // 문 옆 더미에서 빨간 장바구니 하나 집기
+      c.state = 'grab'; c.t0 = g.t; c.happyUntil = g.t + 0.7;
+      later(() => { c.hasBk = true; g.stackN = Math.max(0, g.stackN - 1); audio.playPopSound(); later(() => advance(c), 350); }, 350);
+    } else if (c.goal === 'drop') {   // 장바구니는 더미에 돌려놓고, 산 물건은 봉투에
+      c.state = 'grab'; c.t0 = g.t;
+      later(() => { c.hasBk = false; c.bag = true; g.stackN = Math.min(8, g.stackN + 1); audio.playFreq(500, 'triangle', 0.08, 0.3); audio.playNoise(0.15, 0.15, 2500); later(() => walkTo(c, g.L.doorX, 'door', 0), 350); }, 350);
+    }
   };
   const flyTo = (c, cell, ask) => {
     const g = G.current;
@@ -926,7 +949,7 @@ export default function ShopGame({ audio, speak }) {
     later(() => {
       g.phase = 'bye'; g.phaseT = g.t; c.happyUntil = g.t + 2; c.bkOn = false; c.bkBack = true; c.bkT = g.t;
       say(VOICE.shopBye()); talk(c, 1.5); sync();
-      later(() => { g.task = null; g.phase = 'none'; g.card = null; g.coinsOut = []; walkTo(c, g.L.doorX, 'door', 0); sync(); }, 1300);
+      later(() => { g.task = null; g.phase = 'none'; g.card = null; g.coinsOut = []; walkTo(c, g.L.stackX - g.L.S * 0.6 * 0.55, 'drop', 0.1); sync(); }, 1300);
     }, wait);
   };
 
@@ -1048,6 +1071,7 @@ export default function ShopGame({ audio, speak }) {
           if (glow > 0) { ctx.save(); ctx.font = `${Math.round(cell.h * 0.42)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('👆', cell.x + cell.w * 0.3, cell.base - cell.h * 0.05 + Math.sin(t * 6) * cell.h * 0.06); ctx.restore(); }
         });
         L.units.forEach((U, u) => { if (SHOP_UNITS[u].kind === 'fridge') drawFridgeGlass(ctx, L, U); });
+        { const sr = L.S * 0.6 * 0.3; ctx.fillStyle = 'rgba(30,30,40,0.15)'; ell(ctx, L.stackX, L.backY + sr * 0.55, sr * 1.1, sr * 0.2); ctx.fill(); drawBasketStack(ctx, L.stackX, L.backY, sr, g.stackN); }
 
         // 손님 (가까운 쪽이 앞)
         [...g.custs].sort((a, b) => a.py - b.py).forEach(c => {
@@ -1062,10 +1086,11 @@ export default function ShopGame({ audio, speak }) {
           ctx.translate(c.px, c.py - hop - jump); ctx.rotate(rot);
           GUEST_FN[c.id](ctx, S, t, happy, mouth);
           ctx.restore();
-          if (!c.bkOn && !c.bkBack) {
+          if (!c.bkOn && !c.bkBack && (c.hasBk || c.bag)) {
             const bk = handBk(c);
             ctx.save(); if (c.state === 'enter' || c.state === 'exit') ctx.globalAlpha = c.state === 'enter' ? clamp01((t - c.t0) / 0.35) : clamp01((0.7 - (t - c.t0)) / 0.35);
-            drawBasket(ctx, bk.x, bk.y - hop - jump, bk.r, c.basket); ctx.restore();
+            if (c.hasBk) drawBasket(ctx, bk.x, bk.y - hop - jump, bk.r, c.basket); else drawBag(ctx, bk.x, bk.y - hop - jump, bk.r, c.basket);
+            ctx.restore();
           }
         });
 
