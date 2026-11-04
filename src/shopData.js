@@ -23,11 +23,11 @@ export const SHOP_GOODS = [
 ];
 // 카운터 진열장 물건: 손님이 계산대에서 "○○ 주세요!" 하고 점원(아이)에게 달라고 하는 것
 export const COUNTER_GOODS = [
-  { id: 'bun', name: '호빵', emoji: '🥟' },
+  { id: 'mandu', name: '만두', emoji: '🥟' },
   { id: 'sweetpotato', name: '군고구마', emoji: '🍠' },
-  { id: 'fishcake', name: '어묵', emoji: '🍢' },
+  { id: 'chicken', name: '치킨', emoji: '🍗' },
   { id: 'hotdog', name: '핫도그', emoji: '🌭' },
-  { id: 'lollipop', name: '사탕', emoji: '🍭' },
+  { id: 'candy', name: '사탕', emoji: '🍬' },
   { id: 'icecream', name: '아이스크림', emoji: '🍦' }
 ];
 export const ASK_MAX_N = 2;   // 카운터에서 한 가지를 달라고 할 때 최대 개수

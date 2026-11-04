@@ -1,10 +1,10 @@
 // ═════════════════════════════════════════════════════════════════════════════
 // 🛒 동물 마을 가게 (편의점): 점원(아이) 쪽에서 바라본 가게 전경.
 //    동물 손님이 자동문으로 들어와 매대를 돌아다니며 스스로 물건을 골라 바구니에 담고, 계산대로 와서 바구니를 올려놓는다.
-//    가끔 "그리고 호빵 한 개 주세요!" 하고 카운터 진열장(점원 쪽) 물건을 달라고 하면 아이가 콕 눌러 바구니에 넣어 준다.
+//    가끔 "그리고 만두 한 개 주세요!" 하고 카운터 진열장(점원 쪽) 물건을 달라고 하면 아이가 콕 눌러 바구니에 넣어 준다.
 //    → 하나씩 콕 "삑!" 찍기 → 현금(동전 콕) 또는 카드(꽂기·돌려주기)
 //  - 손님은 동시에 둘까지. 계산대는 한 번에 한 손님(g.task), 다른 손님은 줄을 선다
-//  - 카운터 진열장 물건: shopData COUNTER_GOODS (그림은 이 파일 gdBun 등)
+//  - 카운터 진열장 물건: shopData COUNTER_GOODS (그림은 이 파일 gdMandu 등)
 //  - 진열대: 과일 · 채소 · 냉장고 (shopData SHOP_UNITS, 가게를 열 때 진열대 안에서 자리만 섞음)
 //  - 손님·음식 그림은 요리 놀이(KitchenGame.jsx)의 GUEST_FN·drawWhole 을 빌려 쓰고, 통째 토마토·사과·달걀·키위만 여기서 그린다
 //  - 실패는 없다: 다른 물건을 누르면 흔들리며 "그건 ○○예요", 가만히 있으면 7초 뒤 찾을 물건이 반짝
@@ -98,17 +98,80 @@ function gdKiwi(c, u) {
   gloss(c, -u * 0.18, -u * 0.15, u * 0.15, u * 0.07, 0.5, -0.3);
   c.restore();
 }
-// ── 카운터 진열장 물건 (호빵·군고구마·어묵·핫도그·막대사탕·아이스크림)
-function gdBun(c, u) {
-  c.fillStyle = '#efe3c8'; c.beginPath(); c.roundRect(-u * 0.8, u * 0.4, u * 1.6, u * 0.2, u * 0.05); c.fill();
-  const dome = () => { c.beginPath(); c.moveTo(-u * 0.84, u * 0.44); c.bezierCurveTo(-u * 0.95, -u * 0.22, -u * 0.46, -u * 0.74, 0, -u * 0.74); c.bezierCurveTo(u * 0.46, -u * 0.74, u * 0.95, -u * 0.22, u * 0.84, u * 0.44); c.quadraticCurveTo(0, u * 0.58, -u * 0.84, u * 0.44); c.closePath(); };
-  shadowOn(c, u * 0.14, u * 0.06); dome();
-  c.fillStyle = rg(c, -u * 0.28, -u * 0.38, u * 0.05, 0, 0, u * 0.98, [[0, '#ffffff'], [0.55, '#f8f3ea'], [1, '#d8ccb8']]); c.fill(); shadowOff(c);
-  c.save(); dome(); c.clip(); speckle(c, 41, 40, -u * 0.8, -u * 0.7, u * 0.8, u * 0.5, u * 0.008, u * 0.02, ['rgba(200,185,160,0.35)']); c.restore();
-  c.strokeStyle = 'rgba(165,145,115,0.5)'; c.lineWidth = u * 0.035; c.lineCap = 'round';
-  for (let i = 0; i < 7; i++) { const q = (i - 3) / 3; c.beginPath(); c.moveTo(q * u * 0.06, -u * 0.63); c.quadraticCurveTo(q * u * 0.32, -u * 0.58, q * u * 0.5, -u * 0.28 - (1 - Math.abs(q)) * u * 0.05); c.stroke(); }
-  c.fillStyle = 'rgba(175,150,115,0.55)'; ell(c, 0, -u * 0.63, u * 0.08, u * 0.045); c.fill();
-  gloss(c, -u * 0.38, -u * 0.32, u * 0.24, u * 0.12, 0.65, -0.5);
+// ── 카운터 진열장 물건 (만두·군고구마·치킨·핫도그·사탕·아이스크림)
+// 만두: 반달 모양, 위쪽 주름
+function gdMandu(c, u) {
+  const body = () => { c.beginPath(); c.moveTo(-u * 0.96, u * 0.28); c.bezierCurveTo(-u * 0.92, -u * 0.58, u * 0.92, -u * 0.58, u * 0.96, u * 0.28); c.quadraticCurveTo(0, u * 0.56, -u * 0.96, u * 0.28); c.closePath(); };
+  shadowOn(c, u * 0.14, u * 0.07); body();
+  c.fillStyle = rg(c, -u * 0.25, -u * 0.25, u * 0.05, 0, u * 0.05, u * 1.0, [[0, '#fffaf0'], [0.55, '#efdfc0'], [1, '#c9ad7c']]); c.fill(); shadowOff(c);
+  c.strokeStyle = 'rgba(150,115,65,0.55)'; c.lineWidth = u * 0.035; body(); c.stroke();
+  c.save(); body(); c.clip();
+  c.fillStyle = 'rgba(140,165,100,0.16)'; ell(c, 0, u * 0.08, u * 0.6, u * 0.24); c.fill();
+  c.fillStyle = 'rgba(200,120,110,0.1)'; ell(c, -u * 0.2, u * 0.12, u * 0.3, u * 0.14); c.fill();
+  speckle(c, 61, 30, -u * 0.9, -u * 0.4, u * 0.9, u * 0.45, u * 0.008, u * 0.02, ['rgba(190,170,130,0.35)']);
+  c.restore();
+  // 위쪽 이음새 + 주름
+  const seamY = (x) => -u * 0.36 * (1 - Math.pow(x / (u * 0.9), 2)) - u * 0.02;
+  c.lineCap = 'round';
+  c.strokeStyle = '#f7eedc'; c.lineWidth = u * 0.14; c.beginPath(); for (let i = 0; i <= 30; i++) { const x = -u * 0.82 + i / 30 * u * 1.64; if (i) c.lineTo(x, seamY(x)); else c.moveTo(x, seamY(x)); } c.stroke();
+  c.strokeStyle = 'rgba(175,145,95,0.55)'; c.lineWidth = u * 0.03;
+  for (let i = 0; i < 8; i++) { const x = -u * 0.66 + i * u * 0.19, y = seamY(x); c.beginPath(); c.moveTo(x - u * 0.04, y - u * 0.05); c.quadraticCurveTo(x + u * 0.06, y + u * 0.06, x + u * 0.04, y + u * 0.24); c.stroke(); }
+  c.strokeStyle = 'rgba(175,145,95,0.4)'; c.lineWidth = u * 0.02; c.beginPath(); for (let i = 0; i <= 30; i++) { const x = -u * 0.82 + i / 30 * u * 1.64; if (i) c.lineTo(x, seamY(x) - u * 0.06); else c.moveTo(x, seamY(x) - u * 0.06); } c.stroke();
+  gloss(c, -u * 0.42, -u * 0.08, u * 0.22, u * 0.08, 0.6, -0.3);
+}
+// 치킨: 바삭한 닭다리 튀김
+function gdChicken(c, u) {
+  c.save(); c.rotate(-0.55);
+  // 뼈
+  c.fillStyle = lg(c, 0, -u * 0.08, 0, u * 0.08, [[0, '#fffaf0'], [1, '#e2d4b8']]); c.beginPath(); c.roundRect(u * 0.3, -u * 0.075, u * 0.62, u * 0.15, u * 0.06); c.fill();
+  [-1, 1].forEach(k => { c.fillStyle = '#f8f1e3'; ell(c, u * 0.95, k * u * 0.09, u * 0.11, u * 0.1); c.fill(); c.strokeStyle = 'rgba(160,140,110,0.5)'; c.lineWidth = u * 0.015; c.stroke(); });
+  // 튀김옷 고기
+  const meat = () => {
+    c.beginPath(); c.moveTo(u * 0.42, -u * 0.12);
+    const pts = 26;
+    for (let i = 0; i <= pts; i++) {
+      const a = -Math.PI * 0.35 - i / pts * Math.PI * 1.3, rx = u * 0.66, ry = u * 0.52;
+      const bump = 1 + 0.05 * Math.sin(i * 2.7) + 0.03 * Math.cos(i * 4.1);
+      c.lineTo(-u * 0.18 + Math.cos(a) * rx * bump, Math.sin(a) * ry * bump);
+    }
+    c.lineTo(u * 0.42, u * 0.12); c.quadraticCurveTo(u * 0.48, 0, u * 0.42, -u * 0.12); c.closePath();
+  };
+  shadowOn(c, u * 0.14, u * 0.07); meat();
+  c.fillStyle = rg(c, -u * 0.35, -u * 0.22, u * 0.05, -u * 0.15, 0, u * 0.85, [[0, '#f9d07a'], [0.5, '#df8e2e'], [1, '#9c5214']]); c.fill(); shadowOff(c);
+  c.save(); meat(); c.clip();
+  speckle(c, 77, 110, -u * 0.9, -u * 0.6, u * 0.45, u * 0.6, u * 0.02, u * 0.05, ['rgba(255,225,140,0.65)', 'rgba(140,70,10,0.45)', 'rgba(230,150,50,0.6)', 'rgba(110,50,5,0.35)']);
+  c.restore();
+  gloss(c, -u * 0.4, -u * 0.22, u * 0.24, u * 0.1, 0.45, -0.2);
+  c.restore();
+}
+// 사탕: 비닐에 하나씩 싸인 알사탕 (양 끝을 꼬았다)
+function gdCandy(c, u) {
+  c.save(); c.rotate(-0.12);
+  // 꼬인 양 끝 비닐
+  [-1, 1].forEach(k => {
+    c.save(); c.scale(k, 1);
+    c.fillStyle = 'rgba(255,190,215,0.75)';
+    c.beginPath(); c.moveTo(u * 0.5, -u * 0.1);
+    c.lineTo(u * 0.98, -u * 0.46); c.lineTo(u * 0.9, -u * 0.27); c.lineTo(u * 1.02, -u * 0.12); c.lineTo(u * 0.9, 0); c.lineTo(u * 1.02, u * 0.13); c.lineTo(u * 0.9, u * 0.28); c.lineTo(u * 0.98, u * 0.46);
+    c.lineTo(u * 0.5, u * 0.1); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(220,90,140,0.55)'; c.lineWidth = u * 0.025;
+    [[-0.36, 0.95], [-0.14, 0.97], [0.14, 0.97], [0.36, 0.95]].forEach(([y, x]) => { c.beginPath(); c.moveTo(u * 0.52, y * u * 0.2); c.lineTo(u * x, y * u); c.stroke(); });
+    c.fillStyle = 'rgba(255,255,255,0.55)'; c.beginPath(); c.moveTo(u * 0.55, -u * 0.06); c.lineTo(u * 0.9, -u * 0.36); c.lineTo(u * 0.84, -u * 0.18); c.closePath(); c.fill();
+    c.fillStyle = '#ec4899'; ell(c, u * 0.5, 0, u * 0.08, u * 0.13); c.fill();
+    c.restore();
+  });
+  // 가운데: 비닐 속 사탕
+  shadowOn(c, u * 0.12, u * 0.06);
+  c.fillStyle = rg(c, -u * 0.15, -u * 0.15, u * 0.03, 0, 0, u * 0.55, [[0, '#ff9ec4'], [0.6, '#f43f7e'], [1, '#be185d']]); ell(c, 0, 0, u * 0.5, u * 0.42); c.fill(); shadowOff(c);
+  c.save(); ell(c, 0, 0, u * 0.5, u * 0.42); c.clip();
+  c.strokeStyle = 'rgba(255,255,255,0.75)'; c.lineWidth = u * 0.08;
+  for (let i = -3; i <= 3; i++) { c.beginPath(); c.moveTo(i * u * 0.2 - u * 0.3, -u * 0.5); c.quadraticCurveTo(i * u * 0.2, 0, i * u * 0.2 + u * 0.3, u * 0.5); c.stroke(); }
+  c.restore();
+  // 비닐 반짝임 + 테두리
+  c.strokeStyle = 'rgba(255,255,255,0.7)'; c.lineWidth = u * 0.03; ell(c, 0, 0, u * 0.53, u * 0.45); c.stroke();
+  gloss(c, -u * 0.2, -u * 0.2, u * 0.22, u * 0.1, 0.9, -0.4);
+  c.fillStyle = 'rgba(255,255,255,0.8)'; ell(c, u * 0.22, u * 0.18, u * 0.06, u * 0.03, -0.4); c.fill();
+  c.restore();
 }
 function gdSweetPotato(c, u) {
   c.save(); c.rotate(-0.28);
@@ -128,19 +191,6 @@ function gdSweetPotato(c, u) {
   c.strokeStyle = 'rgba(255,255,255,0.55)'; c.lineWidth = u * 0.04; c.lineCap = 'round';
   [-0.15, 0.12].forEach((q, i) => { c.beginPath(); c.moveTo(q * u, -u * 0.45); c.bezierCurveTo(q * u + u * 0.12, -u * 0.6, q * u - u * 0.12, -u * 0.72, q * u + (i ? -0.02 : 0.04) * u, -u * 0.9); c.stroke(); });
 }
-function gdFishcake(c, u) {
-  c.fillStyle = lg(c, -u * 0.045, 0, u * 0.045, 0, [[0, '#b98c55'], [1, '#e8cc98']]); c.beginPath(); c.roundRect(-u * 0.045, -u * 1.0, u * 0.09, u * 1.95, u * 0.03); c.fill();
-  const a = u * 0.64, b = u * 0.15, th = u * 0.24;
-  for (let i = 0; i < 4; i++) {
-    const y = -u * 0.68 + i * u * 0.34, k = i % 2 ? 1 : -1, sx = k * u * 0.05;
-    const fold = () => { c.beginPath(); c.moveTo(-a + sx, y); c.quadraticCurveTo(sx, y + b * k * 2, a + sx, y); c.lineTo(a + sx, y + th); c.quadraticCurveTo(sx, y + th + b * k * 2, -a + sx, y + th); c.closePath(); };
-    shadowOn(c, u * 0.08, u * 0.04); fold();
-    c.fillStyle = lg(c, -a, y, a, y + th, [[0, '#f6e0b4'], [0.5, '#e7bf80'], [1, '#c48f50']]); c.fill(); shadowOff(c);
-    c.save(); fold(); c.clip(); speckle(c, 50 + i, 14, -a, y - b, a, y + th + b * 2, u * 0.01, u * 0.025, ['rgba(150,95,40,0.35)', 'rgba(255,245,220,0.5)']); c.restore();
-    c.strokeStyle = 'rgba(140,90,40,0.45)'; c.lineWidth = u * 0.02; c.beginPath(); c.moveTo(-a + sx, y + th); c.quadraticCurveTo(sx, y + th + b * k * 2, a + sx, y + th); c.stroke();
-    c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.moveTo(-a * 0.7 + sx, y + th * 0.2); c.quadraticCurveTo(sx, y + th * 0.2 + b * k * 2, a * 0.2 + sx, y + th * 0.25 + b * k); c.lineTo(a * 0.2 + sx, y + th * 0.4 + b * k); c.quadraticCurveTo(sx, y + th * 0.35 + b * k * 2, -a * 0.7 + sx, y + th * 0.35); c.closePath(); c.fill();
-  }
-}
 function gdHotdog(c, u) {
   c.save(); c.rotate(0.15);
   c.fillStyle = lg(c, -u * 0.05, 0, u * 0.05, 0, [[0, '#b98c55'], [1, '#ead2a0']]); c.beginPath(); c.roundRect(-u * 0.05, u * 0.35, u * 0.1, u * 0.65, u * 0.03); c.fill();
@@ -154,18 +204,6 @@ function gdHotdog(c, u) {
   c.strokeStyle = '#facc15'; c.lineWidth = u * 0.035; c.beginPath(); for (let i = 0; i <= 6; i++) { const y = -u * 0.7 + i * u * 0.19, x = (i % 2 ? -1 : 1) * u * 0.17; if (i) c.lineTo(x, y); else c.moveTo(x, y); } c.stroke();
   gloss(c, -u * 0.14, -u * 0.55, u * 0.08, u * 0.26, 0.45);
   c.restore();
-}
-function gdLollipop(c, u) {
-  c.fillStyle = '#f8fafc'; c.strokeStyle = '#cbd5e1'; c.lineWidth = u * 0.02; c.beginPath(); c.roundRect(-u * 0.05, -u * 0.05, u * 0.1, u * 1.05, u * 0.04); c.fill(); c.stroke();
-  const R = u * 0.62, cy = -u * 0.32;
-  shadowOn(c, u * 0.14, u * 0.06); c.fillStyle = '#fff7ed'; ell(c, 0, cy, R, R); c.fill(); shadowOff(c);
-  c.save(); ell(c, 0, cy, R, R); c.clip();
-  const cols = ['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#a78bfa'];
-  c.lineWidth = R * 0.17; c.lineCap = 'round';
-  cols.forEach((col, i) => { c.strokeStyle = col; c.beginPath(); for (let s = 0; s <= 50; s++) { const a = s / 50 * TAU * 1.6 + i / 6 * TAU, rr = R * 1.05 * s / 50; const x = Math.cos(a) * rr, y = cy + Math.sin(a) * rr; if (s) c.lineTo(x, y); else c.moveTo(x, y); } c.stroke(); });
-  c.fillStyle = rg(c, -R * 0.3, cy - R * 0.3, 0, 0, cy, R, [[0, 'rgba(255,255,255,0.25)'], [0.7, 'rgba(255,255,255,0)'], [1, 'rgba(80,0,40,0.25)']]); ell(c, 0, cy, R, R); c.fill();
-  c.restore();
-  gloss(c, -R * 0.38, cy - R * 0.42, R * 0.32, R * 0.18, 0.75, -0.6);
 }
 function gdIcecream(c, u) {
   const cone = () => { c.beginPath(); c.moveTo(-u * 0.46, -u * 0.12); c.lineTo(u * 0.46, -u * 0.12); c.lineTo(0, u * 1.0); c.closePath(); };
@@ -185,7 +223,7 @@ function gdIcecream(c, u) {
   for (let i = 0; i < 16; i++) { const a = r() * Math.PI, rr = r() * u * 0.5; c.save(); c.translate(Math.cos(a) * rr * 1.1 - u * 0.0, -u * 0.5 - Math.sin(a) * rr * 0.75); c.rotate(r() * 3); c.fillStyle = cols[i % cols.length]; c.beginPath(); c.roundRect(-u * 0.05, -u * 0.015, u * 0.1, u * 0.03, u * 0.015); c.fill(); c.restore(); }
   gloss(c, -u * 0.25, -u * 0.68, u * 0.2, u * 0.1, 0.7, -0.4);
 }
-const OWN_FN = { tomato: gdTomato, apple: gdApple, egg: gdEgg, kiwi: gdKiwi, bun: gdBun, sweetpotato: gdSweetPotato, fishcake: gdFishcake, hotdog: gdHotdog, lollipop: gdLollipop, icecream: gdIcecream };
+const OWN_FN = { tomato: gdTomato, apple: gdApple, egg: gdEgg, kiwi: gdKiwi, mandu: gdMandu, sweetpotato: gdSweetPotato, chicken: gdChicken, hotdog: gdHotdog, candy: gdCandy, icecream: gdIcecream };
 const ownCache = new Map();
 function drawGood(ctx, id, x, y, r, rot = 0, alpha = 1) {
   if (!OWN_FN[id]) {
@@ -382,7 +420,7 @@ function crateArt(ctx, id, w, h) {
 }
 function fridgeArt(ctx, id, w, h) {
   const r = Math.min(w * 0.2, h * 0.42);
-  const upright = id === 'milk' || id === 'fishcake' || id === 'hotdog' || id === 'lollipop' || id === 'icecream';
+  const upright = id === 'milk' || id === 'hotdog' || id === 'icecream';
   [[0, -0.74, 0, 1.0], [-0.3, -0.64, -0.12, 0.92], [0.3, -0.64, 0.14, 0.92]].forEach(([dx, dy, rot, k]) => drawGood(ctx, id, dx * w, dy * h, r * k, upright ? rot * 0.4 : rot));
   const lw = Math.min(w * 0.78, h * 1.5), lh = h * 0.3;
   ctx.fillStyle = '#fef08a'; shadowOn(ctx, 3, 1, 'rgba(0,0,0,0.2)'); ctx.beginPath(); ctx.roundRect(-lw / 2, -lh * 1.08, lw, lh, lh * 0.2); ctx.fill(); shadowOff(ctx);
@@ -729,7 +767,7 @@ export default function ShopGame({ audio, speak }) {
     sync();
   };
 
-  // ── 계산대에서 부탁: "그리고 호빵 한 개 주세요!" → 카운터 진열장에서 콕 → 계산대 위 바구니로 ──
+  // ── 계산대에서 부탁: "그리고 만두 한 개 주세요!" → 카운터 진열장에서 콕 → 계산대 위 바구니로 ──
   const asker = () => { const g = G.current; return g.task && g.task.kind === 'counter' && g.phase === 'ask' ? g.task.c : null; };
   const needOf = (id) => { const c = asker(), l = c && c.want.lines.find(x => x.item === id); return l ? l.n : 0; };
   const haveOf = (id) => { const g = G.current, c = asker(); if (!c) return 0; return c.askGot.filter(x => x === id).length + g.fly.filter(f => f.c === c && f.ask && f.id === id).length; };
