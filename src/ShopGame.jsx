@@ -14,7 +14,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { KITCHEN_GUESTS, GUEST_BY_ID } from './kitchenData.js';
 import { GUEST_FN, drawWhole } from './KitchenGame.jsx';
-import { GOOD_BY_ID, SHOP_UNITS, arrangeStore, arrangeCounter, makeVisit, PIGGY_FULL, loadShop, saveShop } from './shopData.js';
+import { GOOD_BY_ID, SHOP_UNITS, arrangeStore, arrangeCounter, makeVisit, loadShop, saveShop, PRICE, STOCK_MAX, MONEY_GOAL, billsFor, fmtWon, MARKET_GROUPS } from './shopData.js';
 import { VOICE } from './voiceLines.js';
 
 const TAU = Math.PI * 2;
@@ -261,12 +261,12 @@ function layout(W, H) {
 }
 const rowH = (L) => (L.shelfBot - L.shelfTop) / 3;
 // 진열 칸: stock[i] → 진열대 floor(i/6), 그 안에서 2열 × 3층
-function shelfCells(L, stock) {
+function shelfCells(L, stock, inv) {
   const ch = rowH(L);
   return stock.map((id, i) => {
     const u = Math.floor(i / 6), j = i % 6, col = j % 2, row = Math.floor(j / 2), U = L.units[u], cw = (U.x1 - U.x0) / 2;
     const w = Math.min(cw * 0.84, ch * 1.35), h = Math.min(ch * 0.8, w * 0.8);
-    return { id, i, u, fridge: SHOP_UNITS[u].kind === 'fridge', x: U.x0 + cw * (col + 0.5), base: L.shelfTop + ch * (row + 1) - ch * 0.08, w, h };
+    return { id, i, u, n: inv[id] || 0, fridge: SHOP_UNITS[u].kind === 'fridge', x: U.x0 + cw * (col + 0.5), base: L.shelfTop + ch * (row + 1) - ch * 0.08, w, h };
   });
 }
 // 카운터 진열장 (계산대 점원 쪽 앞판 안)
@@ -274,12 +274,12 @@ function caseRect(L) {
   const pTop = L.counterY + L.d + 10, ph = L.H - pTop;
   return { x0: L.counterX + L.d * 0.4, x1: L.W - 12, y0: pTop + ph * 0.2, y1: L.H - 8 };
 }
-function caseCells(L, stock) {
+function caseCells(L, stock, inv) {
   const R = caseRect(L), cw = (R.x1 - R.x0) / L.caseCols, ch = (R.y1 - R.y0) / L.caseRows;
   return stock.map((id, i) => {
     const col = i % L.caseCols, row = Math.floor(i / L.caseCols);
     const w = Math.min(cw * 0.86, ch * 1.2), h = Math.min(ch * 0.76, w * 0.86);
-    return { id, i: 18 + i, fridge: true, inCase: true, x: R.x0 + cw * (col + 0.5), base: R.y0 + ch * (row + 1) - ch * 0.1, w, h };
+    return { id, i: 18 + i, n: inv[id] || 0, fridge: true, inCase: true, x: R.x0 + cw * (col + 0.5), base: R.y0 + ch * (row + 1) - ch * 0.1, w, h };
   });
 }
 // 바구니 안 물건 자리 (왼쪽 → 오른쪽 → 가운데 위)
@@ -403,12 +403,15 @@ function drawFridgeGlass(ctx, L, U) {
 }
 
 // ── 진열 칸 그림: 나무 상자(과일·채소) / 냉장 칸(가격표). 칸마다 한 번 그려 두고 복사
-function crateArt(ctx, id, w, h) {
+// 재고 자리 (앞줄부터 채우고, 그릴 땐 뒤에서 앞으로)
+const CRATE_SLOTS = [[-0.25, -0.5, -0.25, 1], [0.25, -0.5, 0.3, 1], [0, -0.53, 0.1, 1], [-0.13, -0.69, 0.2, 0.92], [0.15, -0.69, -0.2, 0.92], [0, -0.83, 0.05, 0.86]];
+const FRIDGE_SLOTS = [[0, -0.66, 0, 1], [-0.3, -0.6, -0.12, 0.95], [0.3, -0.6, 0.14, 0.95], [-0.16, -0.8, 0.06, 0.85], [0.16, -0.8, -0.06, 0.85], [0, -0.9, 0, 0.8]];
+function crateArt(ctx, id, w, h, n) {
   shadowOn(ctx, w * 0.06, w * 0.03, 'rgba(60,30,10,0.35)');
   ctx.fillStyle = lg(ctx, 0, -h, 0, 0, [[0, '#9c6a3c'], [1, '#6b4220']]); ctx.beginPath(); ctx.roundRect(-w / 2, -h * 0.82, w, h * 0.82, w * 0.04); ctx.fill(); shadowOff(ctx);
   ctx.fillStyle = 'rgba(40,20,5,0.35)'; ctx.fillRect(-w * 0.46, -h * 0.78, w * 0.92, h * 0.1);
-  const r = Math.min(w * 0.2, h * 0.34), tall = id === 'corn' || id === 'carrot';
-  [[0, -0.66, 0.15], [-0.25, -0.5, -0.25], [0.25, -0.5, 0.3]].forEach(([dx, dy, rot], i) => drawGood(ctx, id, dx * w, dy * h - (tall ? h * 0.05 : 0), r * (i ? 1 : 0.95), tall ? rot * 0.5 : rot));
+  const r = Math.min(w * 0.2, h * 0.34) * (n > 3 ? 0.86 : 1), tall = id === 'corn' || id === 'carrot';
+  CRATE_SLOTS.slice(0, n).sort((a, b) => a[1] - b[1]).forEach(([dx, dy, rot, k]) => drawGood(ctx, id, dx * w, dy * h - (tall ? h * 0.05 : 0), r * k, tall ? rot * 0.5 : rot));
   const fh = h * 0.42;
   ctx.fillStyle = lg(ctx, 0, -fh, 0, 0, [[0, '#e2ad70'], [1, '#b47d44']]); ctx.beginPath(); ctx.roundRect(-w / 2, -fh, w, fh, w * 0.04); ctx.fill();
   ctx.strokeStyle = 'rgba(110,60,20,0.45)'; ctx.lineWidth = Math.max(1, w * 0.008); ctx.beginPath(); ctx.moveTo(-w / 2, -fh * 0.5); ctx.lineTo(w / 2, -fh * 0.5); ctx.stroke();
@@ -418,10 +421,10 @@ function crateArt(ctx, id, w, h) {
   ctx.fillStyle = '#5b3a1a'; ctx.font = `${Math.round(lh * 0.66)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(GOOD_BY_ID[id].name, 0, -fh * 0.83 + lh * 0.54);
 }
-function fridgeArt(ctx, id, w, h) {
-  const r = Math.min(w * 0.2, h * 0.42);
+function fridgeArt(ctx, id, w, h, n) {
+  const r = Math.min(w * 0.2, h * 0.42) * (n > 3 ? 0.88 : 1);
   const upright = id === 'milk' || id === 'hotdog' || id === 'icecream';
-  [[0, -0.74, 0, 1.0], [-0.3, -0.64, -0.12, 0.92], [0.3, -0.64, 0.14, 0.92]].forEach(([dx, dy, rot, k]) => drawGood(ctx, id, dx * w, dy * h, r * k, upright ? rot * 0.4 : rot));
+  FRIDGE_SLOTS.slice(0, n).sort((a, b) => a[1] - b[1]).forEach(([dx, dy, rot, k]) => drawGood(ctx, id, dx * w, dy * h, r * k, upright ? rot * 0.4 : rot));
   const lw = Math.min(w * 0.78, h * 1.5), lh = h * 0.3;
   ctx.fillStyle = '#fef08a'; shadowOn(ctx, 3, 1, 'rgba(0,0,0,0.2)'); ctx.beginPath(); ctx.roundRect(-lw / 2, -lh * 1.08, lw, lh, lh * 0.2); ctx.fill(); shadowOff(ctx);
   ctx.fillStyle = '#1e3a8a'; ctx.font = `${Math.round(lh * 0.72)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -435,20 +438,41 @@ function drawCell(ctx, cell, glow, shakeK, pressK) {
     ctx.fillStyle = `rgba(254,240,138,${0.75 * glow})`; ctx.beginPath(); ctx.roundRect(x - w * 0.56, base - h * 1.12, w * 1.12, h * (fridge ? 1.42 : 1.18), w * 0.1); ctx.fill(); ctx.restore();
   }
   const sx = shakeK > 0 ? Math.sin(shakeK * 38) * w * 0.05 * shakeK : 0, sc = 1 - pressK * 0.06;
-  if (fridge) { ctx.save(); ctx.translate(x + sx, base); if (sc !== 1) ctx.scale(sc, sc); fridgeArt(ctx, id, w, h); ctx.restore(); return; }
-  const key = `${id}|${Math.round(w)}|${Math.round(h)}`;
+  const n = cell.n || 0;
+  if (fridge) { ctx.save(); ctx.translate(x + sx, base); if (sc !== 1) ctx.scale(sc, sc); fridgeArt(ctx, id, w, h, n); ctx.restore(); drawTags(ctx, cell); return; }
+  const key = `${id}|${n}|${Math.round(w)}|${Math.round(h)}`;
   let sp = cellCache.get(key);
   if (!sp) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2), cw = w * 1.3, chh = h * 1.7, oy = h * 1.3;
     const cv = document.createElement('canvas'); cv.width = Math.ceil(cw * dpr); cv.height = Math.ceil(chh * dpr);
     const c = cv.getContext('2d'); c.scale(dpr, dpr); c.translate(cw / 2, oy);
-    crateArt(c, id, w, h);
+    crateArt(c, id, w, h, n);
     if (cellCache.size > 90) cellCache.clear();
     sp = { cv, cw, oy, dpr }; cellCache.set(key, sp);
   }
   ctx.save();
   if (sc !== 1 || sx) { ctx.translate(x + sx, base); ctx.scale(sc, sc); ctx.drawImage(sp.cv, -sp.cw / 2, -sp.oy, sp.cv.width / sp.dpr, sp.cv.height / sp.dpr); }
   else { const px = Math.round((x - sp.cw / 2) * sp.dpr) / sp.dpr, py = Math.round((base - sp.oy) * sp.dpr) / sp.dpr; ctx.drawImage(sp.cv, px, py, sp.cv.width / sp.dpr, sp.cv.height / sp.dpr); }
+  ctx.restore();
+  drawTags(ctx, cell);
+}
+// 가격표 (파는 값) + 다 팔리면 '품절' 도장
+function drawTags(ctx, cell) {
+  const { x, base, w, h, id, fridge } = cell, n = cell.n || 0;
+  ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const fs = Math.max(11, Math.round(h * 0.19)), txt = fmtWon(PRICE[id].sell);
+  ctx.font = `${fs}px ${JUA}`;
+  const tw = ctx.measureText(txt).width + fs * 0.7, th = fs * 1.3, tx = x + w * 0.52 - tw / 2, ty = base - h * (fridge ? 1.0 : 0.86);
+  shadowOn(ctx, 4, 1, 'rgba(0,0,0,0.25)'); ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.roundRect(tx - tw / 2, ty - th / 2, tw, th, th * 0.4); ctx.fill(); shadowOff(ctx);
+  ctx.fillStyle = '#ffffff'; ctx.fillText(txt, tx, ty + fs * 0.05);
+  if (n <= 0) {
+    ctx.translate(x, base - h * 0.57); ctx.rotate(-0.08);
+    const sf = Math.max(13, Math.round(h * 0.24)); ctx.font = `${sf}px ${JUA}`;
+    const sw = ctx.measureText('품절').width + sf * 0.8, sh = sf * 1.35;
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.roundRect(-sw / 2, -sh / 2, sw, sh, sh * 0.2); ctx.fill();
+    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = Math.max(2, sf * 0.12); ctx.stroke();
+    ctx.fillStyle = '#dc2626'; ctx.fillText('품절', 0, sf * 0.06);
+  }
   ctx.restore();
 }
 
@@ -557,18 +581,46 @@ function drawBag(ctx, x, y, r, items) {
   ctx.restore();
 }
 
-// 동전 (카운터 위에 비스듬히 누운 모습 / 날아갈 땐 세운 모습)
-function drawCoin(ctx, x, y, r, flat = 0.55, spin = 0) {
-  const ry = r * flat, sx = Math.max(0.15, Math.abs(Math.cos(spin)));
-  ctx.save(); ctx.translate(x, y); ctx.scale(sx, 1);
-  shadowOn(ctx, r * 0.3, r * 0.15, 'rgba(80,50,0,0.35)');
-  ctx.fillStyle = '#b77d0a'; ell(ctx, 0, r * 0.12 * flat, r, ry); ctx.fill(); shadowOff(ctx);
-  ctx.fillStyle = rg(ctx, -r * 0.3, -ry * 0.4, 0, 0, 0, r, [[0, '#fff3b0'], [0.45, '#fbcd34'], [1, '#d99a0b']]); ell(ctx, 0, 0, r, ry); ctx.fill();
-  ctx.strokeStyle = 'rgba(160,100,0,0.55)'; ctx.lineWidth = r * 0.07; ell(ctx, 0, 0, r * 0.76, ry * 0.76); ctx.stroke();
-  ctx.save(); ctx.scale(1, flat); ctx.fillStyle = 'rgba(190,120,0,0.6)'; ctx.beginPath();
-  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i / 10 * TAU, rr = i % 2 ? r * 0.2 : r * 0.46; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
-  ctx.closePath(); ctx.fill(); ctx.restore();
-  gloss(ctx, -r * 0.35, -ry * 0.35, r * 0.35, ry * 0.25, 0.7, -0.3);
+// 💵 지폐 (우리나라 돈 색과 배치를 닮게: 천 원 파랑, 오천 원 주황, 만 원 초록, 오만 원 노랑. 인물 대신 동물 얼굴)
+const BILL_STYLE = {
+  1000: { base: ['#d7e8f5', '#a9cbe8'], ink: '#1f5b8f', word: '천원' },
+  5000: { base: ['#fbe3cb', '#f0b98c'], ink: '#a1441b', word: '오천원' },
+  10000: { base: ['#ddf0d0', '#aed79a'], ink: '#2f6b2a', word: '만원' },
+  50000: { base: ['#f8ebb8', '#ecd078'], ink: '#8a5d06', word: '오만원' }
+};
+function drawBill(ctx, x, y, w, v, rot = 0, flat = 1, alpha = 1) {
+  const st = BILL_STYLE[v] || BILL_STYLE[1000], h = w * 0.48, ink = st.ink;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(1, flat); if (alpha < 1) ctx.globalAlpha *= alpha;
+  const shape = () => { ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, w * 0.025); };
+  shadowOn(ctx, w * 0.06, w * 0.03, 'rgba(30,40,30,0.3)');
+  ctx.fillStyle = lg(ctx, -w / 2, 0, w / 2, 0, [[0, st.base[0]], [0.55, st.base[1]], [1, st.base[0]]]); shape(); ctx.fill(); shadowOff(ctx);
+  ctx.save(); shape(); ctx.clip();
+  // 물결 무늬
+  ctx.save(); ctx.globalAlpha *= 0.2; ctx.strokeStyle = ink; ctx.lineWidth = Math.max(0.6, w * 0.006);
+  for (let k = 0; k < 8; k++) { ctx.beginPath(); for (let i = 0; i <= 24; i++) { const xx = -w / 2 + i / 24 * w, yy = -h * 0.42 + k * h * 0.12 + Math.sin(i * 0.8 + k) * h * 0.035; if (i) ctx.lineTo(xx, yy); else ctx.moveTo(xx, yy); } ctx.stroke(); }
+  ctx.restore();
+  // 왼쪽 숨은 그림 동그라미
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'; ell(ctx, -w * 0.3, 0, h * 0.3, h * 0.32); ctx.fill();
+  // 은색 띠 (오천 원 이상)
+  if (v >= 5000) { ctx.fillStyle = lg(ctx, -w * 0.13, 0, -w * 0.09, 0, [[0, 'rgba(220,225,235,0.9)'], [0.5, 'rgba(255,255,255,0.95)'], [1, 'rgba(190,200,215,0.9)']]); ctx.fillRect(-w * 0.13, -h / 2, w * 0.04, h); }
+  // 오른쪽 초상 자리: 동물 얼굴
+  const fx = w * 0.27, fy = h * 0.04, fr = h * 0.25;
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'; ell(ctx, fx, fy, fr * 1.3, fr * 1.5); ctx.fill();
+  ctx.save(); ctx.globalAlpha *= 0.8; ctx.fillStyle = ink; ctx.strokeStyle = ink;
+  ell(ctx, fx - fr * 0.68, fy - fr * 0.68, fr * 0.32, fr * 0.32); ctx.fill(); ell(ctx, fx + fr * 0.68, fy - fr * 0.68, fr * 0.32, fr * 0.32); ctx.fill();
+  ctx.lineWidth = Math.max(0.8, fr * 0.12); ell(ctx, fx, fy, fr, fr * 0.92); ctx.stroke();
+  ell(ctx, fx - fr * 0.36, fy - fr * 0.12, fr * 0.1, fr * 0.12); ctx.fill(); ell(ctx, fx + fr * 0.36, fy - fr * 0.12, fr * 0.1, fr * 0.12); ctx.fill();
+  ell(ctx, fx, fy + fr * 0.3, fr * 0.36, fr * 0.26); ctx.stroke(); ell(ctx, fx, fy + fr * 0.2, fr * 0.11, fr * 0.08); ctx.fill();
+  ctx.restore();
+  // 테두리 선
+  ctx.save(); ctx.strokeStyle = ink; ctx.globalAlpha *= 0.55; ctx.lineWidth = Math.max(0.8, w * 0.01); ctx.strokeRect(-w / 2 + w * 0.03, -h / 2 + w * 0.03, w - w * 0.06, h - w * 0.06); ctx.restore();
+  // 글씨
+  ctx.fillStyle = ink; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  ctx.font = `${Math.max(6, Math.round(h * 0.13))}px ${JUA}`; ctx.fillText('동물마을 은행', -w * 0.44, -h * 0.3);
+  ctx.font = `${Math.max(8, Math.round(h * 0.3))}px ${JUA}`; ctx.fillText(String(v), -w * 0.45, h * 0.27);
+  ctx.textAlign = 'center'; ctx.font = `${Math.max(7, Math.round(h * 0.22))}px ${JUA}`; ctx.fillText(st.word, -w * 0.3, 0);
+  ctx.textAlign = 'right'; ctx.font = `${Math.max(6, Math.round(h * 0.18))}px ${JUA}`; ctx.fillText(String(v), w * 0.45, -h * 0.32);
+  ctx.restore();
   ctx.restore();
 }
 
@@ -635,6 +687,7 @@ function drawRegister(ctx, x, base, R, t, o) {
   ctx.fillStyle = '#374151'; ctx.beginPath(); ctx.roundRect(R * 0.0, -R * 1.66, R * 0.95, R * 0.48, R * 0.08); ctx.fill(); shadowOff(ctx);
   ctx.fillStyle = lg(ctx, 0, -R * 1.6, 0, -R * 1.24, [[0, '#d9fbe5'], [1, '#a7f3c5']]); ctx.beginPath(); ctx.roundRect(R * 0.06, -R * 1.6, R * 0.83, R * 0.36, R * 0.05); ctx.fill();
   ctx.fillStyle = '#14532d'; ctx.font = `${Math.round(R * 0.24)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  { const tw = ctx.measureText(o.screen || '').width; if (tw > R * 0.76) ctx.font = `${Math.round(R * 0.24 * R * 0.76 / tw)}px ${JUA}`; }
   ctx.fillText(o.screen || '', R * 0.475, -R * 1.41);
   // 몸통 앞면
   shadowOn(ctx, R * 0.12, R * 0.05);
@@ -665,8 +718,13 @@ function drawRegister(ctx, x, base, R, t, o) {
     ctx.beginPath(); ctx.moveTo(-R * 0.8, -R * 0.36); ctx.lineTo(-R * 0.74, -R * 0.36 - th); ctx.lineTo(R * 0.74, -R * 0.36 - th); ctx.lineTo(R * 0.8, -R * 0.36); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = '#1f2937'; ctx.lineWidth = R * 0.02;
     for (let i = 1; i < 4; i++) { const xx = -R * 0.8 + i * R * 0.4; ctx.beginPath(); ctx.moveTo(xx, -R * 0.36); ctx.lineTo(xx * 0.93, -R * 0.36 - th); ctx.stroke(); }
-    const nc = Math.min(o.coinsIn || 0, 8);
-    for (let i = 0; i < nc; i++) { const cx = -R * 0.6 + (i % 4) * R * 0.4, cy = -R * 0.36 - th * 0.45 - Math.floor(i / 4) * R * 0.04; ctx.fillStyle = '#b77d0a'; ell(ctx, cx, cy + R * 0.015, R * 0.13, R * 0.05); ctx.fill(); ctx.fillStyle = '#fbcd34'; ell(ctx, cx, cy, R * 0.13, R * 0.05); ctx.fill(); }
+    const cnt = [0, 0, 0, 0];   // 칸: 천 원 · 오천 원 · 만 원 · 오만 원
+    (o.bills || []).forEach(v => {
+      const slot = v >= 50000 ? 3 : v >= 10000 ? 2 : v >= 5000 ? 1 : 0, k2 = cnt[slot]++; if (k2 > 5) return;
+      const st = BILL_STYLE[v] || BILL_STYLE[1000], cx = -R * 0.6 + slot * R * 0.4, cy = -R * 0.36 - th * 0.4 - k2 * R * 0.025;
+      ctx.fillStyle = st.ink; ctx.fillRect(cx - R * 0.16, cy - R * 0.03, R * 0.32, R * 0.07);
+      ctx.fillStyle = st.base[1]; ctx.fillRect(cx - R * 0.16, cy - R * 0.045, R * 0.32, R * 0.07);
+    });
   }
   ctx.fillStyle = lg(ctx, 0, -R * 0.36, 0, -R * 0.06, [[0, '#ece6da'], [1, '#bfb5a2']]); ctx.beginPath(); ctx.roundRect(-R * 0.8, -R * 0.36, R * 1.6, R * 0.3, R * 0.04); ctx.fill();
   ctx.fillStyle = '#9ca3af'; ctx.beginPath(); ctx.roundRect(-R * 0.18, -R * 0.24, R * 0.36, R * 0.06, R * 0.03); ctx.fill();
@@ -705,20 +763,71 @@ function drawBubble(ctx, L, x, y, icons, label, heart, popK, t) {
 // ─────────────────────────────── 화면 ───────────────────────────────
 //  손님 c.state: enter(문에서 나옴) → walk ↔ pick(매대에서 혼자 고르기) → queue(줄 서기) → counter(계산) → walk(문으로) → exit
 //  g.phase (아이가 할 일): none | ask(카운터 물건 건네기) | thanks | scan | pay | card | bye
+const fromSave = (s) => ({ money: s.money, inv: s.inv, earned: s.earned, spent: s.spent });
 const makeGame = () => ({ stock: arrangeStore(), caseStock: arrangeCounter(), custs: [], uid: 0, lastGuest: null, nextSpawnT: 0.8,
-  task: null, phase: 'none', phaseT: 0, t: 0, served: 0, fly: [], coinsOut: [], parts: [], coins: loadShop().coins,
+  task: null, phase: 'none', phaseT: 0, t: 0, served: 0, fly: [], coinsOut: [], parts: [], ...fromSave(loadShop()), market: false, marketSaid: false, total: 0, payIn: 0, lastSoldSay: -9,
   help: false, helpSaid: false, lastAct: 0, lastWrongSay: -9, shake: null, press: null, doorT: -9, doorUntil: -9,
   regT: -9, scanned: 0, scanFly: null, beepT: -9, receiptT: null, drawerOpen: false, drawerT: -9, coinsIn: 0, card: null, cardN: 0, termT: -9, payBy: 'cash',
   stackN: 5, bubble: null, L: null, cells: [], caseCells: [], timers: [] });
 
+// ── 🚚 도매 시장: 물건 그림은 가게와 같은 그림
+function GoodPic({ id, size }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const cv = ref.current; if (!cv) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2); cv.width = Math.round(size * dpr); cv.height = Math.round(size * dpr);
+    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, size, size); drawGood(c, id, size / 2, size / 2, size * 0.36);
+  }, [id, size]);
+  return <canvas ref={ref} style={{ width: size, height: size, display: 'block' }} />;
+}
+function MarketPanel({ ui, flash, onBuy, onClose }) {
+  const [tab, setTab] = useState(MARKET_GROUPS[0].id);
+  const grp = MARKET_GROUPS.find(x => x.id === tab);
+  const pill = (bg, color) => ({ fontFamily: JUA, fontSize: '1.05rem', background: bg, color, borderRadius: '16px', padding: '6px 12px', whiteSpace: 'nowrap' });
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(#fff7ed, #fefce8)', display: 'flex', flexDirection: 'column', padding: '12px', gap: '10px', overflowY: 'auto' }}>
+      <style>{'@keyframes mkpopA{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}@keyframes mkpopB{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}'}</style>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ fontFamily: JUA, fontSize: '1.6rem', color: '#9a3412', flex: 1, minWidth: '140px' }}>🚚 도매 시장</div>
+        <div style={pill('#dcfce7', '#166534')}>💵 가진 돈 {fmtWon(ui.money)}</div>
+        <button onClick={onClose} style={{ border: 'none', borderRadius: '22px', minHeight: '50px', padding: '0 18px', background: '#16a34a', color: '#fff', fontFamily: JUA, fontSize: '1.15rem', cursor: 'pointer', touchAction: 'manipulation' }}>🏪 가게로 돌아가기</button>
+      </div>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        {MARKET_GROUPS.map(gp => {
+          const empty = gp.items.filter(id => (ui.inv[id] || 0) <= 0).length;
+          return <button key={gp.id} onClick={() => setTab(gp.id)} style={{ border: 'none', borderRadius: '18px', minHeight: '46px', padding: '0 16px', fontFamily: JUA, fontSize: '1.1rem', cursor: 'pointer', touchAction: 'manipulation', background: tab === gp.id ? gp.color : '#ffffff', color: tab === gp.id ? '#ffffff' : '#57534e', boxShadow: '0 4px 10px -8px rgba(0,0,0,0.5)' }}>{gp.label}{empty ? ` 🔴${empty}` : ''}</button>;
+        })}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
+        {grp.items.map(id => {
+          const g = GOOD_BY_ID[id], p = PRICE[id], n = ui.inv[id] || 0, full = n >= STOCK_MAX, poor = ui.money < p.buy;
+          const anim = flash && flash.id === id ? `${flash.n % 2 ? 'mkpopA' : 'mkpopB'} 0.35s` : 'none';
+          return (
+            <button key={id} onClick={() => onBuy(id)} style={{ border: n <= 0 ? '3px solid #f87171' : '3px solid transparent', borderRadius: '20px', background: '#ffffff', padding: '8px 6px 10px', cursor: 'pointer', touchAction: 'manipulation', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', fontFamily: JUA, boxShadow: '0 8px 16px -12px rgba(120,60,20,0.6)', opacity: full || poor ? 0.6 : 1, animation: anim }}>
+              <GoodPic id={id} size={72} />
+              <div style={{ fontSize: '1.2rem', color: '#44403c' }}>{g.name}</div>
+              <div style={{ display: 'flex', gap: '3px' }}>{Array.from({ length: STOCK_MAX }, (_, i) => <span key={i} style={{ width: '12px', height: '12px', borderRadius: '50%', background: i < n ? '#22c55e' : '#e7e5e4' }} />)}</div>
+              <div style={{ fontSize: '0.95rem', color: n <= 0 ? '#dc2626' : '#78716c' }}>{n <= 0 ? '매대가 비었어요!' : `매대에 ${n}개`}</div>
+              <div style={{ fontSize: '1.35rem', color: '#1d4ed8' }}>{fmtWon(p.buy)}</div>
+              <div style={{ marginTop: '4px', background: full ? '#a8a29e' : poor ? '#fca5a5' : '#2563eb', color: '#fff', borderRadius: '14px', padding: '6px 12px', fontSize: '1.05rem' }}>{full ? '꽉 찼어요' : poor ? '돈이 모자라요' : '💵 사기'}</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function ShopGame({ audio, speak }) {
   const canvasRef = useRef(null);
   const G = useRef(null);
-  const [ui, setUi] = useState({ phase: 'none', guest: null, lines: '', cardSt: null, coins: 0, land: true, nc: 0 });
+  const [ui, setUi] = useState({ phase: 'none', guest: null, lines: '', cardSt: null, money: 0, inv: {}, earned: 0, spent: 0, market: false, empty: 0, land: true, nc: 0 });
+  const [flash, setFlash] = useState(null);
   const sync = () => {
     const g = G.current, c = g.task && g.task.c;
-    setUi({ phase: g.phase, guest: c ? c.id : null, lines: g.phase === 'ask' && c ? c.want.lines.map(l => `${l.item}:${l.n}`).join(',') : '', cardSt: g.card ? g.card.state : null, coins: g.coins, land: g.L ? g.L.land : true, nc: g.custs.length });
+    setUi({ phase: g.phase, guest: c ? c.id : null, lines: g.phase === 'ask' && c ? c.want.lines.map(l => `${l.item}:${l.n}`).join(',') : '', cardSt: g.card ? g.card.state : null, money: g.money, inv: { ...g.inv }, earned: g.earned, spent: g.spent, market: g.market, empty: Object.values(g.inv).filter(n => n <= 0).length, land: g.L ? g.L.land : true, nc: g.custs.length });
   };
+  const persist = () => { const g = G.current; saveShop({ version: 2, money: g.money, inv: g.inv, earned: g.earned, spent: g.spent }); };
   const later = (fn, ms) => { const g = G.current; const id = setTimeout(() => { g.timers = g.timers.filter(x => x !== id); fn(); }, ms); g.timers.push(id); };
   const say = (text) => { if (speak && text) speak(text); };
   const talk = (c, sec) => { if (c) c.mouthUntil = G.current.t + sec; };
@@ -733,7 +842,7 @@ export default function ShopGame({ audio, speak }) {
     const id = ids[Math.floor(Math.random() * ids.length)]; g.lastGuest = id;
     const v = makeVisit(id);
     const c = { uid: ++g.uid, id, steps: v.steps, step: 0, payBy: v.payBy, basket: [], askGot: [], want: v.ask, hasBk: false, bag: false, xf: L.doorX / L.W, txf: 0, yk: 0, tyk: 0, dep: Math.random(), dir: 1,
-      state: 'enter', t0: g.t, wt: 0, goal: null, happyUntil: 0, mouthUntil: 0, bkOn: false, bkBack: false, bkT: -9, px: L.doorX, py: L.laneY, sc: 1 };
+      state: 'enter', t0: g.t, wt: 0, goal: null, happyUntil: 0, mouthUntil: 0, bkOn: false, bkBack: false, bkT: -9, sadItem: null, sadT: 0, sadUntil: 0, px: L.doorX, py: L.laneY, sc: 1 };
     g.custs.push(c); openDoor();
     audio.playXylophone(1318.5, 0.5); setTimeout(() => audio.playXylophone(1046.5, 0.6), 230);   // 딩동
     if (!g.task) { say(VOICE.shopWelcome(GUEST_BY_ID[id])); talk(c, 2.2); }
@@ -741,15 +850,34 @@ export default function ShopGame({ audio, speak }) {
     sync();
   };
   const walkTo = (c, x, goal, yk = 1) => { c.state = 'walk'; c.txf = x / G.current.L.W; c.tyk = yk; c.goal = goal; };
+  // 다 팔린 물건: 손님이 시무룩 + 말풍선 '다 팔렸어요'
+  const soldOut = (c, id) => {
+    const g = G.current;
+    c.sadItem = id; c.sadT = g.t; c.sadUntil = g.t + 2.4; c.happyUntil = 0;
+    audio.playFreq(330, 'triangle', 0.18, 0.3); setTimeout(() => audio.playFreq(247, 'triangle', 0.22, 0.3), 180);
+    const free = g.phase === 'none' || (g.task && g.task.c === c);
+    if (free && g.t - g.lastSoldSay > 3) { g.lastSoldSay = g.t; say(VOICE.shopSoldOut(GOOD_BY_ID[id])); talk(c, 2.2); }
+  };
+  const canWant = (c) => { const g = G.current; return !!(c.want && c.want.lines.some(l => (g.inv[l.item] || 0) > 0)); };
+  const leaveEmpty = (c) => {
+    const g = G.current; c.sadUntil = Math.max(c.sadUntil, g.t + 1.5);
+    if (g.phase === 'none') { say(VOICE.shopNothing()); talk(c, 1.8); }
+    walkTo(c, g.L.stackX - g.L.S * 0.6 * 0.55, 'drop', 0.1);
+  };
   const advance = (c) => {
     const g = G.current, L = g.L, s = c.steps[c.step];
     if (!c.hasBk) { walkTo(c, L.stackX - L.S * 0.6 * 0.55, 'grab', 0.1); return; }
     if (s) { const cell = g.cells.find(k => k.id === s.item); walkTo(c, cell ? cell.x + (Math.random() - 0.5) * cell.w * 0.2 : L.queueX, 'self', 0); return; }
+    if (!c.basket.length && !canWant(c)) { leaveEmpty(c); return; }
     if (!g.task) { g.task = { kind: 'counter', c }; walkTo(c, L.gx, 'counter'); } else walkTo(c, L.queueX, 'queue');
   };
   const arrived = (c) => {
     const g = G.current;
-    if (c.goal === 'self') { c.state = 'pick'; c.t0 = g.t; c.happyUntil = g.t + 1.0; later(() => selfPick(c), 380); }
+    if (c.goal === 'self') {
+      const s = c.steps[c.step];
+      if (s && (g.inv[s.item] || 0) <= 0) { c.state = 'look'; c.t0 = g.t; soldOut(c, s.item); later(() => { c.step += 1; advance(c); }, 1600); return; }
+      c.state = 'pick'; c.t0 = g.t; c.happyUntil = g.t + 1.0; later(() => selfPick(c), 380);
+    }
     else if (c.goal === 'queue') c.state = 'queue';
     else if (c.goal === 'counter') startCounter(c);
     else if (c.goal === 'door') { c.state = 'exit'; c.t0 = g.t; openDoor(); }
@@ -758,7 +886,7 @@ export default function ShopGame({ audio, speak }) {
       later(() => { c.hasBk = true; g.stackN = Math.max(0, g.stackN - 1); audio.playPopSound(); later(() => advance(c), 350); }, 350);
     } else if (c.goal === 'drop') {   // 장바구니는 더미에 돌려놓고, 산 물건은 봉투에
       c.state = 'grab'; c.t0 = g.t;
-      later(() => { c.hasBk = false; c.bag = true; g.stackN = Math.min(8, g.stackN + 1); audio.playFreq(500, 'triangle', 0.08, 0.3); audio.playNoise(0.15, 0.15, 2500); later(() => walkTo(c, g.L.doorX, 'door', 0), 350); }, 350);
+      later(() => { c.hasBk = false; c.bag = c.basket.length > 0; g.stackN = Math.min(8, g.stackN + 1); audio.playFreq(500, 'triangle', 0.08, 0.3); audio.playNoise(0.15, 0.15, 2500); later(() => walkTo(c, g.L.doorX, 'door', 0), 350); }, 350);
     }
   };
   const flyTo = (c, cell, ask) => {
@@ -771,6 +899,8 @@ export default function ShopGame({ audio, speak }) {
   const selfPick = (c) => {
     const g = G.current, s = c.steps[c.step], cell = s && g.cells.find(k => k.id === s.item);
     if (!cell) { c.step += 1; advance(c); return; }
+    if ((g.inv[cell.id] || 0) <= 0) { c.state = 'look'; soldOut(c, cell.id); later(() => { c.step += 1; advance(c); }, 1600); return; }
+    g.inv[cell.id] -= 1; persist(); sync();   // 매대 재고 하나 줄어듦
     audio.playPopSound(); flyTo(c, cell, false);
   };
   const landItem = (f) => {
@@ -814,6 +944,8 @@ export default function ShopGame({ audio, speak }) {
       return;
     }
     if (c.askGot.length + g.fly.filter(f => f.c === c && f.ask).length >= c.want.n) return;
+    if ((g.inv[cell.id] || 0) <= 0) { g.shake = { id: cell.id, t0: g.t }; soldOut(c, cell.id); return; }
+    g.inv[cell.id] -= 1; persist(); sync();
     audio.playPopSound(); flyTo(c, cell, true);
   };
   const finishAsk = (c) => {
@@ -829,18 +961,31 @@ export default function ShopGame({ audio, speak }) {
   const startCounter = (c) => {
     const g = G.current;
     g.task = { kind: 'counter', c }; c.state = 'counter'; c.bkOn = true; c.bkBack = false; c.bkT = g.t;
-    g.scanned = 0; g.scanFly = null; g.receiptT = null; g.card = null; g.coinsOut = []; g.coinsIn = 0; g.payBy = c.payBy;
+    g.scanned = 0; g.scanFly = null; g.receiptT = null; g.card = null; g.coinsOut = []; g.coinsIn = 0; g.payIn = 0; g.total = 0; g.payBy = c.payBy;
     g.help = false; g.lastAct = g.t;
     if (g.drawerOpen) { g.drawerOpen = false; g.drawerT = g.t; }
     audio.playNoise(0.08, 0.2, 600);
+    let wait = 500;
+    if (c.want) {   // 카운터 물건이 모자라면 있는 만큼만 달라고 한다
+      const miss = c.want.lines.find(l => (g.inv[l.item] || 0) < l.n);
+      const lines = c.want.lines.map(l => ({ item: l.item, n: Math.min(l.n, g.inv[l.item] || 0) })).filter(l => l.n > 0);
+      c.want = lines.length ? { lines, item: lines[0].item, n: lines.reduce((a, l) => a + l.n, 0) } : null;
+      if (miss) { soldOut(c, miss.item); wait = 2600; }
+    }
     if (c.want) {   // 카운터 물건도 달라고 한다
-      g.phase = 'ask'; g.phaseT = g.t + 0.5; c.askGot = []; g.helpSaid = false;
-      later(() => { if (g.phase === 'ask') { audio.playFreq(880, 'sine', 0.08, 0.3); g.lastAct = g.t; sayAsk(c); } }, 500);
+      g.phase = 'ask'; g.phaseT = g.t + wait / 1000; c.askGot = []; g.helpSaid = false;
+      later(() => { if (g.phase === 'ask') { audio.playFreq(880, 'sine', 0.08, 0.3); g.lastAct = g.t; sayAsk(c); } }, wait);
       sync();
-    } else startScan(c);
+    } else if (wait > 500) { g.phase = 'wait'; sync(); later(() => startScan(c), wait); }
+    else startScan(c);
   };
   const startScan = (c) => {
     const g = G.current;
+    if (!c.basket.length) {   // 살 게 하나도 없었다
+      g.task = null; g.phase = 'none'; c.bkOn = false; c.bkBack = true; c.bkT = g.t; c.sadUntil = g.t + 1.8;
+      say(VOICE.shopNothing()); talk(c, 1.8);
+      later(() => walkTo(c, g.L.stackX - g.L.S * 0.6 * 0.55, 'drop', 0.1), 900); sync(); return;
+    }
     g.phase = 'scan'; g.phaseT = g.t; g.scanned = 0; g.lastAct = g.t; g.help = false;
     say(g.served < 3 ? VOICE.shopScan() : VOICE.shopScanShort()); talk(c, g.served < 3 ? 2.6 : 1.2);
     sync();
@@ -862,8 +1007,10 @@ export default function ShopGame({ audio, speak }) {
     sync();
   };
   const checkout = () => {
-    const g = G.current; if (g.phase !== 'scan') return;
-    if (g.payBy === 'card') { later(startCard, 250); return; }
+    const g = G.current, c = counterCust(); if (g.phase !== 'scan' || !c) return;
+    g.total = c.basket.reduce((a, id) => a + PRICE[id].sell, 0);
+    say(VOICE.shopTotal(g.total)); talk(c, 1.6);
+    if (g.payBy === 'card') { later(startCard, 1900); return; }
     g.receiptT = g.t;
     audio.playNoise(0.8, 0.12, 3500, 2);
     later(() => {
@@ -871,14 +1018,14 @@ export default function ShopGame({ audio, speak }) {
       audio.playXylophone(2093, 0.6); setTimeout(() => audio.playXylophone(2637, 0.5), 90);
       audio.playNoise(0.12, 0.25, 900);
       later(startPay, 450);
-    }, 950);
+    }, 1500);
   };
   const startPay = () => {
     const g = G.current, c = counterCust(); if (g.phase !== 'scan' || !c) return;
     g.phase = 'pay'; g.phaseT = g.t; c.happyUntil = g.t + 1.6; g.help = false;
     audio.playYum(); hearts(g.L.gx, g.L.laneY - g.L.S * 1.1, 5);
     say(g.served < 3 ? VOICE.shopPay() : VOICE.shopPayShort()); talk(c, g.served < 3 ? 3.2 : 1.6);
-    g.coinsOut = Array.from({ length: c.basket.length }, (_, i) => ({ i, state: 'drop', t0: g.t + 0.6 + i * 0.3 }));
+    g.payIn = 0; g.coinsOut = billsFor(g.total).map((v, i) => ({ i, v, state: 'drop', t0: g.t + 0.6 + i * 0.3 }));
     sync();
   };
   const startCard = () => {
@@ -902,6 +1049,7 @@ export default function ShopGame({ audio, speak }) {
     [350, 700, 1050].forEach(ms => later(() => audio.playFreq(1300, 'sine', 0.05, 0.25), ms));
     later(() => {
       cd.state = 'ok'; cd.t1 = g.t; g.regT = g.t; g.receiptT = g.t;
+      g.money += g.total; g.earned += g.total; g.payIn = g.total; persist();   // 카드 결제도 가게 돈으로
       audio.playXylophone(1567.98, 0.6); setTimeout(() => audio.playXylophone(2093, 0.6), 160);
       audio.playNoise(0.8, 0.12, 3500, 2);
       say(VOICE.shopCardOk()); talk(c, 1.2);
@@ -916,7 +1064,9 @@ export default function ShopGame({ audio, speak }) {
     if (!c) return;
     c.happyUntil = g.t + 2; audio.playYum(); hearts(g.L.gx, g.L.laneY - g.L.S * 1.1, 6);
     g.served += 1;
-    endCounter(c, 700);
+    const full = goalHit();
+    if (full) cheer(300);
+    endCounter(c, full ? 3300 : 700);
     sync();
   };
   const takeCoin = (coin) => {
@@ -927,20 +1077,22 @@ export default function ShopGame({ audio, speak }) {
   const coinIn = (coin) => {
     const g = G.current, L = g.L;
     coin.state = 'done';
-    g.coins += 1; saveShop({ version: 1, coins: g.coins });
+    g.money += coin.v; g.earned += coin.v; g.payIn += coin.v; persist();
     g.regT = g.t; g.coinsIn += 1;
     audio.playXylophone(1567.98, 0.55); setTimeout(() => audio.playXylophone(2093, 0.45), 70);
     const got = g.coinsOut.filter(c => c.state === 'done').length;
-    say(VOICE.shopCount(got));
+    say(VOICE.shopBill(coin.v));
     { const [dx, dy] = regDrawerPos(L.px, L.counterY + L.d * 0.55, L.pr, 1); sparkle(dx, dy, 6); }
     sync();
     if (got >= g.coinsOut.length) finishOrder();
   };
+  const goalHit = () => { const g = G.current; return Math.floor(g.money / MONEY_GOAL) > Math.floor((g.money - g.total) / MONEY_GOAL); };
+  const cheer = (ms) => later(() => { const g = G.current, L = g.L; audio.playFanfare(); say(VOICE.shopPiggy()); g.regT = g.t; hearts(L.px, L.counterY - L.pr, 10); sparkle(L.px, L.counterY - L.pr, 16); }, ms);
   const finishOrder = () => {
     const g = G.current, c = counterCust(); g.served += 1;
-    const full = g.coins % PIGGY_FULL === 0;
+    const full = goalHit();
     later(() => { g.drawerOpen = false; g.drawerT = g.t; audio.playFreq(330, 'triangle', 0.1, 0.4); audio.playNoise(0.1, 0.25, 700); }, 450);
-    if (full) later(() => { audio.playFanfare(); say(VOICE.shopPiggy()); g.regT = g.t; const L = g.L; hearts(L.px, L.counterY - L.pr, 10); sparkle(L.px, L.counterY - L.pr, 16); }, 900);
+    if (full) cheer(900);
     if (c) endCounter(c, full ? 3800 : 1000);
   };
   // 계산 끝: 바구니를 다시 들고 인사 → 문으로
@@ -963,10 +1115,21 @@ export default function ShopGame({ audio, speak }) {
     return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k - Math.sin(k * Math.PI) * a.r * 0.8, r: a.r + (b.r - a.r) * k };
   };
 
+  const openMarket = () => { const g = G.current; if (!g) return; g.market = true; audio.playPopSound(); if (!g.marketSaid) { g.marketSaid = true; say(VOICE.shopMarket()); } sync(); };
+  const closeMarket = () => { const g = G.current; if (!g) return; g.market = false; audio.playPopSound(); sync(); };
+  const buyGood = (id) => {
+    const g = G.current; if (!g) return; const p = PRICE[id];
+    if ((g.inv[id] || 0) >= STOCK_MAX) { audio.playFreq(260, 'triangle', 0.14, 0.35); say(VOICE.shopShelfFull()); return; }
+    if (g.money < p.buy) { audio.playFreq(220, 'triangle', 0.18, 0.35); say(VOICE.shopNoMoney()); return; }
+    g.money -= p.buy; g.spent += p.buy; g.inv[id] = (g.inv[id] || 0) + 1; persist();
+    audio.playXylophone(1046.5, 0.4); setTimeout(() => audio.playXylophone(1318.5, 0.4), 90);
+    say(VOICE.shopBuy(GOOD_BY_ID[id]));
+    setFlash(f => ({ id, n: (f ? f.n : 0) + 1 })); sync();
+  };
   const resetAll = () => {
     const g = G.current; if (!g) return;
     g.timers.forEach(clearTimeout); g.timers = [];
-    const fresh = makeGame(); fresh.coins = g.coins; fresh.L = g.L; fresh.t = g.t; fresh.nextSpawnT = g.t + 0.3; fresh.cardN = g.cardN; fresh.served = g.served;
+    const fresh = makeGame(); fresh.L = g.L; fresh.t = g.t; fresh.nextSpawnT = g.t + 0.3; fresh.cardN = g.cardN; fresh.served = g.served;
     G.current = fresh; sync();
   };
   useEffect(() => { G.current = makeGame(); return () => { G.current.timers.forEach(clearTimeout); G.current.timers = []; }; }, []);
@@ -989,7 +1152,8 @@ export default function ShopGame({ audio, speak }) {
       if (cd && (cd.state === 'wait' || cd.state === 'ready') && cd.x != null && Math.hypot(x - cd.x, y - cd.y) < Math.max(L.br * 0.75, 50)) { tapCard(); return; }
     } else if (g.phase === 'pay') {
       let best = null, bd = 1e9;
-      g.coinsOut.forEach(c => { if (c.state !== 'wait') return; const dd = Math.hypot(x - c.x, y - c.y); if (dd < Math.max(c.r * 1.9, 46) && dd < bd) { bd = dd; best = c; } });
+      g.coinsOut.forEach(c => { if (c.state === 'wait' && Math.abs(x - c.x) < c.bw * 0.5 + 8 && Math.abs(y - c.y) < c.bh * 0.5 + 10) best = c; });
+      if (!best) g.coinsOut.forEach(c => { if (c.state !== 'wait') return; const dd = Math.hypot(x - c.x, y - c.y); if (dd < Math.max(c.bw * 0.7, 46) && dd < bd) { bd = dd; best = c; } });
       if (best) { takeCoin(best); return; }
     }
     const hitCell = (c) => x > c.x - c.w * 0.55 && x < c.x + c.w * 0.55 && y > c.base - c.h * 1.1 && y < c.base + c.h * (c.fridge ? 0.3 : 0.12);
@@ -1025,16 +1189,17 @@ export default function ShopGame({ audio, speak }) {
         const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         const L = layout(W, H); const wasLand = g.L && g.L.land; g.L = L;
         if (wasLand !== L.land) sync();
-        g.cells = shelfCells(L, g.stock); g.caseCells = caseCells(L, g.caseStock);
+        g.cells = shelfCells(L, g.stock, g.inv); g.caseCells = caseCells(L, g.caseStock, g.inv);
 
         // ── 손님 움직이기 ──
+        if (g.market) g.nextSpawnT = Math.max(g.nextSpawnT, t + 2);   // 시장 보는 동안은 가게가 잠깐 멈춤
         if (t > g.nextSpawnT && g.custs.length < 2) spawn();
         if (!g.custs.length && g.nextSpawnT > t + 3) g.nextSpawnT = t + 3;
         g.custs.forEach(c => {
           if (c.state === 'enter' && t - c.t0 >= 0.7) advance(c);
           else if (c.state === 'walk') {
             const depth = L.laneY - L.backY, dx = (c.txf - c.xf) * W, dy = (c.tyk - c.yk) * depth, dist = Math.hypot(dx, dy);
-            const v = L.speed * W * dt * (0.7 + 0.3 * c.yk);   // 멀리(매대 쪽) 갈수록 천천히 보이게
+            const v = L.speed * W * (g.market ? 0 : dt) * (0.7 + 0.3 * c.yk);   // 멀리(매대 쪽) 갈수록 천천히 보이게
             if (dist <= v) { c.xf = c.txf; c.yk = c.tyk; arrived(c); }
             else { c.xf += dx / dist * v / W; c.yk += dy / dist * v / depth; if (Math.abs(dx) > 1) c.dir = Math.sign(dx); c.wt += dt; }
           } else if (c.state === 'queue' && !g.task) { g.task = { kind: 'counter', c }; walkTo(c, L.gx, 'counter'); }
@@ -1115,13 +1280,13 @@ export default function ShopGame({ audio, speak }) {
         });
         drawCaseGlass(ctx, L);
         const cc = g.task && g.task.kind === 'counter' ? g.task.c : null, atC = cc && (cc.state === 'counter') ? cc : null;
-        const nItems = atC ? atC.basket.length : 0;
         const pBase = L.counterY + L.d * 0.55;
         const pk = (t - g.regT) / 0.45, phop = pk > 0 && pk < 1 ? Math.sin(pk * Math.PI) : 0;
         const drk = clamp01((t - g.drawerT) / 0.3), drawerK = g.drawerOpen ? easeOut(drk) : 1 - easeOut(drk);
         const cst = g.card ? g.card.state : null;
-        const screen = g.phase === 'scan' ? `삑 ${g.scanned}개` : g.phase === 'pay' ? `${g.coinsIn} / ${nItems}` : g.phase === 'card' ? (cst === 'proc' ? '결제 중' : cst === 'ok' || cst === 'ready' || cst === 'return' || cst === 'gone' ? '완료!' : '💳 카드') : `🪙 ${g.coins}`;
-        drawRegister(ctx, L.px, pBase, L.pr, t, { flash: clamp01(1 - (t - g.beepT) / 0.35), drawer: drawerK, receipt: g.receiptT == null || !atC ? 0 : easeOut((t - g.receiptT) / 0.9), screen, hop: phop, coinsIn: g.coinsIn });
+        const scannedSum = atC ? atC.basket.slice(atC.basket.length - g.scanned).reduce((a, id) => a + PRICE[id].sell, 0) : 0;   // 찍을 때마다 값이 더해진다
+        const screen = g.phase === 'scan' ? (g.scanned ? fmtWon(scannedSum) : '삑!') : g.phase === 'pay' ? fmtWon(g.payIn) : g.phase === 'card' ? (cst === 'proc' ? '결제 중' : cst === 'ok' || cst === 'ready' || cst === 'return' || cst === 'gone' ? fmtWon(g.total) : '💳 카드') : fmtWon(g.money);
+        drawRegister(ctx, L.px, pBase, L.pr, t, { flash: clamp01(1 - (t - g.beepT) / 0.35), drawer: drawerK, receipt: g.receiptT == null || !atC ? 0 : easeOut((t - g.receiptT) / 0.9), screen, hop: phop, bills: g.coinsOut.filter(b => b.state === 'done').map(b => b.v) });
 
         // 계산대 위 바구니 (올려놓는 중·돌려받는 중 포함)
         g.custs.forEach(c => {
@@ -1146,32 +1311,33 @@ export default function ShopGame({ audio, speak }) {
           }
         });
 
-        // 동전
-        const cr = Math.min(L.d * 0.36, L.br * 0.36);
+        // 💵 지폐 (손님이 카운터에 내려놓음 → 콕 → 서랍으로)
+        const bw = L.br * 1.7, bh = bw * 0.48, bfl = 0.66, nb = g.coinsOut.length;
         g.coinsOut.forEach(c => {
-          const n = g.coinsOut.length, tx = L.bx - (n - 1) * cr * 1.35 + c.i * cr * 2.7 - L.br * 0.2, ty = L.counterY + L.d * 0.55;
-          c.r = cr;
+          const row = Math.floor(c.i / 4), inRow = Math.min(4, nb - row * 4), col = c.i % 4;   // 한 줄에 4장
+          const tx = L.bx - L.br * 0.6 + (col - (inRow - 1) / 2) * bw * 0.52 + row * bw * 0.18, ty = L.counterY + L.d * (0.3 + row * 0.42);
+          const rot = ((c.i * 37) % 7 - 3) * 0.025;
+          c.bw = bw; c.bh = bh * bfl;
           if (c.state === 'drop') {
             const k = (t - c.t0) / 0.45; if (k < 0) return;
-            const hx = L.gx + L.S * 0.2, hy = L.counterY - L.S * 0.3;
-            c.x = hx + (tx - hx) * easeOut(k); c.y = hy + (ty - hy) * k * k - Math.sin(clamp01(k) * Math.PI) * L.S * 0.15;
-            drawCoin(ctx, c.x, c.y, cr, 0.55 + (1 - clamp01(k)) * 0.45, (1 - clamp01(k)) * 6);
-            if (k >= 1) { c.state = 'wait'; c.x = tx; c.y = ty; audio.playFreq(1200 + c.i * 150, 'sine', 0.05, 0.25); }
+            const hx = L.gx + L.S * 0.2, hy = L.counterY - L.S * 0.3, kk = easeOut(k);
+            c.x = hx + (tx - hx) * kk; c.y = hy + (ty - hy) * k * k - Math.sin(clamp01(k) * Math.PI) * L.S * 0.15;
+            drawBill(ctx, c.x, c.y, bw, c.v, rot + (1 - clamp01(k)) * 0.5, bfl + (1 - clamp01(k)) * 0.38);
+            if (k >= 1) { c.state = 'wait'; c.x = tx; c.y = ty; audio.playNoise(0.06, 0.12, 3000); }
           } else if (c.state === 'wait') {
             c.x = tx; c.y = ty;
             const bob = Math.sin(t * 5 + c.i) * 0.5 + 0.5;
-            ctx.save(); ctx.globalAlpha = 0.35 + bob * 0.3; ctx.fillStyle = '#fde047'; ell(ctx, tx, ty, cr * 1.5, cr * 0.95); ctx.fill(); ctx.restore();
-            drawCoin(ctx, tx, ty, cr);
+            ctx.save(); ctx.globalAlpha = 0.3 + bob * 0.3; ctx.fillStyle = '#fde047'; ell(ctx, tx, ty, bw * 0.62, bh * bfl * 0.9); ctx.fill(); ctx.restore();
+            drawBill(ctx, tx, ty, bw, c.v, rot, bfl);
           } else if (c.state === 'fly') {
-            const k = (t - c.t1) / 0.55, sx0 = c.x, sy0 = c.y, [ex, ey] = regDrawerPos(L.px, pBase, L.pr, drawerK);
-            const kk = easeOut(k);
-            drawCoin(ctx, sx0 + (ex - sx0) * kk, sy0 + (ey - sy0) * kk - Math.sin(clamp01(k) * Math.PI) * L.pr * 0.9, cr * (1 - 0.3 * kk), 0.55 + 0.45 * clamp01(k * 2), k * 10);
+            const k = (t - c.t1) / 0.55, [ex, ey] = regDrawerPos(L.px, pBase, L.pr, drawerK), kk = easeOut(k);
+            drawBill(ctx, c.x + (ex - c.x) * kk, c.y + (ey - c.y) * kk - Math.sin(clamp01(k) * Math.PI) * L.pr * 0.9, bw * (1 - 0.55 * kk), c.v, rot * (1 - kk), bfl + 0.38 * Math.sin(clamp01(k) * Math.PI));
             if (k >= 1) coinIn(c);
           }
         });
         if (g.phase === 'pay' && !g.coinsOut.some(c => c.state === 'fly')) {
-          const w = g.coinsOut.find(c => c.state === 'wait');
-          if (w) { ctx.save(); ctx.font = `${Math.round(cr * 1.6)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('👆', w.x + cr * 0.4, w.y + cr * 1.6 + Math.sin(t * 6) * cr * 0.2); ctx.restore(); }
+          const w = [...g.coinsOut].reverse().find(c => c.state === 'wait');
+          if (w) { ctx.save(); ctx.font = `${Math.round(bh * 0.9)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('👆', w.x + bw * 0.22, w.y + bh * 0.75 + Math.sin(t * 6) * bh * 0.1); ctx.restore(); }
         }
 
         // 💳 카드 단말기 + 카드
@@ -1225,6 +1391,15 @@ export default function ShopGame({ audio, speak }) {
           drawBubble(ctx, L, atC.px + S * 0.38, atC.py - S * 1.3, icons, `${atC.basket.length}개`, g.phase !== 'scan', 1, t);
         }
 
+        // 다 팔려서 시무룩한 손님
+        g.custs.forEach(c => {
+          if (!c.sadItem || t > c.sadUntil) return;
+          const S = L.S * c.sc, r = drawBubble(ctx, L, c.px + S * 0.38, c.py - S * 1.25, [{ id: c.sadItem, done: false }], '다 팔렸어요', false, easeOut((t - c.sadT) / 0.3), t);
+          const ir = L.S * (L.land ? 0.12 : 0.13), cx = (r.x0 + r.x1) / 2, cy = r.y0 + 10 + ir * 1.25;
+          ctx.save(); ctx.strokeStyle = 'rgba(239,68,68,0.9)'; ctx.lineWidth = ir * 0.22; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(cx - ir * 0.8, cy - ir * 0.8); ctx.lineTo(cx + ir * 0.8, cy + ir * 0.8); ctx.moveTo(cx + ir * 0.8, cy - ir * 0.8); ctx.lineTo(cx - ir * 0.8, cy + ir * 0.8); ctx.stroke(); ctx.restore();
+        });
+
         // 효과
         g.parts = g.parts.filter(p => {
           const e = t - p.born; if (e < 0) return true; if (e > p.life) return false;
@@ -1249,9 +1424,10 @@ export default function ShopGame({ audio, speak }) {
     : ui.phase === 'ask' && lines.length ? `${GOOD_BY_ID[lines[0][0]].emoji} ${GOOD_BY_ID[lines[0][0]].name} ${lines[0][1]}개를 콕! 바구니에 넣어 줘요`
     : ui.phase === 'thanks' ? '😊 고마워요!'
     : ui.phase === 'scan' ? '🧺 바구니를 콕! 계산대에서 삑~ 찍어요'
-    : ui.phase === 'pay' ? '🪙 동전을 콕! 계산대 서랍에 넣어요'
+    : ui.phase === 'pay' ? '💵 지폐를 콕! 계산대 서랍에 넣어요'
     : ui.phase === 'card' ? (ui.cardSt === 'insert' || ui.cardSt === 'proc' ? '💳 결제하고 있어요...' : ui.cardSt === 'ok' ? '✅ 결제 완료!' : ui.cardSt === 'ready' || ui.cardSt === 'return' || ui.cardSt === 'gone' ? '💳 카드를 콕! 손님에게 돌려줘요' : '💳 카드를 콕! 단말기에 꽂아요')
     : ui.phase === 'bye' ? '👋 안녕히 가세요~'
+    : ui.empty ? '🚚 다 팔린 물건이 있어요! 시장에서 사 와요'
     : ui.nc > 0 ? '🛒 손님들이 장을 보고 있어요' : '🚪 손님을 기다리고 있어요';
   const replay = () => { const g = G.current; if (!g) return; if (g.phase === 'ask') sayAsk(asker()); else if (g.phase === 'scan') say(VOICE.shopScanShort()); };
 
@@ -1262,12 +1438,14 @@ export default function ShopGame({ audio, speak }) {
         <button onClick={replay} style={btn('#ffffff', '#9a3412')}>🔊 다시 듣기</button>
         <div style={{ flex: 1, textAlign: 'center', fontFamily: JUA, fontSize: '1.4rem', color: '#15803d', minWidth: '160px' }}>🛒 동물 마을 가게{gu ? ` · ${gu.name} 손님` : ''}</div>
         <button onClick={resetAll} style={btn('#f6efe7', '#5c5248')} title="가게를 처음부터">🔄</button>
-        <div style={{ fontFamily: JUA, fontSize: '1.3rem', color: '#a16207', background: '#fef9c3', borderRadius: '20px', padding: '8px 16px', boxShadow: '0 6px 14px -10px rgba(120,80,0,0.6)' }}>🪙 {ui.coins}</div>
+        <button onClick={openMarket} style={btn(ui.empty ? '#f97316' : '#2563eb')}>🚚 시장{ui.empty ? ` (품절 ${ui.empty})` : ''}</button>
+        <div style={{ fontFamily: JUA, fontSize: '1.3rem', color: '#166534', background: '#dcfce7', borderRadius: '20px', padding: '8px 16px', boxShadow: '0 6px 14px -10px rgba(20,90,40,0.6)' }}>💵 {fmtWon(ui.money)}</div>
       </div>
       <div style={{ flex: 1, minHeight: 0, position: 'relative', borderRadius: '26px', overflow: 'hidden', boxShadow: '0 16px 30px -18px rgba(21,128,61,0.5)' }}>
         <canvas ref={canvasRef} onPointerDown={onDown}
           style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }} />
-        {hint && <div style={{ position: 'absolute', left: '12%', right: '12%', top: '6px', textAlign: 'center', pointerEvents: 'none' }}>
+        {ui.market && <MarketPanel ui={ui} flash={flash} onBuy={buyGood} onClose={closeMarket} />}
+        {hint && !ui.market && <div style={{ position: 'absolute', left: '12%', right: '12%', top: '6px', textAlign: 'center', pointerEvents: 'none' }}>
           <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.92)', borderRadius: '18px', padding: '6px 16px', fontFamily: JUA, fontSize: '1.2rem', color: '#7c2d12', boxShadow: '0 4px 12px -6px rgba(0,0,0,0.3)' }}>{hint}</span>
         </div>}
       </div>

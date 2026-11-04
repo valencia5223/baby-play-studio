@@ -2,7 +2,7 @@ import { FISH_SPECIES, STAGE_NAMES, breedOf } from './aquariumData.js';
 import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID, CROPS } from './farmData.js';
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
 import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
-import { BASKET_MAX, COUNTER_GOODS, ASK_MAX_N } from './shopData.js';
+import { BASKET_MAX, COUNTER_GOODS, ASK_MAX_N, SHOP_GOODS, BILLS, wonText, TOTAL_MAX } from './shopData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -187,19 +187,27 @@ export const VOICE = {
   shopCount: (n) => ['', '하나!', '둘!', '셋!', '넷!', '다섯!'][n],
   shopWrong: (got, want) => `음, 그건 ${attachJosa(got.name, '이에요/예요')}. ${attachJosa(want.name, '을/를')} 찾아 주세요!`,
   shopFind: (want) => `${attachJosa(want.name, '이/가')} 어디 있을까요? 반짝반짝 빛나는 걸 눌러 보세요!`,
-  shopPay: () => '와! 고맙습니다! 여기 동전이요! 동전을 콕 눌러서 받아 주세요!',
-  shopPayShort: () => '고맙습니다! 여기 동전이요!',
+  shopPay: () => '와! 고맙습니다! 여기 돈이요! 지폐를 콕 눌러서 받아 주세요!',
+  shopPayShort: () => '고맙습니다! 여기 돈이요!',
   shopBye: () => '안녕히 가세요! 또 오세요!',
   shopScan: () => '계산해 주세요! 바구니를 콕 눌러서 삑 찍어 주세요!',
   shopScanShort: () => '계산해 주세요!',
   shopCard: () => '카드로 할게요! 카드를 콕 눌러서 꽂아 주세요!',
   shopCardShort: () => '카드로 할게요!',
-  shopCardOk: () => '띵동! 결제가 됐어요! 카드를 돌려주세요!',
+  shopCardOk: () => '띵동! 결제가 됐어요! 돈이 들어왔어요! 카드를 돌려주세요!',
   shopWelcome: (g) => `딩동! ${g.name} 손님이 왔어요! 어서 오세요!`,
   shopThanks: () => '와, 고마워요!',
   shopAsk: (item, n) => `그리고 ${item.name} ${KOR_COUNT[n]} 개 주세요!`,
   shopAsk2: (a, b) => `그리고 ${a.name} 한 개랑 ${b.name} 한 개 주세요!`,
-  shopPiggy: () => '와아! 동전이 열 개 더 모였어요! 최고예요!',
+  shopPiggy: () => '와아! 돈이 만 원 더 모였어요! 최고예요!',
+  shopTotal: (n) => `모두 ${wonText(n)}이에요!`,
+  shopBill: (v) => `${wonText(v)}!`,
+  shopSoldOut: (a) => `앗, ${attachJosa(a.name, '이/가')} 다 팔렸어요! 시장에서 사 와야겠어요!`,
+  shopNothing: () => '어, 살 게 없네요. 다음에 또 올게요!',
+  shopMarket: () => '시장이에요! 가게에 놓을 물건을 사 볼까요?',
+  shopBuy: (a) => `${attachJosa(a.name, '을/를')} 사 왔어요! 매대에 놓을게요!`,
+  shopNoMoney: () => '돈이 모자라요! 손님에게 물건을 팔아서 돈을 모아요!',
+  shopShelfFull: () => '매대가 꽉 찼어요! 다른 물건을 사 볼까요?',
 
   // 🍳 요리 놀이 (동물 친구 식당, KitchenGame.jsx)
   kitchenArrive: (g) => `딸랑딸랑! ${g.name} 손님이 왔어요! 무엇을 만들어 줄까요?`,
@@ -333,7 +341,11 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   for (let n = 1; n <= 12; n++) lines.push(VOICE.trainCount(n));
   Object.values(CARGO_COLORS).forEach(c => lines.push(VOICE.trainBox(c), VOICE.trainBoxOk(c), VOICE.trainBoxNoCar(c)));
   for (let n = 1; n <= BASKET_MAX; n++) lines.push(VOICE.shopCount(n));
-  lines.push(VOICE.shopCard(), VOICE.shopCardShort(), VOICE.shopCardOk(), VOICE.shopScan(), VOICE.shopScanShort(), VOICE.shopPay(), VOICE.shopPayShort(), VOICE.shopBye(), VOICE.shopPiggy(), VOICE.shopThanks());
+  lines.push(VOICE.shopCard(), VOICE.shopCardShort(), VOICE.shopCardOk(), VOICE.shopScan(), VOICE.shopScanShort(), VOICE.shopPay(), VOICE.shopPayShort(), VOICE.shopBye(), VOICE.shopPiggy(), VOICE.shopThanks(),
+    VOICE.shopNothing(), VOICE.shopMarket(), VOICE.shopNoMoney(), VOICE.shopShelfFull());
+  for (let n = 1000; n <= TOTAL_MAX; n += 1000) lines.push(VOICE.shopTotal(n));
+  BILLS.forEach(v => lines.push(VOICE.shopBill(v)));
+  [...SHOP_GOODS, ...COUNTER_GOODS].forEach(a => lines.push(VOICE.shopSoldOut(a), VOICE.shopBuy(a)));
   KITCHEN_GUESTS.forEach(g => lines.push(VOICE.shopWelcome(g)));
   COUNTER_GOODS.forEach(a => {
     for (let n = 1; n <= ASK_MAX_N; n++) lines.push(VOICE.shopAsk(a, n));
