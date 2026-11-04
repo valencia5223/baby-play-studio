@@ -192,8 +192,12 @@ function drawGood(ctx, id, x, y, r, rot = 0, alpha = 1) {
     if (!rot && alpha === 1) { drawWhole(ctx, id, x, y, r); return; }
     ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.globalAlpha *= alpha; drawWhole(ctx, id, 0, 0, r); ctx.restore(); return;
   }
-  const ref = 110; let cv = ownCache.get(id);
-  if (!cv) { cv = document.createElement('canvas'); cv.width = cv.height = Math.ceil(ref * 2.4); const c = cv.getContext('2d'); c.translate(cv.width / 2, cv.height / 2); OWN_FN[id](c, ref); ownCache.set(id, cv); }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), ref = Math.max(16, Math.min(240, Math.ceil(r * dpr / 8) * 8)), key = `${id}|${ref}`;
+  let cv = ownCache.get(key);
+  if (!cv) {
+    if (ownCache.size > 160) ownCache.clear();
+    cv = document.createElement('canvas'); cv.width = cv.height = Math.ceil(ref * 2.4); const c = cv.getContext('2d'); c.translate(cv.width / 2, cv.height / 2); OWN_FN[id](c, ref); ownCache.set(key, cv);
+  }
   const sc = r / ref;
   ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); if (alpha < 1) ctx.globalAlpha *= alpha;
   ctx.drawImage(cv, -cv.width / 2 * sc, -cv.height / 2 * sc, cv.width * sc, cv.height * sc); ctx.restore();
@@ -206,14 +210,14 @@ function layout(W, H) {
     return { land, W, H, S: H * 0.22, ceil: H * 0.045, signY: H * 0.105, shelfTop: H * 0.165, shelfBot: H * 0.49, wallBot: H * 0.5,
       door: { x0: W * 0.012, x1: W * 0.118, y0: H * 0.15 },
       units: [0, 1, 2].map(u => ({ x0: W * (0.135 + u * 0.29), x1: W * (0.405 + u * 0.29) })),
-      laneY: H * 0.8, laneD: H * 0.025, counterX: W * 0.45, counterY: H * 0.72, d: H * 0.065, caseCols: 6, caseRows: 1,
+      laneY: H * 0.8, laneD: H * 0.025, backY: H * 0.54, counterX: W * 0.45, counterY: H * 0.72, d: H * 0.065, caseCols: 6, caseRows: 1,
       gx: W * 0.685, bx: W * 0.79, br: Math.min(W * 0.055, H * 0.085), px: W * 0.915, pr: Math.min(W * 0.07, H * 0.11),
       queueX: W * 0.35, doorX: W * 0.065, speed: 0.15 };
   }
   return { land, W, H, S: Math.min(H * 0.15, W * 0.22), ceil: H * 0.035, signY: H * 0.072, shelfTop: H * 0.115, shelfBot: H * 0.44, wallBot: H * 0.45,
     door: { x0: W * 0.01, x1: W * 0.098, y0: H * 0.11 },
     units: [0, 1, 2].map(u => ({ x0: W * (0.108 + u * 0.298), x1: W * (0.393 + u * 0.298) })),
-    laneY: H * 0.68, laneD: H * 0.02, counterX: W * 0.3, counterY: H * 0.65, d: H * 0.07, caseCols: 3, caseRows: 2,
+    laneY: H * 0.68, laneD: H * 0.02, backY: H * 0.48, counterX: W * 0.3, counterY: H * 0.65, d: H * 0.07, caseCols: 3, caseRows: 2,
     gx: W * 0.5, bx: W * 0.67, br: Math.min(W * 0.09, H * 0.065), px: W * 0.87, pr: Math.min(W * 0.11, H * 0.085),
     queueX: W * 0.15, doorX: W * 0.054, speed: 0.2 };
 }
@@ -380,9 +384,9 @@ function fridgeArt(ctx, id, w, h) {
   const r = Math.min(w * 0.2, h * 0.42);
   const upright = id === 'milk' || id === 'fishcake' || id === 'hotdog' || id === 'lollipop' || id === 'icecream';
   [[0, -0.74, 0, 1.0], [-0.3, -0.64, -0.12, 0.92], [0.3, -0.64, 0.14, 0.92]].forEach(([dx, dy, rot, k]) => drawGood(ctx, id, dx * w, dy * h, r * k, upright ? rot * 0.4 : rot));
-  const lw = Math.min(w * 0.7, h * 1.4), lh = h * 0.28;
+  const lw = Math.min(w * 0.78, h * 1.5), lh = h * 0.3;
   ctx.fillStyle = '#fef08a'; shadowOn(ctx, 3, 1, 'rgba(0,0,0,0.2)'); ctx.beginPath(); ctx.roundRect(-lw / 2, -lh * 1.08, lw, lh, lh * 0.2); ctx.fill(); shadowOff(ctx);
-  ctx.fillStyle = '#1e3a8a'; ctx.font = `${Math.round(lh * 0.66)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#1e3a8a'; ctx.font = `${Math.round(lh * 0.72)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(GOOD_BY_ID[id].name, 0, -lh * 0.52);
 }
 const cellCache = new Map();
@@ -392,19 +396,22 @@ function drawCell(ctx, cell, glow, shakeK, pressK) {
     ctx.save(); shadowOn(ctx, w * 0.25, 0, `rgba(250,204,21,${0.9 * glow})`);
     ctx.fillStyle = `rgba(254,240,138,${0.75 * glow})`; ctx.beginPath(); ctx.roundRect(x - w * 0.56, base - h * 1.12, w * 1.12, h * (fridge ? 1.42 : 1.18), w * 0.1); ctx.fill(); ctx.restore();
   }
-  const key = `${id}|${fridge ? 1 : 0}|${Math.round(w)}|${Math.round(h)}`;
+  const sx = shakeK > 0 ? Math.sin(shakeK * 38) * w * 0.05 * shakeK : 0, sc = 1 - pressK * 0.06;
+  if (fridge) { ctx.save(); ctx.translate(x + sx, base); if (sc !== 1) ctx.scale(sc, sc); fridgeArt(ctx, id, w, h); ctx.restore(); return; }
+  const key = `${id}|${Math.round(w)}|${Math.round(h)}`;
   let sp = cellCache.get(key);
   if (!sp) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2), cw = w * 1.3, chh = h * 1.7, oy = h * 1.3;
     const cv = document.createElement('canvas'); cv.width = Math.ceil(cw * dpr); cv.height = Math.ceil(chh * dpr);
     const c = cv.getContext('2d'); c.scale(dpr, dpr); c.translate(cw / 2, oy);
-    (fridge ? fridgeArt : crateArt)(c, id, w, h);
+    crateArt(c, id, w, h);
     if (cellCache.size > 90) cellCache.clear();
-    sp = { cv, cw, chh, oy }; cellCache.set(key, sp);
+    sp = { cv, cw, oy, dpr }; cellCache.set(key, sp);
   }
-  const sx = shakeK > 0 ? Math.sin(shakeK * 38) * w * 0.05 * shakeK : 0, sc = 1 - pressK * 0.06;
-  ctx.save(); ctx.translate(x + sx, base); if (sc !== 1) ctx.scale(sc, sc);
-  ctx.drawImage(sp.cv, -sp.cw / 2, -sp.oy, sp.cw, sp.chh); ctx.restore();
+  ctx.save();
+  if (sc !== 1 || sx) { ctx.translate(x + sx, base); ctx.scale(sc, sc); ctx.drawImage(sp.cv, -sp.cw / 2, -sp.oy, sp.cv.width / sp.dpr, sp.cv.height / sp.dpr); }
+  else { const px = Math.round((x - sp.cw / 2) * sp.dpr) / sp.dpr, py = Math.round((base - sp.oy) * sp.dpr) / sp.dpr; ctx.drawImage(sp.cv, px, py, sp.cv.width / sp.dpr, sp.cv.height / sp.dpr); }
+  ctx.restore();
 }
 
 // ── 계산대 (앞쪽, 손님보다 나중에 그린다) + 바구니 더미
@@ -452,9 +459,9 @@ function drawCounterFg(ctx, W, H, L) {
 function drawCaseGlass(ctx, L) {
   const R = caseRect(L), w = R.x1 - R.x0, h = R.y1 - R.y0;
   ctx.save();
-  ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(R.x0, R.y0, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(R.x0, R.y0, w, h);
   ctx.beginPath(); ctx.rect(R.x0, R.y0, w, h); ctx.clip();
-  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.fillStyle = 'rgba(255,255,255,0.1)';
   for (let k = 0; k < 3; k++) { const x = R.x0 + w * (0.12 + k * 0.33); ctx.beginPath(); ctx.moveTo(x, R.y0); ctx.lineTo(x + w * 0.05, R.y0); ctx.lineTo(x - w * 0.03, R.y1); ctx.lineTo(x - w * 0.08, R.y1); ctx.closePath(); ctx.fill(); }
   ctx.restore();
   const th = Math.min(L.H * 0.035, (R.y0 - L.counterY - L.d - 10) * 0.85), tw = th * 5.4;
@@ -672,7 +679,7 @@ export default function ShopGame({ audio, speak }) {
     const ids = KITCHEN_GUESTS.map(k => k.id).filter(id => id !== g.lastGuest && !g.custs.some(c => c.id === id));
     const id = ids[Math.floor(Math.random() * ids.length)]; g.lastGuest = id;
     const v = makeVisit(id);
-    const c = { uid: ++g.uid, id, steps: v.steps, step: 0, payBy: v.payBy, basket: [], askGot: [], want: v.ask, xf: L.doorX / L.W, txf: 0, dep: Math.random(), dir: 1,
+    const c = { uid: ++g.uid, id, steps: v.steps, step: 0, payBy: v.payBy, basket: [], askGot: [], want: v.ask, xf: L.doorX / L.W, txf: 0, yk: 0, tyk: 0, dep: Math.random(), dir: 1,
       state: 'enter', t0: g.t, wt: 0, goal: null, happyUntil: 0, mouthUntil: 0, bkOn: false, bkBack: false, bkT: -9, px: L.doorX, py: L.laneY, sc: 1 };
     g.custs.push(c); openDoor();
     audio.playXylophone(1318.5, 0.5); setTimeout(() => audio.playXylophone(1046.5, 0.6), 230);   // 딩동
@@ -680,10 +687,10 @@ export default function ShopGame({ audio, speak }) {
     g.nextSpawnT = g.t + 12 + Math.random() * 8;
     sync();
   };
-  const walkTo = (c, x, goal) => { c.state = 'walk'; c.txf = x / G.current.L.W; c.goal = goal; };
+  const walkTo = (c, x, goal, yk = 1) => { c.state = 'walk'; c.txf = x / G.current.L.W; c.tyk = yk; c.goal = goal; };
   const advance = (c) => {
     const g = G.current, L = g.L, s = c.steps[c.step];
-    if (s) { const cell = g.cells.find(k => k.id === s.item); walkTo(c, cell ? cell.x + (Math.random() - 0.5) * cell.w * 0.3 : L.queueX, 'self'); return; }
+    if (s) { const cell = g.cells.find(k => k.id === s.item); walkTo(c, cell ? cell.x + (Math.random() - 0.5) * cell.w * 0.2 : L.queueX, 'self', 0); return; }
     if (!g.task) { g.task = { kind: 'counter', c }; walkTo(c, L.gx, 'counter'); } else walkTo(c, L.queueX, 'queue');
   };
   const arrived = (c) => {
@@ -881,7 +888,7 @@ export default function ShopGame({ audio, speak }) {
     later(() => {
       g.phase = 'bye'; g.phaseT = g.t; c.happyUntil = g.t + 2; c.bkOn = false; c.bkBack = true; c.bkT = g.t;
       say(VOICE.shopBye()); talk(c, 1.5); sync();
-      later(() => { g.task = null; g.phase = 'none'; g.card = null; g.coinsOut = []; walkTo(c, g.L.doorX, 'door'); sync(); }, 1300);
+      later(() => { g.task = null; g.phase = 'none'; g.card = null; g.coinsOut = []; walkTo(c, g.L.doorX, 'door', 0); sync(); }, 1300);
     }, wait);
   };
 
@@ -963,25 +970,24 @@ export default function ShopGame({ audio, speak }) {
         if (t > g.nextSpawnT && g.custs.length < 2) spawn();
         if (!g.custs.length && g.nextSpawnT > t + 3) g.nextSpawnT = t + 3;
         g.custs.forEach(c => {
-          if (c.state === 'enter' && t - c.t0 >= 1.0) advance(c);
+          if (c.state === 'enter' && t - c.t0 >= 0.7) advance(c);
           else if (c.state === 'walk') {
-            const v = L.speed * dt, d = c.txf - c.xf;
-            if (Math.abs(d) <= v) { c.xf = c.txf; arrived(c); }
-            else { c.xf += Math.sign(d) * v; c.dir = Math.sign(d); c.wt += dt; }
+            const depth = L.laneY - L.backY, dx = (c.txf - c.xf) * W, dy = (c.tyk - c.yk) * depth, dist = Math.hypot(dx, dy);
+            const v = L.speed * W * dt * (0.7 + 0.3 * c.yk);   // 멀리(매대 쪽) 갈수록 천천히 보이게
+            if (dist <= v) { c.xf = c.txf; c.yk = c.tyk; arrived(c); }
+            else { c.xf += dx / dist * v / W; c.yk += dy / dist * v / depth; if (Math.abs(dx) > 1) c.dir = Math.sign(dx); c.wt += dt; }
           } else if (c.state === 'queue' && !g.task) { g.task = { kind: 'counter', c }; walkTo(c, L.gx, 'counter'); }
         });
         const nBefore = g.custs.length;
-        g.custs = g.custs.filter(c => !(c.state === 'exit' && t - c.t0 >= 1.0));
+        g.custs = g.custs.filter(c => !(c.state === 'exit' && t - c.t0 >= 0.7));
         if (g.custs.length !== nBefore) sync();
         // 화면 위치
         g.custs.forEach(c => {
-          const ly = L.laneY + c.dep * L.laneD, base = 0.97 + c.dep * 0.06;
-          let x = c.xf * W, y = ly, sc = base;
-          if (c.state === 'enter' || c.state === 'exit') {
-            const k = c.state === 'enter' ? easeOut((t - c.t0) / 1.0) : 1 - easeIn((t - c.t0) / 1.0);
-            x = L.doorX; y = L.wallBot + (ly - L.wallBot) * k; sc = base * (0.62 + 0.38 * k);
-          }
-          c.px = x; c.py = y; c.sc = sc;
+          const ly = L.laneY + c.dep * L.laneD;
+          let y = L.backY + (ly - L.backY) * c.yk;
+          if (c.state === 'enter') y -= (1 - easeOut((t - c.t0) / 0.7)) * L.S * 0.12;   // 문에서 한 발 나온다
+          if (c.state === 'exit') y -= easeIn((t - c.t0) / 0.7) * L.S * 0.12;
+          c.px = c.xf * W; c.py = y; c.sc = (0.6 + 0.4 * c.yk) * (0.97 + c.dep * 0.06 * c.yk);
         });
 
         drawStore(ctx, W, H, L);
@@ -1011,15 +1017,16 @@ export default function ShopGame({ audio, speak }) {
           const ph = walking ? (c.state === 'walk' ? c.wt : t) * 9 : 0;
           const hop = walking ? Math.abs(Math.sin(ph)) * S * 0.06 : 0, rot = walking ? Math.sin(ph) * 0.07 : 0;
           const happy = t < c.happyUntil, mouth = t < c.mouthUntil ? 0.15 + 0.2 * Math.abs(Math.sin(t * 13)) : 0;
-          const jump = happy ? Math.abs(Math.sin(t * 6)) * S * 0.05 : 0;
-          ctx.save(); ctx.globalAlpha = c.state === 'enter' ? clamp01((t - c.t0) / 0.25) : c.state === 'exit' ? clamp01((1 - (t - c.t0)) / 0.25) : 1;
+          const reach = c.state === 'pick' ? Math.sin(clamp01((t - c.t0) / 0.9) * Math.PI) * S * 0.12 : 0;
+          const jump = (happy ? Math.abs(Math.sin(t * 6)) * S * 0.05 : 0) + reach;
+          ctx.save(); ctx.globalAlpha = c.state === 'enter' ? clamp01((t - c.t0) / 0.35) : c.state === 'exit' ? clamp01((0.7 - (t - c.t0)) / 0.35) : 1;
           ctx.fillStyle = 'rgba(30,30,40,0.18)'; ell(ctx, c.px, c.py, S * 0.4, S * 0.07); ctx.fill();
           ctx.translate(c.px, c.py - hop - jump); ctx.rotate(rot);
           GUEST_FN[c.id](ctx, S, t, happy, mouth);
           ctx.restore();
           if (!c.bkOn && !c.bkBack) {
             const bk = handBk(c);
-            ctx.save(); if (c.state === 'enter' || c.state === 'exit') ctx.globalAlpha = c.state === 'enter' ? clamp01((t - c.t0) / 0.25) : clamp01((1 - (t - c.t0)) / 0.25);
+            ctx.save(); if (c.state === 'enter' || c.state === 'exit') ctx.globalAlpha = c.state === 'enter' ? clamp01((t - c.t0) / 0.35) : clamp01((0.7 - (t - c.t0)) / 0.35);
             drawBasket(ctx, bk.x, bk.y - hop - jump, bk.r, c.basket); ctx.restore();
           }
         });
