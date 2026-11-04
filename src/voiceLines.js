@@ -2,7 +2,7 @@ import { FISH_SPECIES, STAGE_NAMES, breedOf } from './aquariumData.js';
 import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID, CROPS } from './farmData.js';
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
 import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
-import { SHOP_GOODS, SHOP_MAX_N } from './shopData.js';
+import { BASKET_MAX, COUNTER_GOODS, ASK_MAX_N } from './shopData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -183,8 +183,6 @@ export const VOICE = {
   trainBuy: () => '와아! 멋지게 바뀌었어요!',
 
   // 🛒 동물 마을 가게 (ShopGame.jsx)
-  shopOrder: (item, n) => `안녕하세요! ${item.name} ${KOR_COUNT[n]} 개 주세요!`,
-  shopOrder2: (a, b) => `안녕하세요! ${a.name} 한 개랑 ${b.name} 한 개 주세요!`,
   shopFull: (a) => `${attachJosa(a.name, '은/는')} 다 담았어요! 다른 것도 찾아 볼까요?`,
   shopCount: (n) => ['', '하나!', '둘!', '셋!', '넷!', '다섯!'][n],
   shopWrong: (got, want) => `음, 그건 ${attachJosa(got.name, '이에요/예요')}. ${attachJosa(want.name, '을/를')} 찾아 주세요!`,
@@ -197,6 +195,10 @@ export const VOICE = {
   shopCard: () => '카드로 할게요! 카드를 콕 눌러서 꽂아 주세요!',
   shopCardShort: () => '카드로 할게요!',
   shopCardOk: () => '띵동! 결제가 됐어요! 카드를 돌려주세요!',
+  shopWelcome: (g) => `딩동! ${g.name} 손님이 왔어요! 어서 오세요!`,
+  shopThanks: () => '와, 고마워요!',
+  shopAsk: (item, n) => `그리고 ${item.name} ${KOR_COUNT[n]} 개 주세요!`,
+  shopAsk2: (a, b) => `그리고 ${a.name} 한 개랑 ${b.name} 한 개 주세요!`,
   shopPiggy: () => '와아! 동전이 열 개 더 모였어요! 최고예요!',
 
   // 🍳 요리 놀이 (동물 친구 식당, KitchenGame.jsx)
@@ -330,13 +332,14 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   PASSENGERS.forEach(id => lines.push(VOICE.trainAlight(FARM_BY_ID[id])));
   for (let n = 1; n <= 12; n++) lines.push(VOICE.trainCount(n));
   Object.values(CARGO_COLORS).forEach(c => lines.push(VOICE.trainBox(c), VOICE.trainBoxOk(c), VOICE.trainBoxNoCar(c)));
-  SHOP_GOODS.forEach(a => {
-    for (let n = 1; n <= SHOP_MAX_N; n++) lines.push(VOICE.shopOrder(a, n));
+  for (let n = 1; n <= BASKET_MAX; n++) lines.push(VOICE.shopCount(n));
+  lines.push(VOICE.shopCard(), VOICE.shopCardShort(), VOICE.shopCardOk(), VOICE.shopScan(), VOICE.shopScanShort(), VOICE.shopPay(), VOICE.shopPayShort(), VOICE.shopBye(), VOICE.shopPiggy(), VOICE.shopThanks());
+  KITCHEN_GUESTS.forEach(g => lines.push(VOICE.shopWelcome(g)));
+  COUNTER_GOODS.forEach(a => {
+    for (let n = 1; n <= ASK_MAX_N; n++) lines.push(VOICE.shopAsk(a, n));
     lines.push(VOICE.shopFind(a), VOICE.shopFull(a));
-    SHOP_GOODS.forEach(b => { if (a.id !== b.id) lines.push(VOICE.shopWrong(a, b), VOICE.shopOrder2(a, b)); });
+    COUNTER_GOODS.forEach(b => { if (a.id !== b.id) lines.push(VOICE.shopWrong(a, b), VOICE.shopAsk2(a, b)); });
   });
-  for (let n = 1; n <= SHOP_MAX_N; n++) lines.push(VOICE.shopCount(n));
-  lines.push(VOICE.shopCard(), VOICE.shopCardShort(), VOICE.shopCardOk(), VOICE.shopScan(), VOICE.shopScanShort(), VOICE.shopPay(), VOICE.shopPayShort(), VOICE.shopBye(), VOICE.shopPiggy());
   KITCHEN_GUESTS.forEach(g => lines.push(VOICE.kitchenArrive(g), VOICE.kitchenFav(g), VOICE.kitchenYum(g), VOICE.kitchenYumFav(g)));
   KITCHEN_MENUS.forEach(m => lines.push(VOICE.kitchenMenu(m)));
   Object.keys(INGREDIENTS).forEach(id => lines.push(VOICE.kitchenIng(id)));

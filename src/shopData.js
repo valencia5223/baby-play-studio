@@ -21,33 +21,55 @@ export const SHOP_GOODS = [
   { id: 'cherry', name: '체리', emoji: '🍒' },
   { id: 'blueberry', name: '블루베리', emoji: '🫐' }
 ];
-export const SHELF_N = 9;   // 선반 칸 수 (손님마다 SHOP_GOODS 에서 무작위로 골라 순서도 섞는다)
-export const GOOD_BY_ID = Object.fromEntries(SHOP_GOODS.map(g => [g.id, g]));
+// 카운터 진열장 물건: 손님이 계산대에서 "○○ 주세요!" 하고 점원(아이)에게 달라고 하는 것
+export const COUNTER_GOODS = [
+  { id: 'bun', name: '호빵', emoji: '🥟' },
+  { id: 'sweetpotato', name: '군고구마', emoji: '🍠' },
+  { id: 'fishcake', name: '어묵', emoji: '🍢' },
+  { id: 'hotdog', name: '핫도그', emoji: '🌭' },
+  { id: 'lollipop', name: '사탕', emoji: '🍭' },
+  { id: 'icecream', name: '아이스크림', emoji: '🍦' }
+];
+export const ASK_MAX_N = 2;   // 카운터에서 한 가지를 달라고 할 때 최대 개수
+export const GOOD_BY_ID = Object.fromEntries([...SHOP_GOODS, ...COUNTER_GOODS].map(g => [g.id, g]));
 
 // 손님이 자주 사는 물건 (반쯤은 이걸 산다)
 const SHOP_FAV = { rabbit: 'carrot', monkey: 'banana', pig: 'apple', chick: 'corn', fox: 'egg', cat: 'fish', penguin: 'fish', mouse: 'cheese', elephant: 'orange', bear: 'honey', hippo: 'kiwi', koala: 'lettuce', panda: 'blueberry', lion: 'potato', dog: 'milk', squirrel: 'cherry' };
 
-export const SHOP_MAX_N = 3;    // 한 번에 사는 개수 최대
 export const PIGGY_FULL = 10;   // 동전이 이만큼 모일 때마다 저금통 축하
 
-export const MULTI_RATE = 0.2;   // 두 가지를 함께 사는 손님 비율 (한 가지 8 : 두 가지 2)
+export const MULTI_RATE = 0.2;   // 카운터에서 두 가지를 달라는 비율 (한 가지 8 : 두 가지 2)
 
-// 주문: { lines: [{ item, n }], item: 첫 물건, n: 모두 몇 개 }
-//  한 가지 = 1~3개 무작위, 두 가지 = 각각 한 개씩 (예: 사과 한 개랑 바나나 한 개)
-export function makeOrder(guestId, served, lastItem) {
-  const fav = SHOP_FAV[guestId];
-  const pickOne = (avoid) => { let id = null; while (!id || avoid.includes(id)) id = SHOP_GOODS[Math.floor(Math.random() * SHOP_GOODS.length)].id; return id; };
-  const first = fav && fav !== lastItem && Math.random() < 0.5 ? fav : pickOne([lastItem]);
-  const lines = Math.random() < MULTI_RATE ? [{ item: first, n: 1 }, { item: pickOne([first]), n: 1 }] : [{ item: first, n: 1 + Math.floor(Math.random() * SHOP_MAX_N) }];
-  return { lines, item: first, n: lines.reduce((a, l) => a + l.n, 0) };
+const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+
+// 편의점 진열대 3개 (왼쪽부터, 칸 6개씩 = 2열 × 3층). 가게를 열 때마다 진열대 안에서 자리만 섞는다
+export const SHOP_UNITS = [
+  { id: 'fruit', label: '🍎 과일', color: '#ef4444', kind: 'shelf', items: ['apple', 'banana', 'strawberry', 'orange', 'kiwi', 'cherry'] },
+  { id: 'veg', label: '🥕 채소', color: '#16a34a', kind: 'shelf', items: ['carrot', 'tomato', 'corn', 'potato', 'onion', 'lettuce'] },
+  { id: 'cold', label: '🥛 냉장', color: '#2563eb', kind: 'fridge', items: ['milk', 'egg', 'cheese', 'fish', 'blueberry', 'honey'] }
+];
+export function arrangeStore() { return SHOP_UNITS.flatMap(u => shuffle(u.items)); }
+export function arrangeCounter() { return shuffle(COUNTER_GOODS.map(g => g.id)); }
+
+export const ASK_RATE = 0.6;   // 계산대에서 카운터 물건을 달라고 하는 손님 비율
+export const BASKET_MAX = 3;   // 손님 바구니에 담기는 물건 수 최대
+
+// 카운터 주문: 한 가지 1~2개, 또는 (MULTI_RATE) 두 가지 한 개씩 → { lines: [{ item, n }], item, n }
+export function makeCounterOrder() {
+  const ids = shuffle(COUNTER_GOODS.map(g => g.id));
+  const lines = Math.random() < MULTI_RATE ? [{ item: ids[0], n: 1 }, { item: ids[1], n: 1 }] : [{ item: ids[0], n: 1 + Math.floor(Math.random() * ASK_MAX_N) }];
+  return { lines, item: lines[0].item, n: lines.reduce((x, l) => x + l.n, 0) };
 }
-
-// 이번 손님 선반: 주문한 물건(들)을 꼭 넣고 나머지는 무작위, 자리도 섞는다
-export function makeStock(items) {
-  const rest = SHOP_GOODS.map(g => g.id).filter(id => !items.includes(id));
-  const stock = [...items, ...rest.sort(() => Math.random() - 0.5)].slice(0, SHELF_N);
-  for (let i = stock.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [stock[i], stock[j]] = [stock[j], stock[i]]; }
-  return stock;
+// 손님 한 명의 장보기: 매대에서 스스로 고르는 물건(self, 1개 이상) + 가끔 계산대에서 부탁(ask)
+//  → { steps: [{ kind: 'self', item }], ask: 주문|null, payBy }
+export function makeVisit(guestId) {
+  const ask = Math.random() < ASK_RATE ? makeCounterOrder() : null;
+  const room = BASKET_MAX - (ask ? ask.n : 0);
+  const fav = SHOP_FAV[guestId];
+  let pool = shuffle(SHOP_GOODS.map(g => g.id));
+  if (fav && Math.random() < 0.5) pool = [fav, ...pool.filter(id => id !== fav)];
+  const selfN = 1 + Math.floor(Math.random() * room);
+  return { steps: pool.slice(0, selfN).map(item => ({ kind: 'self', item })), ask, payBy: Math.random() < 0.5 ? 'card' : 'cash' };
 }
 
 const KEY = 'bps_shop_v1';
