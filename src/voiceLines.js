@@ -305,7 +305,7 @@ export const VOICE = {
   feedWrongFood: (animal, food) => `으응, 이거 말고! ${attachJosa(animal.name, '은/는')} ${attachJosa(food.name, '을/를')} 먹고 싶대요.`,
   feedWrongAnimal: (animal, food) => `나는 아니에요. ${animal.name}에게 ${attachJosa(food.name, '을/를')} 주세요!`,
   // 🚗 우리 동네 (TownGame.jsx)
-  townWelcome: () => '우리 동네 산본이에요! 가고 싶은 곳을 콕 눌러 봐요!',
+  townWelcome: () => '우리 동네 군포예요! 가고 싶은 곳을 콕 눌러 봐요!',
   townHow: (s) => `${s.name}에 갈까요? 무엇을 타고 갈까요?`,
   townCarGo: (s) => `아빠 차 출발! 부릉부릉, ${toRo(s.name)} 가요!`,
   townPickup: () => '아빠 차가 데리러 와요! 부릉부릉!',

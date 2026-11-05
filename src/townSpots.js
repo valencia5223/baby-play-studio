@@ -29,7 +29,20 @@ export const SPOT_LIST = [
   { id: 'chomakgol', name: '초막골생태공원', emoji: '🦆', kind: 'pond', real: [126.9180, 37.3452], at: [0.22, 0.78],
     desc: '초막골생태공원이에요! 연못에서 오리랑 개구리를 찾아봐요.' },
   { id: 'surisan', name: '수리산', emoji: '⛰️', kind: 'mountain', real: [126.9135, 37.3585], at: [0.13, 0.42], link: 'surisanStn',
-    desc: '높은 수리산에 왔어요! 다람쥐랑 새들이 살아요. 야호!' }
+    desc: '높은 수리산에 왔어요! 다람쥐랑 새들이 살아요. 야호!' },
+  // ── 군포 당동·당정동 (산본 지도 오른쪽 아래, 1호선 옆) ──
+  { id: 'gunpoStn', name: '군포역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.9483, 37.3535], at: [0.885, 0.585], stop: ['군포역'],
+    desc: '군포역이에요! 남색 1호선 전철이 서요. 기차도 쌩쌩 지나가요.' },
+  { id: 'dangdongPost', name: '당동 우체국', emoji: '📮', kind: 'post', real: [126.9451, 37.3507], at: [0.78, 0.66], stop: ['당동우체국'],
+    desc: '당동 우체국이에요! 할미 할비한테 편지를 보내 볼까요?' },
+  { id: 'gunpoSchool', name: '군포초등학교', emoji: '🏫', kind: 'school', real: [126.9433, 37.3478], at: [0.8, 0.8], stop: ['군포초등학교'],
+    desc: '군포초등학교예요! 형 누나들이 공부하고 운동장에서 뛰어놀아요.' },
+  { id: 'hansei', name: '한세대학교', emoji: '🎓', kind: 'univ', real: [126.9517, 37.3475], at: [0.965, 0.79], stop: ['한세대학교'],
+    desc: '한세대학교예요! 언니 오빠들이 공부하는 커다란 대학교예요.' },
+  { id: 'itValley', name: '군포 IT밸리', emoji: '🏢', kind: 'tower', real: [126.9518, 37.3495], at: [0.965, 0.665], stop: ['군포IT밸리'],
+    desc: '군포 IT밸리예요! 반짝반짝 높은 건물에서 컴퓨터로 일하는 곳이에요.' },
+  { id: 'dangjeongStn', name: '당정역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.9487, 37.3441], at: [0.89, 0.9], stop: ['당정역'],
+    desc: '당정역이에요! 남색 1호선 전철이 서요.' }
 ];
 // 금정역은 4호선·1호선 둘 다 선다 (역 그림의 노선 동그라미)
 SPOT_LIST.find(s => s.id === 'geumjeongStn').lines = ['4', '1'];
@@ -37,7 +50,7 @@ SPOT_LIST.find(s => s.id === 'geumjeongStn').lines = ['4', '1'];
 // 🚇 옆 동네 안양 (범계·평촌·안양역). 지도 범위는 townData.js 의 ANYANG_BOX, 버스는 townBus_anyang.json (npm run bus anyang)
 export const ANYANG_SPOT_LIST = [
   { id: 'bumgyeStn', name: '범계역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.9515, 37.3897], at: [0.72, 0.66], stop: ['범계역'],
-    desc: '범계역이에요! 파란 4호선 전철이 서요. 산본에서 전철로 금방 와요.' },
+    desc: '범계역이에요! 파란 4호선 전철이 서요. 군포에서 전철로 금방 와요.' },
   { id: 'pyeongchonStn', name: '평촌역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.9640, 37.3946], at: [0.93, 0.58], stop: ['평촌역'],
     desc: '평촌역이에요! 파란 4호선 전철이 서요.' },
   { id: 'anyangStn', name: '안양역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.9228, 37.4010], at: [0.12, 0.41], stop: ['안양역'],

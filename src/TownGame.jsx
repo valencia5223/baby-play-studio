@@ -145,6 +145,13 @@ function buildLayer(L, dpr) {
     if (it.k === 'b') { drawBuilding(c, it.x, it.y, it.w, it.h, it.col, it.roof); blocks.push(it); }
     else drawTree(c, it.x, it.y, 7 * s, '#4ea24a');
   });
+  // 동네 이름 (예: 산본 지도 오른쪽 아래 '군포 당동·당정동')
+  T.areas.forEach(ar => {
+    const fs = Math.round(26 * s); c.font = `${fs}px ${JUA}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    const x = X({ u: ar.at[0], v: ar.at[1] }), y = Y({ u: ar.at[0], v: ar.at[1] }), tw = c.measureText(ar.name).width + fs;
+    c.fillStyle = 'rgba(255,255,255,0.75)'; rrect(c, x - tw / 2, y - fs * 0.75, tw, fs * 1.5, fs * 0.75); c.fill();
+    c.fillStyle = '#0f766e'; c.fillText(ar.name, x, y + 1);
+  });
   return { cv, blocks };
 }
 
@@ -265,6 +272,32 @@ function drawSpot(c, sp, x, y, u, t, opt) {
     c.font = `${Math.round(u * 0.55)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText('🚲', -u * 0.9 + ((t * 0.35) % 1) * u * 1.8, -u * 0.95);
     c.fillText('🦆', Math.sin(t * 0.7) * u * 0.6, -u * 0.32 + Math.sin(t * 3) * u * 0.03);
+  } else if (K === 'post') {
+    // 빨간 우체국 + 편지 봉투
+    const w = u * 1.6, h = u * 1.1;
+    c.fillStyle = '#fff7ed'; rrect(c, -w / 2, -h, w, h, u * 0.08); c.fill(); c.strokeStyle = '#ea580c'; c.lineWidth = u * 0.06; c.stroke();
+    c.fillStyle = '#ef4444'; rrect(c, -w / 2 - u * 0.05, -h - u * 0.25, w + u * 0.1, u * 0.3, u * 0.06); c.fill();
+    c.fillStyle = '#7dd3fc'; c.fillRect(-w * 0.4, -h * 0.7, w * 0.3, h * 0.35); c.fillStyle = '#475569'; rrect(c, w * 0.05, -h * 0.6, w * 0.25, h * 0.6, u * 0.04); c.fill();
+    const ey = -h - u * 0.75 + Math.sin(t * 3) * u * 0.08;
+    c.fillStyle = '#ffffff'; c.strokeStyle = '#ef4444'; c.lineWidth = u * 0.05; c.fillRect(-u * 0.32, ey, u * 0.64, u * 0.42); c.strokeRect(-u * 0.32, ey, u * 0.64, u * 0.42);
+    c.beginPath(); c.moveTo(-u * 0.32, ey); c.lineTo(0, ey + u * 0.24); c.lineTo(u * 0.32, ey); c.stroke();
+  } else if (K === 'school' || K === 'univ') {
+    // 학교: 시계탑 건물 + 운동장(초등학교) / 큰 건물 + 학사모(대학교)
+    const uni = K === 'univ', w = u * (uni ? 2.2 : 1.9), h = u * (uni ? 1.5 : 1.1);
+    if (!uni) { c.fillStyle = '#d9a066'; ell(c, u * 0.2, u * 0.05, u * 1.3, u * 0.28); c.fill(); }
+    c.fillStyle = uni ? '#e0e7ff' : '#fef3c7'; c.fillRect(-w / 2, -h, w, h); c.strokeStyle = uni ? '#4338ca' : '#b45309'; c.lineWidth = u * 0.05; c.strokeRect(-w / 2, -h, w, h);
+    c.fillStyle = '#7dd3fc'; for (let i = 0; i < (uni ? 3 : 2); i++) for (let j = 0; j < 4; j++) c.fillRect(-w / 2 + w * (0.08 + j * 0.24), -h + h * (0.14 + i * (uni ? 0.28 : 0.4)), w * 0.14, h * (uni ? 0.16 : 0.22));
+    c.fillStyle = uni ? '#6366f1' : '#f59e0b'; c.fillRect(-u * 0.25, -h - u * 0.55, u * 0.5, u * 0.55);
+    c.fillStyle = '#ffffff'; ell(c, 0, -h - u * 0.3, u * 0.17, u * 0.17); c.fill();
+    c.strokeStyle = '#1f2937'; c.lineWidth = u * 0.03; c.beginPath(); c.moveTo(0, -h - u * 0.3); c.lineTo(Math.cos(t) * u * 0.12, -h - u * 0.3 + Math.sin(t) * u * 0.12); c.stroke();
+    if (uni) { c.font = `${Math.round(u * 0.5)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🎓', w * 0.55, -h - u * 0.2 + Math.sin(t * 2) * u * 0.06); }
+  } else if (K === 'tower') {
+    // 유리 빌딩 셋 (반짝이는 창)
+    [[-0.7, 1.9, '#bae6fd'], [0, 2.6, '#a5f3fc'], [0.7, 2.1, '#c7d2fe']].forEach(([q, hh, col], i) => {
+      const x0 = q * u - u * 0.32, w = u * 0.64, h = u * hh;
+      c.fillStyle = col; c.fillRect(x0, -h, w, h); c.strokeStyle = '#0369a1'; c.lineWidth = u * 0.04; c.strokeRect(x0, -h, w, h);
+      for (let r = 0; r < Math.floor(hh * 3); r++) { c.fillStyle = (r + i + Math.floor(t * 2)) % 5 === 0 ? '#fef08a' : 'rgba(14,116,144,0.35)'; c.fillRect(x0 + w * 0.15, -h + u * 0.15 + r * u * 0.3, w * 0.7, u * 0.14); }
+    });
   } else if (K === 'mountain') {
     c.fillStyle = '#2f7d32'; c.beginPath(); c.moveTo(-u * 1.5, 0); c.lineTo(-u * 0.4, -u * 1.7); c.lineTo(u * 0.2, -u * 1.0); c.lineTo(u * 0.7, -u * 1.45); c.lineTo(u * 1.5, 0); c.fill();
     c.fillStyle = '#4caf50'; c.beginPath(); c.moveTo(-u * 1.1, 0); c.lineTo(-u * 0.4, -u * 1.4); c.lineTo(u * 0.4, 0); c.fill();
@@ -469,7 +502,7 @@ export default function TownGame({ audio, speak }) {
     audio.playXylophone(880, 0.3);
     if (sp.id === g.at) { g.mode = 'card'; sync({ card: sp.id, newStamp: false }); say(VOICE.townArrive(sp)); return; }
     g.sel = sp.id; g.mode = 'choose';
-    sync({ wrong: null, walk: canWalk(sp), bus: T.canBus(originStops(), sp), metro: T.METRO_STATIONS.includes(g.at) && T.METRO_STATIONS.includes(sp.id) });
+    sync({ wrong: null, walk: canWalk(sp), bus: T.canBus(originStops(), sp), metro: !!T.metroPath(g.at, sp.id) });
     say(VOICE.townHow(sp));
   };
   const canWalk = (sp) => T.meters(curSpot().r, sp.r) < 900;
@@ -579,9 +612,9 @@ export default function TownGame({ audio, speak }) {
       const ext = (p0, p1) => ({ u: p0.u + (p0.u - p1.u) * 1.2, v: p0.v + (p0.v - p1.v) * 1.2 });
       const pts = [ext(mp.pts[0], mp.pts[1]), ...mp.pts, ext(mp.pts[mp.pts.length - 1], mp.pts[mp.pts.length - 2])];
       const m = mover(pts, 300, 99);
-      const stopAt = [m.cum[1], ...mp.middle.map(md => m.cum[1 + mp.pts.indexOf(T.RAILS[0].pts[md.at])]), m.cum[pts.length - 2]];
-      g.metro = { m, stopAt, si: 0, state: 'come', wait: 0, yuna: false, alpha: 0, sp, mids: mp.middle.map(md => T.SPOT_BY_ID[md.id]), speed: Math.max(300, (stopAt[stopAt.length - 1] - stopAt[0]) / 7) };
-      g.route = { pts: mp.pts, col: '#0ea5e9' };
+      const stopAt = [m.cum[1], ...mp.middle.map(md => m.cum[1 + mp.pts.indexOf(mp.rail.pts[md.at])]), m.cum[pts.length - 2]];
+      g.metro = { col: mp.rail.color, m, stopAt, si: 0, state: 'come', wait: 0, yuna: false, alpha: 0, sp, mids: mp.middle.map(md => T.SPOT_BY_ID[md.id]), speed: Math.max(300, (stopAt[stopAt.length - 1] - stopAt[0]) / 7) };
+      g.route = { pts: mp.pts, col: mp.rail.color };
     }, spd.walk * 0.6, 1.2);
   };
   // 🚌 버스: 정류장에 서는 버스를 모두 보여 준다 (가는 버스 → 갈아타는 버스 → 안 가는 버스)
@@ -641,7 +674,7 @@ export default function TownGame({ audio, speak }) {
     const g = G.current; if (!g) return;
     if (g.mode === 'card') { g.mode = 'idle'; sync({ card: null }); }
     if (g.mode !== 'idle' || g.at === 'home') return;
-    if (T.id !== 'sanbon') { crossCar('home'); return; }   // 안양에서는 아빠 차로 산본 집까지
+    if (T.id !== 'sanbon') { crossCar('home'); return; }   // 안양에서는 아빠 차로 군포 집까지
     g.sel = 'home'; goCar();
   };
   const replay = () => { const g = G.current; if (g && g.lastLine) say(g.lastLine); };

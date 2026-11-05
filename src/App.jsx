@@ -4702,7 +4702,7 @@ export default function App() {
           {activeTab === 'kitchen' && <KitchenGame audio={audioEngine} speak={speakNaturalKorean} />}
           {/* ===== 🛒 동물 마을 가게 (ShopGame.jsx) ===== */}
           {activeTab === 'shop' && <ShopGame audio={audioEngine} speak={speakNaturalKorean} />}
-          {/* ===== 🚗 우리 동네 산본 (TownGame.jsx) ===== */}
+          {/* ===== 🚗 우리 동네 군포 (TownGame.jsx) ===== */}
           {activeTab === 'town' && <TownGame audio={audioEngine} speak={speakNaturalKorean} />}
           {activeTab === 'story' && (
             <StoryBook

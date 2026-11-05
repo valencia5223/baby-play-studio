@@ -161,22 +161,23 @@ function makeTown(def) {
   const canBus = (fromStops, dest) => !!dest.stops.length && busBoard(fromStops, dest).some(x => x.ok);
 
   // ── 지하철 (동네 안: 4호선 역끼리) ──
-  const METRO_RAIL_IDX = RAILS[0].stations;   // 역 id → RAILS[0].pts 안 위치
-  const METRO_STATIONS = Object.keys(METRO_RAIL_IDX);
+  // 역끼리: 두 역이 같은 노선(4호선·1호선)에 있으면 그 철길로
+  const METRO_STATIONS = [...new Set(RAILS.flatMap(rl => Object.keys(rl.stations)))];
   function metroPath(fromId, toId) {
-    const a = METRO_RAIL_IDX[fromId], b = METRO_RAIL_IDX[toId], pts = RAILS[0].pts;
-    if (a == null || b == null || a === b) return null;
+    const rl = RAILS.find(r => r.stations[fromId] != null && r.stations[toId] != null);
+    if (!rl) return null;
+    const idx = rl.stations, a = idx[fromId], b = idx[toId], pts = rl.pts;
+    if (a === b) return null;
     const seg = a < b ? pts.slice(a, b + 1) : pts.slice(b, a + 1).reverse();
-    const stops = METRO_STATIONS.filter(id => { const k = METRO_RAIL_IDX[id]; return (k > Math.min(a, b) && k < Math.max(a, b)); });
-    if (a > b) stops.reverse();
-    return { pts: seg, middle: stops.map(id => ({ id, at: METRO_RAIL_IDX[id] })), dir: a < b ? 1 : -1 };
+    const stops = Object.keys(idx).filter(id => { const k = idx[id]; return (k > Math.min(a, b) && k < Math.max(a, b)); }).sort((x, y) => (a < b ? idx[x] - idx[y] : idx[y] - idx[x]));
+    return { pts: seg, rail: rl, middle: stops.map(id => ({ id, at: idx[id] })), dir: a < b ? 1 : -1 };
   }
   // 옆 동네 이정표 자리 (누르면 그 동네로)
   const GATES = Object.fromEntries(Object.entries(def.gates).map(([to, [su, sv]]) => [to, { sign: { u: su, v: sv } }]));
   // 온 동네 지도(WORLD) 안에서 이 동네 지도의 자리: 산본 지도 크기를 1 로 본 왼쪽 위 모서리
   const off = { u: (BOX.x0 - WORLD_REF.x0) / (WORLD_REF.x1 - WORLD_REF.x0), v: (WORLD_REF.y1 - BOX.y1) / (WORLD_REF.y1 - WORLD_REF.y0) };
 
-  return { id: def.id, name: def.name, hills: def.hills, river: def.river ? def.river.map(([x, y]) => uv(x, y)) : null, home: def.home, carEntry: def.carEntry, off,
+  return { id: def.id, name: def.name, areas: def.areas || [], hills: def.hills, river: def.river ? def.river.map(([x, y]) => uv(x, y)) : null, home: def.home, carEntry: def.carEntry, off,
     BOX, uv, meters, TOWN_SPOTS, SPOT_BY_ID, RAILS, NODES, EDGES, roadPath, HOME_STOPS, shortStop, nodeOfStop, stopsAtNode, ALL_ROUTES, busBoard, canBus,
     METRO_STATIONS, metroPath, GATES };
 }
@@ -187,14 +188,16 @@ const ANYANG_HILLS = [[0.0, 0.08, 0.1, 0.14], [0.06, -0.02, 0.12, 0.08], [0.98, 
 
 export const TOWNS = {
   sanbon: makeTown({
-    id: 'sanbon', name: '산본', bus: BUS_SANBON, spots: SPOT_LIST, hills: SANBON_HILLS, home: 'home',
+    id: 'sanbon', name: '군포', bus: BUS_SANBON, spots: SPOT_LIST, hills: SANBON_HILLS, home: 'home',
+    areas: [{ name: '당동·당정동', at: [0.86, 0.975] }],   // 지도 위 동네 이름 (산본 옆 당동·당정동)
     rails: [
       // 4호선: 수리산역(2) → 산본역(4) → 금정역(6) → 안양 쪽(7)
       { id: 4, pts: [[126.9190, 37.3380], [126.9230, 37.3450], [126.9254, 37.3500], [126.9290, 37.3545], [126.9331, 37.3584], [126.9392, 37.3648], [126.9432, 37.3720], [126.9460, 37.3780]],
         stations: { surisanStn: 2, sanbonStn: 4, geumjeongStn: 6 }, ends: { anyang: 7 }, arrive: { anyang: 'sanbonStn' } },
       // 1호선: 금정역(3) → 안양 쪽(4)
-      { id: 1, pts: [[126.9510, 37.3380], [126.9480, 37.3560], [126.9450, 37.3660], [126.9432, 37.3720], [126.9405, 37.3780]],
-        stations: { geumjeongStn: 3 }, ends: { anyang: 4 }, arrive: { anyang: 'geumjeongStn' } }
+      // 1호선: 의왕 쪽 → 당정역(1) → 군포역(2) → 금정역(4) → 안양 쪽(5)
+      { id: 1, pts: [[126.9500, 37.3330], [126.9487, 37.3441], [126.9483, 37.3535], [126.9450, 37.3660], [126.9432, 37.3720], [126.9405, 37.3780]],
+        stations: { dangjeongStn: 1, gunpoStn: 2, geumjeongStn: 4 }, ends: { anyang: 5 }, arrive: { anyang: 'geumjeongStn' } }
     ],
     gates: { anyang: [0.94, 0.06] },                 // '안양' 이정표 자리 (북동쪽 끝)
     carEntry: { anyang: 'home' }                     // 안양에서 아빠 차로 오면 유나집으로
@@ -211,8 +214,8 @@ export const TOWNS = {
       { id: 1, pts: [[126.9405, 37.3780], [126.9353, 37.3846], [126.9290, 37.3930], [126.9228, 37.4010], [126.9165, 37.4110]],
         stations: { anyangStn: 3 }, ends: { sanbon: 0 }, arrive: { sanbon: 'anyangStn' } }
     ],
-    gates: { sanbon: [0.38, 0.95] },                 // '산본' 이정표 자리 (남쪽 끝)
-    carEntry: { sanbon: 'pyeongchonPark' }           // 산본에서 아빠 차로 오면 평촌 중앙공원으로
+    gates: { sanbon: [0.38, 0.95] },                 // '군포' 이정표 자리 (남쪽 끝)
+    carEntry: { sanbon: 'pyeongchonPark' }           // 군포에서 아빠 차로 오면 평촌 중앙공원으로
   })
 };
 export const TOWN_LIST = Object.values(TOWNS);
