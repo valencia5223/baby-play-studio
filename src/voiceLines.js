@@ -3,7 +3,7 @@ import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID,
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
 import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
 import { BASKET_MAX, COUNTER_GOODS, ASK_MAX_N, SHOP_GOODS, BILLS, wonText, TOTAL_MAX } from './shopData.js';
-import { TOWN_LIST, busSpoken } from './townData.js';
+import { TOWN_LIST, busSpoken, TRANSFERS, SPOT_BY_ID } from './townData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -386,7 +386,7 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   });
   lines.push(VOICE.townNeedStation());
   TOWN_LIST.forEach(tw => tw.METRO_STATIONS.forEach(id => lines.push(VOICE.townMetroWalk(tw.SPOT_BY_ID[id]))));
-  const gj = TOWN_LIST[0].SPOT_BY_ID.geumjeongStn; lines.push(VOICE.townMetroTransfer(gj, 1), VOICE.townMetroTransfer(gj, 4));   // 갈아타기는 금정역에서만
+  TRANSFERS.forEach(x => lines.push(VOICE.townMetroTransfer(SPOT_BY_ID[x.id], x.line)));   // 갈아타는 역 (금정·사당)
   COUNTER_GOODS.forEach(a => {
     for (let n = 1; n <= ASK_MAX_N; n++) lines.push(VOICE.shopAsk(a, n));
     lines.push(VOICE.shopFind(a), VOICE.shopFull(a));

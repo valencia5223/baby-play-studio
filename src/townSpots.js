@@ -178,5 +178,28 @@ export const GEUMCHEON_SPOT_LIST = [
   { id: 'hoamsan', name: '호암산', emoji: '⛰️', kind: 'mountain', real: [126.9291, 37.4510], at: [0.88, 0.75],
     desc: '호암산이에요! 관악산 옆 산이에요. 꼭대기에서 야호!' }
 ];
+// 🎓 서울 관악구 (금천 동쪽). 2호선 신림~사당, 4호선 남태령·사당. 버스는 서울시 버스 API
+export const GWANAK_SPOT_LIST = [
+  { id: 'sillimStn', name: '신림역', emoji: '🚉', kind: 'station', lines: ['2'], real: [126.9296, 37.4846], at: [0.04, 0.08], stop: ['신림역'],
+    desc: '신림역이에요! 초록색 2호선 전철이 서요.' },
+  { id: 'bongcheonStn', name: '봉천역', emoji: '🚉', kind: 'station', lines: ['2'], real: [126.9416, 37.4825], at: [0.15, 0.13], stop: ['봉천역'],
+    desc: '봉천역이에요! 초록색 2호선 전철이 서요.' },
+  { id: 'snuStn', name: '서울대입구역', emoji: '🚉', kind: 'station', lines: ['2'], real: [126.9527, 37.4812], at: [0.31, 0.1], stop: ['서울대입구역'],
+    desc: '서울대입구역이에요! 초록색 2호선 전철이 서요.' },
+  { id: 'nakseongdaeStn', name: '낙성대역', emoji: '🚉', kind: 'station', lines: ['2'], real: [126.9637, 37.4770], at: [0.5, 0.2], stop: ['낙성대역'],
+    desc: '낙성대역이에요! 초록색 2호선 전철이 서요.' },
+  { id: 'sadangStn', name: '사당역', emoji: '🚉', kind: 'station', lines: ['2', '4'], real: [126.9817, 37.4766], at: [0.79, 0.22], stop: ['사당역'],
+    desc: '사당역이에요! 초록색 2호선이랑 하늘색 4호선을 갈아탈 수 있어요.' },
+  { id: 'namtaeryeongStn', name: '남태령역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.9880, 37.4656], at: [0.9, 0.47], stop: ['남태령'],
+    desc: '남태령역이에요! 하늘색 4호선 전철이 서요. 고개 넘으면 과천이에요.' },
+  { id: 'gwanakHall', name: '관악구청', emoji: '🏛️', kind: 'hall', real: [126.9520, 37.4781], at: [0.25, 0.3], stop: ['관악구청'],
+    desc: '관악구청이에요! 서울 관악구를 돌보는 건물이에요.' },
+  { id: 'nakseongdae', name: '낙성대공원', emoji: '🌳', kind: 'park', real: [126.9590, 37.4717], at: [0.46, 0.4], stop: ['낙성대'],
+    desc: '낙성대공원이에요! 옛날 강감찬 장군이 태어난 곳이에요. 별이 떨어졌대요!' },
+  { id: 'snu', name: '서울대학교', emoji: '🎓', kind: 'univ', real: [126.9522, 37.4590], at: [0.28, 0.62], stop: ['서울대'],
+    desc: '서울대학교예요! 언니 오빠들이 공부하는 아주 넓은 학교예요.' },
+  { id: 'gwanaksan', name: '관악산', emoji: '⛰️', kind: 'mountain', real: [126.9646, 37.4448], at: [0.52, 0.9],
+    desc: '관악산이에요! 바위가 많은 높은 산이에요. 꼭대기에 연주대가 있어요.' }
+];
 export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST,
-  gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST };
+  gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST, gwanak: GWANAK_SPOT_LIST };

@@ -4,7 +4,7 @@
 //  - 동네마다 버스 노선을 따로 받지만(scripts/update-bus.mjs, 지도 밖 600m 까지), 여기서 정류장·길·노선을 모두 합친다
 //    · 길: 버스 노선 정류장 순서를 이은 선 (가까운 정류장(길 양쪽)은 한 점으로 합침) → 아빠 차·걷기 길찾기
 //    · 노선: 동네마다 잘려 받은 구간을 같은 노선끼리 이어 붙인다 → 동네를 넘어가는 버스도 탄다
-//  - 전철: 4호선·1호선을 노선 하나씩으로 (금정역에서 갈아타기)
+//  - 전철: 4호선·1호선·2호선을 노선 하나씩으로 (금정역·사당역에서 갈아타기)
 //  - 장소 at(그림 자리)은 그 동네 버스 지도 범위 안 0~1 (복잡한 곳은 겹치지 않게 조금씩 벌림)
 // ═════════════════════════════════════════════════════════════════════════════
 import BUS_SANBON from './townBus.json';
@@ -15,7 +15,8 @@ import BUS_GUNPOSOUTH from './townBus_gunposouth.json';
 import BUS_SEOKSU from './townBus_seoksu.json';
 import BUS_GWANGMYEONG from './townBus_gwangmyeong.json';
 import BUS_GEUMCHEON from './townBus_geumcheon.json';
-import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST } from './townSpots.js';
+import BUS_GWANAK from './townBus_gwanak.json';
+import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST, GWANAK_SPOT_LIST } from './townSpots.js';
 
 export const BUS_STYLE = {
   '마을버스': { color: '#facc15', dark: '#ca8a04', label: '마을버스', text: '#713f12' },
@@ -30,14 +31,14 @@ export const busStyle = (type) => BUS_STYLE[type] || BUS_STYLE['일반형시내�
 // 음성용 번호: 11-2 → 11 다시 2, P9801(출근) → P9801
 export const busSpoken = (name) => `${String(name).replace(/\(.*?\)/g, '').replace('-', ' 다시 ')}번`;
 export const busLabel = (name) => String(name).replace(/\(.*?\)/g, '');
-export const LINE_COLOR = { 4: ['#38bdf8', '#0284c7'], 1: ['#1e3a8a', '#172554'] };
+export const LINE_COLOR = { 4: ['#38bdf8', '#0284c7'], 1: ['#1e3a8a', '#172554'], 2: ['#22c55e', '#15803d'] };
 
 // ── 온 동네 좌표 ──
 const REF = BUS_SANBON.box, SX = REF.x1 - REF.x0, SY = REF.y1 - REF.y0;
 export const wuv = (lon, lat) => ({ u: (lon - REF.x0) / SX, v: (REF.y1 - lat) / SY });
 const W_M = SX * 88400, H_M = SY * 111000;
 export const meters = (a, b) => Math.hypot((a.u - b.u) * W_M, (a.v - b.v) * H_M);
-const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON];
+const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON, BUS_GWANAK];
 
 // ── 길: 모든 동네 정류장을 합친 점 + 버스 노선을 이은 선 ──
 export const NODES = [];          // {u, v, n}
@@ -142,7 +143,12 @@ const TOWN_DEFS = [
   { id: 'geumcheon', name: '서울 금천', button: '금천(서울)', bus: BUS_GEUMCHEON, spots: GEUMCHEON_SPOT_LIST, label: [0.7, 0.22],
     // 호암산·삼성산 쪽 언덕
     hills: [[0.95, 0.78, 0.1, 0.2], [1.0, 0.5, 0.08, 0.14], [0.78, 0.98, 0.1, 0.06]],
-    areas: [{ name: '독산동', at: [0.4, 0.33] }, { name: '시흥동', at: [0.68, 0.68] }, { name: '가산동', at: [0.2, 0.05] }] }
+    areas: [{ name: '독산동', at: [0.4, 0.33] }, { name: '시흥동', at: [0.68, 0.68] }, { name: '가산동', at: [0.2, 0.05] }] },
+  // 서울 관악구 (금천 동쪽): 2호선이 남부순환로를 따라 지나간다
+  { id: 'gwanak', name: '서울 관악', button: '관악(서울)', bus: BUS_GWANAK, spots: GWANAK_SPOT_LIST, label: [0.66, 0.36],
+    // 관악산(아래)·까치산·남태령 고개 언덕
+    hills: [[0.52, 1.0, 0.22, 0.14], [0.3, 0.92, 0.12, 0.1], [0.75, 0.9, 0.12, 0.12], [1.0, 0.62, 0.08, 0.12], [0.62, 0.55, 0.06, 0.06]],
+    areas: [{ name: '신림동', at: [0.1, 0.38] }, { name: '봉천동', at: [0.18, 0.24] }] }
 ];
 const boxToWorld = (box) => (p) => wuv(box.x0 + p[0] * (box.x1 - box.x0), box.y1 - p[1] * (box.y1 - box.y0));
 // 온 동네의 모든 장소
@@ -260,16 +266,22 @@ export function busBoard(fromStops, dest, pref = null) {
 }
 export const canBus = (fromStops, dest) => !!dest.stops.length && busBoard(fromStops, dest).some(x => x.ok);
 
-// ── 전철 (4호선·1호선, 경도·위도). 금정역에서 서로 갈아탄다 ──
+// ── 전철 (4호선·1호선·2호선, 경도·위도). 금정역(1↔4)·사당역(2↔4)에서 갈아탄다 ──
 export const LINES = [
   { id: 4, pts: [[126.9030, 37.3120], [126.9172, 37.3275], [126.9215, 37.3405], [126.9254, 37.3500], [126.9290, 37.3545], [126.9331, 37.3584], [126.9392, 37.3648], [126.9432, 37.3720], [126.9460, 37.3780],
-    [126.9488, 37.3845], [126.9515, 37.3897], [126.9580, 37.3925], [126.9640, 37.3946], [126.9768, 37.4013], [126.9840, 37.4140], [126.9900, 37.4262], [126.9966, 37.4327], [127.0063, 37.4357], [127.0063, 37.4441], [127.0185, 37.4515]],
-    stations: { daeyamiStn: 1, surisanStn: 3, sanbonStn: 5, geumjeongStn: 7, bumgyeStn: 10, pyeongchonStn: 12, indeogwonStn: 13, govStn: 15, gwacheonStn: 16, grandParkStn: 17, racecourseStn: 18 } },
+    [126.9488, 37.3845], [126.9515, 37.3897], [126.9580, 37.3925], [126.9640, 37.3946], [126.9768, 37.4013], [126.9840, 37.4140], [126.9900, 37.4262], [126.9966, 37.4327], [127.0063, 37.4357], [127.0063, 37.4441], [127.0185, 37.4515],
+    [127.0105, 37.4605], [126.9880, 37.4656], [126.9817, 37.4766], [126.9800, 37.4900]],
+    stations: { daeyamiStn: 1, surisanStn: 3, sanbonStn: 5, geumjeongStn: 7, bumgyeStn: 10, pyeongchonStn: 12, indeogwonStn: 13, govStn: 15, gwacheonStn: 16, grandParkStn: 17, racecourseStn: 18, namtaeryeongStn: 21, sadangStn: 22 } },
   { id: 1, pts: [[126.9520, 37.2900], [126.9503, 37.3209], [126.9500, 37.3330], [126.9487, 37.3441], [126.9483, 37.3535], [126.9450, 37.3660], [126.9432, 37.3720], [126.9405, 37.3780],
     [126.9353, 37.3846], [126.9290, 37.3930], [126.9228, 37.4010], [126.9160, 37.4100], [126.9093, 37.4193], [126.9028, 37.4340], [126.8990, 37.4460], [126.8946, 37.4560], [126.8895, 37.4662], [126.8826, 37.4810], [126.8790, 37.4950]],
-    stations: { uiwangStn: 1, dangjeongStn: 3, gunpoStn: 4, geumjeongStn: 6, anyangStn: 10, gwanakStn: 12, seoksuStn: 13, geumcheonStn: 15, doksanStn: 16, gasanStn: 17 } }
+    stations: { uiwangStn: 1, dangjeongStn: 3, gunpoStn: 4, geumjeongStn: 6, anyangStn: 10, gwanakStn: 12, seoksuStn: 13, geumcheonStn: 15, doksanStn: 16, gasanStn: 17 } },
+  // 2호선 (신대방 쪽 → 신림 → 봉천 → 서울대입구 → 낙성대 → 사당 → 방배 쪽)
+  { id: 2, pts: [[126.9130, 37.4875], [126.9296, 37.4846], [126.9416, 37.4825], [126.9527, 37.4812], [126.9637, 37.4770], [126.9817, 37.4766], [126.9970, 37.4815]],
+    stations: { sillimStn: 1, bongcheonStn: 2, snuStn: 3, nakseongdaeStn: 4, sadangStn: 5 } }
 ].map(l => ({ ...l, color: LINE_COLOR[l.id][0], dark: LINE_COLOR[l.id][1], pts: l.pts.map(([x, y]) => wuv(x, y)) }));
-const TRANSFER = 'geumjeongStn';
+// 갈아타는 역: 두 노선에 같이 있는 역 (금정 1↔4, 사당 2↔4)
+const sharedStn = (A, B) => Object.keys(A.stations).filter(id => B.stations[id] != null);
+export const TRANSFERS = LINES.flatMap(A => LINES.filter(B => B !== A).flatMap(B => sharedStn(A, B).map(id => ({ id, line: B.id }))));
 export const STATION_IDS = [...new Set(LINES.flatMap(l => Object.keys(l.stations)))];
 // 한 노선 구간: 점 목록 + 사이에 서는 역
 export function lineLeg(line, fromId, toId) {
@@ -285,15 +297,18 @@ export function metroPlan(fromSpot, toSpot) {
   let best = null;
   near(fromSpot).forEach(o => near(toSpot).forEach(d => {
     if (o.id === d.id) return;
-    LINES.forEach(A => {
-      if (A.stations[o.id] == null) return;
-      let legs = null;
-      if (A.stations[d.id] != null) legs = [lineLeg(A, o.id, d.id)];
-      else {
-        const B = LINES.find(l => l !== A && l.stations[d.id] != null && l.stations[TRANSFER] != null);
-        if (B && A.stations[TRANSFER] != null && o.id !== TRANSFER && d.id !== TRANSFER) legs = [lineLeg(A, o.id, TRANSFER), lineLeg(B, TRANSFER, d.id)];
-      }
-      if (!legs) return;
+    // 노선을 최대 3개(갈아타기 2번)까지 이어 본다
+    const tries = [];
+    const walk = (line, at, legs, used) => {
+      if (line.stations[d.id] != null && at !== d.id) tries.push([...legs, lineLeg(line, at, d.id)]);
+      if (used.length >= 3) return;
+      LINES.forEach(B => {
+        if (used.includes(B)) return;
+        sharedStn(line, B).forEach(x => { if (x !== at && x !== d.id) walk(B, x, [...legs, lineLeg(line, at, x)], [...used, B]); });
+      });
+    };
+    LINES.forEach(A => { if (A.stations[o.id] != null) walk(A, o.id, [], [A]); });
+    tries.forEach(legs => {
       const cost = (o.d + d.d) / 60 + legs.reduce((n, l) => n + l.pts.length, 0) + (legs.length - 1) * 4;
       if (!best || cost < best.cost) best = { cost, legs, from: SPOT_BY_ID[o.id], to: SPOT_BY_ID[d.id] };
     });

@@ -13,7 +13,9 @@ const KEY_FILE = process.env.DATA_GO_KEY_FILE || path.join(os.homedir(), 'data_g
 const KEY = fs.readFileSync(KEY_FILE, 'utf8').trim();
 const TOWNS = {
   // 서울 금천구 (석수역 위, 1호선 금천구청·독산·가산디지털단지)
-  geumcheon: { out: 'townBus_geumcheon.json', box: { x0: 126.875, x1: 126.935, y0: 37.440, y1: 37.488 } }
+  geumcheon: { out: 'townBus_geumcheon.json', box: { x0: 126.875, x1: 126.935, y0: 37.440, y1: 37.488 } },
+  // 서울 관악구 (금천 동쪽, 2호선 신림~사당·서울대·관악산)
+  gwanak: { out: 'townBus_gwanak.json', box: { x0: 126.935, x1: 126.995, y0: 37.440, y1: 37.488 } }
 };
 const TOWN = process.argv[2] || 'geumcheon';
 if (!TOWNS[TOWN]) throw new Error(`동네 이름: ${Object.keys(TOWNS).join(', ')}`);

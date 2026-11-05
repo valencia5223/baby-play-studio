@@ -6,12 +6,12 @@
 //  - 길·버스 노선은 townData.js (네 동네 경기버스 노선을 이어 붙임, scripts/update-bus.mjs)
 //  - 흐름: 장소 콕 → '무엇을 타고 갈까?'(아빠 차 / 버스 / 지하철 / 걷기) → 이동 → 도착 카드 + 도장
 //    버스: 정류장에 서는 버스 중 목적지에 가는 버스를 골라 타고, 내릴 때 벨을 누른다 (동네를 넘어가는 버스도)
-//    지하철: 가까운 역까지 걸어가 타고, 필요하면 금정역에서 4호선 ↔ 1호선을 갈아탄다
+//    지하철: 가까운 역까지 걸어가 타고, 필요하면 금정역(4↔1)·사당역(4↔2)에서 갈아탄다
 //  - 유나 그림은 그림책(StoryBook.jsx)의 drawYuna 를 그대로 쓴다
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
 import { drawYuna } from './StoryBook.jsx';
-import { TOWNS, TOWN_LIST, ALL_TOWN_SPOTS, SPOT_BY_ID, NODES, EDGES, HILLS, RIVERS, LINES, WORLD_BOUNDS, roadPath, meters, busBoard, canBus, busStyle, busLabel, shortStop, nodeOfStop, stopsAtNode, HOME_STOPS, metroPlan, townAt, loadTown, saveTown } from './townData.js';
+import { TOWNS, TOWN_LIST, ALL_TOWN_SPOTS, SPOT_BY_ID, NODES, EDGES, HILLS, RIVERS, LINES, WORLD_BOUNDS, roadPath, meters, busBoard, canBus, busStyle, busLabel, shortStop, nodeOfStop, stopsAtNode, HOME_STOPS, metroPlan, townAt, loadTown, saveTown, LINE_COLOR } from './townData.js';
 import { VOICE } from './voiceLines.js';
 
 const TAU = Math.PI * 2;
@@ -207,7 +207,7 @@ function drawSpot(c, sp, x, y, u, t, opt) {
     c.fillStyle = '#0284c7'; c.beginPath(); c.moveTo(-w / 2 - u * 0.15, -h); c.lineTo(-w / 2 + u * 0.15, -h - u * 0.4); c.lineTo(w / 2 - u * 0.15, -h - u * 0.4); c.lineTo(w / 2 + u * 0.15, -h); c.fill();
     c.fillStyle = '#93c5fd'; [-0.62, -0.2, 0.22, 0.64].forEach(q => c.fillRect(q * u - u * 0.15, -h * 0.75, u * 0.3, h * 0.35));
     c.fillStyle = '#334155'; rrect(c, -u * 0.2, -h * 0.5, u * 0.4, h * 0.5, u * 0.05); c.fill();
-    const lines = (sp.lines || ['4']).map(n => [n, n === '1' ? '#1e3a8a' : '#0ea5e9']);
+    const lines = (sp.lines || ['4']).map(n => [n, (LINE_COLOR[n] || LINE_COLOR[4])[1]]);
     lines.forEach(([n, col], i) => {
       const bx = (i - (lines.length - 1) / 2) * u * 0.5, by = -h - u * 0.62;
       c.fillStyle = col; c.beginPath(); c.arc(bx, by, u * 0.22, 0, TAU); c.fill(); c.strokeStyle = '#ffffff'; c.lineWidth = u * 0.05; c.stroke();
