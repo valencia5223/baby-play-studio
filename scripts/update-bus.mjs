@@ -2,22 +2,29 @@
 //  - 경기도 버스정보(GBIS) 공공데이터포털 API. 키는 파일에서만 읽고(기본 ~/data_go_key.txt, 또는 DATA_GO_KEY_FILE) 결과 파일에는 넣지 않는다
 //  - 장소마다 근처 정류장(spotStops)을 찾고, 그 정류장들 + 우리집 앞(HOME) + 길 잇기용(EXTRA)을 지나는 모든 노선을 받아
 //    지도 범위(BOX) 안에 있는 구간만 정류장 순서대로 저장한다 (게임은 이 파일만 읽음)
-//  - 실행: npm run bus  (노선이 바뀌었을 때만 가끔)
+//  - 실행: npm run bus  (산본), npm run bus anyang  (옆 동네 안양 → src/townBus_anyang.json). 노선이 바뀌었을 때만 가끔
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { SPOT_LIST } from '../src/townSpots.js';
+import { TOWN_SPOT_LISTS } from '../src/townSpots.js';
 
 const KEY_FILE = process.env.DATA_GO_KEY_FILE || path.join(os.homedir(), 'data_go_key.txt');
 const KEY = fs.readFileSync(KEY_FILE, 'utf8').trim();
-const OUT = new URL('../src/townBus.json', import.meta.url);
-
-// 한라2차아파트입구 + 수리산역(길 양쪽)
-const HOME = [225000140, 225000138, 225000397, 225000398];
-// 철쭉동산·초막골공원·산본시장·산본역 쪽 길도 지도에 그리려고 같이 받는다 (버스 놀이에는 HOME 노선만 씀)
-const EXTRA = [225000092, 225000422, 225000096, 225000052, 225000047];
-export const BOX = { x0: 126.905, x1: 126.952, y0: 37.338, y1: 37.378 };
-const inBox = (s) => s.x > BOX.x0 && s.x < BOX.x1 && s.y > BOX.y0 && s.y < BOX.y1;
+// 동네마다: 지도 범위, 우리집 앞 정류장, 길 잇기용 정류장 (townData.js 의 BOX 와 같아야 한다)
+const TOWNS = {
+  // 한라2차아파트입구 + 수리산역(길 양쪽). 철쭉동산·초막골공원·산본시장·산본역 쪽 길도 지도에 그리려고 EXTRA 를 같이 받는다
+  sanbon: { out: 'townBus.json', box: { x0: 126.905, x1: 126.952, y0: 37.338, y1: 37.378 },
+    home: [225000140, 225000138, 225000397, 225000398], extra: [225000092, 225000422, 225000096, 225000052, 225000047] },
+  // 안양: 산본과 같은 크기(가로 0.047°, 세로 0.040°)로 산본 바로 위(북쪽)에 붙인 지도. 두 지도는 37.378 에서 맞닿는다
+  anyang: { out: 'townBus_anyang.json', box: { x0: 126.9175, x1: 126.9645, y0: 37.378, y1: 37.418 }, home: [], extra: [] }
+};
+const TOWN = process.argv[2] || 'sanbon';
+if (!TOWNS[TOWN]) throw new Error(`동네 이름: ${Object.keys(TOWNS).join(', ')}`);
+const { box: BOX, home: HOME, extra: EXTRA } = TOWNS[TOWN], SPOT_LIST = TOWN_SPOT_LISTS[TOWN];
+const OUT = new URL(`../src/${TOWNS[TOWN].out}`, import.meta.url);
+// 지도 밖으로 조금(약 600m) 더 받아 둔다: 옆 동네와 맞닿는 곳에서 길이 끊기지 않고 이어진다
+const M = 0.006;
+const inBox = (s) => s.x > BOX.x0 - M && s.x < BOX.x1 + M && s.y > BOX.y0 - M && s.y < BOX.y1 + M;
 
 const hide = (s) => String(s).split(KEY).join('***').split(encodeURIComponent(KEY)).join('***');
 const arr = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
@@ -76,4 +83,4 @@ for (const r of routes.values()) {
 out.sort((a, b) => a.name.localeCompare(b.name, 'ko', { numeric: true }));
 const data = { updated: new Date().toISOString().slice(0, 10), box: BOX, home: HOME, spotStops, stops, routes: out };
 fs.writeFileSync(OUT, JSON.stringify(data));
-console.log(`저장: src/townBus.json (노선 ${out.length}개, 정류장 ${Object.keys(stops).length}개)`);
+console.log(`저장: src/${TOWNS[TOWN].out} (노선 ${out.length}개, 정류장 ${Object.keys(stops).length}개)`);

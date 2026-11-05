@@ -31,3 +31,30 @@ export const SPOT_LIST = [
   { id: 'surisan', name: '수리산', emoji: '⛰️', kind: 'mountain', real: [126.9135, 37.3585], at: [0.13, 0.42], link: 'surisanStn',
     desc: '높은 수리산에 왔어요! 다람쥐랑 새들이 살아요. 야호!' }
 ];
+// 금정역은 4호선·1호선 둘 다 선다 (역 그림의 노선 동그라미)
+SPOT_LIST.find(s => s.id === 'geumjeongStn').lines = ['4', '1'];
+
+// 🚇 옆 동네 안양 (범계·평촌·안양역). 지도 범위는 townData.js 의 ANYANG_BOX, 버스는 townBus_anyang.json (npm run bus anyang)
+export const ANYANG_SPOT_LIST = [
+  { id: 'bumgyeStn', name: '범계역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.9515, 37.3897], at: [0.72, 0.66], stop: ['범계역'],
+    desc: '범계역이에요! 파란 4호선 전철이 서요. 산본에서 전철로 금방 와요.' },
+  { id: 'pyeongchonStn', name: '평촌역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.9640, 37.3946], at: [0.93, 0.58], stop: ['평촌역'],
+    desc: '평촌역이에요! 파란 4호선 전철이 서요.' },
+  { id: 'anyangStn', name: '안양역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.9228, 37.4010], at: [0.12, 0.41], stop: ['안양역'],
+    desc: '안양역이에요! 남색 1호선 전철이 서요. 기차도 지나가요.' },
+  { id: 'anyang1st', name: '안양1번가', emoji: '🛍️', kind: 'shops', real: [126.9218, 37.3990], at: [0.11, 0.58], stop: ['안양1번가'],
+    desc: '안양1번가예요! 옷 가게랑 맛있는 가게가 줄줄이 있어요.' },
+  { id: 'bumgyeDept', name: '범계 백화점', emoji: '🏬', kind: 'dept', real: [126.9500, 37.3904], at: [0.6, 0.79], stop: ['롯데백화점'],
+    desc: '범계 백화점이에요! 엘리베이터 타고 장난감 가게에 가 봐요.' },
+  { id: 'anyangHall', name: '안양시청', emoji: '🏛️', kind: 'hall', real: [126.9580, 37.3940], at: [0.82, 0.48], stop: ['안양시청'],
+    desc: '안양시청이에요! 안양을 돌보는 커다란 건물이에요.' },
+  { id: 'pyeongchonPark', name: '평촌 중앙공원', emoji: '⛲', kind: 'park', real: [126.9600, 37.3898], at: [0.87, 0.77], stop: ['중앙공원'],
+    desc: '평촌 중앙공원이에요! 넓은 잔디밭에서 뛰어놀고 분수도 봐요.' },
+  { id: 'bisanEmart', name: '비산 이마트', emoji: '🛒', kind: 'mart', real: [126.9360, 37.3985], at: [0.4, 0.46], stop: ['이마트'],
+    desc: '안양 이마트예요! 카트 타고 장 보러 가요.' },
+  { id: 'stadium', name: '안양종합운동장', emoji: '⚽', kind: 'stadium', real: [126.9505, 37.4027], at: [0.68, 0.35], stop: ['종합운동장'],
+    desc: '안양종합운동장이에요! 축구 선수들이 공을 뻥뻥 차요. 와아, 골인!' },
+  { id: 'anyangStream', name: '안양천', emoji: '🚲', kind: 'river', real: [126.9296, 37.3962], at: [0.28, 0.67],
+    desc: '안양천이에요! 졸졸 흐르는 냇물을 따라 자전거도 타고 산책도 해요.' }
+];
+export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST };

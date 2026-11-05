@@ -3,7 +3,7 @@ import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID,
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
 import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
 import { BASKET_MAX, COUNTER_GOODS, ASK_MAX_N, SHOP_GOODS, BILLS, wonText, TOTAL_MAX } from './shopData.js';
-import { TOWN_SPOTS, ALL_ROUTES, METRO_STATIONS, SPOT_BY_ID as TOWN_SPOT_BY_ID, busSpoken } from './townData.js';
+import { TOWN_LIST, busSpoken } from './townData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -322,7 +322,12 @@ export const VOICE = {
   townMetroGo: (s) => `지하철을 타고 ${toRo(s.name)} 가요! 칙칙폭폭!`,
   townMetroStop: (s) => `이번 역은 ${s.name}입니다.`,
   townArrive: (s) => s.desc,
-  townStampAll: () => '우와! 우리 동네 도장을 모두 모았어요! 최고예요!'
+  townStampAll: () => '우와! 우리 동네 도장을 모두 모았어요! 최고예요!',
+  townCrossAsk: (t) => `옆 동네 ${t.name}에 갈까요? 무엇을 타고 갈까요?`,
+  townCrossCar: (t) => `아빠 차를 타고 ${toRo(t.name)} 가요! 부릉부릉!`,
+  townCrossMetro: (t) => `지하철을 타고 ${toRo(t.name)} 가요! 칙칙폭폭!`,
+  townCrossArrive: (t) => `${t.name}에 왔어요! 어디에 가 볼까요?`,
+  townNeedStation: () => '지하철은 역에서 탈 수 있어요! 먼저 역으로 가 봐요!'
 };
 
 // 앱에서 나올 수 있는 모든 문장 목록 (MP3 생성 스크립트용)
@@ -371,9 +376,13 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   [...SHOP_GOODS, ...COUNTER_GOODS].forEach(a => lines.push(VOICE.shopSoldOut(a), VOICE.shopBuy(a)));
   KITCHEN_GUESTS.forEach(g => lines.push(VOICE.shopWelcome(g)));
   lines.push(VOICE.townWelcome(), VOICE.townPickup(), VOICE.townBell(), VOICE.townTransfer(), VOICE.townBusNextTransfer(), VOICE.townStampAll());
-  METRO_STATIONS.forEach(id => lines.push(VOICE.townMetroGo(TOWN_SPOT_BY_ID[id]), VOICE.townMetroStop(TOWN_SPOT_BY_ID[id])));
-  TOWN_SPOTS.forEach(s => lines.push(VOICE.townHow(s), VOICE.townCarGo(s), VOICE.townWalkGo(s), VOICE.townBusPick(s), VOICE.townBusWrong(s), VOICE.townBusNext(s), VOICE.townBusAlight(s), VOICE.townNoBus(s), VOICE.townArrive(s)));
-  ALL_ROUTES.forEach(r => lines.push(VOICE.townBusOk(r.name)));
+  TOWN_LIST.forEach(tw => {
+    lines.push(VOICE.townCrossAsk(tw), VOICE.townCrossCar(tw), VOICE.townCrossMetro(tw), VOICE.townCrossArrive(tw));
+    tw.METRO_STATIONS.forEach(id => lines.push(VOICE.townMetroGo(tw.SPOT_BY_ID[id]), VOICE.townMetroStop(tw.SPOT_BY_ID[id])));
+    tw.TOWN_SPOTS.forEach(s => lines.push(VOICE.townHow(s), VOICE.townCarGo(s), VOICE.townWalkGo(s), VOICE.townBusPick(s), VOICE.townBusWrong(s), VOICE.townBusNext(s), VOICE.townBusAlight(s), VOICE.townNoBus(s), VOICE.townArrive(s)));
+    tw.ALL_ROUTES.forEach(r => lines.push(VOICE.townBusOk(r.name)));
+  });
+  lines.push(VOICE.townNeedStation());
   COUNTER_GOODS.forEach(a => {
     for (let n = 1; n <= ASK_MAX_N; n++) lines.push(VOICE.shopAsk(a, n));
     lines.push(VOICE.shopFind(a), VOICE.shopFull(a));
