@@ -17,8 +17,10 @@ const TOWNS = {
     home: [225000140, 225000138, 225000397, 225000398], extra: [225000092, 225000422, 225000096, 225000052, 225000047] },
   // 안양: 산본과 같은 크기(가로 0.047°, 세로 0.040°)로 산본 바로 위(북쪽)에 붙인 지도. 두 지도는 37.378 에서 맞닿는다
   anyang: { out: 'townBus_anyang.json', box: { x0: 126.9175, x1: 126.9645, y0: 37.378, y1: 37.418 }, home: [], extra: [] },
-  // 의왕: 군포 바로 동쪽. 아울렛·백운호수까지 담으려고 군포보다 1.32배 넓다 (가로세로 비율은 같음)
-  uiwang: { out: 'townBus_uiwang.json', box: { x0: 126.952, x1: 127.014, y0: 37.335, y1: 37.3878 }, home: [], extra: [] }
+  // 의왕: 군포 동쪽. 북쪽 계원예대·동쪽 아울렛부터 남쪽 의왕역·왕송호수까지
+  uiwang: { out: 'townBus_uiwang.json', box: { x0: 126.940, x1: 127.016, y0: 37.295, y1: 37.397 }, home: [], extra: [] },
+  // 과천: 안양 바로 동쪽(북동쪽). 의왕처럼 군포보다 1.32배 넓다
+  gwacheon: { out: 'townBus_gwacheon.json', box: { x0: 126.9645, x1: 127.0265, y0: 37.397, y1: 37.4498 }, home: [], extra: [] }
 };
 const TOWN = process.argv[2] || 'sanbon';
 if (!TOWNS[TOWN]) throw new Error(`동네 이름: ${Object.keys(TOWNS).join(', ')}`);

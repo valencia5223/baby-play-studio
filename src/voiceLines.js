@@ -327,7 +327,9 @@ export const VOICE = {
   townCrossCar: (t) => `아빠 차를 타고 ${toRo(t.name)} 가요! 부릉부릉!`,
   townCrossMetro: (t) => `지하철을 타고 ${toRo(t.name)} 가요! 칙칙폭폭!`,
   townCrossArrive: (t) => `${t.name}에 왔어요! 어디에 가 볼까요?`,
-  townNeedStation: () => '지하철은 역에서 탈 수 있어요! 먼저 역으로 가 봐요!'
+  townNeedStation: () => '지하철은 역에서 탈 수 있어요! 먼저 역으로 가 봐요!',
+  townMetroWalk: (st) => `가까운 ${st.name}까지 걸어가서 지하철을 타요!`,
+  townMetroTransfer: (st, line) => `${st.name}에서 ${line}호선으로 갈아타요!`
 };
 
 // 앱에서 나올 수 있는 모든 문장 목록 (MP3 생성 스크립트용)
@@ -383,6 +385,8 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
     tw.ALL_ROUTES.forEach(r => lines.push(VOICE.townBusOk(r.name)));
   });
   lines.push(VOICE.townNeedStation());
+  TOWN_LIST.forEach(tw => tw.METRO_STATIONS.forEach(id => lines.push(VOICE.townMetroWalk(tw.SPOT_BY_ID[id]))));
+  const gj = TOWN_LIST[0].SPOT_BY_ID.geumjeongStn; lines.push(VOICE.townMetroTransfer(gj, 1), VOICE.townMetroTransfer(gj, 4));   // 갈아타기는 금정역에서만
   COUNTER_GOODS.forEach(a => {
     for (let n = 1; n <= ASK_MAX_N; n++) lines.push(VOICE.shopAsk(a, n));
     lines.push(VOICE.shopFind(a), VOICE.shopFull(a));

@@ -71,22 +71,53 @@ export const ANYANG_SPOT_LIST = [
     desc: '안양천이에요! 졸졸 흐르는 냇물을 따라 자전거도 타고 산책도 해요.' }
 ];
 
-// 🏞️ 옆 동네 의왕 (군포 동쪽). 동쪽 끝 아울렛·백운호수까지 담으려고 지도가 군포보다 조금 넓다 (townData.js 의 UIWANG box)
+// 🏞️ 옆 동네 의왕 (군포 동쪽). 북쪽 계원예대·동쪽 아울렛부터 남쪽 의왕역·왕송호수까지
 export const UIWANG_SPOT_LIST = [
-  { id: 'lotteOutlet', name: '롯데아울렛', emoji: '🛍️', kind: 'outlet', real: [127.0085, 37.3757], at: [0.9, 0.3], stop: ['롯데프리미엄아울렛'],
+  { id: 'lotteOutlet', name: '롯데아울렛', emoji: '🛍️', kind: 'outlet', real: [127.0085, 37.3757], at: [0.9, 0.23], stop: ['롯데프리미엄아울렛'],
     desc: '롯데아울렛이에요! 예쁜 가게가 마을처럼 모여 있어요. 구경하러 가요!' },
-  { id: 'baegunLake', name: '백운호수', emoji: '🦢', kind: 'lake', real: [127.0040, 37.3825], at: [0.78, 0.1], stop: ['백운호수'],
+  { id: 'baegunLake', name: '백운호수', emoji: '🦢', kind: 'lake', real: [127.0040, 37.3825], at: [0.83, 0.12], stop: ['백운호수'],
     desc: '백운호수예요! 반짝이는 호수를 따라 산책하고 오리배도 봐요.' },
-  { id: 'uiwangLotteMart', name: '의왕 롯데마트', emoji: '🛒', kind: 'mart', real: [126.9728, 37.3798], at: [0.26, 0.21], stop: ['롯데마트'],
+  { id: 'uiwangLotteMart', name: '의왕 롯데마트', emoji: '🛒', kind: 'mart', real: [126.9728, 37.3798], at: [0.4, 0.19], stop: ['롯데마트'],
     desc: '의왕 롯데마트예요! 카트 타고 장 보러 가요.' },
-  { id: 'kaywon', name: '계원예대', emoji: '🎨', kind: 'art', real: [126.9755, 37.3795], at: [0.45, 0.12], stop: ['계원예술대학교'],
+  { id: 'kaywon', name: '계원예대', emoji: '🎨', kind: 'art', real: [126.9755, 37.3795], at: [0.5, 0.14], stop: ['계원예술대학교'],
     desc: '계원예술대학교예요! 언니 오빠들이 그림도 그리고 멋진 것을 만들어요.' },
   // 이마트 의왕점: 오전동 경수대로 262 (의왕서해그랑블 블루스퀘어), 정류장 '서해그랑블'
-  { id: 'uiwangEmart', name: '의왕 이마트', emoji: '🛒', kind: 'mart', real: [126.9740, 37.3497], at: [0.36, 0.6], stop: ['서해그랑블'],
+  { id: 'uiwangEmart', name: '의왕 이마트', emoji: '🛒', kind: 'mart', real: [126.9740, 37.3497], at: [0.45, 0.45], stop: ['서해그랑블'],
     desc: '의왕 이마트예요! 카트 타고 맛있는 것 사러 가요.' },
-  { id: 'uiwangHall', name: '의왕시청', emoji: '🏛️', kind: 'hall', real: [126.9705, 37.3445], at: [0.3, 0.79], stop: ['의왕시청'],
+  { id: 'uiwangHall', name: '의왕시청', emoji: '🏛️', kind: 'hall', real: [126.9705, 37.3445], at: [0.39, 0.52], stop: ['의왕시청'],
     desc: '의왕시청이에요! 의왕을 돌보는 커다란 건물이에요.' },
-  { id: 'gocheonGym', name: '고천 체육관', emoji: '🏀', kind: 'stadium', real: [126.9820, 37.3478], at: [0.5, 0.74], stop: ['고천다목적체육관'],
-    desc: '고천 체육관이에요! 공 던지고 달리기하며 신나게 운동해요.' }
+  { id: 'gocheonGym', name: '고천 체육관', emoji: '🏀', kind: 'stadium', real: [126.9820, 37.3478], at: [0.56, 0.49], stop: ['고천다목적체육관'],
+    desc: '고천 체육관이에요! 공 던지고 달리기하며 신나게 운동해요.' },
+  // ── 의왕 남쪽 (의왕역·왕송호수) ──
+  { id: 'uiwangStn', name: '의왕역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.9503, 37.3209], at: [0.15, 0.74], stop: ['의왕역'],
+    desc: '의왕역이에요! 남색 1호선 전철이 서요. 기차도 쌩쌩 지나가요.' },
+  { id: 'railBike', name: '의왕레일바이크', emoji: '🚲', kind: 'railbike', real: [126.9451, 37.3129], at: [0.08, 0.83], stop: ['레일바이크'],
+    desc: '의왕레일바이크예요! 기찻길 위에서 자전거를 굴리며 호수를 한 바퀴 돌아요!' },
+  { id: 'wangsongLake', name: '왕송호수', emoji: '🦆', kind: 'lake', real: [126.9480, 37.3060], at: [0.17, 0.92], stop: ['왕송호수'],
+    desc: '왕송호수예요! 넓은 호수에 오리랑 새들이 둥둥 떠 있어요.' }
 ];
-export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST };
+
+// 🦒 옆 동네 과천 (안양 북동쪽). 4호선 인덕원~경마공원. 서울대공원·과학관 안에는 버스정류장이 없어 위치는 오픈스트리트맵 기준
+export const GWACHEON_SPOT_LIST = [
+  { id: 'indeogwonStn', name: '인덕원역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.9768, 37.4013], at: [0.2, 0.86], stop: ['인덕원역'],
+    desc: '인덕원역이에요! 파란 4호선을 타면 과천으로 가요.' },
+  { id: 'govStn', name: '정부과천청사역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.9900, 37.4262], at: [0.37, 0.48], stop: ['정부과천청사역'],
+    desc: '정부과천청사역이에요! 파란 4호선 전철이 서요.' },
+  { id: 'gwacheonStn', name: '과천역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.9966, 37.4327], at: [0.5, 0.36], stop: ['과천역'],
+    desc: '과천역이에요! 파란 4호선 전철이 서요.' },
+  { id: 'grandParkStn', name: '대공원역', emoji: '🚉', kind: 'station', lines: ['4'], real: [127.0063, 37.4357], at: [0.68, 0.33],
+    desc: '대공원역이에요! 여기서 내리면 동물원이랑 과학관이 바로 앞이에요.' },
+  { id: 'racecourseStn', name: '경마공원역', emoji: '🚉', kind: 'station', lines: ['4'], real: [127.0063, 37.4441], at: [0.6, 0.07], stop: ['경마공원역'],
+    desc: '경마공원역이에요! 말들이 사는 렛츠런파크가 가까워요.' },
+  { id: 'seoulZoo', name: '서울대공원 동물원', emoji: '🦒', kind: 'zoo', real: [127.0130, 37.4325], at: [0.84, 0.4],
+    desc: '서울대공원 동물원이에요! 코끼리, 기린, 사자를 만나러 가요!' },
+  { id: 'seoulLand', name: '서울랜드', emoji: '🎡', kind: 'themepark', real: [127.0203, 37.4341], at: [0.94, 0.24],
+    desc: '서울랜드예요! 빙글빙글 관람차랑 회전목마를 타요!' },
+  { id: 'scienceMuseum', name: '과천과학관', emoji: '🚀', kind: 'science', real: [127.0062, 37.4385], at: [0.63, 0.2],
+    desc: '국립과천과학관이에요! 로켓이랑 별이랑 공룡을 보러 가요!' },
+  { id: 'letsrun', name: '렛츠런파크', emoji: '🐎', kind: 'horse', real: [127.0140, 37.4460], at: [0.82, 0.09], stop: ['렛츠런파크'],
+    desc: '렛츠런파크예요! 멋진 말들이 다그닥다그닥 달려요!' },
+  { id: 'gwacheonPark', name: '과천 중앙공원', emoji: '⛲', kind: 'park', real: [126.9922, 37.4287], at: [0.5, 0.57], stop: ['과천중앙공원'],
+    desc: '과천 중앙공원이에요! 넓은 잔디밭에서 공놀이해요.' }
+];
+export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST };
