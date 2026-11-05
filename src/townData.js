@@ -8,7 +8,8 @@
 // ═════════════════════════════════════════════════════════════════════════════
 import BUS_SANBON from './townBus.json';
 import BUS_ANYANG from './townBus_anyang.json';
-import { SPOT_LIST, ANYANG_SPOT_LIST } from './townSpots.js';
+import BUS_UIWANG from './townBus_uiwang.json';
+import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST } from './townSpots.js';
 
 export const BUS_STYLE = {
   '마을버스': { color: '#facc15', dark: '#ca8a04', label: '마을버스', text: '#713f12' },
@@ -176,8 +177,10 @@ function makeTown(def) {
   const GATES = Object.fromEntries(Object.entries(def.gates).map(([to, [su, sv]]) => [to, { sign: { u: su, v: sv } }]));
   // 온 동네 지도(WORLD) 안에서 이 동네 지도의 자리: 산본 지도 크기를 1 로 본 왼쪽 위 모서리
   const off = { u: (BOX.x0 - WORLD_REF.x0) / (WORLD_REF.x1 - WORLD_REF.x0), v: (WORLD_REF.y1 - BOX.y1) / (WORLD_REF.y1 - WORLD_REF.y0) };
+  // 배율: 이 동네 지도가 군포 지도보다 몇 배 넓은지 (의왕 1.32배, 나머지 1)
+  const k = { u: (BOX.x1 - BOX.x0) / (WORLD_REF.x1 - WORLD_REF.x0), v: (BOX.y1 - BOX.y0) / (WORLD_REF.y1 - WORLD_REF.y0) };
 
-  return { id: def.id, name: def.name, areas: def.areas || [], hills: def.hills, river: def.river ? def.river.map(([x, y]) => uv(x, y)) : null, home: def.home, carEntry: def.carEntry, off,
+  return { id: def.id, name: def.name, areas: def.areas || [], hills: def.hills, river: def.river ? def.river.map(([x, y]) => uv(x, y)) : null, home: def.home, carEntry: def.carEntry, off, k,
     BOX, uv, meters, TOWN_SPOTS, SPOT_BY_ID, RAILS, NODES, EDGES, roadPath, HOME_STOPS, shortStop, nodeOfStop, stopsAtNode, ALL_ROUTES, busBoard, canBus,
     METRO_STATIONS, metroPath, GATES };
 }
@@ -199,8 +202,8 @@ export const TOWNS = {
       { id: 1, pts: [[126.9500, 37.3330], [126.9487, 37.3441], [126.9483, 37.3535], [126.9450, 37.3660], [126.9432, 37.3720], [126.9405, 37.3780]],
         stations: { dangjeongStn: 1, gunpoStn: 2, geumjeongStn: 4 }, ends: { anyang: 5 }, arrive: { anyang: 'geumjeongStn' } }
     ],
-    gates: { anyang: [0.94, 0.06] },                 // '안양' 이정표 자리 (북동쪽 끝)
-    carEntry: { anyang: 'home' }                     // 안양에서 아빠 차로 오면 유나집으로
+    gates: { anyang: [0.94, 0.06], uiwang: [0.965, 0.33] },   // '안양'(북동쪽 끝)·'의왕'(동쪽 끝) 이정표 자리
+    carEntry: { anyang: 'home', uiwang: 'home' }     // 옆 동네에서 아빠 차로 오면 유나집으로
   }),
   anyang: makeTown({
     id: 'anyang', name: '안양', bus: BUS_ANYANG, spots: ANYANG_SPOT_LIST, hills: ANYANG_HILLS,
@@ -214,8 +217,16 @@ export const TOWNS = {
       { id: 1, pts: [[126.9405, 37.3780], [126.9353, 37.3846], [126.9290, 37.3930], [126.9228, 37.4010], [126.9165, 37.4110]],
         stations: { anyangStn: 3 }, ends: { sanbon: 0 }, arrive: { sanbon: 'anyangStn' } }
     ],
-    gates: { sanbon: [0.38, 0.95] },                 // '군포' 이정표 자리 (남쪽 끝)
-    carEntry: { sanbon: 'pyeongchonPark' }           // 군포에서 아빠 차로 오면 평촌 중앙공원으로
+    gates: { sanbon: [0.38, 0.95], uiwang: [0.95, 0.93] },   // '군포'(남쪽 끝)·'의왕'(남동쪽 끝, 평촌 → 의왕 내손·포일동) 이정표 자리
+    carEntry: { sanbon: 'pyeongchonPark', uiwang: 'pyeongchonPark' }   // 옆 동네에서 아빠 차로 오면 평촌 중앙공원으로
+  }),
+  uiwang: makeTown({
+    id: 'uiwang', name: '의왕', bus: BUS_UIWANG, spots: UIWANG_SPOT_LIST,
+    // 모락산(왼쪽 가운데)·청계산 쪽(오른쪽 위) 언덕
+    hills: [[0.08, 0.4, 0.09, 0.13], [0.14, 0.5, 0.07, 0.09], [1.0, 0.0, 0.1, 0.12], [0.98, 0.95, 0.08, 0.1]],
+    rails: [],
+    gates: { sanbon: [0.04, 0.58], anyang: [0.07, 0.06] },   // '군포'(서쪽 끝)·'안양'(북서쪽 끝, 평촌 쪽) 이정표 자리
+    carEntry: { sanbon: 'baegunLake', anyang: 'uiwangLotteMart' }   // 군포에서 오면 백운호수, 안양에서 오면 롯데마트로
   })
 };
 export const TOWN_LIST = Object.values(TOWNS);
@@ -259,10 +270,10 @@ function makeWorld(buses) {
   }
   return { uv, meters, path };
 }
-export const WORLD = makeWorld([BUS_SANBON, BUS_ANYANG]);
+export const WORLD = makeWorld([BUS_SANBON, BUS_ANYANG, BUS_UIWANG]);
 // 동네 지도 좌표 ↔ 온 동네 좌표
-export const toWorld = (town, p) => ({ u: p.u + town.off.u, v: p.v + town.off.v });
-export const toLocal = (town, p) => ({ u: p.u - town.off.u, v: p.v - town.off.v });
+export const toWorld = (town, p) => ({ u: town.off.u + p.u * town.k.u, v: town.off.v + p.v * town.k.v });
+export const toLocal = (town, p) => ({ u: (p.u - town.off.u) / town.k.u, v: (p.v - town.off.v) / town.k.v });
 // 동네 사이 지하철: 출발 역 → 철길 끝(맞닿는 곳) → 옆 동네 철길 → 내릴 역 (온 동네 좌표)
 export function crossRail(fromTown, toTown, lineId, fromId) {
   const ra = fromTown.RAILS.find(r => r.id === lineId), rb = toTown.RAILS.find(r => r.id === lineId);
@@ -275,7 +286,7 @@ export function crossRail(fromTown, toTown, lineId, fromId) {
 }
 export const ALL_TOWN_SPOTS = TOWN_LIST.flatMap(t => t.TOWN_SPOTS);
 // 옆 동네 (지금은 산본 ↔ 안양)
-export const otherTown = (id) => (id === 'sanbon' ? TOWNS.anyang : TOWNS.sanbon);
+export const otherTown = (id) => (id === 'sanbon' ? TOWNS.anyang : TOWNS.sanbon);   // (예전 코드용) 이제 옆 동네는 이정표마다 다르다
 
 // 산본 (음성 문장·예전 코드용)
 export const TOWN_SPOTS = TOWNS.sanbon.TOWN_SPOTS;

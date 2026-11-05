@@ -70,4 +70,23 @@ export const ANYANG_SPOT_LIST = [
   { id: 'anyangStream', name: '안양천', emoji: '🚲', kind: 'river', real: [126.9296, 37.3962], at: [0.28, 0.67],
     desc: '안양천이에요! 졸졸 흐르는 냇물을 따라 자전거도 타고 산책도 해요.' }
 ];
-export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST };
+
+// 🏞️ 옆 동네 의왕 (군포 동쪽). 동쪽 끝 아울렛·백운호수까지 담으려고 지도가 군포보다 조금 넓다 (townData.js 의 UIWANG box)
+export const UIWANG_SPOT_LIST = [
+  { id: 'lotteOutlet', name: '롯데아울렛', emoji: '🛍️', kind: 'outlet', real: [127.0085, 37.3757], at: [0.9, 0.3], stop: ['롯데프리미엄아울렛'],
+    desc: '롯데아울렛이에요! 예쁜 가게가 마을처럼 모여 있어요. 구경하러 가요!' },
+  { id: 'baegunLake', name: '백운호수', emoji: '🦢', kind: 'lake', real: [127.0040, 37.3825], at: [0.78, 0.1], stop: ['백운호수'],
+    desc: '백운호수예요! 반짝이는 호수를 따라 산책하고 오리배도 봐요.' },
+  { id: 'uiwangLotteMart', name: '의왕 롯데마트', emoji: '🛒', kind: 'mart', real: [126.9728, 37.3798], at: [0.26, 0.21], stop: ['롯데마트'],
+    desc: '의왕 롯데마트예요! 카트 타고 장 보러 가요.' },
+  { id: 'kaywon', name: '계원예대', emoji: '🎨', kind: 'art', real: [126.9755, 37.3795], at: [0.45, 0.12], stop: ['계원예술대학교'],
+    desc: '계원예술대학교예요! 언니 오빠들이 그림도 그리고 멋진 것을 만들어요.' },
+  // 이마트 의왕점: 오전동 경수대로 262 (의왕서해그랑블 블루스퀘어), 정류장 '서해그랑블'
+  { id: 'uiwangEmart', name: '의왕 이마트', emoji: '🛒', kind: 'mart', real: [126.9740, 37.3497], at: [0.36, 0.6], stop: ['서해그랑블'],
+    desc: '의왕 이마트예요! 카트 타고 맛있는 것 사러 가요.' },
+  { id: 'uiwangHall', name: '의왕시청', emoji: '🏛️', kind: 'hall', real: [126.9705, 37.3445], at: [0.3, 0.79], stop: ['의왕시청'],
+    desc: '의왕시청이에요! 의왕을 돌보는 커다란 건물이에요.' },
+  { id: 'gocheonGym', name: '고천 체육관', emoji: '🏀', kind: 'stadium', real: [126.9820, 37.3478], at: [0.5, 0.74], stop: ['고천다목적체육관'],
+    desc: '고천 체육관이에요! 공 던지고 달리기하며 신나게 운동해요.' }
+];
+export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST };
