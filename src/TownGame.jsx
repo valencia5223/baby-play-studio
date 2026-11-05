@@ -152,9 +152,9 @@ function buildTile(ti, tj, L, dpr) {
   });
   // 동네 이름 (크게, 연하게) + 동네 안 구역 이름
   TOWN_LIST.forEach(t => {
-    const x = X(t.label), y = Y(t.label);
     c.textAlign = 'center'; c.textBaseline = 'middle';
-    if (near(x, y, 200 * s)) {
+    const x = t.label ? X(t.label) : 0, y = t.label ? Y(t.label) : 0;
+    if (t.label && near(x, y, 200 * s)) {
       const fs = Math.round(44 * s); c.font = `${fs}px ${JUA}`;
       c.lineWidth = 8 * s; c.strokeStyle = 'rgba(255,255,255,0.8)'; c.strokeText(t.name, x, y); c.fillStyle = 'rgba(15,118,110,0.75)'; c.fillText(t.name, x, y);
     }
@@ -304,6 +304,32 @@ function drawSpot(c, sp, x, y, u, t, opt) {
     c.fillStyle = '#ffffff'; ell(c, 0, -h - u * 0.3, u * 0.17, u * 0.17); c.fill();
     c.strokeStyle = '#1f2937'; c.lineWidth = u * 0.03; c.beginPath(); c.moveTo(0, -h - u * 0.3); c.lineTo(Math.cos(t) * u * 0.12, -h - u * 0.3 + Math.sin(t) * u * 0.12); c.stroke();
     if (uni) { c.font = `${Math.round(u * 0.5)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🎓', w * 0.55, -h - u * 0.2 + Math.sin(t * 2) * u * 0.06); }
+  } else if (K === 'ktx') {
+    // KTX 역: 커다란 유리 지붕 + 쌩 지나가는 고속열차
+    c.fillStyle = '#e0f2fe'; c.beginPath(); c.moveTo(-u * 1.5, 0); c.lineTo(-u * 1.5, -u * 0.8); c.quadraticCurveTo(0, -u * 1.7, u * 1.5, -u * 0.8); c.lineTo(u * 1.5, 0); c.closePath(); c.fill();
+    c.strokeStyle = '#0369a1'; c.lineWidth = u * 0.06; c.stroke();
+    c.strokeStyle = 'rgba(3,105,161,0.4)'; c.lineWidth = u * 0.03; for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(i * u * 0.55, 0); c.lineTo(i * u * 0.55, -u * (1.2 - Math.abs(i) * 0.15)); c.stroke(); }
+    const tx = ((t * 0.5) % 1) * u * 4 - u * 2;
+    c.save(); c.beginPath(); c.rect(-u * 1.5, -u * 0.6, u * 3, u * 0.6); c.clip();
+    c.fillStyle = '#f8fafc'; rrect(c, tx - u * 0.9, -u * 0.48, u * 1.8, u * 0.32, u * 0.16); c.fill();
+    c.fillStyle = '#1d4ed8'; c.fillRect(tx - u * 0.9, -u * 0.3, u * 1.8, u * 0.06);
+    c.fillStyle = '#334155'; for (let k = 0; k < 4; k++) c.fillRect(tx - u * 0.6 + k * u * 0.35, -u * 0.44, u * 0.18, u * 0.1);
+    c.restore();
+  } else if (K === 'cave') {
+    // 동굴: 바위산 + 어두운 입구 + 박쥐
+    c.fillStyle = '#78716c'; c.beginPath(); c.moveTo(-u * 1.5, 0); c.quadraticCurveTo(-u * 1.2, -u * 1.6, 0, -u * 1.7); c.quadraticCurveTo(u * 1.3, -u * 1.6, u * 1.5, 0); c.closePath(); c.fill();
+    c.fillStyle = '#57534e'; ell(c, -u * 0.6, -u * 1.0, u * 0.35, u * 0.2); c.fill(); ell(c, u * 0.7, -u * 0.7, u * 0.3, u * 0.18); c.fill();
+    c.fillStyle = '#1c1917'; c.beginPath(); c.moveTo(-u * 0.5, 0); c.quadraticCurveTo(-u * 0.5, -u * 0.9, 0, -u * 0.95); c.quadraticCurveTo(u * 0.5, -u * 0.9, u * 0.5, 0); c.closePath(); c.fill();
+    ['#fde047', '#f472b6', '#38bdf8'].forEach((col, i) => { c.fillStyle = col; c.globalAlpha = 0.6 + 0.4 * Math.sin(t * 3 + i * 2); ell(c, (i - 1) * u * 0.22, -u * 0.35 - i * u * 0.12, u * 0.06, u * 0.06); c.fill(); });
+    c.globalAlpha = 1; c.font = `${Math.round(u * 0.45)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('🦇', Math.sin(t * 2) * u * 0.6, -u * 1.9 + Math.sin(t * 5) * u * 0.08);
+  } else if (K === 'ikea') {
+    // 파란 큰 상자 건물 + 노란 띠
+    const w = u * 2.4, h = u * 1.2;
+    c.fillStyle = '#1d4ed8'; c.fillRect(-w / 2, -h, w, h); c.fillStyle = '#facc15'; c.fillRect(-w / 2, -h * 0.72, w, h * 0.2);
+    c.fillStyle = '#1d4ed8'; c.font = `${Math.round(u * 0.26)}px ${JUA}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('이케아', 0, -h * 0.62);
+    c.fillStyle = '#93c5fd'; c.fillRect(-u * 0.3, -h * 0.4, u * 0.6, h * 0.4);
+    c.font = `${Math.round(u * 0.5)}px sans-serif`; c.fillText('🛋️', w * 0.55, -u * 0.3);
   } else if (K === 'railbike') {
     // 레일바이크: 둥근 기찻길 위를 달리는 자전거 수레
     c.strokeStyle = '#78716c'; c.lineWidth = u * 0.08; ell(c, 0, -u * 0.45, u * 1.4, u * 0.5); c.stroke();
@@ -530,7 +556,7 @@ const AMB_COLS = ['#ef4444', '#facc15', '#38bdf8', '#a3e635', '#f472b6'];
 const SAFE = 0.24;   // 움직이는 탈것이 화면 가장자리에서 이만큼 안쪽에 있도록 카메라가 따라간다
 const clampCam = (c) => { const b = WORLD_BOUNDS, m = 0.05; return { u: Math.max(b.u0 - m, Math.min(b.u1 - 1 + m, c.u)), v: Math.max(b.v0 - m, Math.min(b.v1 - 1 + m, c.v)) }; };
 const camOn = (p) => clampCam({ u: p.u - 0.5, v: p.v - 0.55 });
-const townCenter = (t) => ({ u: t.label.u, v: t.label.v + 0.35 });
+const townCenter = (t) => t.center;
 
 // ═════════════════════════════════════════════════════════════════════════════
 export default function TownGame({ audio, speak }) {
@@ -651,10 +677,11 @@ export default function TownGame({ audio, speak }) {
       g.yuna.vis = false;
       const pts = [ext(lp[0], lp[1], 0.6), ...lp, ext(lp[lp.length - 1], lp[lp.length - 2], 0.6)];
       const m = mover(pts, 300, 99);
-      const stopAt = [m.cum[1], ...leg.mids.map(md => m.cum[1 + lp.indexOf(md.at)]), m.cum[pts.length - 2]];
+      // 서는 곳은 탈 역·내릴 역뿐. 중간 역은 멈추지 않고 지나가며 '띵동'만 (midAt)
+      const stopAt = [m.cum[1], m.cum[pts.length - 2]], midAt = leg.mids.map(md => m.cum[1 + lp.indexOf(md.at)]);
       g.route = { pts: lp, col: leg.line.color };
-      g.metro = { m, stopAt, si: 0, state: 'come', wait: 0, yuna: false, alpha: 0, col: leg.line.color, mids: leg.mids.map(md => SPOT_BY_ID[md.id]),
-        speed: Math.max(300, (stopAt[stopAt.length - 1] - stopAt[0]) / 8),
+      g.metro = { m, stopAt, midAt, midN: 0, si: 0, state: 'come', wait: 0, yuna: false, alpha: 0, col: leg.line.color,
+        speed: Math.max(300, (stopAt[stopAt.length - 1] - stopAt[0]) / 7),
         onAlight: () => {
           const st = SPOT_BY_ID[leg.to]; g.yuna.p = { ...st.r }; g.yuna.vis = true; g.route = null;
           if (i + 1 < plan.legs.length) { say(VOICE.townMetroTransfer(st, plan.legs[i + 1].line.id)); later(() => startLeg(i + 1), 1400); }
@@ -881,11 +908,11 @@ export default function TownGame({ audio, speak }) {
           if (mt.state === 'come' || mt.state === 'go' || mt.state === 'leave') {
             mt.alpha = mt.state === 'leave' ? Math.max(0, mt.alpha - dt * 0.9) : Math.min(1, mt.alpha + dt * 2.5);
             mt.m.s += (mt.state === 'come' ? 260 : mt.speed) * dt;
+            // 중간 역을 지날 때: 띵동만
+            if (mt.state === 'go' && mt.midAt && mt.midN < mt.midAt.length && mt.m.s >= mt.midAt[mt.midN]) { mt.midN += 1; audio.playXylophone(1568, 0.25); setTimeout(() => audio.playXylophone(1318.5, 0.3), 160); }
             if (mt.state !== 'leave' && mt.m.s >= target) {
               mt.m.s = target; mt.state = 'dwell'; mt.wait = 0;
               audio.playXylophone(1568, 0.3); setTimeout(() => audio.playXylophone(1318.5, 0.4), 160);
-              const mid = mt.si > 0 && mt.si < mt.stopAt.length - 1 ? mt.mids[mt.si - 1] : null;
-              if (mid) say(VOICE.townMetroStop(mid));
             }
             if (mt.state === 'leave' && (mt.alpha <= 0 || mt.m.s >= mt.m.len)) { if (g.metro === mt) g.metro = null; }
           } else if (mt.state === 'dwell') {
@@ -1021,7 +1048,7 @@ export default function TownGame({ audio, speak }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flexShrink: 0 }}>
         <span style={{ fontFamily: JUA, fontSize: '1.05rem', color: '#57534e' }}>🗺️ 동네 보기</span>
-        {TOWN_LIST.map(tw => <button key={tw.id} onClick={() => lookTown(tw.id)} style={{ ...small, background: ui.view === tw.id ? '#0f766e' : '#ffffff', color: ui.view === tw.id ? '#ffffff' : '#0f766e' }}>{tw.name}</button>)}
+        {TOWN_LIST.map(tw => <button key={tw.id} onClick={() => lookTown(tw.id)} style={{ ...small, background: ui.view === tw.id ? '#0f766e' : '#ffffff', color: ui.view === tw.id ? '#ffffff' : '#0f766e' }}>{tw.button}</button>)}
         <button onClick={lookYuna} style={{ ...small, background: '#fce7f3', color: '#be185d' }}>📍 유나 찾기</button>
       </div>
       <div style={{ flex: 1, minHeight: 0, position: 'relative', borderRadius: '26px', overflow: 'hidden', boxShadow: '0 16px 30px -18px rgba(15,118,110,0.5)' }}>

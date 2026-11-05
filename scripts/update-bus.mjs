@@ -20,7 +20,13 @@ const TOWNS = {
   // 의왕: 군포 동쪽. 북쪽 계원예대·동쪽 아울렛부터 남쪽 의왕역·왕송호수까지
   uiwang: { out: 'townBus_uiwang.json', box: { x0: 126.940, x1: 127.016, y0: 37.295, y1: 37.397 }, home: [], extra: [] },
   // 과천: 안양 바로 동쪽(북동쪽). 의왕처럼 군포보다 1.32배 넓다
-  gwacheon: { out: 'townBus_gwacheon.json', box: { x0: 126.9645, x1: 127.0265, y0: 37.397, y1: 37.4498 }, home: [], extra: [] }
+  gwacheon: { out: 'townBus_gwacheon.json', box: { x0: 126.9645, x1: 127.0265, y0: 37.397, y1: 37.4498 }, home: [], extra: [] },
+  // 군포 남쪽 대야미·송부 (산본 아래)
+  gunposouth: { out: 'townBus_gunposouth.json', box: { x0: 126.880, x1: 126.955, y0: 37.300, y1: 37.338 }, home: [], extra: [] },
+  // 안양 북쪽 석수·관악
+  seoksu: { out: 'townBus_seoksu.json', box: { x0: 126.890, x1: 126.935, y0: 37.405, y1: 37.445 }, home: [], extra: [] },
+  // 광명 남쪽 (광명역·광명동굴·이케아)
+  gwangmyeong: { out: 'townBus_gwangmyeong.json', box: { x0: 126.850, x1: 126.895, y0: 37.395, y1: 37.440 }, home: [], extra: [] }
 };
 const TOWN = process.argv[2] || 'sanbon';
 if (!TOWNS[TOWN]) throw new Error(`동네 이름: ${Object.keys(TOWNS).join(', ')}`);

@@ -120,4 +120,45 @@ export const GWACHEON_SPOT_LIST = [
   { id: 'gwacheonPark', name: '과천 중앙공원', emoji: '⛲', kind: 'park', real: [126.9922, 37.4287], at: [0.5, 0.57], stop: ['과천중앙공원'],
     desc: '과천 중앙공원이에요! 넓은 잔디밭에서 공놀이해요.' }
 ];
-export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST };
+
+// 🌾 군포 남쪽 대야미·송부 (산본 아래). 4호선 대야미역
+export const GUNPO_SOUTH_SPOT_LIST = [
+  { id: 'daeyamiStn', name: '대야미역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.9172, 37.3275], at: [0.5, 0.27], stop: ['대야미역'],
+    desc: '대야미역이에요! 파란 4호선 전철이 서요. 논밭이랑 호수가 가까워요.' },
+  { id: 'banwolLake', name: '반월호수', emoji: '🦢', kind: 'lake', real: [126.8924, 37.3215], at: [0.17, 0.44], stop: ['반월호수'],
+    desc: '반월호수예요! 호수 둘레길을 걸으며 물고기랑 오리를 찾아봐요.' },
+  { id: 'galchi', name: '갈치저수지', emoji: '🐟', kind: 'pond', real: [126.9067, 37.3338], at: [0.33, 0.12],
+    desc: '갈치저수지예요! 조용한 저수지에 물고기가 살아요.' },
+  { id: 'dundaeSchool', name: '둔대초등학교', emoji: '🏫', kind: 'school', real: [126.9117, 37.3261], at: [0.37, 0.52], stop: ['둔대초등학교'],
+    desc: '둔대초등학교예요! 형 누나들이 공부하고 운동장에서 뛰어놀아요.' },
+  { id: 'songjeongPark', name: '송정중앙공원', emoji: '⛲', kind: 'park', real: [126.9169, 37.3182], at: [0.56, 0.66],
+    desc: '송부동 송정중앙공원이에요! 잔디밭에서 뛰어놀고 그네도 타요.' },
+  { id: 'gunpoTech', name: '첨단산업단지', emoji: '🏭', kind: 'tower', real: [126.9392, 37.3266], at: [0.8, 0.32], stop: ['군포첨단산업단지'],
+    desc: '군포첨단산업단지예요! 반짝반짝 공장에서 멋진 물건을 만들어요.' }
+];
+
+// ⛰️ 안양 북쪽 석수·관악 (1호선 관악역·석수역, 안양예술공원)
+export const SEOKSU_SPOT_LIST = [
+  { id: 'gwanakStn', name: '관악역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.9093, 37.4193], at: [0.42, 0.62], stop: ['관악역'],
+    desc: '관악역이에요! 남색 1호선 전철이 서요.' },
+  { id: 'seoksuStn', name: '석수역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.9028, 37.4340], at: [0.28, 0.27], stop: ['석수역'],
+    desc: '석수역이에요! 남색 1호선 전철이 서요. 조금만 더 가면 서울이에요.' },
+  { id: 'anyangArtPark', name: '안양예술공원', emoji: '🎨', kind: 'art', real: [126.9146, 37.4167], at: [0.6, 0.72], stop: ['안양예술공원'],
+    desc: '안양예술공원이에요! 계곡 물놀이도 하고 신기한 조각 작품도 구경해요.' },
+  { id: 'seoksuMarket', name: '석수시장', emoji: '🧺', kind: 'market', real: [126.9075, 37.4128], at: [0.38, 0.84], stop: ['석수시장'],
+    desc: '석수시장이에요! 떡이랑 과일이랑 맛있는 게 가득해요.' }
+];
+
+// 🚄 광명 (안양 서쪽 소하·일직동). KTX 광명역·광명동굴
+export const GWANGMYEONG_SPOT_LIST = [
+  { id: 'gwangmyeongStn', name: '광명역', emoji: '🚄', kind: 'ktx', real: [126.8845, 37.4168], at: [0.76, 0.58], stop: ['KTX광명역'],
+    desc: '광명역이에요! 아주 빠른 KTX 기차가 쌩 하고 달려요!' },
+  { id: 'gwangmyeongCave', name: '광명동굴', emoji: '🦇', kind: 'cave', real: [126.8650, 37.4255], at: [0.33, 0.32], stop: ['광명동굴'],
+    desc: '광명동굴이에요! 어둡고 시원한 동굴 안에 반짝이는 불빛이 가득해요.' },
+  { id: 'ikea', name: '이케아', emoji: '🛋️', kind: 'ikea', real: [126.8825, 37.4232], at: [0.64, 0.33], stop: ['이케아'],
+    desc: '이케아예요! 예쁜 침대랑 의자가 잔뜩 있어요. 미트볼도 먹어요!' },
+  { id: 'costco', name: '코스트코', emoji: '🛒', kind: 'mart', real: [126.8865, 37.4209], at: [0.87, 0.4], stop: ['코스트코'],
+    desc: '코스트코예요! 커다란 카트를 밀며 장을 봐요.' }
+];
+export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST,
+  gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST };

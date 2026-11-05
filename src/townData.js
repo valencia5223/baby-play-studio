@@ -11,7 +11,10 @@ import BUS_SANBON from './townBus.json';
 import BUS_ANYANG from './townBus_anyang.json';
 import BUS_UIWANG from './townBus_uiwang.json';
 import BUS_GWACHEON from './townBus_gwacheon.json';
-import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST } from './townSpots.js';
+import BUS_GUNPOSOUTH from './townBus_gunposouth.json';
+import BUS_SEOKSU from './townBus_seoksu.json';
+import BUS_GWANGMYEONG from './townBus_gwangmyeong.json';
+import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST } from './townSpots.js';
 
 export const BUS_STYLE = {
   '마을버스': { color: '#facc15', dark: '#ca8a04', label: '마을버스', text: '#713f12' },
@@ -29,7 +32,7 @@ const REF = BUS_SANBON.box, SX = REF.x1 - REF.x0, SY = REF.y1 - REF.y0;
 export const wuv = (lon, lat) => ({ u: (lon - REF.x0) / SX, v: (REF.y1 - lat) / SY });
 const W_M = SX * 88400, H_M = SY * 111000;
 export const meters = (a, b) => Math.hypot((a.u - b.u) * W_M, (a.v - b.v) * H_M);
-const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON];
+const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG];
 
 // ── 길: 모든 동네 정류장을 합친 점 + 버스 노선을 이은 선 ──
 export const NODES = [];          // {u, v, n}
@@ -116,7 +119,19 @@ const TOWN_DEFS = [
     hills: [[0.2, 0.28, 0.06, 0.06], [0.27, 0.33, 0.05, 0.05], [1.0, 0.05, 0.08, 0.07], [0.98, 0.6, 0.06, 0.08], [0.6, 0.85, 0.08, 0.06]] },
   { id: 'gwacheon', name: '과천', bus: BUS_GWACHEON, spots: GWACHEON_SPOT_LIST, label: [0.28, 0.25],
     // 관악산(왼쪽 위)·청계산(오른쪽) 언덕
-    hills: [[0.0, 0.08, 0.14, 0.18], [0.1, 0.0, 0.12, 0.1], [1.0, 0.62, 0.1, 0.2], [0.96, 0.85, 0.1, 0.14]] }
+    hills: [[0.0, 0.08, 0.14, 0.18], [0.1, 0.0, 0.12, 0.1], [1.0, 0.62, 0.1, 0.2], [0.96, 0.85, 0.1, 0.14]] },
+  // 군포 남쪽 대야미·송부: 이름은 '군포', 동네 보기 버튼은 '대야미·송부'
+  { id: 'gunposouth', name: '군포', button: '대야미·송부', bus: BUS_GUNPOSOUTH, spots: GUNPO_SOUTH_SPOT_LIST, label: null,
+    hills: [[0.02, 0.15, 0.08, 0.2], [0.26, 0.0, 0.07, 0.1], [0.08, 0.85, 0.1, 0.15]],
+    areas: [{ name: '대야미', at: [0.27, 0.66] }, { name: '송부동', at: [0.66, 0.84] }] },
+  // 안양 북쪽 석수·관악: 이름은 '안양', 버튼은 '석수·관악'
+  { id: 'seoksu', name: '안양', button: '석수·관악', bus: BUS_SEOKSU, spots: SEOKSU_SPOT_LIST, label: null,
+    // 삼성산·관악산 쪽 언덕
+    hills: [[0.85, 0.2, 0.15, 0.2], [0.95, 0.5, 0.1, 0.14], [0.62, 0.05, 0.1, 0.08]],
+    areas: [{ name: '석수·관악', at: [0.6, 0.45] }] },
+  { id: 'gwangmyeong', name: '광명', bus: BUS_GWANGMYEONG, spots: GWANGMYEONG_SPOT_LIST, label: [0.45, 0.72],
+    // 가학산(광명동굴 뒤)·구름산 쪽 언덕
+    hills: [[0.18, 0.22, 0.13, 0.14], [0.05, 0.5, 0.08, 0.14], [0.3, 0.02, 0.1, 0.06]] }
 ];
 const boxToWorld = (box) => (p) => wuv(box.x0 + p[0] * (box.x1 - box.x0), box.y1 - p[1] * (box.y1 - box.y0));
 // 온 동네의 모든 장소
@@ -135,7 +150,8 @@ export const TOWN_LIST = TOWN_DEFS.map(def => {
   });
   spots.forEach(o => { ALL_TOWN_SPOTS.push(o); SPOT_BY_ID[o.id] = o; });
   return {
-    id: def.id, name: def.name, box, label: toW(def.label),
+    id: def.id, name: def.name, button: def.button || def.name, box, label: def.label ? toW(def.label) : null,
+    center: wuv((box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2),
     hills: def.hills.map(([u, v, ru, rv]) => { const c = toW([u, v]); return [c.u, c.v, ru * kx, rv * ky]; }),
     river: def.river ? def.river.map(([x, y]) => wuv(x, y)) : null,
     areas: (def.areas || []).map(ar => ({ name: ar.name, p: toW(ar.at) })),
@@ -235,12 +251,12 @@ export const canBus = (fromStops, dest) => !!dest.stops.length && busBoard(fromS
 
 // ── 전철 (4호선·1호선, 경도·위도). 금정역에서 서로 갈아탄다 ──
 export const LINES = [
-  { id: 4, pts: [[126.9190, 37.3380], [126.9230, 37.3450], [126.9254, 37.3500], [126.9290, 37.3545], [126.9331, 37.3584], [126.9392, 37.3648], [126.9432, 37.3720], [126.9460, 37.3780],
+  { id: 4, pts: [[126.9030, 37.3120], [126.9172, 37.3275], [126.9215, 37.3405], [126.9254, 37.3500], [126.9290, 37.3545], [126.9331, 37.3584], [126.9392, 37.3648], [126.9432, 37.3720], [126.9460, 37.3780],
     [126.9488, 37.3845], [126.9515, 37.3897], [126.9580, 37.3925], [126.9640, 37.3946], [126.9768, 37.4013], [126.9840, 37.4140], [126.9900, 37.4262], [126.9966, 37.4327], [127.0063, 37.4357], [127.0063, 37.4441], [127.0185, 37.4515]],
-    stations: { surisanStn: 2, sanbonStn: 4, geumjeongStn: 6, bumgyeStn: 9, pyeongchonStn: 11, indeogwonStn: 12, govStn: 14, gwacheonStn: 15, grandParkStn: 16, racecourseStn: 17 } },
+    stations: { daeyamiStn: 1, surisanStn: 3, sanbonStn: 5, geumjeongStn: 7, bumgyeStn: 10, pyeongchonStn: 12, indeogwonStn: 13, govStn: 15, gwacheonStn: 16, grandParkStn: 17, racecourseStn: 18 } },
   { id: 1, pts: [[126.9520, 37.2900], [126.9503, 37.3209], [126.9500, 37.3330], [126.9487, 37.3441], [126.9483, 37.3535], [126.9450, 37.3660], [126.9432, 37.3720], [126.9405, 37.3780],
-    [126.9353, 37.3846], [126.9290, 37.3930], [126.9228, 37.4010], [126.9165, 37.4110]],
-    stations: { uiwangStn: 1, dangjeongStn: 3, gunpoStn: 4, geumjeongStn: 6, anyangStn: 10 } }
+    [126.9353, 37.3846], [126.9290, 37.3930], [126.9228, 37.4010], [126.9160, 37.4100], [126.9093, 37.4193], [126.9028, 37.4340], [126.8990, 37.4480]],
+    stations: { uiwangStn: 1, dangjeongStn: 3, gunpoStn: 4, geumjeongStn: 6, anyangStn: 10, gwanakStn: 12, seoksuStn: 13 } }
 ].map(l => ({ ...l, color: LINE_COLOR[l.id][0], dark: LINE_COLOR[l.id][1], pts: l.pts.map(([x, y]) => wuv(x, y)) }));
 const TRANSFER = 'geumjeongStn';
 export const STATION_IDS = [...new Set(LINES.flatMap(l => Object.keys(l.stations)))];
