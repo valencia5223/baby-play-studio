@@ -160,5 +160,23 @@ export const GWANGMYEONG_SPOT_LIST = [
   { id: 'costco', name: '코스트코', emoji: '🛒', kind: 'mart', real: [126.8865, 37.4209], at: [0.87, 0.4], stop: ['코스트코'],
     desc: '코스트코예요! 커다란 카트를 밀며 장을 봐요.' }
 ];
+
+// 🏙️ 서울 금천구 (석수역 위). 버스는 서울시 버스 API (scripts/update-bus-seoul.mjs → townBus_geumcheon.json)
+export const GEUMCHEON_SPOT_LIST = [
+  { id: 'geumcheonStn', name: '금천구청역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.8946, 37.4560], at: [0.3, 0.66], stop: ['금천구청역'],
+    desc: '금천구청역이에요! 남색 1호선 전철이 서요. 여기부터 서울이에요!' },
+  { id: 'doksanStn', name: '독산역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.8895, 37.4662], at: [0.24, 0.45], stop: ['독산역'],
+    desc: '독산역이에요! 남색 1호선 전철이 서요.' },
+  { id: 'gasanStn', name: '가산디지털단지역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.8826, 37.4810], at: [0.13, 0.15], stop: ['가산디지털단지역'],
+    desc: '가산디지털단지역이에요! 1호선이랑 7호선 전철이 서요.' },
+  { id: 'geumcheonHall', name: '금천구청', emoji: '🏛️', kind: 'hall', real: [126.8990, 37.4585], at: [0.43, 0.57], stop: ['금천구청'],
+    desc: '금천구청이에요! 서울 금천구를 돌보는 커다란 건물이에요.' },
+  { id: 'ginkgo', name: '시흥동 은행나무', emoji: '🌳', kind: 'ginkgo', real: [126.9085, 37.4508], at: [0.56, 0.8], stop: ['시흥동은행나무'],
+    desc: '시흥동 은행나무예요! 아주아주 오래된 할아버지 나무예요. 가을엔 노랗게 물들어요.' },
+  { id: 'geumcheonPark', name: '금천체육공원', emoji: '⚽', kind: 'stadium', real: [126.9085, 37.4683], at: [0.56, 0.4], stop: ['금천체육공원'],
+    desc: '금천체육공원이에요! 운동장에서 공 차고 달리기해요.' },
+  { id: 'hoamsan', name: '호암산', emoji: '⛰️', kind: 'mountain', real: [126.9291, 37.4510], at: [0.88, 0.75],
+    desc: '호암산이에요! 관악산 옆 산이에요. 꼭대기에서 야호!' }
+];
 export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST,
-  gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST };
+  gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST };

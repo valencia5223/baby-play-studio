@@ -9,6 +9,7 @@
     "build": "vite build",
     "update-lotto": "node scripts/update-lotto.mjs",
     "bus": "node scripts/update-bus.mjs",
+    "bus-seoul": "node scripts/update-bus-seoul.mjs",
     "preview": "vite preview",
     "voices": "node scripts/generate-voices.mjs",
     "story-voices": "node scripts/generate-story-voices.mjs"

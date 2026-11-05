@@ -14,12 +14,17 @@ import BUS_GWACHEON from './townBus_gwacheon.json';
 import BUS_GUNPOSOUTH from './townBus_gunposouth.json';
 import BUS_SEOKSU from './townBus_seoksu.json';
 import BUS_GWANGMYEONG from './townBus_gwangmyeong.json';
-import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST } from './townSpots.js';
+import BUS_GEUMCHEON from './townBus_geumcheon.json';
+import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST } from './townSpots.js';
 
 export const BUS_STYLE = {
   '마을버스': { color: '#facc15', dark: '#ca8a04', label: '마을버스', text: '#713f12' },
   '일반형시내버스': { color: '#2563eb', dark: '#1e40af', label: '시내버스' },
-  '직행좌석형시내버스': { color: '#ef4444', dark: '#b91c1c', label: '빨간 버스' }
+  '직행좌석형시내버스': { color: '#ef4444', dark: '#b91c1c', label: '빨간 버스' },
+  // 서울 버스 (서울시 버스 API 노선 종류)
+  '서울간선': { color: '#2563eb', dark: '#1e40af', label: '파란 버스' },
+  '서울지선': { color: '#22c55e', dark: '#15803d', label: '초록 버스' },
+  '서울순환': { color: '#facc15', dark: '#ca8a04', label: '노란 버스', text: '#713f12' }
 };
 export const busStyle = (type) => BUS_STYLE[type] || BUS_STYLE['일반형시내버스'];
 // 음성용 번호: 11-2 → 11 다시 2, P9801(출근) → P9801
@@ -32,7 +37,7 @@ const REF = BUS_SANBON.box, SX = REF.x1 - REF.x0, SY = REF.y1 - REF.y0;
 export const wuv = (lon, lat) => ({ u: (lon - REF.x0) / SX, v: (REF.y1 - lat) / SY });
 const W_M = SX * 88400, H_M = SY * 111000;
 export const meters = (a, b) => Math.hypot((a.u - b.u) * W_M, (a.v - b.v) * H_M);
-const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG];
+const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON];
 
 // ── 길: 모든 동네 정류장을 합친 점 + 버스 노선을 이은 선 ──
 export const NODES = [];          // {u, v, n}
@@ -113,7 +118,8 @@ const TOWN_DEFS = [
   { id: 'anyang', name: '안양', bus: BUS_ANYANG, spots: ANYANG_SPOT_LIST, label: [0.45, 0.13],
     hills: [[0.0, 0.08, 0.1, 0.14], [0.06, -0.02, 0.12, 0.08]],
     // 안양천 (남쪽 → 북서쪽, 경도·위도)
-    river: [[126.9365, 37.3790], [126.9335, 37.3870], [126.9310, 37.3940], [126.9285, 37.4000], [126.9245, 37.4060], [126.9190, 37.4110]] },
+    river: [[126.9365, 37.3790], [126.9335, 37.3870], [126.9310, 37.3940], [126.9285, 37.4000], [126.9245, 37.4060], [126.9190, 37.4110],
+      [126.9010, 37.4250], [126.8920, 37.4400], [126.8860, 37.4560], [126.8800, 37.4720], [126.8760, 37.4850], [126.8730, 37.5000]] },
   { id: 'uiwang', name: '의왕', bus: BUS_UIWANG, spots: UIWANG_SPOT_LIST, label: [0.68, 0.34],
     // 모락산(왼쪽 위)·청계산(오른쪽 위)·오봉산 쪽 언덕
     hills: [[0.2, 0.28, 0.06, 0.06], [0.27, 0.33, 0.05, 0.05], [1.0, 0.05, 0.08, 0.07], [0.98, 0.6, 0.06, 0.08], [0.6, 0.85, 0.08, 0.06]] },
@@ -131,7 +137,12 @@ const TOWN_DEFS = [
     areas: [{ name: '석수·관악', at: [0.6, 0.45] }] },
   { id: 'gwangmyeong', name: '광명', bus: BUS_GWANGMYEONG, spots: GWANGMYEONG_SPOT_LIST, label: [0.45, 0.72],
     // 가학산(광명동굴 뒤)·구름산 쪽 언덕
-    hills: [[0.18, 0.22, 0.13, 0.14], [0.05, 0.5, 0.08, 0.14], [0.3, 0.02, 0.1, 0.06]] }
+    hills: [[0.18, 0.22, 0.13, 0.14], [0.05, 0.5, 0.08, 0.14], [0.3, 0.02, 0.1, 0.06]] },
+  // 서울 금천구 (석수 위): 버스는 서울시 버스 API
+  { id: 'geumcheon', name: '서울 금천', button: '금천(서울)', bus: BUS_GEUMCHEON, spots: GEUMCHEON_SPOT_LIST, label: [0.7, 0.22],
+    // 호암산·삼성산 쪽 언덕
+    hills: [[0.95, 0.78, 0.1, 0.2], [1.0, 0.5, 0.08, 0.14], [0.78, 0.98, 0.1, 0.06]],
+    areas: [{ name: '독산동', at: [0.4, 0.33] }, { name: '시흥동', at: [0.68, 0.68] }, { name: '가산동', at: [0.2, 0.05] }] }
 ];
 const boxToWorld = (box) => (p) => wuv(box.x0 + p[0] * (box.x1 - box.x0), box.y1 - p[1] * (box.y1 - box.y0));
 // 온 동네의 모든 장소
@@ -255,8 +266,8 @@ export const LINES = [
     [126.9488, 37.3845], [126.9515, 37.3897], [126.9580, 37.3925], [126.9640, 37.3946], [126.9768, 37.4013], [126.9840, 37.4140], [126.9900, 37.4262], [126.9966, 37.4327], [127.0063, 37.4357], [127.0063, 37.4441], [127.0185, 37.4515]],
     stations: { daeyamiStn: 1, surisanStn: 3, sanbonStn: 5, geumjeongStn: 7, bumgyeStn: 10, pyeongchonStn: 12, indeogwonStn: 13, govStn: 15, gwacheonStn: 16, grandParkStn: 17, racecourseStn: 18 } },
   { id: 1, pts: [[126.9520, 37.2900], [126.9503, 37.3209], [126.9500, 37.3330], [126.9487, 37.3441], [126.9483, 37.3535], [126.9450, 37.3660], [126.9432, 37.3720], [126.9405, 37.3780],
-    [126.9353, 37.3846], [126.9290, 37.3930], [126.9228, 37.4010], [126.9160, 37.4100], [126.9093, 37.4193], [126.9028, 37.4340], [126.8990, 37.4480]],
-    stations: { uiwangStn: 1, dangjeongStn: 3, gunpoStn: 4, geumjeongStn: 6, anyangStn: 10, gwanakStn: 12, seoksuStn: 13 } }
+    [126.9353, 37.3846], [126.9290, 37.3930], [126.9228, 37.4010], [126.9160, 37.4100], [126.9093, 37.4193], [126.9028, 37.4340], [126.8990, 37.4460], [126.8946, 37.4560], [126.8895, 37.4662], [126.8826, 37.4810], [126.8790, 37.4950]],
+    stations: { uiwangStn: 1, dangjeongStn: 3, gunpoStn: 4, geumjeongStn: 6, anyangStn: 10, gwanakStn: 12, seoksuStn: 13, geumcheonStn: 15, doksanStn: 16, gasanStn: 17 } }
 ].map(l => ({ ...l, color: LINE_COLOR[l.id][0], dark: LINE_COLOR[l.id][1], pts: l.pts.map(([x, y]) => wuv(x, y)) }));
 const TRANSFER = 'geumjeongStn';
 export const STATION_IDS = [...new Set(LINES.flatMap(l => Object.keys(l.stations)))];

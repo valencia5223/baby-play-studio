@@ -416,6 +416,19 @@ function drawSpot(c, sp, x, y, u, t, opt) {
     c.strokeStyle = '#64748b'; c.lineWidth = u * 0.05; c.beginPath(); c.moveTo(-u * 0.4, -u * 1.7); c.lineTo(-u * 0.4, -u * 2.25); c.stroke();
     c.fillStyle = '#ef4444'; const wv = Math.sin(t * 4) * u * 0.05; c.beginPath(); c.moveTo(-u * 0.4, -u * 2.25); c.lineTo(u * 0.1, -u * 2.12 + wv); c.lineTo(-u * 0.4, -u * 1.98); c.fill();
     c.font = `${Math.round(u * 0.45)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🐿️', u * 0.85, -u * 0.35 + Math.abs(Math.sin(t * 3)) * -u * 0.15);
+  } else if (K === 'ginkgo') {
+    // 오래된 큰 은행나무: 굵은 줄기 + 노란 잎 덩어리 + 팔랑 떨어지는 잎, 둘레에 돌 울타리
+    c.fillStyle = '#94a3b8'; ell(c, 0, -u * 0.05, u * 1.2, u * 0.28); c.fill();
+    c.fillStyle = '#6b4423'; c.beginPath(); c.moveTo(-u * 0.32, 0); c.lineTo(-u * 0.18, -u * 1.2); c.lineTo(u * 0.18, -u * 1.2); c.lineTo(u * 0.32, 0); c.fill();
+    c.strokeStyle = '#6b4423'; c.lineWidth = u * 0.12; c.beginPath(); c.moveTo(0, -u * 1.0); c.lineTo(-u * 0.6, -u * 1.55); c.moveTo(0, -u * 1.1); c.lineTo(u * 0.55, -u * 1.65); c.stroke();
+    [[-0.75, -1.7, 0.62], [0.7, -1.75, 0.6], [0, -2.15, 0.78], [-0.35, -1.45, 0.5], [0.4, -1.42, 0.5]].forEach(([x, y, r], i) => {
+      c.fillStyle = i % 2 ? '#fde047' : '#facc15'; ell(c, u * x, u * y, u * r, u * r * 0.85); c.fill();
+    });
+    c.fillStyle = '#eab308';
+    for (let i = 0; i < 4; i++) {
+      const p = (t * 0.35 + i * 0.25) % 1, lx = u * (-0.9 + i * 0.6) + Math.sin(t * 2 + i) * u * 0.2, ly = -u * 1.4 + p * u * 1.4;
+      c.save(); c.translate(lx, ly); c.rotate(Math.sin(t * 3 + i)); c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, u * 0.12, -Math.PI * 0.85, -Math.PI * 0.15); c.closePath(); c.fill(); c.restore();
+    }
   }
   // 이름표
   const fs = Math.round(u * 0.5);
