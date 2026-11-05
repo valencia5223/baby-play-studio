@@ -40,6 +40,7 @@ import PhoneCall from './PhoneCall.jsx';
 import BirthdayParty from './BirthdayParty.jsx';
 import KitchenGame from './KitchenGame.jsx';
 import ShopGame from './ShopGame.jsx';
+import TownGame from './TownGame.jsx';
 import STORY_VOICE_INDEX from './storyVoiceIndex.json';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
@@ -4365,7 +4366,7 @@ export default function App() {
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav className="bps-nav" style={{
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px',
+          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px',
           padding: '10px 12px', background: '#fffcf8', borderBottom: '1px solid #f3e8dc',
           flexShrink: 0
         }}>
@@ -4375,6 +4376,7 @@ export default function App() {
             { id: 'kitchen', icon: '🍳', label: '요리 놀이', sub: '동물 친구 식당', pastel: '#ffc9c9', soft: '#ffe8e8', ink: '#9b2c2c' },
             { id: 'ocean', icon: '🐠', label: '내 어항', sub: '물고기 키우기', pastel: '#b9e3f5', soft: '#e3f4fb', ink: '#1d5f7a' },
             { id: 'shop', icon: '🛒', label: '동물 마을 가게', sub: '사과 두 개 주세요!', pastel: '#c8ebc0', soft: '#e8f7e4', ink: '#2f6b25' },
+            { id: 'town', icon: '🚗', label: '우리 동네', sub: '아빠 차·버스 타기', pastel: '#b2ece4', soft: '#e0f7f3', ink: '#0f5f56' },
             // 🐮 내 목장·🌱 텃밭 가꾸기는 메뉴에서만 뺐다 (FarmGame.jsx·GardenGame.jsx·저장 데이터는 그대로, 기차 마을이 목장 동물 그림을 빌려 쓰므로 파일은 지우지 말 것. 아래 줄을 되살리면 다시 보인다)
             // { id: 'farm', icon: '🐮', label: '내 목장', sub: '동물 키우기', pastel: '#c8ebc0', soft: '#e8f7e4', ink: '#2f6b25' },
             // { id: 'garden', icon: '🌱', label: '텃밭 가꾸기', sub: '심고 물 주고 수확', pastel: '#e3eeb4', soft: '#f3f8de', ink: '#5a6b16' },
@@ -4423,7 +4425,7 @@ export default function App() {
         {/* 캔버스 영역 (스크롤 메뉴와 비스크롤 고정 메뉴 분기) */}
         <div style={{
           flex: 1,
-          padding: ['paint', 'story', 'phone', 'birthday', 'kitchen'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
+          padding: ['paint', 'story', 'phone', 'birthday', 'kitchen', 'town'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
           position: 'relative',
           background: '#fffdfa',
           overflowY: isScrollableTab ? 'auto' : 'hidden',
@@ -4700,6 +4702,8 @@ export default function App() {
           {activeTab === 'kitchen' && <KitchenGame audio={audioEngine} speak={speakNaturalKorean} />}
           {/* ===== 🛒 동물 마을 가게 (ShopGame.jsx) ===== */}
           {activeTab === 'shop' && <ShopGame audio={audioEngine} speak={speakNaturalKorean} />}
+          {/* ===== 🚗 우리 동네 산본 (TownGame.jsx) ===== */}
+          {activeTab === 'town' && <TownGame audio={audioEngine} speak={speakNaturalKorean} />}
           {activeTab === 'story' && (
             <StoryBook
               audio={audioEngine}

@@ -3,6 +3,7 @@ import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID,
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
 import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
 import { BASKET_MAX, COUNTER_GOODS, ASK_MAX_N, SHOP_GOODS, BILLS, wonText, TOTAL_MAX } from './shopData.js';
+import { TOWN_SPOTS, ALL_ROUTES, METRO_STATIONS, SPOT_BY_ID as TOWN_SPOT_BY_ID, busSpoken } from './townData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -14,6 +15,9 @@ const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱',
 // ═════════════════════════════════════════════════════════════════════════════
 
 // 한글 조사 자동 연결 헬퍼 (은/는, 이/가, 을/를, 과/와)
+// '으로/로': 받침이 없거나 ㄹ 받침이면 '로'
+const toRo = (w) => { const c = w.charCodeAt(w.length - 1) - 0xac00, b = c % 28; return w + (c >= 0 && b > 0 && b !== 8 ? '으로' : '로'); };
+
 export function attachJosa(word, josaType) {
   if (!word) return '';
   const lastChar = word.charCodeAt(word.length - 1);
@@ -299,7 +303,26 @@ export const VOICE = {
     `냠냠 꿀꺽! 달콤한 ${food.name} 맛있어요! 배가 든든해요!`
   ][idx],
   feedWrongFood: (animal, food) => `으응, 이거 말고! ${attachJosa(animal.name, '은/는')} ${attachJosa(food.name, '을/를')} 먹고 싶대요.`,
-  feedWrongAnimal: (animal, food) => `나는 아니에요. ${animal.name}에게 ${attachJosa(food.name, '을/를')} 주세요!`
+  feedWrongAnimal: (animal, food) => `나는 아니에요. ${animal.name}에게 ${attachJosa(food.name, '을/를')} 주세요!`,
+  // 🚗 우리 동네 (TownGame.jsx)
+  townWelcome: () => '우리 동네 산본이에요! 가고 싶은 곳을 콕 눌러 봐요!',
+  townHow: (s) => `${s.name}에 갈까요? 무엇을 타고 갈까요?`,
+  townCarGo: (s) => `아빠 차 출발! 부릉부릉, ${toRo(s.name)} 가요!`,
+  townPickup: () => '아빠 차가 데리러 와요! 부릉부릉!',
+  townWalkGo: (s) => `${s.name}까지 아장아장 걸어가요!`,
+  townBusPick: (s) => `${s.name}에 가는 버스를 찾아봐요!`,
+  townBusWrong: (s) => `이 버스는 ${s.name}에 안 가요. 다른 버스를 찾아봐요!`,
+  townBusOk: (name) => `${busSpoken(name)} 버스를 타요! 카드를 삑!`,
+  townBusNext: (s) => `곧 ${s.name}에 도착해요! 내릴 때는 벨을 눌러요!`,
+  townBell: () => '띵동! 다음 정류장에서 내려요!',
+  townBusAlight: (s) => `${s.name}에서 내려요! 기사님, 고맙습니다!`,
+  townNoBus: (s) => `${s.name}에는 버스가 바로 안 가요. 아빠 차를 타고 가요!`,
+  townTransfer: () => '여기서 다른 버스로 갈아타요! 어떤 버스를 탈까요?',
+  townBusNextTransfer: () => '곧 갈아탈 정류장이에요! 벨을 눌러요!',
+  townMetroGo: (s) => `지하철을 타고 ${toRo(s.name)} 가요! 칙칙폭폭!`,
+  townMetroStop: (s) => `이번 역은 ${s.name}입니다.`,
+  townArrive: (s) => s.desc,
+  townStampAll: () => '우와! 우리 동네 도장을 모두 모았어요! 최고예요!'
 };
 
 // 앱에서 나올 수 있는 모든 문장 목록 (MP3 생성 스크립트용)
@@ -347,6 +370,10 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   BILLS.forEach(v => lines.push(VOICE.shopBill(v)));
   [...SHOP_GOODS, ...COUNTER_GOODS].forEach(a => lines.push(VOICE.shopSoldOut(a), VOICE.shopBuy(a)));
   KITCHEN_GUESTS.forEach(g => lines.push(VOICE.shopWelcome(g)));
+  lines.push(VOICE.townWelcome(), VOICE.townPickup(), VOICE.townBell(), VOICE.townTransfer(), VOICE.townBusNextTransfer(), VOICE.townStampAll());
+  METRO_STATIONS.forEach(id => lines.push(VOICE.townMetroGo(TOWN_SPOT_BY_ID[id]), VOICE.townMetroStop(TOWN_SPOT_BY_ID[id])));
+  TOWN_SPOTS.forEach(s => lines.push(VOICE.townHow(s), VOICE.townCarGo(s), VOICE.townWalkGo(s), VOICE.townBusPick(s), VOICE.townBusWrong(s), VOICE.townBusNext(s), VOICE.townBusAlight(s), VOICE.townNoBus(s), VOICE.townArrive(s)));
+  ALL_ROUTES.forEach(r => lines.push(VOICE.townBusOk(r.name)));
   COUNTER_GOODS.forEach(a => {
     for (let n = 1; n <= ASK_MAX_N; n++) lines.push(VOICE.shopAsk(a, n));
     lines.push(VOICE.shopFind(a), VOICE.shopFull(a));
