@@ -40,7 +40,10 @@ const TOWNS = {
   // 인천 바닷가: 인천 부평·남동 왼쪽 (송도·월미도·영종도). 대부분 바다
   incheonwest: { out: 'townBus_incheonwest.json', box: { x0: 126.360, x1: 126.660, y0: 37.330, y1: 37.530 }, home: [], extra: [] },
   // 인천 북쪽: 계양·서구·청라 ~ 김포공항 (인천·부천 위)
-  incheonnorth: { out: 'townBus_incheonnorth.json', box: { x0: 126.600, x1: 126.800, y0: 37.530, y1: 37.610 }, home: [], extra: [] }
+  incheonnorth: { out: 'townBus_incheonnorth.json', box: { x0: 126.600, x1: 126.800, y0: 37.530, y1: 37.610 }, home: [], extra: [] },
+  // 김포: 인천 서구 위 (한강 하구). 강화도: 김포 서쪽 섬
+  gimpo: { out: 'townBus_gimpo.json', box: { x0: 126.540, x1: 126.800, y0: 37.590, y1: 37.770 }, home: [], extra: [] },
+  ganghwa: { out: 'townBus_ganghwa.json', box: { x0: 126.330, x1: 126.545, y0: 37.580, y1: 37.800 }, home: [], extra: [] }
 };
 const TOWN = process.argv[2] || 'sanbon';
 if (!TOWNS[TOWN]) throw new Error(`동네 이름: ${Object.keys(TOWNS).join(', ')}`);

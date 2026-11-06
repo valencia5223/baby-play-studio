@@ -15,7 +15,11 @@ const TOWNS = {
   // 서울 금천구 (석수역 위, 1호선 금천구청·독산·가산디지털단지)
   geumcheon: { out: 'townBus_geumcheon.json', box: { x0: 126.875, x1: 126.935, y0: 37.440, y1: 37.488 } },
   // 서울 관악구 (금천 동쪽, 2호선 신림~사당·서울대·관악산)
-  gwanak: { out: 'townBus_gwanak.json', box: { x0: 126.935, x1: 126.995, y0: 37.440, y1: 37.488 } }
+  gwanak: { out: 'townBus_gwanak.json', box: { x0: 126.935, x1: 126.995, y0: 37.440, y1: 37.488 } },
+  // 서울 구로·영등포 (금천 위, 부천 오른쪽 위. 양천 목동·여의도까지)
+  guro: { out: 'townBus_guro.json', box: { x0: 126.840, x1: 126.945, y0: 37.488, y1: 37.540 } },
+  // 서울 강서 (구로 위 왼쪽, 김포공항 ~ 마곡 ~ 화곡)
+  gangseo: { out: 'townBus_gangseo.json', box: { x0: 126.770, x1: 126.875, y0: 37.520, y1: 37.590 } }
 };
 const TOWN = process.argv[2] || 'geumcheon';
 if (!TOWNS[TOWN]) throw new Error(`동네 이름: ${Object.keys(TOWNS).join(', ')}`);

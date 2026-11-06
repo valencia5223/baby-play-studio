@@ -23,7 +23,11 @@ import BUS_BUCHEON from './townBus_bucheon.json';
 import BUS_INCHEON from './townBus_incheon.json';
 import BUS_INCHEON_WEST from './townBus_incheonwest.json';
 import BUS_INCHEON_NORTH from './townBus_incheonnorth.json';
-import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST, GWANAK_SPOT_LIST, ANSAN_SPOT_LIST, SIHEUNG_SPOT_LIST, DAEBU_SPOT_LIST, BUCHEON_SPOT_LIST, INCHEON_SPOT_LIST, INCHEON_WEST_SPOT_LIST, INCHEON_NORTH_SPOT_LIST } from './townSpots.js';
+import BUS_GURO from './townBus_guro.json';
+import BUS_GANGSEO from './townBus_gangseo.json';
+import BUS_GIMPO from './townBus_gimpo.json';
+import BUS_GANGHWA from './townBus_ganghwa.json';
+import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST, GWANAK_SPOT_LIST, ANSAN_SPOT_LIST, SIHEUNG_SPOT_LIST, DAEBU_SPOT_LIST, BUCHEON_SPOT_LIST, INCHEON_SPOT_LIST, INCHEON_WEST_SPOT_LIST, INCHEON_NORTH_SPOT_LIST, GURO_SPOT_LIST, GANGSEO_SPOT_LIST, GIMPO_SPOT_LIST, GANGHWA_SPOT_LIST } from './townSpots.js';
 
 export const BUS_STYLE = {
   '마을버스': { color: '#facc15', dark: '#ca8a04', label: '마을버스', text: '#713f12' },
@@ -38,9 +42,9 @@ export const busStyle = (type) => BUS_STYLE[type] || BUS_STYLE['일반형시내�
 // 음성용 번호: 11-2 → 11 다시 2, P9801(출근) → P9801
 export const busSpoken = (name) => `${String(name).replace(/\(.*?\)/g, '').replace('-', ' 다시 ')}번`;
 export const busLabel = (name) => String(name).replace(/\(.*?\)/g, '');
-export const LINE_COLOR = { 4: ['#38bdf8', '#0284c7'], 1: ['#1e3a8a', '#172554'], 2: ['#22c55e', '#15803d'], '서해': ['#a3e635', '#65a30d'], 7: ['#a3a32a', '#6b6b10'], '경인': ['#1e3a8a', '#172554'], '인천1': ['#7ca3d8', '#3f68a8'], '수인': ['#facc15', '#ca8a04'], '공항': ['#3b82f6', '#1d4ed8'] };
+export const LINE_COLOR = { 4: ['#38bdf8', '#0284c7'], 1: ['#1e3a8a', '#172554'], 2: ['#22c55e', '#15803d'], '서해': ['#a3e635', '#65a30d'], 7: ['#a3a32a', '#6b6b10'], '경인': ['#1e3a8a', '#172554'], '인천1': ['#7ca3d8', '#3f68a8'], '수인': ['#facc15', '#ca8a04'], '공항': ['#3b82f6', '#1d4ed8'], 5: ['#a855f7', '#7e22ce'], 9: ['#c8b273', '#8e7a3e'], '김포': ['#e0a800', '#9c7400'] };
 // 안내 문장용 노선 이름: 4 → 4호선, 서해 → 서해선
-const LINE_NAME = { '경인': '1호선', '인천1': '인천 1호선', '공항': '공항철도' };
+const LINE_NAME = { '경인': '1호선', '인천1': '인천 1호선', '공항': '공항철도', '김포': '김포골드라인' };
 export const lineName = (id) => (LINE_NAME[id] ? LINE_NAME[id] : /^\d+$/.test(String(id)) ? `${id}호선` : `${id}선`);   // 경인선은 1호선 갈래
 
 // ── 온 동네 좌표 ──
@@ -48,7 +52,7 @@ const REF = BUS_SANBON.box, SX = REF.x1 - REF.x0, SY = REF.y1 - REF.y0;
 export const wuv = (lon, lat) => ({ u: (lon - REF.x0) / SX, v: (REF.y1 - lat) / SY });
 const W_M = SX * 88400, H_M = SY * 111000;
 export const meters = (a, b) => Math.hypot((a.u - b.u) * W_M, (a.v - b.v) * H_M);
-const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON, BUS_GWANAK, BUS_ANSAN, BUS_SIHEUNG, BUS_DAEBU, BUS_BUCHEON, BUS_INCHEON, BUS_INCHEON_WEST, BUS_INCHEON_NORTH];
+const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON, BUS_GWANAK, BUS_ANSAN, BUS_SIHEUNG, BUS_DAEBU, BUS_BUCHEON, BUS_INCHEON, BUS_INCHEON_WEST, BUS_INCHEON_NORTH, BUS_GURO, BUS_GANGSEO, BUS_GIMPO, BUS_GANGHWA];
 
 // ── 길: 모든 동네 정류장을 합친 점 + 버스 노선을 이은 선 ──
 export const NODES = [];          // {u, v, n}
@@ -130,7 +134,7 @@ const TOWN_DEFS = [
     hills: [[0.0, 0.08, 0.1, 0.14], [0.06, -0.02, 0.12, 0.08]],
     // 안양천 (남쪽 → 북서쪽, 경도·위도)
     river: [[126.9365, 37.3790], [126.9335, 37.3870], [126.9310, 37.3940], [126.9285, 37.4000], [126.9245, 37.4060], [126.9190, 37.4110],
-      [126.9010, 37.4250], [126.8920, 37.4400], [126.8860, 37.4560], [126.8800, 37.4720], [126.8760, 37.4850], [126.8730, 37.5000]] },
+      [126.9010, 37.4250], [126.8920, 37.4400], [126.8860, 37.4560], [126.8800, 37.4720], [126.8760, 37.4850], [126.8730, 37.5000], [126.8715, 37.5150], [126.8745, 37.5300], [126.8800, 37.5430], [126.8850, 37.5530]] },
   { id: 'uiwang', name: '의왕', bus: BUS_UIWANG, spots: UIWANG_SPOT_LIST, label: [0.68, 0.34],
     // 모락산(왼쪽 위)·청계산(오른쪽 위)·오봉산 쪽 언덕
     hills: [[0.2, 0.28, 0.06, 0.06], [0.27, 0.33, 0.05, 0.05], [1.0, 0.05, 0.08, 0.07], [0.98, 0.6, 0.06, 0.08], [0.6, 0.85, 0.08, 0.06]] },
@@ -164,6 +168,36 @@ const TOWN_DEFS = [
     // 노적봉·광덕산(가운데 아래)·수리산 서쪽 언덕
     hills: [[0.55, 0.98, 0.1, 0.12], [0.95, 0.12, 0.08, 0.14], [0.2, 0.95, 0.08, 0.08]],
     areas: [{ name: '고잔동', at: [0.58, 0.68] }, { name: '원곡동', at: [0.2, 0.52] }, { name: '사동', at: [0.72, 0.92] }] },
+  // 서울 구로·영등포 (양천 목동·여의도). 한강이 위쪽으로 흐르고 안양천이 한강으로 들어간다
+  { id: 'guro', name: '서울 구로·영등포', bus: BUS_GURO, spots: GURO_SPOT_LIST, label: [0.3, 0.62],
+    hills: [],
+    // 한강 (행주대교 → 여의도). 바다처럼 넓은 물로 그린다. 선유도는 한강 속 섬
+    sea: [[126.8116, 37.6092], [126.8255, 37.5993], [126.8434, 37.5884], [126.8615, 37.5763], [126.8785, 37.5643], [126.8930, 37.5546], [126.9074, 37.5489], [126.9224, 37.5429], [126.9371, 37.5370], [126.9569, 37.5310], [126.9531, 37.5230], [126.9329, 37.5290], [126.9176, 37.5351], [126.9026, 37.5411], [126.8870, 37.5474], [126.8715, 37.5577], [126.8545, 37.5697], [126.8366, 37.5816], [126.8185, 37.5927], [126.8044, 37.6028]],
+    islands: [[[126.8955, 37.5440], [126.9025, 37.5445], [126.9030, 37.5480], [126.8960, 37.5482]]],
+    areas: [{ name: '구로', at: [0.38, 0.3] }, { name: '영등포', at: [0.62, 0.48] }, { name: '목동', at: [0.28, 0.85] }, { name: '여의도', at: [0.83, 0.42] }] },
+  // 서울 강서 (김포공항·마곡·화곡)
+  { id: 'gangseo', name: '서울 강서', bus: BUS_GANGSEO, spots: GANGSEO_SPOT_LIST, label: [0.55, 0.3],
+    hills: [[0.32, 0.17, 0.035, 0.05], [0.69, 0.6, 0.022, 0.035]],   // 개화산·우장산
+    areas: [{ name: '마곡', at: [0.6, 0.18] }, { name: '화곡동', at: [0.88, 0.75] }, { name: '방화동', at: [0.35, 0.38] }] },
+  // 김포 (한강 하구). 북쪽·서쪽은 논밭이 많은 시골
+  { id: 'gimpo', name: '김포', bus: BUS_GIMPO, spots: GIMPO_SPOT_LIST, label: [0.45, 0.42],
+    hills: [[0.07, 0.2, 0.025, 0.04], [0.36, 0.6, 0.03, 0.04], [0.55, 0.3, 0.03, 0.05]],   // 문수산·가현산 쪽·운유산
+    // 바다·한강 하구: 강화 서쪽 바다 → 북쪽 하구 → 김포 동쪽 한강을 따라 행주대교까지
+    sea: [[126.250, 37.600], [126.250, 37.860], [126.700, 37.860], [126.700, 37.755], [126.722, 37.722], [126.742, 37.692], [126.762, 37.664], [126.785, 37.640], [126.808, 37.618], [126.820, 37.608],
+      [126.808, 37.598], [126.792, 37.611], [126.770, 37.632], [126.748, 37.656], [126.728, 37.684], [126.705, 37.712], [126.672, 37.737], [126.632, 37.757], [126.592, 37.767], [126.560, 37.757],
+      [126.546, 37.732], [126.541, 37.700], [126.545, 37.670], [126.553, 37.648], [126.578, 37.622], [126.603, 37.600]],
+    // 강화대교·초지대교
+    dams: [[[126.547, 37.729], [126.538, 37.730], [126.528, 37.731]], [[126.553, 37.647], [126.535, 37.646], [126.516, 37.645]]],
+    areas: [{ name: '한강신도시', at: [0.48, 0.38] }, { name: '고촌', at: [0.88, 0.95] }, { name: '한강 하구', at: [0.6, 0.97] }] },
+  // 강화도 (섬). 석모도도 옆에
+  { id: 'ganghwa', name: '강화도', bus: BUS_GANGHWA, spots: GANGHWA_SPOT_LIST, label: [0.62, 0.45],
+    hills: [[0.46, 0.84, 0.05, 0.05], [0.45, 0.33, 0.06, 0.05], [0.58, 0.55, 0.05, 0.05]],   // 마니산·고려산·혈구산
+    islands: [
+      [[126.522, 37.778], [126.536, 37.745], [126.531, 37.715], [126.522, 37.690], [126.516, 37.660], [126.512, 37.630], [126.500, 37.600], [126.480, 37.586], [126.450, 37.584], [126.415, 37.590],
+        [126.385, 37.603], [126.360, 37.625], [126.352, 37.655], [126.366, 37.685], [126.360, 37.715], [126.372, 37.750], [126.400, 37.778], [126.440, 37.793], [126.485, 37.792]],
+      // 석모도
+      [[126.330, 37.650], [126.345, 37.668], [126.350, 37.700], [126.338, 37.728], [126.318, 37.722], [126.305, 37.690], [126.310, 37.660]]],
+    areas: [{ name: '강화읍', at: [0.72, 0.25] }, { name: '화도면', at: [0.5, 0.95] }, { name: '석모도', at: [0.05, 0.45] }, { name: '바다', at: [0.15, 0.95] }] },
   // 인천 바닷가 (송도·월미도·영종도). 바다 + 영종도·무의도 + 인천대교·영종대교
   { id: 'incheonwest', name: '인천 바닷가', bus: BUS_INCHEON_WEST, spots: INCHEON_WEST_SPOT_LIST, label: [0.62, 0.6],
     hills: [[0.58, 0.22, 0.03, 0.04]],   // 영종도 백운산
@@ -259,8 +293,8 @@ export const RIVERS = TOWN_LIST.filter(t => t.river).map(t => t.river);
 const toWorldPts = (l) => l.map(([x, y]) => wuv(x, y));
 const SEA_DEFS = TOWN_DEFS.filter(d => d.sea);
 export const SEAS = SEA_DEFS.map(d => toWorldPts(d.sea));
-export const ISLANDS = SEA_DEFS.flatMap(d => (d.islands || []).map(toWorldPts));
-export const DAMS = SEA_DEFS.flatMap(d => (d.dams || []).map(toWorldPts));
+export const ISLANDS = TOWN_DEFS.flatMap(d => (d.islands || []).map(toWorldPts));   // 바다는 옆 동네에 있어도 섬은 이 동네에
+export const DAMS = TOWN_DEFS.flatMap(d => (d.dams || []).map(toWorldPts));
 // 다리·방조제 위 길: 섬으로 가는 버스는 정류장 사이가 멀어(1.3km 넘음) 길이 끊기니, 그림대로 잇고 양 끝을 가까운 길에 붙인다
 DAMS.forEach(dm => {
   const ids = dm.map(p => { NODES.push({ u: p.u, v: p.v, n: 0 }); ADJ.push([]); return NODES.length - 1; });
@@ -304,8 +338,8 @@ const inPoly = (p, poly) => {
 // 바다 위인가 (섬은 땅)
 export const inSea = (p) => SEAS.some(sp => inPoly(p, sp)) && !ISLANDS.some(il => inPoly(p, il));
 // 시골 (아파트 대신 나무·작은 집): 섬, 그리고 안산 남쪽 시화호 아래(화성 송산 쪽)
-const RURAL_V = wuv(0, 37.285).v, RURAL_U = wuv(126.83, 0).u;
-export const isRural = (p) => ISLANDS.some(il => inPoly(p, il)) || (p.v > RURAL_V && p.u < RURAL_U);
+const RURAL_V = wuv(0, 37.285).v, RURAL_U = wuv(126.83, 0).u, RURAL2_V = wuv(0, 37.668).v, RURAL2_U = wuv(126.665, 0).u;
+export const isRural = (p) => ISLANDS.some(il => inPoly(p, il)) || (p.v > RURAL_V && p.u < RURAL_U) || (p.v < RURAL2_V && p.u < RURAL2_U);
 // 이 점은 어느 동네? (동네 버스 지도 범위 가운데에 가장 가까운 곳)
 export function townAt(p) {
   let best = TOWN_LIST[0], bd = Infinity;
@@ -400,17 +434,17 @@ export const LINES = [
     [127.0105, 37.4605], [126.9880, 37.4656], [126.9817, 37.4766], [126.9800, 37.4900]],
     stations: { oidoStn: 0, jeongwangStn: 1, ansanStn: 3, chojiStn: 4, ansanCenterStn: 6, handaeStn: 7, sangroksuStn: 8, daeyamiStn: 10, surisanStn: 12, sanbonStn: 14, geumjeongStn: 16, bumgyeStn: 19, pyeongchonStn: 21, indeogwonStn: 22, govStn: 24, gwacheonStn: 25, grandParkStn: 26, racecourseStn: 27, namtaeryeongStn: 30, sadangStn: 31 } },
   { id: 1, pts: [[126.9520, 37.2900], [126.9503, 37.3209], [126.9500, 37.3330], [126.9487, 37.3441], [126.9483, 37.3535], [126.9450, 37.3660], [126.9432, 37.3720], [126.9405, 37.3780],
-    [126.9353, 37.3846], [126.9290, 37.3930], [126.9228, 37.4010], [126.9160, 37.4100], [126.9093, 37.4193], [126.9028, 37.4340], [126.8990, 37.4460], [126.8946, 37.4560], [126.8895, 37.4662], [126.8826, 37.4810], [126.8790, 37.4950]],
-    stations: { uiwangStn: 1, dangjeongStn: 3, gunpoStn: 4, geumjeongStn: 6, anyangStn: 10, gwanakStn: 12, seoksuStn: 13, geumcheonStn: 15, doksanStn: 16, gasanStn: 17 } },
+    [126.9353, 37.3846], [126.9290, 37.3930], [126.9228, 37.4010], [126.9160, 37.4100], [126.9093, 37.4193], [126.9028, 37.4340], [126.8990, 37.4460], [126.8946, 37.4560], [126.8895, 37.4662], [126.8826, 37.4810], [126.8790, 37.4950], [126.8818, 37.5030], [126.8913, 37.5088], [126.9071, 37.5155], [126.9175, 37.5175], [126.9265, 37.5133], [126.9425, 37.5135]],
+    stations: { uiwangStn: 1, dangjeongStn: 3, gunpoStn: 4, geumjeongStn: 6, anyangStn: 10, gwanakStn: 12, seoksuStn: 13, geumcheonStn: 15, doksanStn: 16, gasanStn: 17, guroStn: 19, sindorimStn: 20, yeongdeungpoStn: 21 } },
   // 2호선 (신대방 쪽 → 신림 → 봉천 → 서울대입구 → 낙성대 → 사당 → 방배 쪽)
-  { id: 2, pts: [[126.9130, 37.4875], [126.9296, 37.4846], [126.9416, 37.4825], [126.9527, 37.4812], [126.9637, 37.4770], [126.9817, 37.4766], [126.9970, 37.4815]],
-    stations: { sillimStn: 1, bongcheonStn: 2, snuStn: 3, nakseongdaeStn: 4, sadangStn: 5 } },
+  { id: 2, pts: [[126.8467, 37.5318], [126.8565, 37.5200], [126.8655, 37.5125], [126.8830, 37.5145], [126.8913, 37.5088], [126.8958, 37.4925], [126.9016, 37.4852], [126.9130, 37.4875], [126.9296, 37.4846], [126.9416, 37.4825], [126.9527, 37.4812], [126.9637, 37.4770], [126.9817, 37.4766], [126.9970, 37.4815]],
+    stations: { kkachisanStn: 0, sindorimStn: 4, sillimStn: 8, bongcheonStn: 9, snuStn: 10, nakseongdaeStn: 11, sadangStn: 12 } },
   // 서해선 (부천 소사 쪽 → 시흥대야 → 신천 → 신현 → 시흥시청 → 시흥능곡 → 달미 → 선부 → 초지 → 원시)
   { id: '서해', pts: [[126.7953, 37.4827], [126.7954, 37.4700], [126.7940, 37.4508], [126.7880, 37.4391], [126.7879, 37.4081], [126.8062, 37.3820], [126.8080, 37.3698], [126.8098, 37.3496], [126.8100, 37.3350], [126.8070, 37.3213], [126.7863, 37.3017]],
     stations: { sosaStn: 0, daeyaStn: 2, sincheonStn: 3, siheungHallStn: 5, chojiStn: 9 } },
   // 1호선 경인선 갈래 (개봉 → 오류동 → 온수 → 역곡 → 소사 → 부천 → 중동 → 송내 → 부개). 소사(서해선)·온수(7호선)에서 갈아탄다
-  { id: '경인', pts: [[126.8580, 37.4945], [126.8395, 37.4946], [126.8240, 37.4921], [126.8115, 37.4853], [126.7953, 37.4827], [126.7829, 37.4842], [126.7646, 37.4866], [126.7530, 37.4877], [126.7400, 37.4890], [126.7238, 37.4897], [126.7076, 37.4834], [126.7027, 37.4718], [126.6936, 37.4648], [126.6810, 37.4648], [126.6687, 37.4660], [126.6566, 37.4667], [126.6430, 37.4687], [126.6327, 37.4751], [126.6167, 37.4766]],
-    stations: { onsuStn: 2, yeokgokStn: 3, sosaStn: 4, bucheonStn: 5, songnaeStn: 7, bupyeongStn: 9, incheonStn: 18 } },
+  { id: '경인', pts: [[126.8818, 37.5030], [126.8705, 37.4965], [126.8580, 37.4945], [126.8395, 37.4946], [126.8240, 37.4921], [126.8115, 37.4853], [126.7953, 37.4827], [126.7829, 37.4842], [126.7646, 37.4866], [126.7530, 37.4877], [126.7400, 37.4890], [126.7238, 37.4897], [126.7076, 37.4834], [126.7027, 37.4718], [126.6936, 37.4648], [126.6810, 37.4648], [126.6687, 37.4660], [126.6566, 37.4667], [126.6430, 37.4687], [126.6327, 37.4751], [126.6167, 37.4766]],
+    stations: { guroStn: 0, onsuStn: 4, yeokgokStn: 5, sosaStn: 6, bucheonStn: 7, songnaeStn: 9, bupyeongStn: 11, incheonStn: 20 } },
   // 7호선 (가산디지털단지 → 철산 → 광명사거리 → 천왕 → 온수 → 까치울 → 부천종합운동장 → 춘의 → 신중동 → 부천시청 → 상동 → 삼산체육관)
   { id: 7, pts: [[126.8826, 37.4810], [126.8680, 37.4760], [126.8547, 37.4792], [126.8387, 37.4866], [126.8251, 37.4921], [126.8062, 37.5063], [126.7975, 37.5050], [126.7871, 37.5036], [126.7760, 37.5029], [126.7634, 37.5045], [126.7531, 37.5057], [126.7426, 37.5065], [126.7317, 37.5067], [126.7215, 37.5082]],
     stations: { gasanStn: 0, onsuStn: 4, bcStadiumStn: 6, bucheonHallStn: 9, bupyeongGuStn: 13 } },
@@ -424,7 +458,18 @@ export const LINES = [
     stations: { oidoStn: 0, soraePort: 3, incheonStn: 13 } },
   // 공항철도 (김포공항 → 계양 → 검암 → 청라국제도시 → 영종대교 → 영종 → 운서 → 공항화물청사 → 인천공항)
   { id: '공항', pts: [[126.8015, 37.5620], [126.7373, 37.5715], [126.6745, 37.5690], [126.6247, 37.5562], [126.5900, 37.5360], [126.5413, 37.5105], [126.4932, 37.4927], [126.4720, 37.4690], [126.4525, 37.4475]],
-    stations: { gimpoAirport: 0, gyeyangStn: 1, cheongnaStn: 3, incheonAirport: 8 } }
+    stations: { gimpoAirport: 0, gyeyangStn: 1, cheongnaStn: 3, incheonAirport: 8 } },
+  // 5호선 (김포공항 → 송정 → 마곡 → 발산 → 우장산 → 화곡 → 까치산 → 신정 → 목동 → 오목교 → 양평 → 영등포구청 → 영등포시장 → 신길 → 여의도 → 여의나루 → 마포)
+  { id: 5, pts: [[126.8015, 37.5620], [126.8115, 37.5612], [126.8255, 37.5602], [126.8375, 37.5585], [126.8360, 37.5485], [126.8405, 37.5415], [126.8467, 37.5318], [126.8560, 37.5250], [126.8648, 37.5260],
+    [126.8750, 37.5245], [126.8855, 37.5258], [126.8960, 37.5248], [126.9050, 37.5228], [126.9175, 37.5175], [126.9243, 37.5216], [126.9325, 37.5270], [126.9460, 37.5395]],
+    stations: { gimpoAirport: 0, balsanStn: 3, hwagokStn: 5, kkachisanStn: 6, ohmokgyoStn: 9, yeouidoStn: 14 } },
+  // 9호선 (김포공항 → 공항시장 → 신방화 → 마곡나루 → 양천향교 → 가양 → 증미 → 등촌 → 염창 → 신목동 → 선유도 → 당산 → 국회의사당 → 여의도 → 샛강 → 노량진)
+  { id: 9, pts: [[126.8015, 37.5620], [126.8105, 37.5636], [126.8165, 37.5675], [126.8271, 37.5668], [126.8418, 37.5682], [126.8545, 37.5615], [126.8610, 37.5580], [126.8690, 37.5505],
+    [126.8750, 37.5470], [126.8828, 37.5440], [126.8935, 37.5380], [126.9025, 37.5345], [126.9178, 37.5280], [126.9243, 37.5216], [126.9290, 37.5175], [126.9425, 37.5135]],
+    stations: { gimpoAirport: 0, magokStn: 3, gayangStn: 5, yeouidoStn: 13 } },
+  // 김포골드라인 (김포공항 → 고촌 → 풍무 → 사우 → 걸포북변 → 운양 → 장기 → 마산 → 구래 → 양촌). 꼬마 무인 전철
+  { id: '김포', pts: [[126.8015, 37.5620], [126.7695, 37.6015], [126.7320, 37.6125], [126.7170, 37.6205], [126.7058, 37.6315], [126.6850, 37.6505], [126.6705, 37.6430], [126.6440, 37.6400], [126.6280, 37.6450], [126.6150, 37.6440]],
+    stations: { gimpoAirport: 0, sawooStn: 3, guraeStn: 8 } }
 ].map(l => ({ ...l, color: LINE_COLOR[l.id][0], dark: LINE_COLOR[l.id][1], pts: l.pts.map(([x, y]) => wuv(x, y)) }));
 // 갈아타는 역: 두 노선에 같이 있는 역 (금정 1↔4, 사당 2↔4, 초지 4↔서해)
 const sharedStn = (A, B) => Object.keys(A.stations).filter(id => B.stations[id] != null);
