@@ -19,7 +19,8 @@ import BUS_GWANAK from './townBus_gwanak.json';
 import BUS_ANSAN from './townBus_ansan.json';
 import BUS_SIHEUNG from './townBus_siheung.json';
 import BUS_DAEBU from './townBus_daebu.json';
-import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST, GWANAK_SPOT_LIST, ANSAN_SPOT_LIST, SIHEUNG_SPOT_LIST, DAEBU_SPOT_LIST } from './townSpots.js';
+import BUS_BUCHEON from './townBus_bucheon.json';
+import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST, GWANAK_SPOT_LIST, ANSAN_SPOT_LIST, SIHEUNG_SPOT_LIST, DAEBU_SPOT_LIST, BUCHEON_SPOT_LIST } from './townSpots.js';
 
 export const BUS_STYLE = {
   '마을버스': { color: '#facc15', dark: '#ca8a04', label: '마을버스', text: '#713f12' },
@@ -34,16 +35,16 @@ export const busStyle = (type) => BUS_STYLE[type] || BUS_STYLE['일반형시내�
 // 음성용 번호: 11-2 → 11 다시 2, P9801(출근) → P9801
 export const busSpoken = (name) => `${String(name).replace(/\(.*?\)/g, '').replace('-', ' 다시 ')}번`;
 export const busLabel = (name) => String(name).replace(/\(.*?\)/g, '');
-export const LINE_COLOR = { 4: ['#38bdf8', '#0284c7'], 1: ['#1e3a8a', '#172554'], 2: ['#22c55e', '#15803d'], '서해': ['#a3e635', '#65a30d'] };
+export const LINE_COLOR = { 4: ['#38bdf8', '#0284c7'], 1: ['#1e3a8a', '#172554'], 2: ['#22c55e', '#15803d'], '서해': ['#a3e635', '#65a30d'], 7: ['#a3a32a', '#6b6b10'], '경인': ['#1e3a8a', '#172554'] };
 // 안내 문장용 노선 이름: 4 → 4호선, 서해 → 서해선
-export const lineName = (id) => (/^\d+$/.test(String(id)) ? `${id}호선` : `${id}선`);
+export const lineName = (id) => (id === '경인' ? '1호선' : /^\d+$/.test(String(id)) ? `${id}호선` : `${id}선`);   // 경인선은 1호선 갈래
 
 // ── 온 동네 좌표 ──
 const REF = BUS_SANBON.box, SX = REF.x1 - REF.x0, SY = REF.y1 - REF.y0;
 export const wuv = (lon, lat) => ({ u: (lon - REF.x0) / SX, v: (REF.y1 - lat) / SY });
 const W_M = SX * 88400, H_M = SY * 111000;
 export const meters = (a, b) => Math.hypot((a.u - b.u) * W_M, (a.v - b.v) * H_M);
-const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON, BUS_GWANAK, BUS_ANSAN, BUS_SIHEUNG, BUS_DAEBU];
+const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON, BUS_GWANAK, BUS_ANSAN, BUS_SIHEUNG, BUS_DAEBU, BUS_BUCHEON];
 
 // ── 길: 모든 동네 정류장을 합친 점 + 버스 노선을 이은 선 ──
 export const NODES = [];          // {u, v, n}
@@ -159,6 +160,11 @@ const TOWN_DEFS = [
     // 노적봉·광덕산(가운데 아래)·수리산 서쪽 언덕
     hills: [[0.55, 0.98, 0.1, 0.12], [0.95, 0.12, 0.08, 0.14], [0.2, 0.95, 0.08, 0.08]],
     areas: [{ name: '고잔동', at: [0.58, 0.68] }, { name: '원곡동', at: [0.2, 0.52] }, { name: '사동', at: [0.72, 0.92] }] },
+  // 부천 (시흥 위, 광명 왼쪽). 경인선(1호선)이 동서로, 7호선이 위쪽으로 지나간다
+  { id: 'bucheon', name: '부천', bus: BUS_BUCHEON, spots: BUCHEON_SPOT_LIST, label: [0.3, 0.72],
+    // 성주산(부천역 남쪽)·거마산(송내 남쪽)·춘덕산(식물원 동쪽)
+    hills: [[0.33, 0.9, 0.07, 0.06], [0.1, 0.88, 0.06, 0.07], [0.86, 0.2, 0.05, 0.06]],
+    areas: [{ name: '중동', at: [0.33, 0.52] }, { name: '상동', at: [0.18, 0.22] }, { name: '소사', at: [0.6, 0.76] }, { name: '오정', at: [0.48, 0.1] }] },
   // 시흥 (안산 위, 광명 왼쪽). 서해선이 남북으로 지나간다
   { id: 'siheung', name: '시흥', bus: BUS_SIHEUNG, spots: SIHEUNG_SPOT_LIST, label: [0.32, 0.6],
     // 소래산(신천역 동쪽)·군자봉(능곡 남쪽)·수암봉·수리산 서쪽(오른쪽 끝, 군포와 사이)
@@ -335,8 +341,14 @@ export const LINES = [
   { id: 2, pts: [[126.9130, 37.4875], [126.9296, 37.4846], [126.9416, 37.4825], [126.9527, 37.4812], [126.9637, 37.4770], [126.9817, 37.4766], [126.9970, 37.4815]],
     stations: { sillimStn: 1, bongcheonStn: 2, snuStn: 3, nakseongdaeStn: 4, sadangStn: 5 } },
   // 서해선 (부천 소사 쪽 → 시흥대야 → 신천 → 신현 → 시흥시청 → 시흥능곡 → 달미 → 선부 → 초지 → 원시)
-  { id: '서해', pts: [[126.7954, 37.4700], [126.7940, 37.4508], [126.7880, 37.4391], [126.7879, 37.4081], [126.8062, 37.3820], [126.8080, 37.3698], [126.8098, 37.3496], [126.8100, 37.3350], [126.8070, 37.3213], [126.7863, 37.3017]],
-    stations: { daeyaStn: 1, sincheonStn: 2, siheungHallStn: 4, chojiStn: 8 } }
+  { id: '서해', pts: [[126.7953, 37.4827], [126.7954, 37.4700], [126.7940, 37.4508], [126.7880, 37.4391], [126.7879, 37.4081], [126.8062, 37.3820], [126.8080, 37.3698], [126.8098, 37.3496], [126.8100, 37.3350], [126.8070, 37.3213], [126.7863, 37.3017]],
+    stations: { sosaStn: 0, daeyaStn: 2, sincheonStn: 3, siheungHallStn: 5, chojiStn: 9 } },
+  // 1호선 경인선 갈래 (개봉 → 오류동 → 온수 → 역곡 → 소사 → 부천 → 중동 → 송내 → 부개). 소사(서해선)·온수(7호선)에서 갈아탄다
+  { id: '경인', pts: [[126.8580, 37.4945], [126.8395, 37.4946], [126.8240, 37.4921], [126.8115, 37.4853], [126.7953, 37.4827], [126.7829, 37.4842], [126.7646, 37.4866], [126.7530, 37.4877], [126.7400, 37.4890]],
+    stations: { onsuStn: 2, yeokgokStn: 3, sosaStn: 4, bucheonStn: 5, songnaeStn: 7 } },
+  // 7호선 (가산디지털단지 → 철산 → 광명사거리 → 천왕 → 온수 → 까치울 → 부천종합운동장 → 춘의 → 신중동 → 부천시청 → 상동 → 삼산체육관)
+  { id: 7, pts: [[126.8826, 37.4810], [126.8680, 37.4760], [126.8547, 37.4792], [126.8387, 37.4866], [126.8251, 37.4921], [126.8062, 37.5063], [126.7975, 37.5050], [126.7871, 37.5036], [126.7760, 37.5029], [126.7634, 37.5045], [126.7531, 37.5057], [126.7426, 37.5065]],
+    stations: { gasanStn: 0, onsuStn: 4, bcStadiumStn: 6, bucheonHallStn: 9 } }
 ].map(l => ({ ...l, color: LINE_COLOR[l.id][0], dark: LINE_COLOR[l.id][1], pts: l.pts.map(([x, y]) => wuv(x, y)) }));
 // 갈아타는 역: 두 노선에 같이 있는 역 (금정 1↔4, 사당 2↔4, 초지 4↔서해)
 const sharedStn = (A, B) => Object.keys(A.stations).filter(id => B.stations[id] != null);

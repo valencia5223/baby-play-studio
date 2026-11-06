@@ -28,11 +28,12 @@ const NB = NODES.map(() => []);
 EDGES.forEach(([a, b]) => { NB[a].push(b); NB[b].push(a); });
 
 // ═══════════════ 배치: cam = 화면 지도 칸 왼쪽 위의 온 동네 좌표, 화면 한 장 = 1×1 ═══════════════
-function layout(W, H, cam) {
-  const s = Math.max(0.62, Math.min(1.35, Math.min(W, H) / 720));
-  const ox = W * 0.015, oy = H * 0.05, mw = W * 0.97, mh = H * 0.92;
+//  z = 확대 배율 (1 = 기본, 작을수록 넓게). 그림 크기는 덜 줄여서(0.6제곱) 넓게 봐도 장소가 보이게
+function layout(W, H, cam, z = 1) {
+  const s = Math.max(0.62, Math.min(1.35, Math.min(W, H) / 720)) * Math.pow(z, 0.6);
+  const ox = W * 0.015, oy = H * 0.05, mw = W * 0.97 * z, mh = H * 0.92 * z;
   const X = (p) => ox + (p.u - cam.u) * mw, Y = (p) => oy + (p.v - cam.v) * mh;
-  return { W, H, s, ox, oy, mw, mh, X, Y, cam };
+  return { W, H, s, ox, oy, mw, mh, X, Y, cam, z };
 }
 
 // ═══════════════ 고정 배경: 지도 조각(타일) ═══════════════
@@ -642,8 +643,12 @@ function addSparkle(g, p, n) {
 const spd = { car: 430, pickup: 700, walk: 95, bus: 330 };   // 지도 위 m/초 (실제보다 아주 빠르게)
 const AMB_COLS = ['#ef4444', '#facc15', '#38bdf8', '#a3e635', '#f472b6'];
 const SAFE = 0.24;   // 움직이는 탈것이 화면 가장자리에서 이만큼 안쪽에 있도록 카메라가 따라간다
-const clampCam = (c) => { const b = WORLD_BOUNDS, m = 0.05; return { u: Math.max(b.u0 - m, Math.min(b.u1 - 1 + m, c.u)), v: Math.max(b.v0 - m, Math.min(b.v1 - 1 + m, c.v)) }; };
-const camOn = (p) => clampCam({ u: p.u - 0.5, v: p.v - 0.55 });
+// V = 화면 한 장이 보여 주는 온 동네 크기 (1 / 확대 배율)
+const clampCam = (c, V = 1) => { const b = WORLD_BOUNDS, m = 0.05 * V; return { u: Math.max(b.u0 - m, Math.min(b.u1 - V + m, c.u)), v: Math.max(b.v0 - m, Math.min(b.v1 - V + m, c.v)) }; };
+const camOn = (p, V = 1) => clampCam({ u: p.u - 0.5 * V, v: p.v - 0.55 * V }, V);
+// 지도 확대 단계 (+ / − 버튼, 두 손가락). 3 = 기본
+const ZOOMS = [0.35, 0.5, 0.7, 1, 1.35];
+const ZOOM_BASE = 3;
 
 // ═════════════════════════════════════════════════════════════════════════════
 export default function TownGame({ audio, speak }) {
@@ -671,7 +676,7 @@ export default function TownGame({ audio, speak }) {
     return () => { document.removeEventListener('fullscreenchange', onChange); document.removeEventListener('webkitfullscreenchange', onChange); };
   }, []);
   const G = useRef(null);
-  const [ui, setUi] = useState({ mode: 'idle', sel: null, choices: [], wrong: null, card: null, bell: false, bellOn: false, stamps: 0, at: 'home', view: 'sanbon', newStamp: false });
+  const [ui, setUi] = useState({ zoomI: ZOOM_BASE, mode: 'idle', sel: null, choices: [], wrong: null, card: null, bell: false, bellOn: false, stamps: 0, at: 'home', view: 'sanbon', newStamp: false });
 
   const say = (text) => { const g = G.current; if (g) g.lastLine = text; if (speak && text) speak(text); };
   const later = (fn, ms) => { const g = G.current; const id = setTimeout(() => { g.timers = g.timers.filter(x => x !== id); fn(); }, ms); g.timers.push(id); };
@@ -686,7 +691,7 @@ export default function TownGame({ audio, speak }) {
     // 이 기기에서 유나가 마지막으로 있던 곳에서 시작한다 (없으면 군포 유나집)
     const startId = save.last && SPOT_BY_ID[save.last.at] ? save.last.at : 'home';
     const home = SPOT_BY_ID[startId];
-    G.current = { t: 0, mode: 'idle', at: home.id, view: home.town, cam: camOn(home.a), camTo: null, drag: null, sel: null, save, timers: [], parts: [], amb: [], lastLine: '',
+    G.current = { t: 0, mode: 'idle', at: home.id, view: home.town, cam: camOn(home.a), camTo: null, drag: null, zoom: 1, zoomI: ZOOM_BASE, ptrs: new Map(), pinch: null, sel: null, save, timers: [], parts: [], amb: [], lastLine: '',
       yuna: { p: { ...home.a }, vis: true, walk: null, onDone: null, dir: 1 },
       car: { p: { ...home.r }, at: home.id, node: home.node, dir: 1, m: null, onDone: null, yuna: false, roll: 0 },
       bus: null, metro: null, route: null, bell: false, bellOn: false };
@@ -843,7 +848,14 @@ export default function TownGame({ audio, speak }) {
     g.sel = 'home'; goCar();
   };
   // 지도 옮겨 보기: 동네 버튼·유나 찾기
-  const lookYuna = () => { const g = G.current; if (!g) return; g.camTo = camOn(g.yuna.p); audio.playFreq(660, 'sine', 0.08, 0.25); };
+  const lookYuna = () => { const g = G.current; if (!g) return; g.camTo = camOn(g.yuna.p, 1 / g.zoom); audio.playFreq(660, 'sine', 0.08, 0.25); };
+  // 지도 크게·작게 (+1 = 크게 보기, -1 = 넓게 보기)
+  const zoomStep = (dir) => {
+    const g = G.current; if (!g) return;
+    const ni = Math.max(0, Math.min(ZOOMS.length - 1, g.zoomI + dir));
+    if (ni === g.zoomI) { audio.playFreq(300, 'triangle', 0.1, 0.2); return; }
+    g.zoomI = ni; audio.playFreq(dir > 0 ? 880 : 587, 'sine', 0.08, 0.25); sync({ zoomI: ni });
+  };
 
   // ── 터치: 장소 콕 / 아빠 차 빵빵 / 손가락으로 끌어 지도 옮기기 ──
   const pos = (e) => { const rc = canvasRef.current.getBoundingClientRect(); return [e.clientX - rc.left, e.clientY - rc.top]; };
@@ -851,20 +863,33 @@ export default function TownGame({ audio, speak }) {
     const g = G.current, cv = canvasRef.current; if (!g || !g.L || !cv) return;
     const [x, y] = pos(e), L = g.L;
     try { cv.setPointerCapture(e.pointerId); } catch { /* 무시 */ }
+    g.ptrs.set(e.pointerId, [x, y]);
+    if (g.ptrs.size === 2) { const [a, b] = [...g.ptrs.values()]; g.pinch = { d0: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1 }; g.drag = null; return; }
+    if (g.ptrs.size > 2) return;
     let best = null, bd = Infinity;
     ALL_TOWN_SPOTS.forEach(sp => { const sx = L.X(sp.a), sy = L.Y(sp.a) - 22 * L.s, d = Math.hypot(x - sx, (y - sy) * 0.9); if (d < bd) { bd = d; best = sp; } });
     if (best && bd < 52 * L.s && g.mode === 'idle') { tapSpot(best); return; }
     g.drag = { x, y, cam: { ...g.cam }, moved: false };
   };
   const onMove = (e) => {
-    const g = G.current; if (!g || !g.drag || !g.L) return;
+    const g = G.current; if (!g || !g.L) return;
+    if (g.ptrs.has(e.pointerId)) g.ptrs.set(e.pointerId, pos(e));
+    if (g.pinch && g.ptrs.size >= 2) {
+      const [a, b] = [...g.ptrs.values()], dd = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      if (dd / g.pinch.d0 > 1.3) { zoomStep(1); g.pinch.d0 = dd; } else if (dd / g.pinch.d0 < 0.77) { zoomStep(-1); g.pinch.d0 = dd; }
+      return;
+    }
+    if (!g.drag) return;
     const [x, y] = pos(e), d = g.drag;
     if (!d.moved && Math.hypot(x - d.x, y - d.y) < 8) return;
     d.moved = true; g.camTo = null; g.userLookT = g.t;
-    g.cam = clampCam({ u: d.cam.u - (x - d.x) / g.L.mw, v: d.cam.v - (y - d.y) / g.L.mh });
+    g.cam = clampCam({ u: d.cam.u - (x - d.x) / g.L.mw, v: d.cam.v - (y - d.y) / g.L.mh }, 1 / g.zoom);
   };
   const onUp = (e) => {
-    const g = G.current; if (!g || !g.drag) return;
+    const g = G.current; if (!g) return;
+    g.ptrs.delete(e.pointerId);
+    if (g.pinch) { if (g.ptrs.size < 2) g.pinch = null; g.drag = null; return; }
+    if (!g.drag) return;
     const d = g.drag; g.drag = null;
     if (d.moved || !g.L) return;
     const [x, y] = pos(e), L = g.L;
@@ -873,17 +898,23 @@ export default function TownGame({ audio, speak }) {
     if (Math.abs(x - cx) < cl * 0.55 && y < cy + 6 && y > cy - cl * 0.45) { honk(); g.car.honkT = g.t; }
   };
 
+  const onWheel = (e) => { const g = G.current; if (!g) return; const now = Date.now(); if (g.wheelT && now - g.wheelT < 250) return; g.wheelT = now; zoomStep(e.deltaY < 0 ? 1 : -1); };
+
   // ── 그림 루프 ──
   useEffect(() => {
     const cv = canvasRef.current; if (!cv) return undefined;
     let raf = 0, last = -1, t0 = 0;
     const tiles = new Map(), tileOrder = [];
+    let built = 0;
     const tileOf = (i, j, L, W, H, dpr) => {
-      const key = `${i},${j}@${W}x${H}@${dpr}`;
+      const key = `${i},${j}@${W}x${H}@${dpr}@${L.z}`;
       let tl = tiles.get(key);
       if (!tl) {
+        if (built >= 4) return null;   // 넓게 볼 때 한꺼번에 많이 그리면 멈칫하니 나눠서 그린다
+        built += 1;
         tl = buildTile(i, j, L, dpr); tiles.set(key, tl); tileOrder.push(key);
-        while (tileOrder.length > 16) tiles.delete(tileOrder.shift());   // 오래된 조각은 버린다
+        const keep = Math.max(9, Math.round(16 / (L.z * L.z)));   // 조각이 작을수록 많이 둔다 (메모리는 비슷)
+        while (tileOrder.length > keep) tiles.delete(tileOrder.shift());   // 오래된 조각은 버린다
       }
       return tl;
     };
@@ -898,6 +929,15 @@ export default function TownGame({ audio, speak }) {
         if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
         const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         const y = g.yuna, car = g.car, b = g.bus, mt = g.metro;
+        // ── 확대 배율: 화면 가운데를 그대로 둔 채 부드럽게 바꾼다 ──
+        const zt = ZOOMS[g.zoomI];
+        if (g.zoom !== zt) {
+          const V0 = 1 / g.zoom, cu = g.cam.u + V0 / 2, cvv = g.cam.v + V0 / 2;
+          g.zoom += (zt - g.zoom) * Math.min(1, dt * 9); if (Math.abs(g.zoom - zt) < 0.004) g.zoom = zt;
+          const V1 = 1 / g.zoom; g.cam = clampCam({ u: cu - V1 / 2, v: cvv - V1 / 2 }, V1);
+          if (g.camTo) g.camTo = clampCam({ u: g.camTo.u + (V0 - V1) / 2, v: g.camTo.v + (V0 - V1) / 2 }, V1);
+        }
+        const VW = 1 / g.zoom;
 
         // ── 카메라: 움직이는 것(탈 것·걷는 유나)을 화면 안쪽에 두도록 따라간다. 손으로 옮긴 뒤 잠깐은 그대로 ──
         let focus = null;
@@ -906,27 +946,29 @@ export default function TownGame({ audio, speak }) {
         else if (car.m && (car.yuna || car.m.len > 1500)) focus = car.p;
         else if (y.walk) focus = y.p;
         if (focus && !g.drag && !(g.userLookT && t - g.userLookT < 2.5)) {
-          const want = { ...g.cam }, sx = SAFE, sy = SAFE + 0.04;
-          if (focus.u - want.u < sx) want.u = focus.u - sx; if (focus.u - want.u > 1 - sx) want.u = focus.u - (1 - sx);
-          if (focus.v - want.v < sy) want.v = focus.v - sy; if (focus.v - want.v > 1 - sy * 0.6) want.v = focus.v - (1 - sy * 0.6);
-          g.camTo = clampCam(want);
+          const want = { ...g.cam }, sx = SAFE * VW, sy = (SAFE + 0.04) * VW;
+          if (focus.u - want.u < sx) want.u = focus.u - sx; if (focus.u - want.u > VW - sx) want.u = focus.u - (VW - sx);
+          if (focus.v - want.v < sy) want.v = focus.v - sy; if (focus.v - want.v > VW - sy * 0.6) want.v = focus.v - (VW - sy * 0.6);
+          g.camTo = clampCam(want, VW);
         }
         if (g.camTo && !g.drag) {
           const k = Math.min(1, dt * (focus ? 6 : 4));
           g.cam = { u: g.cam.u + (g.camTo.u - g.cam.u) * k, v: g.cam.v + (g.camTo.v - g.cam.v) * k };
           if (Math.abs(g.camTo.u - g.cam.u) < 1e-4 && Math.abs(g.camTo.v - g.cam.v) < 1e-4) g.camTo = null;
         }
-        const L = layout(W, H, g.cam); g.L = L; const { X, Y, s } = L;
+        const L = layout(W, H, g.cam, g.zoom); g.L = L; const { X, Y, s } = L;
+        const LT = layout(W, H, g.cam, zt);   // 지도 조각은 목표 배율로 그린다
         // 지금 보고 있는 동네 이름 (위 제목)
-        if (!g.viewT || t - g.viewT > 0.4) { g.viewT = t; const tv = townAt({ u: g.cam.u + 0.5, v: g.cam.v + 0.5 }).id; if (tv !== g.view) { g.view = tv; sync(); } }
+        if (!g.viewT || t - g.viewT > 0.4) { g.viewT = t; const tv = townAt({ u: g.cam.u + VW / 2, v: g.cam.v + VW / 2 }).id; if (tv !== g.view) { g.view = tv; sync(); } }
 
         // 지도 조각 붙이기
         ctx.fillStyle = '#b9e3a0'; ctx.fillRect(0, 0, W, H);
         const i0 = Math.floor(g.cam.u - L.ox / L.mw), i1 = Math.floor(g.cam.u + (W - L.ox) / L.mw);
         const j0 = Math.floor(g.cam.v - L.oy / L.mh), j1 = Math.floor(g.cam.v + (H - L.oy) / L.mh);
-        const shown = [];
+        const shown = []; built = 0;
         for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-          const tl = tileOf(i, j, L, W, H, dpr), dx = L.ox + (i - g.cam.u) * L.mw, dy = L.oy + (j - g.cam.v) * L.mh;
+          const tl = tileOf(i, j, LT, W, H, dpr), dx = L.ox + (i - g.cam.u) * L.mw, dy = L.oy + (j - g.cam.v) * L.mh;
+          if (!tl) continue;
           ctx.drawImage(tl.cv, dx, dy, L.mw, L.mh); shown.push([tl, dx, dy]);
         }
 
@@ -1009,7 +1051,7 @@ export default function TownGame({ audio, speak }) {
           }
         }
         // 지나가는 차들: 화면 근처 길 위에서 달리고, 멀어지면 화면 안 다른 길로 옮긴다
-        const inView = (p, m = 0.1) => p.u > g.cam.u - m && p.u < g.cam.u + 1 + m && p.v > g.cam.v - m && p.v < g.cam.v + 1 + m;
+        const inView = (p, m = 0.1) => p.u > g.cam.u - m * VW && p.u < g.cam.u + VW + m * VW && p.v > g.cam.v - m * VW && p.v < g.cam.v + VW + m * VW;
         while (g.amb.length < AMB_COLS.length) g.amb.push({ col: AMB_COLS[g.amb.length], a: -1 });
         g.amb.forEach(a => {
           if (a.a < 0 || !inView(a.p || NODES[a.a], 0.25)) {
@@ -1093,7 +1135,10 @@ export default function TownGame({ audio, speak }) {
         if (dark > 0) {
           ctx.fillStyle = `rgba(20,30,80,${0.38 * dark})`; ctx.fillRect(0, 0, W, H);
           ctx.fillStyle = `rgba(253,224,71,${0.85 * dark})`;
-          shown.forEach(([tl, dx, dy]) => tl.blocks.forEach((bk, i) => { if ((i * 7) % 5 === 0) return; const wx = dx + bk.x + bk.w * 0.18, rows = Math.max(2, Math.floor(bk.h / (bk.w * 0.32))); for (let r = 0; r < rows; r++) if ((i + r) % 3) ctx.fillRect(wx + ((i + r) % 2) * bk.w * 0.42, dy + bk.y - bk.h + bk.h * (0.1 + r * 0.85 / rows), bk.w * 0.22, bk.h * 0.45 / rows); }));
+          const zk = L.mw / LT.mw;   // 배율이 바뀌는 중이면 조각을 늘려 붙인 만큼
+          ctx.save();
+          shown.forEach(([tl, dx, dy]) => { ctx.setTransform(dpr * zk, 0, 0, dpr * zk, dpr * dx, dpr * dy); tl.blocks.forEach((bk, i) => { if ((i * 7) % 5 === 0) return; const wx = bk.x + bk.w * 0.18, rows = Math.max(2, Math.floor(bk.h / (bk.w * 0.32))); for (let r = 0; r < rows; r++) if ((i + r) % 3) ctx.fillRect(wx + ((i + r) % 2) * bk.w * 0.42, bk.y - bk.h + bk.h * (0.1 + r * 0.85 / rows), bk.w * 0.22, bk.h * 0.45 / rows); }); });
+          ctx.restore();
         }
         // 반짝이
         g.parts = g.parts.filter(p => {
@@ -1119,6 +1164,7 @@ export default function TownGame({ audio, speak }) {
   const walkOk = sel && ui.walk;
   const busNote = sel && !ui.bus ? '버스는 안 가요' : '';
   const mapBtn = (bg, color) => ({ ...btn(bg, color), minHeight: '64px', width: '78px', padding: '6px 4px', borderRadius: '20px', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', whiteSpace: 'normal', lineHeight: 1.1 });
+  const zoomBtn = { ...btn('#ffffff', '#0f766e'), width: '60px', height: '60px', minHeight: '60px', padding: 0, borderRadius: '50%', fontSize: '2rem', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' };
   const chip = (color, bg = 'rgba(255,255,255,0.92)') => ({ background: bg, color, borderRadius: '16px', padding: '5px 12px', fontFamily: JUA, fontSize: '1.05rem', boxShadow: '0 4px 12px -6px rgba(0,0,0,0.3)' });
 
   return (
@@ -1126,7 +1172,7 @@ export default function TownGame({ audio, speak }) {
       ? { position: 'fixed', inset: 0, zIndex: 9999, background: '#fdf6ec', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }
       : { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
       <div style={{ flex: 1, minHeight: 0, position: 'relative', borderRadius: full ? '18px' : '26px', overflow: 'hidden', boxShadow: '0 16px 30px -18px rgba(15,118,110,0.5)' }}>
-        <canvas ref={canvasRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }} />
+        <canvas ref={canvasRef} onWheel={onWheel} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }} />
         {hint && <div style={{ position: 'absolute', left: '12%', right: '12%', top: '6px', textAlign: 'center', pointerEvents: 'none' }}>
           <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.92)', borderRadius: '18px', padding: '6px 16px', fontFamily: JUA, fontSize: '1.15rem', color: '#7c2d12', boxShadow: '0 4px 12px -6px rgba(0,0,0,0.3)' }}>{hint}</span>
         </div>}
@@ -1134,6 +1180,10 @@ export default function TownGame({ audio, speak }) {
           <button onClick={lookYuna} style={mapBtn('#fce7f3', '#be185d')}><span style={{ fontSize: '1.7rem', lineHeight: 1 }}>📍</span>유나 찾기</button>
           <button onClick={goHome} style={mapBtn('#fff7ed', '#9a3412')}><span style={{ fontSize: '1.7rem', lineHeight: 1 }}>🏠</span>집으로</button>
           <button onClick={toggleFull} style={mapBtn(full ? '#334155' : '#ffffff', full ? '#ffffff' : '#0f766e')}><span style={{ fontSize: '1.7rem', lineHeight: 1 }}>{full ? '↙' : '⛶'}</span>{full ? '작게' : '전체화면'}</button>
+        </div>
+        <div style={{ position: 'absolute', left: '10px', top: '52px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <button onClick={() => zoomStep(1)} disabled={ui.zoomI >= ZOOMS.length - 1} style={{ ...zoomBtn, opacity: ui.zoomI >= ZOOMS.length - 1 ? 0.45 : 1 }} aria-label="크게 보기">＋</button>
+          <button onClick={() => zoomStep(-1)} disabled={ui.zoomI <= 0} style={{ ...zoomBtn, opacity: ui.zoomI <= 0 ? 0.45 : 1 }} aria-label="넓게 보기">－</button>
         </div>
         <div style={{ position: 'absolute', left: '10px', bottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap', pointerEvents: 'none', maxWidth: 'calc(100% - 150px)' }}>
           <span style={chip('#0f766e')}>🚗 우리 동네 {TOWNS[ui.view || 'sanbon'].name}</span>

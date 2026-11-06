@@ -167,7 +167,7 @@ export const GEUMCHEON_SPOT_LIST = [
     desc: '금천구청역이에요! 남색 1호선 전철이 서요. 여기부터 서울이에요!' },
   { id: 'doksanStn', name: '독산역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.8895, 37.4662], at: [0.24, 0.45], stop: ['독산역'],
     desc: '독산역이에요! 남색 1호선 전철이 서요.' },
-  { id: 'gasanStn', name: '가산디지털단지역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.8826, 37.4810], at: [0.13, 0.15], stop: ['가산디지털단지역'],
+  { id: 'gasanStn', name: '가산디지털단지역', emoji: '🚉', kind: 'station', lines: ['1', '7'], real: [126.8826, 37.4810], at: [0.13, 0.15], stop: ['가산디지털단지역'],
     desc: '가산디지털단지역이에요! 1호선이랑 7호선 전철이 서요.' },
   { id: 'geumcheonHall', name: '금천구청', emoji: '🏛️', kind: 'hall', real: [126.8990, 37.4585], at: [0.43, 0.57], stop: ['금천구청'],
     desc: '금천구청이에요! 서울 금천구를 돌보는 커다란 건물이에요.' },
@@ -266,6 +266,37 @@ export const DAEBU_SPOT_LIST = [
   { id: 'tando', name: '탄도항', emoji: '⛵', kind: 'port', real: [126.6458, 37.1943], at: [0.48, 0.95], stop: ['탄도'],
     desc: '탄도항이에요! 배가 둥실둥실, 바다 건너 누에섬에는 커다란 바람개비가 빙글빙글 돌아요.' }
 ];
+// 🏙️ 부천 (시흥 위, 광명 왼쪽). 1호선(경인선)·7호선·서해선이 지나간다
+export const BUCHEON_SPOT_LIST = [
+  { id: 'bucheonStn', name: '부천역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.7829, 37.4842], at: [0.42, 0.62], stop: ['부천역'],
+    desc: '부천역이에요! 남색 1호선 전철이 칙칙폭폭 서요. 사람이 아주 많아요!' },
+  { id: 'songnaeStn', name: '송내역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.7530, 37.4877], at: [0.16, 0.57], stop: ['송내역'],
+    desc: '송내역이에요! 남색 1호선 전철이 서요.' },
+  { id: 'yeokgokStn', name: '역곡역', emoji: '🚉', kind: 'station', lines: ['1'], real: [126.8115, 37.4853], at: [0.67, 0.6], stop: ['역곡역'],
+    desc: '역곡역이에요! 남색 1호선 전철이 서요.' },
+  { id: 'sosaStn', name: '소사역', emoji: '🚉', kind: 'station', lines: ['1', '서해'], real: [126.7953, 37.4827], at: [0.53, 0.66], stop: ['소사역'],
+    desc: '소사역이에요! 남색 1호선이랑 연두색 서해선을 갈아탈 수 있어요.' },
+  { id: 'onsuStn', name: '온수역', emoji: '🚉', kind: 'station', lines: ['1', '7'], real: [126.8251, 37.4921], at: [0.79, 0.5], stop: ['온수역'],
+    desc: '온수역이에요! 남색 1호선이랑 올리브색 7호선을 갈아탈 수 있어요.' },
+  { id: 'bucheonHallStn', name: '부천시청역', emoji: '🚉', kind: 'station', lines: ['7'], real: [126.7634, 37.5045], at: [0.25, 0.33], stop: ['부천시청역'],
+    desc: '부천시청역이에요! 올리브색 7호선 전철이 땅속으로 다녀요.' },
+  { id: 'bcStadiumStn', name: '부천종합운동장', emoji: '🏟️', kind: 'stadium', lines: ['7'], real: [126.7975, 37.5050], at: [0.55, 0.33], stop: ['부천종합운동장'],
+    desc: '부천종합운동장이에요! 축구 선수들이 공을 뻥뻥 차요. 7호선 역도 바로 옆에 있어요.' },
+  { id: 'bucheonHall', name: '부천시청', emoji: '🏛️', kind: 'hall', real: [126.7660, 37.5035], at: [0.29, 0.41], stop: ['부천시청'],
+    desc: '부천시청이에요! 부천을 돌보는 커다란 건물이에요. 앞에 넓은 잔디밭도 있어요.' },
+  { id: 'sangdongLake', name: '상동호수공원', emoji: '🦢', kind: 'lake', real: [126.7470, 37.5025], at: [0.09, 0.4], stop: ['상동호수공원'],
+    desc: '상동호수공원이에요! 호수에 오리가 둥실둥실 떠 있어요.' },
+  { id: 'woongjin', name: '웅진플레이도시', emoji: '🏊', kind: 'themepark', real: [126.7458, 37.5008], at: [0.15, 0.47], stop: ['웅진플레이도시'],
+    desc: '웅진플레이도시예요! 물놀이도 하고 눈썰매도 타는 커다란 곳이에요. 첨벙첨벙 신나요.' },
+  { id: 'wonmi', name: '원미산 진달래동산', emoji: '🌸', kind: 'azalea', real: [126.7960, 37.4960], at: [0.53, 0.47],
+    desc: '원미산 진달래동산이에요! 봄이 되면 산이 온통 분홍색 진달래로 물들어요.' },
+  { id: 'botanical', name: '부천식물원', emoji: '🌵', kind: 'park', real: [126.8180, 37.5120], at: [0.72, 0.24], stop: ['식물원', '자연생태공원'],
+    desc: '부천식물원이에요! 유리 온실 안에 뾰족뾰족 선인장이랑 커다란 나무가 있어요.' },
+  { id: 'manhwa', name: '만화박물관', emoji: '📚', kind: 'art', real: [126.7413, 37.5085], at: [0.05, 0.23], stop: ['한국만화박물관'],
+    desc: '만화박물관이에요! 재미있는 그림책이랑 만화가 가득해요.' },
+  { id: 'freeMarket', name: '부천 자유시장', emoji: '🛒', kind: 'market', real: [126.7860, 37.4870], at: [0.45, 0.53],
+    desc: '부천 자유시장이에요! 떡이랑 과일이랑 맛있는 게 많아요.' }
+];
 export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST,
   gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST, gwanak: GWANAK_SPOT_LIST,
-  ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST, daebu: DAEBU_SPOT_LIST };
+  ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST, daebu: DAEBU_SPOT_LIST, bucheon: BUCHEON_SPOT_LIST };
