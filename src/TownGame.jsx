@@ -479,6 +479,22 @@ function drawSpot(c, sp, x, y, u, t, opt) {
       c.strokeStyle = '#ffffff'; c.lineWidth = u * 0.06;
       for (let k = 0; k < 3; k++) { const a = t * 2.5 + i + k * TAU / 3; c.beginPath(); c.moveTo(bx, top); c.lineTo(bx + Math.cos(a) * u * 0.35, top + Math.sin(a) * u * 0.35); c.stroke(); }
     });
+  } else if (K === 'airport') {
+    // 공항: 활주로 + 터미널 + 관제탑 + 달려가다 떠오르는 비행기
+    c.fillStyle = '#9ca3af'; rrect(c, -u * 1.7, -u * 0.36, u * 3.4, u * 0.36, u * 0.08); c.fill();
+    c.strokeStyle = '#ffffff'; c.lineWidth = u * 0.05; c.setLineDash([u * 0.2, u * 0.15]); c.beginPath(); c.moveTo(-u * 1.55, -u * 0.18); c.lineTo(u * 1.55, -u * 0.18); c.stroke(); c.setLineDash([]);
+    c.fillStyle = '#e0f2fe'; rrect(c, -u * 1.35, -u * 1.05, u * 1.6, u * 0.62, u * 0.26); c.fill(); c.strokeStyle = '#0369a1'; c.lineWidth = u * 0.05; c.stroke();
+    c.fillStyle = '#7dd3fc'; for (let i = 0; i < 4; i++) c.fillRect(-u * 1.18 + i * u * 0.36, -u * 0.88, u * 0.22, u * 0.3);
+    c.fillStyle = '#f1f5f9'; c.fillRect(u * 0.5, -u * 1.95, u * 0.22, u * 1.55); c.strokeStyle = '#94a3b8'; c.lineWidth = u * 0.03; c.strokeRect(u * 0.5, -u * 1.95, u * 0.22, u * 1.55);
+    c.fillStyle = '#38bdf8'; rrect(c, u * 0.34, -u * 2.25, u * 0.54, u * 0.32, u * 0.08); c.fill();
+    const k = (t * 0.22) % 1, up = Math.max(0, k - 0.45);
+    const px = -u * 1.45 + k * u * 3.8, py = -u * 0.32 - up * up * u * 7;
+    c.save(); c.globalAlpha = k > 0.82 ? Math.max(0, (1 - k) / 0.18) : 1; c.translate(px, py); c.rotate(up > 0 ? -0.3 : 0);
+    c.fillStyle = '#ffffff'; ell(c, 0, 0, u * 0.52, u * 0.13); c.fill(); c.strokeStyle = '#64748b'; c.lineWidth = u * 0.03; c.stroke();
+    c.fillStyle = '#3b82f6'; c.beginPath(); c.moveTo(-u * 0.05, 0); c.lineTo(-u * 0.28, u * 0.34); c.lineTo(-u * 0.12, u * 0.34); c.lineTo(u * 0.16, 0); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-u * 0.36, -u * 0.04); c.lineTo(-u * 0.52, -u * 0.3); c.lineTo(-u * 0.4, -u * 0.3); c.lineTo(-u * 0.24, -u * 0.04); c.closePath(); c.fill();
+    c.fillStyle = '#93c5fd'; for (let i = 0; i < 4; i++) { c.beginPath(); c.arc(-u * 0.12 + i * u * 0.12, -u * 0.02, u * 0.03, 0, TAU); c.fill(); }
+    c.restore();
   } else if (K === 'tower') {
     // 유리 빌딩 셋 (반짝이는 창)
     [[-0.7, 1.9, '#bae6fd'], [0, 2.6, '#a5f3fc'], [0.7, 2.1, '#c7d2fe']].forEach(([q, hh, col], i) => {

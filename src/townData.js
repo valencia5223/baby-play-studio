@@ -21,7 +21,9 @@ import BUS_SIHEUNG from './townBus_siheung.json';
 import BUS_DAEBU from './townBus_daebu.json';
 import BUS_BUCHEON from './townBus_bucheon.json';
 import BUS_INCHEON from './townBus_incheon.json';
-import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST, GWANAK_SPOT_LIST, ANSAN_SPOT_LIST, SIHEUNG_SPOT_LIST, DAEBU_SPOT_LIST, BUCHEON_SPOT_LIST, INCHEON_SPOT_LIST } from './townSpots.js';
+import BUS_INCHEON_WEST from './townBus_incheonwest.json';
+import BUS_INCHEON_NORTH from './townBus_incheonnorth.json';
+import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST, GWANAK_SPOT_LIST, ANSAN_SPOT_LIST, SIHEUNG_SPOT_LIST, DAEBU_SPOT_LIST, BUCHEON_SPOT_LIST, INCHEON_SPOT_LIST, INCHEON_WEST_SPOT_LIST, INCHEON_NORTH_SPOT_LIST } from './townSpots.js';
 
 export const BUS_STYLE = {
   '마을버스': { color: '#facc15', dark: '#ca8a04', label: '마을버스', text: '#713f12' },
@@ -36,9 +38,9 @@ export const busStyle = (type) => BUS_STYLE[type] || BUS_STYLE['일반형시내�
 // 음성용 번호: 11-2 → 11 다시 2, P9801(출근) → P9801
 export const busSpoken = (name) => `${String(name).replace(/\(.*?\)/g, '').replace('-', ' 다시 ')}번`;
 export const busLabel = (name) => String(name).replace(/\(.*?\)/g, '');
-export const LINE_COLOR = { 4: ['#38bdf8', '#0284c7'], 1: ['#1e3a8a', '#172554'], 2: ['#22c55e', '#15803d'], '서해': ['#a3e635', '#65a30d'], 7: ['#a3a32a', '#6b6b10'], '경인': ['#1e3a8a', '#172554'], '인천1': ['#7ca3d8', '#3f68a8'], '수인': ['#facc15', '#ca8a04'] };
+export const LINE_COLOR = { 4: ['#38bdf8', '#0284c7'], 1: ['#1e3a8a', '#172554'], 2: ['#22c55e', '#15803d'], '서해': ['#a3e635', '#65a30d'], 7: ['#a3a32a', '#6b6b10'], '경인': ['#1e3a8a', '#172554'], '인천1': ['#7ca3d8', '#3f68a8'], '수인': ['#facc15', '#ca8a04'], '공항': ['#3b82f6', '#1d4ed8'] };
 // 안내 문장용 노선 이름: 4 → 4호선, 서해 → 서해선
-const LINE_NAME = { '경인': '1호선', '인천1': '인천 1호선' };
+const LINE_NAME = { '경인': '1호선', '인천1': '인천 1호선', '공항': '공항철도' };
 export const lineName = (id) => (LINE_NAME[id] ? LINE_NAME[id] : /^\d+$/.test(String(id)) ? `${id}호선` : `${id}선`);   // 경인선은 1호선 갈래
 
 // ── 온 동네 좌표 ──
@@ -46,7 +48,7 @@ const REF = BUS_SANBON.box, SX = REF.x1 - REF.x0, SY = REF.y1 - REF.y0;
 export const wuv = (lon, lat) => ({ u: (lon - REF.x0) / SX, v: (REF.y1 - lat) / SY });
 const W_M = SX * 88400, H_M = SY * 111000;
 export const meters = (a, b) => Math.hypot((a.u - b.u) * W_M, (a.v - b.v) * H_M);
-const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON, BUS_GWANAK, BUS_ANSAN, BUS_SIHEUNG, BUS_DAEBU, BUS_BUCHEON, BUS_INCHEON];
+const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON, BUS_GWANAK, BUS_ANSAN, BUS_SIHEUNG, BUS_DAEBU, BUS_BUCHEON, BUS_INCHEON, BUS_INCHEON_WEST, BUS_INCHEON_NORTH];
 
 // ── 길: 모든 동네 정류장을 합친 점 + 버스 노선을 이은 선 ──
 export const NODES = [];          // {u, v, n}
@@ -162,6 +164,29 @@ const TOWN_DEFS = [
     // 노적봉·광덕산(가운데 아래)·수리산 서쪽 언덕
     hills: [[0.55, 0.98, 0.1, 0.12], [0.95, 0.12, 0.08, 0.14], [0.2, 0.95, 0.08, 0.08]],
     areas: [{ name: '고잔동', at: [0.58, 0.68] }, { name: '원곡동', at: [0.2, 0.52] }, { name: '사동', at: [0.72, 0.92] }] },
+  // 인천 바닷가 (송도·월미도·영종도). 바다 + 영종도·무의도 + 인천대교·영종대교
+  { id: 'incheonwest', name: '인천 바닷가', bus: BUS_INCHEON_WEST, spots: INCHEON_WEST_SPOT_LIST, label: [0.62, 0.6],
+    hills: [[0.58, 0.22, 0.03, 0.04]],   // 영종도 백운산
+    areas: [{ name: '영종도', at: [0.45, 0.2] }, { name: '송도', at: [0.95, 0.58] }, { name: '서해 바다', at: [0.3, 0.75] }, { name: '중구', at: [0.95, 0.2] }],
+    // 바다: 인천 해안선(검단 → 청라 → 북항 → 월미도 → 연안부두 → 송도) 서쪽 전부
+    sea: [[126.300, 37.300], [126.300, 37.640], [126.605, 37.640], [126.602, 37.600], [126.598, 37.575], [126.612, 37.560], [126.603, 37.540], [126.610, 37.520], [126.614, 37.505],
+      [126.600, 37.492], [126.588, 37.486], [126.584, 37.472], [126.591, 37.462], [126.589, 37.455], [126.597, 37.443], [126.611, 37.433], [126.611, 37.416], [126.601, 37.401],
+      [126.605, 37.386], [126.620, 37.373], [126.645, 37.366], [126.660, 37.362], [126.660, 37.300]],
+    islands: [
+      // 영종도 (인천공항·용유도까지 이어진 모양)
+      [[126.360, 37.448], [126.375, 37.470], [126.400, 37.495], [126.440, 37.506], [126.480, 37.520], [126.520, 37.526], [126.555, 37.516], [126.585, 37.501], [126.590, 37.489],
+        [126.576, 37.475], [126.566, 37.455], [126.556, 37.432], [126.530, 37.424], [126.490, 37.417], [126.450, 37.419], [126.410, 37.424], [126.378, 37.432]],
+      // 무의도
+      [[126.408, 37.412], [126.430, 37.407], [126.440, 37.392], [126.425, 37.377], [126.404, 37.386]]],
+    // 인천대교(송도 → 영종도)·영종대교(청라 → 영종도)는 공항까지 이어지는 고속도로로, 공항 → 을왕리 길
+    dams: [[[126.612, 37.392], [126.595, 37.400], [126.575, 37.412], [126.556, 37.430], [126.530, 37.440], [126.490, 37.446], [126.4525, 37.4495]],
+      [[126.612, 37.548], [126.592, 37.538], [126.572, 37.526], [126.552, 37.518], [126.520, 37.502], [126.490, 37.486], [126.466, 37.466], [126.4525, 37.4495]],
+      [[126.4525, 37.4495], [126.420, 37.453], [126.392, 37.449], [126.376, 37.4475]]] },
+  // 인천 북쪽 (계양·서구·청라 ~ 김포공항). 경인아라뱃길이 동서로 흐른다
+  { id: 'incheonnorth', name: '인천 계양·서구', bus: BUS_INCHEON_NORTH, spots: INCHEON_NORTH_SPOT_LIST, label: [0.3, 0.3],
+    hills: [[0.54, 0.86, 0.04, 0.1], [0.25, 0.35, 0.04, 0.08]],   // 계양산·검단 쪽 산
+    river: [[126.600, 37.566], [126.625, 37.566], [126.660, 37.569], [126.700, 37.575], [126.740, 37.578], [126.775, 37.576], [126.810, 37.573]],
+    areas: [{ name: '계양', at: [0.75, 0.75] }, { name: '서구', at: [0.36, 0.55] }, { name: '청라', at: [0.12, 0.85] }, { name: '검단', at: [0.35, 0.12] }] },
   // 인천 부평·남동 (부천·시흥 왼쪽). 소래포구 앞으로 바닷물이 들어오는 갯골(장수천)
   { id: 'incheon', name: '인천', bus: BUS_INCHEON, spots: INCHEON_SPOT_LIST, label: [0.38, 0.4],
     // 원적산(부평 서쪽)·만월산(부평과 구월 사이)
@@ -236,6 +261,38 @@ const SEA_DEFS = TOWN_DEFS.filter(d => d.sea);
 export const SEAS = SEA_DEFS.map(d => toWorldPts(d.sea));
 export const ISLANDS = SEA_DEFS.flatMap(d => (d.islands || []).map(toWorldPts));
 export const DAMS = SEA_DEFS.flatMap(d => (d.dams || []).map(toWorldPts));
+// 다리·방조제 위 길: 섬으로 가는 버스는 정류장 사이가 멀어(1.3km 넘음) 길이 끊기니, 그림대로 잇고 양 끝을 가까운 길에 붙인다
+DAMS.forEach(dm => {
+  const ids = dm.map(p => { NODES.push({ u: p.u, v: p.v, n: 0 }); ADJ.push([]); return NODES.length - 1; });
+  const link = (a, b) => { const d = meters(NODES[a], NODES[b]); EDGES.push([a, b]); ADJ[a].push([b, d]); ADJ[b].push([a, d]); };
+  for (let i = 1; i < ids.length; i++) link(ids[i - 1], ids[i]);
+  [ids[0], ids[ids.length - 1]].forEach(e => {
+    let best = -1, bd = 2500;
+    NODES.forEach((nd, i) => { if (nd.n === 0) return; const d = meters(nd, NODES[e]); if (d < bd) { bd = d; best = i; } });
+    if (best >= 0) link(e, best);
+  });
+});
+// 길이 끊긴 덩어리 잇기: 고속도로를 달리는 버스는 정류장 사이가 멀어 위에서 뺐는데, 그것 때문에 동네끼리 길이 끊기면
+// 그 긴 구간(6km 안)을 길로 쓴다. 이미 이어진 곳에는 넣지 않는다 (산을 가로지르는 직선 길이 생기지 않게)
+{
+  const par = NODES.map((_, i) => i), find = (x) => { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; };
+  EDGES.forEach(([a, b]) => { par[find(a)] = find(b); });
+  const longs = [];
+  ROUTES.forEach(r => r.runs.forEach(run => { for (let i = 1; i < run.length; i++) { const a = stopNode[run[i - 1]], b = stopNode[run[i]]; if (a != null && b != null && a !== b) { const d = meters(NODES[a], NODES[b]); if (d >= 1300 && d < 6000) longs.push([d, a, b]); } } }));
+  longs.sort((x, y) => x[0] - y[0]).forEach(([d, a, b]) => {
+    if (find(a) === find(b)) return;
+    par[find(a)] = find(b); EDGES.push([a, b]); ADJ[a].push([b, d]); ADJ[b].push([a, d]);
+  });
+  // 장소가 붙은 길 점이 외딴 정류장이면 가장 큰 덩어리의 가까운 점으로 옮긴다
+  const size = {}; NODES.forEach((_, i) => { const k = find(i); size[k] = (size[k] || 0) + 1; });
+  const big = +Object.keys(size).sort((x, y) => size[y] - size[x])[0];
+  ALL_TOWN_SPOTS.forEach(sp => {
+    if (find(sp.node) === big) return;
+    let best = sp.node, bd = Infinity;
+    NODES.forEach((nd, i) => { if (find(i) !== big || nd.n === 0) return; const d = meters(nd, sp.link ? SPOT_BY_ID[sp.link].r : sp.r); if (d < bd) { bd = d; best = i; } });
+    sp.node = best;
+  });
+}
 const inPoly = (p, poly) => {
   let inside = false;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -352,18 +409,22 @@ export const LINES = [
   { id: '서해', pts: [[126.7953, 37.4827], [126.7954, 37.4700], [126.7940, 37.4508], [126.7880, 37.4391], [126.7879, 37.4081], [126.8062, 37.3820], [126.8080, 37.3698], [126.8098, 37.3496], [126.8100, 37.3350], [126.8070, 37.3213], [126.7863, 37.3017]],
     stations: { sosaStn: 0, daeyaStn: 2, sincheonStn: 3, siheungHallStn: 5, chojiStn: 9 } },
   // 1호선 경인선 갈래 (개봉 → 오류동 → 온수 → 역곡 → 소사 → 부천 → 중동 → 송내 → 부개). 소사(서해선)·온수(7호선)에서 갈아탄다
-  { id: '경인', pts: [[126.8580, 37.4945], [126.8395, 37.4946], [126.8240, 37.4921], [126.8115, 37.4853], [126.7953, 37.4827], [126.7829, 37.4842], [126.7646, 37.4866], [126.7530, 37.4877], [126.7400, 37.4890], [126.7238, 37.4897], [126.7076, 37.4834], [126.7027, 37.4718]],
-    stations: { onsuStn: 2, yeokgokStn: 3, sosaStn: 4, bucheonStn: 5, songnaeStn: 7, bupyeongStn: 9 } },
+  { id: '경인', pts: [[126.8580, 37.4945], [126.8395, 37.4946], [126.8240, 37.4921], [126.8115, 37.4853], [126.7953, 37.4827], [126.7829, 37.4842], [126.7646, 37.4866], [126.7530, 37.4877], [126.7400, 37.4890], [126.7238, 37.4897], [126.7076, 37.4834], [126.7027, 37.4718], [126.6936, 37.4648], [126.6810, 37.4648], [126.6687, 37.4660], [126.6566, 37.4667], [126.6430, 37.4687], [126.6327, 37.4751], [126.6167, 37.4766]],
+    stations: { onsuStn: 2, yeokgokStn: 3, sosaStn: 4, bucheonStn: 5, songnaeStn: 7, bupyeongStn: 9, incheonStn: 18 } },
   // 7호선 (가산디지털단지 → 철산 → 광명사거리 → 천왕 → 온수 → 까치울 → 부천종합운동장 → 춘의 → 신중동 → 부천시청 → 상동 → 삼산체육관)
   { id: 7, pts: [[126.8826, 37.4810], [126.8680, 37.4760], [126.8547, 37.4792], [126.8387, 37.4866], [126.8251, 37.4921], [126.8062, 37.5063], [126.7975, 37.5050], [126.7871, 37.5036], [126.7760, 37.5029], [126.7634, 37.5045], [126.7531, 37.5057], [126.7426, 37.5065], [126.7317, 37.5067], [126.7215, 37.5082]],
     stations: { gasanStn: 0, onsuStn: 4, bcStadiumStn: 6, bucheonHallStn: 9, bupyeongGuStn: 13 } },
   // 인천 1호선 (갈산 → 부평구청 → 부평시장 → 부평 → 동수 → 부평삼거리 → 간석오거리 → 인천시청 → 예술회관 → 인천터미널 → 문학경기장 → 선학)
-  { id: '인천1', pts: [[126.7210, 37.5175], [126.7215, 37.5082], [126.7228, 37.4985], [126.7238, 37.4897], [126.7160, 37.4853], [126.7125, 37.4780], [126.7075, 37.4672], [126.7020, 37.4575],
-    [126.7006, 37.4495], [126.6990, 37.4420], [126.6930, 37.4355], [126.6950, 37.4270]],
-    stations: { bupyeongGuStn: 1, bupyeongStn: 3, incheonHallStn: 7, lotteIncheon: 9 } },
+  { id: '인천1', pts: [[126.7373, 37.5715], [126.7428, 37.5662], [126.7448, 37.5537], [126.7385, 37.5450], [126.7280, 37.5430], [126.7225, 37.5380], [126.7225, 37.5305], [126.7210, 37.5175], [126.7215, 37.5082], [126.7228, 37.4985], [126.7238, 37.4897], [126.7160, 37.4853], [126.7125, 37.4780], [126.7075, 37.4672], [126.7020, 37.4575],
+    [126.7006, 37.4495], [126.6990, 37.4420], [126.6930, 37.4355], [126.6950, 37.4270],
+      [126.6942, 37.4185], [126.6875, 37.4135], [126.6770, 37.4045], [126.6685, 37.3985], [126.6617, 37.3878], [126.6567, 37.3820], [126.6440, 37.3845], [126.6345, 37.3933], [126.6300, 37.3995]],
+    stations: { gyeyangStn: 0, bupyeongGuStn: 8, bupyeongStn: 10, incheonHallStn: 14, lotteIncheon: 16, songdoPark: 26 } },
   // 수인선 (오이도 → 달월 → 월곶 → 소래포구 → 인천논현 → 호구포 → 남동인더스파크 → 원인재 → 연수)
-  { id: '수인', pts: [[126.7375, 37.3618], [126.7475, 37.3795], [126.7428, 37.3918], [126.7339, 37.4012], [126.7225, 37.4005], [126.7085, 37.4015], [126.6955, 37.4075], [126.6875, 37.4135], [126.6785, 37.4180]],
-    stations: { oidoStn: 0, soraePort: 3 } }
+  { id: '수인', pts: [[126.7375, 37.3618], [126.7475, 37.3795], [126.7428, 37.3918], [126.7339, 37.4012], [126.7225, 37.4005], [126.7085, 37.4015], [126.6955, 37.4075], [126.6875, 37.4135], [126.6785, 37.4180], [126.6575, 37.4285], [126.6545, 37.4485], [126.6435, 37.4615], [126.6243, 37.4697], [126.6167, 37.4766]],
+    stations: { oidoStn: 0, soraePort: 3, incheonStn: 13 } },
+  // 공항철도 (김포공항 → 계양 → 검암 → 청라국제도시 → 영종대교 → 영종 → 운서 → 공항화물청사 → 인천공항)
+  { id: '공항', pts: [[126.8015, 37.5620], [126.7373, 37.5715], [126.6745, 37.5690], [126.6247, 37.5562], [126.5900, 37.5360], [126.5413, 37.5105], [126.4932, 37.4927], [126.4720, 37.4690], [126.4525, 37.4475]],
+    stations: { gimpoAirport: 0, gyeyangStn: 1, cheongnaStn: 3, incheonAirport: 8 } }
 ].map(l => ({ ...l, color: LINE_COLOR[l.id][0], dark: LINE_COLOR[l.id][1], pts: l.pts.map(([x, y]) => wuv(x, y)) }));
 // 갈아타는 역: 두 노선에 같이 있는 역 (금정 1↔4, 사당 2↔4, 초지 4↔서해)
 const sharedStn = (A, B) => Object.keys(A.stations).filter(id => B.stations[id] != null);
@@ -379,15 +440,15 @@ export function lineLeg(line, fromId, toId) {
 // 지하철로 가기: 가까운 역(1.5km 안)까지 걸어가 타고(필요하면 금정역에서 갈아타고), 내려서 걸어간다
 export function metroPlan(fromSpot, toSpot) {
   const near = (sp) => (sp.kind === 'station' && STATION_IDS.includes(sp.id) ? [{ id: sp.id, d: 0 }]
-    : STATION_IDS.map(id => ({ id, d: meters(SPOT_BY_ID[id].r, sp.r) })).filter(x => x.d < 1500).sort((x, y) => x.d - y.d).slice(0, 3));
+    : STATION_IDS.map(id => ({ id, d: meters(SPOT_BY_ID[id].r, sp.r) })).filter(x => x.d < 2000).sort((x, y) => x.d - y.d).slice(0, 3));
   let best = null;
   near(fromSpot).forEach(o => near(toSpot).forEach(d => {
     if (o.id === d.id) return;
-    // 노선을 최대 3개(갈아타기 2번)까지 이어 본다
+    // 노선을 최대 5개(갈아타기 4번)까지 이어 본다 (집 → 인천공항처럼 먼 곳)
     const tries = [];
     const walk = (line, at, legs, used) => {
       if (line.stations[d.id] != null && at !== d.id) tries.push([...legs, lineLeg(line, at, d.id)]);
-      if (used.length >= 3) return;
+      if (used.length >= 5) return;
       LINES.forEach(B => {
         if (used.includes(B)) return;
         sharedStn(line, B).forEach(x => { if (x !== at && x !== d.id) walk(B, x, [...legs, lineLeg(line, at, x)], [...used, B]); });

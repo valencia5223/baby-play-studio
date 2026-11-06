@@ -322,6 +322,41 @@ export const INCHEON_SPOT_LIST = [
   { id: 'incheonPark', name: '인천대공원', emoji: '🦌', kind: 'park', real: [126.7515, 37.4595], at: [1.22, 0.5], stop: ['인천대공원'],
     desc: '인천대공원이에요! 넓은 잔디밭이랑 호수가 있고, 작은 동물원에 사슴도 있어요.' }
 ];
+// 🌊 인천 바닷가 (인천 서쪽): 송도·월미도·차이나타운·연안부두·영종도(인천공항·을왕리)
+export const INCHEON_WEST_SPOT_LIST = [
+  { id: 'incheonAirport', name: '인천공항', emoji: '✈️', kind: 'airport', lines: ['공항'], real: [126.4505, 37.4492], at: [0.3, 0.4], stop: ['인천공항1터미널', '제1여객터미널', '제1터미널'],
+    desc: '인천공항이에요! 커다란 비행기가 부웅 하고 하늘로 날아올라요. 먼 나라로 여행 가는 곳이에요!' },
+  { id: 'eurwangni', name: '을왕리 해수욕장', emoji: '🏖️', kind: 'beach', real: [126.3740, 37.4475], at: [0.06, 0.41], stop: ['을왕리'],
+    desc: '을왕리 해수욕장이에요! 모래성 쌓고 파도랑 철썩철썩 놀아요. 저녁엔 해가 바다로 쏙 들어가요.' },
+  { id: 'wolmido', name: '월미도', emoji: '🎡', kind: 'themepark', real: [126.5975, 37.4755], at: [0.78, 0.27], stop: ['월미도', '월미공원', '월미바다'],
+    desc: '월미도예요! 바닷가에 빙글빙글 관람차랑 신나는 놀이기구가 있어요. 갈매기한테 손 흔들어요!' },
+  { id: 'incheonStn', name: '인천역', emoji: '🚉', kind: 'station', lines: ['1', '수인'], real: [126.6167, 37.4766], at: [0.85, 0.25], stop: ['인천역'],
+    desc: '인천역이에요! 남색 1호선이랑 노란 수인선의 끝 역이에요.' },
+  { id: 'chinatown', name: '차이나타운', emoji: '🏮', kind: 'shops', real: [126.6190, 37.4750], at: [0.89, 0.31], stop: ['차이나타운'],
+    desc: '차이나타운이에요! 빨간 등이 주렁주렁, 맛있는 짜장면 냄새가 솔솔 나요.' },
+  { id: 'yeonan', name: '연안부두', emoji: '⛴️', kind: 'port', real: [126.5985, 37.4530], at: [0.8, 0.39], stop: ['연안부두', '연안여객터미널'],
+    desc: '연안부두예요! 섬으로 가는 커다란 배가 뿌우 하고 떠나요.' },
+  { id: 'songdoPark', name: '송도 센트럴파크', emoji: '🏙️', kind: 'park', lines: ['인천1'], real: [126.6345, 37.3933], at: [0.91, 0.68], stop: ['센트럴파크'],
+    desc: '송도 센트럴파크예요! 높은 빌딩 사이로 물길이 흐르고, 배를 타고 둥실둥실 다녀요. 인천 1호선 역도 있어요.' }
+];
+// ⛰️ 인천 북쪽: 계양·서구·청라 (+ 김포공항)
+export const INCHEON_NORTH_SPOT_LIST = [
+  { id: 'gyeyangStn', name: '계양역', emoji: '🚉', kind: 'station', lines: ['인천1', '공항'], real: [126.7373, 37.5715], at: [0.69, 0.48], stop: ['계양역'],
+    desc: '계양역이에요! 인천 1호선이랑 공항철도를 갈아탈 수 있어요. 공항철도 타면 비행기 보러 가요!' },
+  { id: 'gyeyangsan', name: '계양산', emoji: '⛰️', kind: 'mountain', real: [126.7085, 37.5440], at: [0.54, 0.8], stop: ['계양산'],
+    desc: '계양산이에요! 인천에서 제일 높은 산이에요. 꼭대기에 올라가면 바다가 보여요.' },
+  { id: 'asiad', name: '아시아드 경기장', emoji: '🏟️', kind: 'stadium', real: [126.6773, 37.5487], at: [0.38, 0.75], stop: ['아시아드'],
+    desc: '아시아드 주경기장이에요! 아주아주 커다란 운동장에서 달리기도 하고 공연도 해요.' },
+  { id: 'cheongnaStn', name: '청라국제도시역', emoji: '🚉', kind: 'station', lines: ['공항'], real: [126.6247, 37.5562], at: [0.13, 0.66], stop: ['청라국제도시역'],
+    desc: '청라국제도시역이에요! 파란 공항철도 전철이 서요. 다음은 바다 건너 영종도예요!' },
+  { id: 'cheongnaLake', name: '청라호수공원', emoji: '⛲', kind: 'lake', real: [126.6375, 37.5330], at: [0.19, 0.95], stop: ['청라호수공원'],
+    desc: '청라호수공원이에요! 커다란 호수에서 음악에 맞춰 분수가 춤을 춰요.' },
+  { id: 'araRiver', name: '경인아라뱃길', emoji: '🚢', kind: 'river', real: [126.7300, 37.5760], at: [0.65, 0.4],
+    desc: '경인아라뱃길이에요! 바다까지 이어진 커다란 물길이에요. 배도 다니고 자전거도 타요.' },
+  { id: 'gimpoAirport', name: '김포공항', emoji: '🛫', kind: 'airport', lines: ['공항'], real: [126.8015, 37.5620], at: [0.97, 0.6], stop: ['김포공항'],
+    desc: '김포공항이에요! 제주도 가는 비행기가 슝 하고 날아가요. 공항철도로 인천공항까지 갈 수 있어요.' }
+];
 export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST,
   gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST, gwanak: GWANAK_SPOT_LIST,
-  ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST, daebu: DAEBU_SPOT_LIST, bucheon: BUCHEON_SPOT_LIST, incheon: INCHEON_SPOT_LIST };
+  ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST, daebu: DAEBU_SPOT_LIST, bucheon: BUCHEON_SPOT_LIST, incheon: INCHEON_SPOT_LIST,
+  incheonwest: INCHEON_WEST_SPOT_LIST, incheonnorth: INCHEON_NORTH_SPOT_LIST };
