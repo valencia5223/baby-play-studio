@@ -19,7 +19,12 @@ const TOWNS = {
   // 서울 구로·영등포 (금천 위, 부천 오른쪽 위. 양천 목동·여의도까지)
   guro: { out: 'townBus_guro.json', box: { x0: 126.840, x1: 126.945, y0: 37.488, y1: 37.540 } },
   // 서울 강서 (구로 위 왼쪽, 김포공항 ~ 마곡 ~ 화곡)
-  gangseo: { out: 'townBus_gangseo.json', box: { x0: 126.770, x1: 126.875, y0: 37.520, y1: 37.590 } }
+  gangseo: { out: 'townBus_gangseo.json', box: { x0: 126.770, x1: 126.875, y0: 37.520, y1: 37.590 } },
+  // 서울 동작 (노량진·흑석·이수), 서초 (반포·고속터미널), 강남 (강남역·압구정·코엑스), 송파 (잠실·가락)
+  dongjak: { out: 'townBus_dongjak.json', box: { x0: 126.940, x1: 126.985, y0: 37.485, y1: 37.525 } },
+  seocho: { out: 'townBus_seocho.json', box: { x0: 126.985, x1: 127.025, y0: 37.455, y1: 37.525 } },
+  gangnam: { out: 'townBus_gangnam.json', box: { x0: 127.025, x1: 127.090, y0: 37.465, y1: 37.535 } },
+  songpa: { out: 'townBus_songpa.json', box: { x0: 127.090, x1: 127.150, y0: 37.470, y1: 37.545 } }
 };
 const TOWN = process.argv[2] || 'geumcheon';
 if (!TOWNS[TOWN]) throw new Error(`동네 이름: ${Object.keys(TOWNS).join(', ')}`);
@@ -39,8 +44,11 @@ async function api(op, q) {
     try {
       calls++;
       const r = await fetch(u); const j = JSON.parse(await r.text());
+      // 0 = 정상, 4 = 결과 없음. 그 밖(하루 호출 한도 등)은 빈 결과로 넘기지 않고 멈춘다
+      const cd = j.msgHeader && String(j.msgHeader.headerCd);
+      if (cd && cd !== '0' && cd !== '4') { const e = new Error(`API 오류 ${cd}: ${hide(j.msgHeader.headerMsg)}`); e.fatal = true; throw e; }
       return arr(j.msgBody && j.msgBody.itemList);
-    } catch (e) { if (i === 2) throw new Error(hide(e.message)); await new Promise(res => setTimeout(res, 800)); }
+    } catch (e) { if (e.fatal || i === 2) throw new Error(hide(e.message)); await new Promise(res => setTimeout(res, 800)); }
   }
   return [];
 }
@@ -67,10 +75,19 @@ for (const [id, ars] of Object.entries(stationArs)) {
   void id;
 }
 
+// 노선 정류장 목록은 동네가 달라도 같으니 저장소 밖 파일에 모아 두고 다시 쓴다 (호출 수 절약)
+const CACHE_FILE = process.env.SEOUL_ROUTE_CACHE || path.join(os.tmpdir(), 'seoul_route_cache.json');
+const cache = fs.existsSync(CACHE_FILE) ? JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')) : {};
+const today = new Date().toISOString().slice(0, 10);
 const stops = {};
 const out = [];
 for (const r of routes.values()) {
-  const st = (await api('busRouteInfo/getStaionByRoute', `busRouteId=${r.id}`)).sort((a, c) => +a.seq - +c.seq);
+  let st = cache[r.id] && cache[r.id].day === today ? cache[r.id].st : null;
+  if (!st) {
+    st = (await api('busRouteInfo/getStaionByRoute', `busRouteId=${r.id}`)).map(s => ({ seq: +s.seq, station: +s.station, stationNm: s.stationNm, gpsX: +s.gpsX, gpsY: +s.gpsY }));
+    cache[r.id] = { day: today, st }; fs.writeFileSync(CACHE_FILE, JSON.stringify(cache));
+  }
+  st = st.slice().sort((a, c) => +a.seq - +c.seq);
   const runs = []; let cur = [];
   st.forEach(s => {
     const x = +s.gpsX, y = +s.gpsY;

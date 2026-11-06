@@ -11,7 +11,7 @@
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
 import { drawYuna } from './StoryBook.jsx';
-import { TOWNS, TOWN_LIST, ALL_TOWN_SPOTS, SPOT_BY_ID, NODES, EDGES, HILLS, RIVERS, LINES, WORLD_BOUNDS, roadPath, meters, busBoard, canBus, busStyle, busLabel, shortStop, nodeOfStop, stopsAtNode, HOME_STOPS, metroPlan, townAt, loadTown, saveTown, LINE_COLOR, SEAS, ISLANDS, DAMS, inSea, isRural } from './townData.js';
+import { TOWNS, TOWN_LIST, ALL_TOWN_SPOTS, SPOT_BY_ID, NODES, EDGES, HILLS, RIVERS, LINES, WORLD_BOUNDS, roadPath, meters, busBoard, canBus, busStyle, busLabel, shortStop, nodeOfStop, stopsAtNode, HOME_STOPS, metroPlan, townAt, loadTown, saveTown, LINE_COLOR, SEAS, ISLANDS, DAMS, BRIDGES, inSea, isRural } from './townData.js';
 import { VOICE } from './voiceLines.js';
 
 const TAU = Math.PI * 2;
@@ -144,11 +144,29 @@ function buildTile(ti, tj, L, dpr) {
       c.stroke();
     });
   });
+  // 한강 대교 (길·철길 위에 덮는다): 기둥 그림자 → 색 난간 → 회색 길 → 노란 가운데 선, 이름표
+  const BCOL = ['#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#14b8a6'];
+  BRIDGES.forEach((br, i) => {
+    const [a, b] = br.pts, ax = X(a), ay = Y(a), bx = X(b), by = Y(b);
+    if (Math.max(ax, bx) < -200 * s || Math.min(ax, bx) > mw + 200 * s || Math.max(ay, by) < -200 * s || Math.min(ay, by) > mh + 200 * s) return;
+    c.fillStyle = 'rgba(30,64,90,0.25)';
+    for (let k = 1; k < 6; k++) { const q = k / 6; ell(c, ax + (bx - ax) * q, ay + (by - ay) * q + 5 * s, 6 * s, 3 * s); c.fill(); }
+    c.strokeStyle = BCOL[i % BCOL.length]; c.lineWidth = 19 * s; strokePath(c, TL, br.pts);
+    c.strokeStyle = '#d6d3d1'; c.lineWidth = 13 * s; strokePath(c, TL, br.pts);
+    c.strokeStyle = '#facc15'; c.lineWidth = 1.6 * s; c.setLineDash([7 * s, 6 * s]); strokePath(c, TL, br.pts); c.setLineDash([]);
+    const mx = ax + (bx - ax) * 0.32, my = ay + (by - ay) * 0.32, fs = Math.round(17 * s);   // 가운데 섬(노들섬) 장소에 가리지 않게 남쪽으로
+    c.font = `${fs}px ${JUA}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    const tw = c.measureText(br.name).width + fs;
+    c.fillStyle = 'rgba(255,255,255,0.92)'; rrect(c, mx - tw / 2, my - fs * 0.7, tw, fs * 1.4, fs * 0.7); c.fill();
+    c.strokeStyle = BCOL[i % BCOL.length]; c.lineWidth = 2 * s; c.stroke();
+    c.fillStyle = '#1e3a8a'; c.fillText(br.name, mx, my + 1);
+  });
   // 아파트·나무: 온 동네 격자에서 자리를 정한다 (옆 조각과 같은 자리 → 경계에서 이어진다)
   const segs = [];
   edges.forEach(([a, b]) => segs.push([X(NODES[a]), Y(NODES[a]), X(NODES[b]), Y(NODES[b]), rw]));
   LINES.forEach(rl => { for (let i = 1; i < rl.pts.length; i++) segs.push([X(rl.pts[i - 1]), Y(rl.pts[i - 1]), X(rl.pts[i]), Y(rl.pts[i]), 12 * s]); });
   spots.forEach(sp => segs.push([X(sp.r), Y(sp.r), X(NODES[sp.node]), Y(NODES[sp.node]), rw]));
+  BRIDGES.forEach(br => segs.push([X(br.pts[0]), Y(br.pts[0]), X(br.pts[1]), Y(br.pts[1]), 19 * s]));
   const step = 30 * s, items = [], blocks = [];
   const gx0 = Math.floor((ti * mw - 60 * s) / step), gx1 = Math.ceil(((ti + 1) * mw + 60 * s) / step);
   const gy0 = Math.floor((tj * mh - 80 * s) / step), gy1 = Math.ceil(((tj + 1) * mh + 60 * s) / step);
@@ -495,6 +513,22 @@ function drawSpot(c, sp, x, y, u, t, opt) {
     c.beginPath(); c.moveTo(-u * 0.36, -u * 0.04); c.lineTo(-u * 0.52, -u * 0.3); c.lineTo(-u * 0.4, -u * 0.3); c.lineTo(-u * 0.24, -u * 0.04); c.closePath(); c.fill();
     c.fillStyle = '#93c5fd'; for (let i = 0; i < 4; i++) { c.beginPath(); c.arc(-u * 0.12 + i * u * 0.12, -u * 0.02, u * 0.03, 0, TAU); c.fill(); }
     c.restore();
+  } else if (K === 'aquarium') {
+    // 수족관: 파란 건물 + 큰 유리창 속을 헤엄치는 물고기·상어 + 뽀글 거품
+    c.fillStyle = '#dbeafe'; rrect(c, -u * 1.35, -u * 1.25, u * 2.7, u * 1.25, u * 0.25); c.fill(); c.strokeStyle = '#1d4ed8'; c.lineWidth = u * 0.05; c.stroke();
+    c.fillStyle = '#38bdf8'; rrect(c, -u * 1.1, -u * 1.05, u * 2.2, u * 0.8, u * 0.38); c.fill();
+    c.save(); rrect(c, -u * 1.1, -u * 1.05, u * 2.2, u * 0.8, u * 0.38); c.clip();
+    c.font = `${Math.round(u * 0.42)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('🐠', Math.sin(t * 0.9) * u * 0.7, -u * 0.8); c.fillText('🦈', -Math.sin(t * 0.6 + 1) * u * 0.75, -u * 0.48);
+    c.fillStyle = 'rgba(255,255,255,0.7)'; for (let i = 0; i < 3; i++) { const p = (t * 0.5 + i / 3) % 1; ell(c, u * (0.5 - i * 0.45), -u * (0.3 + p * 0.7), u * 0.05, u * 0.05); c.fill(); }
+    c.restore();
+  } else if (K === 'skytower') {
+    // 아주 높은 빌딩: 위로 갈수록 가늘어지는 탑 + 반짝이는 창 + 꼭대기에 걸린 구름
+    c.fillStyle = '#e2e8f0'; c.beginPath(); c.moveTo(-u * 0.5, 0); c.lineTo(-u * 0.14, -u * 3.3); c.lineTo(0, -u * 3.75); c.lineTo(u * 0.14, -u * 3.3); c.lineTo(u * 0.5, 0); c.closePath(); c.fill();
+    c.strokeStyle = '#475569'; c.lineWidth = u * 0.05; c.stroke();
+    c.strokeStyle = 'rgba(71,85,105,0.45)'; c.lineWidth = u * 0.03; c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -u * 3.6); c.stroke();
+    for (let r = 0; r < 10; r++) { const y0 = -u * (0.25 + r * 0.32), hw = u * (0.45 - r * 0.032); c.fillStyle = (r + Math.floor(t * 2)) % 4 === 0 ? '#fef08a' : 'rgba(14,116,144,0.35)'; c.fillRect(-hw * 0.7, y0 - u * 0.08, hw * 1.4, u * 0.1); }
+    c.font = `${Math.round(u * 0.6)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('☁️', Math.sin(t * 0.7) * u * 0.5, -u * 2.9);
   } else if (K === 'tower') {
     // 유리 빌딩 셋 (반짝이는 창)
     [[-0.7, 1.9, '#bae6fd'], [0, 2.6, '#a5f3fc'], [0.7, 2.1, '#c7d2fe']].forEach(([q, hh, col], i) => {

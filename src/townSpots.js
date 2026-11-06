@@ -436,8 +436,83 @@ export const GANGHWA_SPOT_LIST = [
   { id: 'ganghwaLuge', name: '강화 루지', emoji: '🛷', kind: 'themepark', real: [126.4770, 37.6040], at: [0.684, 0.891], stop: ['루지', '씨사이드'],
     desc: '강화 루지예요! 바퀴 달린 썰매를 타고 언덕을 쓩 내려와요!' }
 ];
+// 🌉 서울 동작 (노량진·흑석·사당 위). 한강대교·동작대교
+export const DONGJAK_SPOT_LIST = [
+  { id: 'noryangjinStn', name: '노량진역', emoji: '🚉', kind: 'station', lines: ['1', '9'], real: [126.9425, 37.5135], at: [0.06, 0.38], stop: ['노량진역'],
+    desc: '노량진역이에요! 남색 1호선이랑 금색 9호선을 갈아타요. 바로 옆이 한강이에요.' },
+  { id: 'fishMarket', name: '노량진 수산시장', emoji: '🐟', kind: 'market', real: [126.9395, 37.5170], at: [-0.03, 0.2], stop: ['수산시장'],
+    desc: '노량진 수산시장이에요! 커다란 물고기랑 꽃게, 문어가 수조에서 헤엄쳐요.' },
+  { id: 'nodeulIsland', name: '노들섬', emoji: '🎵', kind: 'park', real: [126.9580, 37.5175], at: [0.505, 0.17], stop: ['노들섬'],
+    desc: '노들섬이에요! 한강대교 가운데 있는 섬이에요. 잔디밭에서 음악을 들어요.' },
+  { id: 'dongjakStn', name: '동작역', emoji: '🚉', kind: 'station', lines: ['4', '9'], real: [126.9800, 37.5027], at: [0.889, 0.558], stop: ['동작역'],
+    desc: '동작역이에요! 하늘색 4호선이랑 금색 9호선을 갈아타요. 4호선은 다리를 건너 한강을 넘어가요.' },
+  { id: 'cemetery', name: '국립서울현충원', emoji: '🌳', kind: 'park', real: [126.9720, 37.4990], at: [0.711, 0.65], stop: ['현충원'],
+    desc: '국립서울현충원이에요! 나라를 지켜 준 분들을 기억하는 넓고 조용한 곳이에요.' },
+  { id: 'isuStn', name: '이수역', emoji: '🚉', kind: 'station', lines: ['4', '7'], real: [126.9817, 37.4867], at: [0.927, 0.958], stop: ['이수역', '총신대입구'],
+    desc: '이수역이에요! 하늘색 4호선이랑 올리브색 7호선을 갈아타요.' },
+  { id: 'boramae', name: '보라매공원', emoji: '✈️', kind: 'park', real: [126.9205, 37.4925], at: [-0.433, 0.812], stop: ['보라매공원'],
+    desc: '보라매공원이에요! 진짜 비행기가 전시되어 있는 넓은 공원이에요.' }
+];
+// 🚌 서울 서초 (반포·고속터미널·예술의전당)
+export const SEOCHO_SPOT_LIST = [
+  { id: 'expressTermStn', name: '고속터미널', emoji: '🚌', kind: 'station', lines: ['3', '7', '9'], real: [127.0050, 37.5050], at: [0.5, 0.286], stop: ['고속터미널'],
+    desc: '고속터미널이에요! 멀리 가는 고속버스가 모이는 곳이에요. 지하철 3호선, 7호선, 9호선도 갈아타요.' },
+  { id: 'banpoPark', name: '반포 한강공원', emoji: '🌈', kind: 'river', real: [126.9960, 37.5105], at: [0.275, 0.25], stop: ['반포한강공원', '세빛'],
+    desc: '반포 한강공원이에요! 밤에는 다리에서 무지개 분수가 쏴아 나와요.' },
+  { id: 'gyodaeStn', name: '교대역', emoji: '🚉', kind: 'station', lines: ['2', '3'], real: [127.0141, 37.4934], at: [0.727, 0.451], stop: ['교대역'],
+    desc: '교대역이에요! 초록 2호선이랑 주황 3호선을 갈아타요.' },
+  { id: 'artsCenter', name: '예술의전당', emoji: '🎻', kind: 'art', real: [127.0140, 37.4790], at: [0.725, 0.657], stop: ['예술의전당'],
+    desc: '예술의전당이에요! 음악회랑 그림 전시를 하는 곳이에요. 바이올린 소리가 들려요.' },
+  { id: 'seoraeVillage', name: '서래마을', emoji: '🥖', kind: 'shops', real: [126.9975, 37.4985], at: [0.313, 0.379], stop: ['서래마을'],
+    desc: '서래마을이에요! 맛있는 빵집이 많은 예쁜 골목이에요.' },
+  { id: 'umyeonsan', name: '우면산', emoji: '⛰️', kind: 'mountain', real: [127.0050, 37.4660], at: [0.5, 0.843],
+    desc: '우면산이에요! 소가 누워 있는 모양 같은 산이에요.' }
+];
+// 🏙️ 서울 강남 (강남역·압구정·코엑스·대모산)
+export const GANGNAM_SPOT_LIST = [
+  { id: 'gangnamStn', name: '강남역', emoji: '🚉', kind: 'station', lines: ['2'], real: [127.0276, 37.4979], at: [0.04, 0.53], stop: ['강남역'],
+    desc: '강남역이에요! 초록 2호선이 서고, 사람이랑 높은 빌딩이 아주 많아요.' },
+  { id: 'yangjaeStn', name: '양재역', emoji: '🚉', kind: 'station', lines: ['3'], real: [127.0344, 37.4840], at: [0.145, 0.729], stop: ['양재역'],
+    desc: '양재역이에요! 주황 3호선 전철이 서요.' },
+  { id: 'yangjaeForest', name: '양재 시민의숲', emoji: '🌲', kind: 'park', real: [127.0375, 37.4700], at: [0.192, 0.929], stop: ['시민의숲'],
+    desc: '양재 시민의숲이에요! 키 큰 나무가 빽빽한 숲 공원이에요.' },
+  { id: 'hyundaiApgujeong', name: '현대백화점 압구정본점', emoji: '🏬', kind: 'dept', sign: '현대', real: [127.0280, 37.5273], at: [0.046, 0.11], stop: ['압구정역', '현대백화점'],
+    desc: '현대백화점 압구정본점이에요! 압구정역 바로 옆 커다란 백화점이에요.' },
+  { id: 'dosanPark', name: '도산공원', emoji: '🌿', kind: 'park', real: [127.0353, 37.5242], at: [0.158, 0.154], stop: ['도산공원'],
+    desc: '도산공원이에요! 큰 나무 아래 산책하기 좋은 조용한 공원이에요.' },
+  { id: 'seonjeongneung', name: '선정릉', emoji: '👑', kind: 'park', real: [127.0490, 37.5085], at: [0.369, 0.379], stop: ['선정릉'],
+    desc: '선정릉이에요! 옛날 임금님이 잠들어 계신 커다란 언덕이 있는 숲이에요.' },
+  { id: 'coex', name: '코엑스 아쿠아리움', emoji: '🐠', kind: 'aquarium', real: [127.0590, 37.5125], at: [0.523, 0.321], stop: ['코엑스', '봉은사역'],
+    desc: '코엑스 아쿠아리움이에요! 커다란 수족관 터널에서 상어랑 가오리가 머리 위로 헤엄쳐요!' },
+  { id: 'samsungStn', name: '삼성역', emoji: '🚉', kind: 'station', lines: ['2'], real: [127.0631, 37.5089], at: [0.59, 0.4], stop: ['삼성역'],
+    desc: '삼성역이에요! 초록 2호선 전철이 서요. 땅속에 커다란 지하 도시가 있어요.' },
+  { id: 'gangnamHall', name: '강남구청', emoji: '🏛️', kind: 'hall', real: [127.0473, 37.5172], at: [0.343, 0.254], stop: ['강남구청'],
+    desc: '강남구청이에요! 강남구를 돌보는 큰 건물이에요.' },
+  { id: 'daemosan', name: '대모산', emoji: '⛰️', kind: 'mountain', real: [127.0800, 37.4760], at: [0.846, 0.843],
+    desc: '대모산이에요! 할머니처럼 포근한 산이라 아장아장 오르기 좋아요.' }
+];
+// 🎠 서울 송파 (잠실 롯데월드·석촌호수·올림픽공원·가락시장)
+export const SONGPA_SPOT_LIST = [
+  { id: 'lotteWorld', name: '롯데월드', emoji: '🎠', kind: 'themepark', real: [127.0982, 37.5111], at: [0.137, 0.452], stop: ['잠실역'],
+    desc: '롯데월드예요! 지붕 아래 놀이공원이라 비가 와도 회전목마를 타요. 잠실역 바로 옆이에요.' },
+  { id: 'lotteTower', name: '롯데월드타워', emoji: '🗼', kind: 'skytower', real: [127.1025, 37.5126], at: [0.21, 0.36], stop: ['롯데월드타워', '잠실역'],
+    desc: '롯데월드타워예요! 우리나라에서 제일 높은 빌딩이에요. 꼭대기가 구름에 닿아요!' },
+  { id: 'seokchon', name: '석촌호수', emoji: '🦢', kind: 'lake', real: [127.1060, 37.5075], at: [0.267, 0.5], stop: ['석촌호수'],
+    desc: '석촌호수예요! 호수 둘레를 걸으면 봄에 벚꽃이 팡팡 피어요.' },
+  { id: 'olympicPark', name: '올림픽공원', emoji: '🏟️', kind: 'park', real: [127.1215, 37.5205], at: [0.525, 0.327], stop: ['올림픽공원'],
+    desc: '올림픽공원이에요! 넓은 잔디밭에 혼자 서 있는 나무랑 커다란 조각이 있어요.' },
+  { id: 'jamsilStadium', name: '잠실 야구장', emoji: '⚾', kind: 'stadium', real: [127.0719, 37.5122], at: [-0.302, 0.437], stop: ['종합운동장', '잠실야구장'],
+    desc: '잠실 야구장이에요! 응원하는 소리가 우와! 종합운동장역에서 2호선이랑 9호선을 갈아타요.' },
+  { id: 'jamsilHangang', name: '잠실 한강공원', emoji: '🛶', kind: 'river', real: [127.0840, 37.5180], at: [-0.1, 0.36], stop: ['잠실한강공원', '잠실새내'],
+    desc: '잠실 한강공원이에요! 넓은 한강에서 오리배가 둥실둥실 떠다녀요.' },
+  { id: 'garakMarket', name: '가락시장', emoji: '🍉', kind: 'market', real: [127.1183, 37.4925], at: [0.472, 0.7], stop: ['가락시장'],
+    desc: '가락시장이에요! 과일이랑 채소랑 생선이 산더미처럼 모이는 커다란 시장이에요.' },
+  { id: 'suseoStn', name: '수서역', emoji: '🚄', kind: 'ktx', lines: ['3'], real: [127.1017, 37.4873], at: [0.195, 0.769], stop: ['수서역'],
+    desc: '수서역이에요! 아주 빠른 기차 SRT가 쌩 출발해요. 주황 3호선도 서요.' }
+];
 export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST,
   gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST, gwanak: GWANAK_SPOT_LIST,
   ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST, daebu: DAEBU_SPOT_LIST, bucheon: BUCHEON_SPOT_LIST, incheon: INCHEON_SPOT_LIST,
   incheonwest: INCHEON_WEST_SPOT_LIST, incheonnorth: INCHEON_NORTH_SPOT_LIST,
-  guro: GURO_SPOT_LIST, gangseo: GANGSEO_SPOT_LIST, gimpo: GIMPO_SPOT_LIST, ganghwa: GANGHWA_SPOT_LIST };
+  guro: GURO_SPOT_LIST, gangseo: GANGSEO_SPOT_LIST, gimpo: GIMPO_SPOT_LIST, ganghwa: GANGHWA_SPOT_LIST,
+  dongjak: DONGJAK_SPOT_LIST, seocho: SEOCHO_SPOT_LIST, gangnam: GANGNAM_SPOT_LIST, songpa: SONGPA_SPOT_LIST };
