@@ -288,7 +288,7 @@ function drawSpot(c, sp, x, y, u, t, opt) {
     const w = u * 1.7, h = u * 2.2;
     c.fillStyle = '#fdf2f8'; rrect(c, -w / 2, -h, w, h, u * 0.08); c.fill(); c.strokeStyle = '#db2777'; c.lineWidth = u * 0.06; c.stroke();
     c.fillStyle = '#ec4899'; c.fillRect(-w / 2, -h, w, u * 0.32);
-    c.fillStyle = '#ffffff'; c.font = `${Math.round(u * 0.24)}px ${JUA}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('백화점', 0, -h + u * 0.17);
+    c.fillStyle = '#ffffff'; c.font = `${Math.round(u * 0.24)}px ${JUA}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(sp.sign ? `${sp.sign}백화점` : '백화점', 0, -h + u * 0.17);
     c.fillStyle = '#bae6fd'; for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) c.fillRect(-w / 2 + w * (0.1 + j * 0.24), -h + u * 0.45 + i * u * 0.36, w * 0.16, u * 0.22);
     c.fillStyle = 'rgba(14,165,233,0.35)'; c.fillRect(w * 0.3, -h + u * 0.4, w * 0.16, h - u * 0.4);
     const ey = -u * 0.35 - ((Math.sin(t * 0.8) + 1) / 2) * (h - u * 1.0);

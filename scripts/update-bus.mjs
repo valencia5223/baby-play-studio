@@ -34,7 +34,9 @@ const TOWNS = {
   // 대부도·오이도 바닷가: 시흥·안산 서쪽 (대부 북쪽 방아머리 ~ 남쪽 탄도). 대부분 바다
   daebu: { out: 'townBus_daebu.json', box: { x0: 126.540, x1: 126.760, y0: 37.185, y1: 37.380 }, home: [], extra: [] },
   // 부천: 시흥 바로 위(북쪽), 광명 왼쪽
-  bucheon: { out: 'townBus_bucheon.json', box: { x0: 126.735, x1: 126.850, y0: 37.455, y1: 37.530 }, home: [], extra: [] }
+  bucheon: { out: 'townBus_bucheon.json', box: { x0: 126.735, x1: 126.850, y0: 37.455, y1: 37.530 }, home: [], extra: [] },
+  // 인천 부평·남동: 부천·시흥 바로 왼쪽 (부평역 ~ 구월동 ~ 소래포구)
+  incheon: { out: 'townBus_incheon.json', box: { x0: 126.660, x1: 126.735, y0: 37.385, y1: 37.530 }, home: [], extra: [] }
 };
 const TOWN = process.argv[2] || 'sanbon';
 if (!TOWNS[TOWN]) throw new Error(`동네 이름: ${Object.keys(TOWNS).join(', ')}`);

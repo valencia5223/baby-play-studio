@@ -57,7 +57,7 @@ export const ANYANG_SPOT_LIST = [
     desc: '안양역이에요! 남색 1호선 전철이 서요. 기차도 지나가요.' },
   { id: 'anyang1st', name: '안양1번가', emoji: '🛍️', kind: 'shops', real: [126.9218, 37.3990], at: [0.11, 0.58], stop: ['안양1번가'],
     desc: '안양1번가예요! 옷 가게랑 맛있는 가게가 줄줄이 있어요.' },
-  { id: 'bumgyeDept', name: '범계 백화점', emoji: '🏬', kind: 'dept', real: [126.9500, 37.3904], at: [0.6, 0.79], stop: ['롯데백화점'],
+  { id: 'bumgyeDept', name: '롯데백화점', emoji: '🏬', kind: 'dept', sign: '롯데', real: [126.9500, 37.3904], at: [0.6, 0.79], stop: ['롯데백화점'],
     desc: '범계 백화점이에요! 엘리베이터 타고 장난감 가게에 가 봐요.' },
   { id: 'anyangHall', name: '안양시청', emoji: '🏛️', kind: 'hall', real: [126.9580, 37.3940], at: [0.82, 0.48], stop: ['안양시청'],
     desc: '안양시청이에요! 안양을 돌보는 커다란 건물이에요.' },
@@ -228,7 +228,7 @@ export const ANSAN_SPOT_LIST = [
 ];
 // 🦀 시흥 (안산 위, 광명 왼쪽). 4호선 정왕·오이도, 서해선 시흥시청~시흥대야
 export const SIHEUNG_SPOT_LIST = [
-  { id: 'oidoStn', name: '오이도역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.7375, 37.3618], at: [0.06, 0.85], stop: ['오이도역'],
+  { id: 'oidoStn', name: '오이도역', emoji: '🚉', kind: 'station', lines: ['4', '수인'], real: [126.7375, 37.3618], at: [0.06, 0.85], stop: ['오이도역'],
     desc: '오이도역이에요! 하늘색 4호선 끝 역이에요. 조금 가면 바다가 있어요!' },
   { id: 'jeongwangStn', name: '정왕역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.7420, 37.3515], at: [0.1, 0.94], stop: ['정왕역'],
     desc: '정왕역이에요! 하늘색 4호선 전철이 서요.' },
@@ -282,6 +282,10 @@ export const BUCHEON_SPOT_LIST = [
     desc: '부천시청역이에요! 올리브색 7호선 전철이 땅속으로 다녀요.' },
   { id: 'bcStadiumStn', name: '부천종합운동장', emoji: '🏟️', kind: 'stadium', lines: ['7'], real: [126.7975, 37.5050], at: [0.55, 0.33], stop: ['부천종합운동장'],
     desc: '부천종합운동장이에요! 축구 선수들이 공을 뻥뻥 차요. 7호선 역도 바로 옆에 있어요.' },
+  { id: 'hyundaiJungdong', name: '현대백화점 중동점', emoji: '🏬', kind: 'dept', sign: '현대', real: [126.7612, 37.5040], at: [0.19, 0.42], stop: ['현대백화점'],
+    desc: '현대백화점 중동점이에요! 부천시청역 바로 옆 커다란 백화점이에요. 엘리베이터 타고 쓩!' },
+  { id: 'lotteJungdong', name: '롯데백화점 중동점', emoji: '🏬', kind: 'dept', sign: '롯데', real: [126.7735, 37.5038], at: [0.38, 0.34], stop: ['롯데백화점'],
+    desc: '롯데백화점 중동점이에요! 신중동역 옆에 있는 커다란 백화점이에요.' },
   { id: 'bucheonHall', name: '부천시청', emoji: '🏛️', kind: 'hall', real: [126.7660, 37.5035], at: [0.29, 0.41], stop: ['부천시청'],
     desc: '부천시청이에요! 부천을 돌보는 커다란 건물이에요. 앞에 넓은 잔디밭도 있어요.' },
   { id: 'sangdongLake', name: '상동호수공원', emoji: '🦢', kind: 'lake', real: [126.7470, 37.5025], at: [0.09, 0.4], stop: ['상동호수공원'],
@@ -297,6 +301,27 @@ export const BUCHEON_SPOT_LIST = [
   { id: 'freeMarket', name: '부천 자유시장', emoji: '🛒', kind: 'market', real: [126.7860, 37.4870], at: [0.45, 0.53],
     desc: '부천 자유시장이에요! 떡이랑 과일이랑 맛있는 게 많아요.' }
 ];
+// 🌉 인천 부평·남동 (부천·시흥 왼쪽). 인천 1호선·경인선·7호선·수인선
+export const INCHEON_SPOT_LIST = [
+  { id: 'bupyeongStn', name: '부평역', emoji: '🚉', kind: 'station', lines: ['1', '인천1'], real: [126.7238, 37.4897], at: [0.85, 0.29], stop: ['부평역'],
+    desc: '부평역이에요! 남색 1호선이랑 인천 1호선을 갈아탈 수 있어요. 땅속에 커다란 지하상가도 있어요!' },
+  { id: 'bupyeongGuStn', name: '부평구청역', emoji: '🚉', kind: 'station', lines: ['7', '인천1'], real: [126.7215, 37.5082], at: [0.82, 0.14], stop: ['부평구청역', '부평구청'],
+    desc: '부평구청역이에요! 올리브색 7호선 끝 역이에요. 인천 1호선으로 갈아탈 수 있어요.' },
+  { id: 'incheonHallStn', name: '인천시청역', emoji: '🚉', kind: 'station', lines: ['인천1'], real: [126.7020, 37.4575], at: [0.53, 0.49], stop: ['인천시청역'],
+    desc: '인천시청역이에요! 인천 1호선 전철이 땅속으로 다녀요.' },
+  { id: 'incheonHall', name: '인천시청', emoji: '🏛️', kind: 'hall', real: [126.7052, 37.4563], at: [0.67, 0.53], stop: ['인천시청'],
+    desc: '인천시청이에요! 바다가 있는 큰 도시 인천을 돌보는 곳이에요.' },
+  { id: 'lotteIncheon', name: '롯데백화점 인천점', emoji: '🏬', kind: 'dept', sign: '롯데', real: [126.7016, 37.4431], at: [0.52, 0.62], stop: ['롯데백화점'],
+    desc: '롯데백화점 인천점이에요! 버스 터미널 바로 옆에 있는 커다란 백화점이에요.' },
+  { id: 'bupyeongMarket', name: '부평시장', emoji: '🛒', kind: 'market', real: [126.7228, 37.4950], at: [0.84, 0.23], stop: ['부평시장'],
+    desc: '부평시장이에요! 떡이랑 반찬이랑 맛있는 게 줄줄이 있어요.' },
+  { id: 'soraePort', name: '소래포구', emoji: '🦐', kind: 'port', lines: ['수인'], real: [126.7339, 37.4012], at: [0.99, 0.89], stop: ['소래포구역'],
+    desc: '소래포구예요! 배가 둥실둥실, 새우랑 꽃게를 파는 어시장이 있어요. 노란 수인선 전철역도 있어요.' },
+  { id: 'soraeWetland', name: '소래습지생태공원', emoji: '🌾', kind: 'park', real: [126.7445, 37.4130], at: [1.12, 0.8], stop: ['소래습지생태공원', '생태공원'],
+    desc: '소래습지생태공원이에요! 갈대밭 사이로 커다란 풍차가 빙글빙글 돌아요.' },
+  { id: 'incheonPark', name: '인천대공원', emoji: '🦌', kind: 'park', real: [126.7515, 37.4595], at: [1.22, 0.5], stop: ['인천대공원'],
+    desc: '인천대공원이에요! 넓은 잔디밭이랑 호수가 있고, 작은 동물원에 사슴도 있어요.' }
+];
 export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST,
   gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST, gwanak: GWANAK_SPOT_LIST,
-  ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST, daebu: DAEBU_SPOT_LIST, bucheon: BUCHEON_SPOT_LIST };
+  ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST, daebu: DAEBU_SPOT_LIST, bucheon: BUCHEON_SPOT_LIST, incheon: INCHEON_SPOT_LIST };
