@@ -3,7 +3,7 @@ import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID,
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
 import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
 import { BASKET_MAX, COUNTER_GOODS, ASK_MAX_N, SHOP_GOODS, BILLS, wonText, TOTAL_MAX } from './shopData.js';
-import { TOWN_LIST, busSpoken, TRANSFERS, SPOT_BY_ID } from './townData.js';
+import { TOWN_LIST, busSpoken, TRANSFERS, SPOT_BY_ID, lineName } from './townData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -329,7 +329,7 @@ export const VOICE = {
   townCrossArrive: (t) => `${t.name}에 왔어요! 어디에 가 볼까요?`,
   townNeedStation: () => '지하철은 역에서 탈 수 있어요! 먼저 역으로 가 봐요!',
   townMetroWalk: (st) => `가까운 ${st.name}까지 걸어가서 지하철을 타요!`,
-  townMetroTransfer: (st, line) => `${st.name}에서 ${line}호선으로 갈아타요!`
+  townMetroTransfer: (st, line) => `${st.name}에서 ${lineName(line)}으로 갈아타요!`
 };
 
 // 앱에서 나올 수 있는 모든 문장 목록 (MP3 생성 스크립트용)

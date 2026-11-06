@@ -201,5 +201,54 @@ export const GWANAK_SPOT_LIST = [
   { id: 'gwanaksan', name: '관악산', emoji: '⛰️', kind: 'mountain', real: [126.9646, 37.4448], at: [0.52, 0.9],
     desc: '관악산이에요! 바위가 많은 높은 산이에요. 꼭대기에 연주대가 있어요.' }
 ];
+// 🌊 안산 (군포 왼쪽). 4호선 상록수~안산역, 초지역에서 서해선 갈아타기
+export const ANSAN_SPOT_LIST = [
+  { id: 'sangroksuStn', name: '상록수역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.8660, 37.3025], at: [0.88, 0.77], stop: ['상록수역'],
+    desc: '상록수역이에요! 하늘색 4호선 전철이 서요. 여기부터 안산이에요!' },
+  { id: 'handaeStn', name: '한대앞역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.8535, 37.3095], at: [0.78, 0.65], stop: ['한대앞역'],
+    desc: '한대앞역이에요! 하늘색 4호선 전철이 서요.' },
+  { id: 'ansanCenterStn', name: '중앙역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.8389, 37.3158], at: [0.66, 0.53], stop: ['중앙역'],
+    desc: '안산 중앙역이에요! 하늘색 4호선 전철이 서요. 사람이 아주 많아요!' },
+  { id: 'chojiStn', name: '초지역', emoji: '🚉', kind: 'station', lines: ['4', '서해'], real: [126.8070, 37.3213], at: [0.39, 0.43], stop: ['초지역'],
+    desc: '초지역이에요! 하늘색 4호선이랑 연두색 서해선을 갈아탈 수 있어요.' },
+  { id: 'ansanStn', name: '안산역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.7893, 37.3279], at: [0.24, 0.31], stop: ['안산역'],
+    desc: '안산역이에요! 하늘색 4호선 전철이 서요.' },
+  { id: 'ansanHall', name: '안산시청', emoji: '🏛️', kind: 'hall', real: [126.8317, 37.3212], at: [0.6, 0.43], stop: ['안산시청'],
+    desc: '안산시청이에요! 안산을 돌보는 커다란 건물이에요.' },
+  { id: 'ansanLake', name: '안산호수공원', emoji: '🦢', kind: 'lake', real: [126.8260, 37.3060], at: [0.55, 0.71],
+    desc: '안산호수공원이에요! 넓은 호수에 오리가 둥둥 떠다녀요.' },
+  { id: 'hwarang', name: '화랑유원지', emoji: '🌷', kind: 'pond', real: [126.8095, 37.3245], at: [0.41, 0.37], stop: ['화랑유원지'],
+    desc: '화랑유원지예요! 큰 연못 둘레를 자전거 타고 빙글빙글 돌아요.' },
+  { id: 'erica', name: '한양대 에리카', emoji: '🎓', kind: 'univ', real: [126.8380, 37.2995], at: [0.65, 0.83], stop: ['한양대'],
+    desc: '한양대학교 에리카예요! 언니 오빠들이 공부하는 학교예요.' },
+  { id: 'wastadium', name: '안산와스타디움', emoji: '⚽', kind: 'stadium', real: [126.8187, 37.3178], at: [0.49, 0.49],
+    desc: '안산와스타디움이에요! 축구 선수들이 뻥뻥 공을 차요. 골인!' },
+  { id: 'multiculture', name: '다문화음식거리', emoji: '🍜', kind: 'market', real: [126.7920, 37.3310], at: [0.27, 0.25], stop: ['원곡동'],
+    desc: '다문화음식거리예요! 여러 나라 친구들의 맛있는 음식이 가득해요.' }
+];
+// 🦀 시흥 (안산 위, 광명 왼쪽). 4호선 정왕·오이도, 서해선 시흥시청~시흥대야
+export const SIHEUNG_SPOT_LIST = [
+  { id: 'oidoStn', name: '오이도역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.7375, 37.3618], at: [0.06, 0.85], stop: ['오이도역'],
+    desc: '오이도역이에요! 하늘색 4호선 끝 역이에요. 조금 가면 바다가 있어요!' },
+  { id: 'jeongwangStn', name: '정왕역', emoji: '🚉', kind: 'station', lines: ['4'], real: [126.7420, 37.3515], at: [0.1, 0.94], stop: ['정왕역'],
+    desc: '정왕역이에요! 하늘색 4호선 전철이 서요.' },
+  { id: 'siheungHallStn', name: '시흥시청역', emoji: '🚉', kind: 'station', lines: ['서해'], real: [126.8062, 37.3820], at: [0.64, 0.66], stop: ['시흥시청역'],
+    desc: '시흥시청역이에요! 연두색 서해선 전철이 서요.' },
+  { id: 'sincheonStn', name: '신천역', emoji: '🚉', kind: 'station', lines: ['서해'], real: [126.7880, 37.4391], at: [0.48, 0.14], stop: ['신천역'],
+    desc: '신천역이에요! 연두색 서해선 전철이 서요.' },
+  { id: 'daeyaStn', name: '시흥대야역', emoji: '🚉', kind: 'station', lines: ['서해'], real: [126.7940, 37.4508], at: [0.53, 0.04], stop: ['시흥대야역'],
+    desc: '시흥대야역이에요! 연두색 서해선 전철이 서요. 조금 가면 부천이에요.' },
+  { id: 'siheungHall', name: '시흥시청', emoji: '🏛️', kind: 'hall', real: [126.8028, 37.3790], at: [0.61, 0.69], stop: ['시흥시청.종합일자리센터'],
+    desc: '시흥시청이에요! 시흥을 돌보는 커다란 건물이에요.' },
+  { id: 'gaetgol', name: '갯골생태공원', emoji: '🦀', kind: 'park', real: [126.7803, 37.3896], at: [0.42, 0.59], stop: ['갯골생태공원'],
+    desc: '갯골생태공원이에요! 갯벌에 게가 옆으로 사사삭 걸어가요. 높은 전망대도 있어요!' },
+  { id: 'mulwang', name: '물왕저수지', emoji: '🎣', kind: 'lake', real: [126.8340, 37.3860], at: [0.87, 0.63], stop: ['물왕'],
+    desc: '물왕저수지예요! 넓은 물에서 아저씨들이 낚시를 해요.' },
+  { id: 'lotus', name: '연꽃테마파크', emoji: '🪷', kind: 'pond', real: [126.8082, 37.4005], at: [0.65, 0.5], stop: ['연꽃테마파크'],
+    desc: '연꽃테마파크예요! 여름이면 커다란 연꽃이 활짝 피어요.' },
+  { id: 'eungyeLake', name: '은계호수공원', emoji: '🦆', kind: 'lake', real: [126.8040, 37.4430], at: [0.62, 0.11], stop: ['은계호수공원'],
+    desc: '은계호수공원이에요! 호수 둘레를 아장아장 산책해요.' }
+];
 export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST,
-  gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST, gwanak: GWANAK_SPOT_LIST };
+  gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST, gwanak: GWANAK_SPOT_LIST,
+  ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST };

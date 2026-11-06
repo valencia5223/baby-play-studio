@@ -211,7 +211,7 @@ function drawSpot(c, sp, x, y, u, t, opt) {
     lines.forEach(([n, col], i) => {
       const bx = (i - (lines.length - 1) / 2) * u * 0.5, by = -h - u * 0.62;
       c.fillStyle = col; c.beginPath(); c.arc(bx, by, u * 0.22, 0, TAU); c.fill(); c.strokeStyle = '#ffffff'; c.lineWidth = u * 0.05; c.stroke();
-      c.fillStyle = '#ffffff'; c.font = `bold ${Math.round(u * 0.3)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(n, bx, by + u * 0.01);
+      c.fillStyle = '#ffffff'; c.font = `bold ${Math.round(u * (n.length > 1 ? 0.19 : 0.3))}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(n, bx, by + u * 0.01);
     });
   } else if (K === 'shops') {
     const cols = [['#fecaca', '#ef4444'], ['#fde68a', '#f59e0b'], ['#bbf7d0', '#16a34a']];
@@ -569,7 +569,6 @@ const AMB_COLS = ['#ef4444', '#facc15', '#38bdf8', '#a3e635', '#f472b6'];
 const SAFE = 0.24;   // 움직이는 탈것이 화면 가장자리에서 이만큼 안쪽에 있도록 카메라가 따라간다
 const clampCam = (c) => { const b = WORLD_BOUNDS, m = 0.05; return { u: Math.max(b.u0 - m, Math.min(b.u1 - 1 + m, c.u)), v: Math.max(b.v0 - m, Math.min(b.v1 - 1 + m, c.v)) }; };
 const camOn = (p) => clampCam({ u: p.u - 0.5, v: p.v - 0.55 });
-const townCenter = (t) => t.center;
 
 // ═════════════════════════════════════════════════════════════════════════════
 export default function TownGame({ audio, speak }) {
@@ -768,9 +767,7 @@ export default function TownGame({ audio, speak }) {
     if (g.mode !== 'idle' || g.at === 'home') return;
     g.sel = 'home'; goCar();
   };
-  const replay = () => { const g = G.current; if (g && g.lastLine) say(g.lastLine); };
   // 지도 옮겨 보기: 동네 버튼·유나 찾기
-  const lookTown = (id) => { const g = G.current; if (!g) return; g.camTo = camOn(townCenter(TOWNS[id])); audio.playFreq(660, 'sine', 0.08, 0.25); };
   const lookYuna = () => { const g = G.current; if (!g) return; g.camTo = camOn(g.yuna.p); audio.playFreq(660, 'sine', 0.08, 0.25); };
 
   // ── 터치: 장소 콕 / 아빠 차 빵빵 / 손가락으로 끌어 지도 옮기기 ──
@@ -1046,29 +1043,27 @@ export default function TownGame({ audio, speak }) {
   const panel = { background: '#fffdf8', borderRadius: '30px', padding: '20px 22px', boxShadow: '0 20px 40px -18px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', maxWidth: '100%' };
   const walkOk = sel && ui.walk;
   const busNote = sel && !ui.bus ? '버스는 안 가요' : '';
-  const small = { ...btn('#ffffff', '#0f766e'), minHeight: '42px', padding: '0 14px', fontSize: '1.05rem' };
+  const mapBtn = (bg, color) => ({ ...btn(bg, color), minHeight: '64px', width: '78px', padding: '6px 4px', borderRadius: '20px', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', whiteSpace: 'normal', lineHeight: 1.1 });
+  const chip = (color, bg = 'rgba(255,255,255,0.92)') => ({ background: bg, color, borderRadius: '16px', padding: '5px 12px', fontFamily: JUA, fontSize: '1.05rem', boxShadow: '0 4px 12px -6px rgba(0,0,0,0.3)' });
 
   return (
     <div ref={rootRef} style={full
       ? { position: 'fixed', inset: 0, zIndex: 9999, background: '#fdf6ec', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }
       : { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flexShrink: 0 }}>
-        <button onClick={goHome} style={btn('#fce7f3', '#be185d')}>🏠 집으로 귀가</button>
-        <button onClick={replay} style={btn('#ffffff', '#9a3412')}>🔊 다시 듣기</button>
-        <button onClick={toggleFull} style={btn(full ? '#334155' : '#ffffff', full ? '#ffffff' : '#0f766e')}>{full ? '↙ 작게 보기' : '⛶ 전체화면'}</button>
-        <div style={{ flex: 1, textAlign: 'center', fontFamily: JUA, fontSize: '1.4rem', color: '#0f766e', minWidth: '160px' }}>🚗 우리 동네 {TOWNS[ui.view || 'sanbon'].name}</div>
-        <div style={{ fontFamily: JUA, fontSize: '1.2rem', color: '#92400e', background: '#fef3c7', borderRadius: '20px', padding: '8px 16px' }}>🏅 도장 {ui.stamps}/{ALL_TOWN_SPOTS.length}</div>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flexShrink: 0 }}>
-        <span style={{ fontFamily: JUA, fontSize: '1.05rem', color: '#57534e' }}>🗺️ 동네 보기</span>
-        {TOWN_LIST.map(tw => <button key={tw.id} onClick={() => lookTown(tw.id)} style={{ ...small, background: ui.view === tw.id ? '#0f766e' : '#ffffff', color: ui.view === tw.id ? '#ffffff' : '#0f766e' }}>{tw.button}</button>)}
-        <button onClick={lookYuna} style={{ ...small, background: '#fce7f3', color: '#be185d' }}>📍 유나 찾기</button>
-      </div>
-      <div style={{ flex: 1, minHeight: 0, position: 'relative', borderRadius: '26px', overflow: 'hidden', boxShadow: '0 16px 30px -18px rgba(15,118,110,0.5)' }}>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative', borderRadius: full ? '18px' : '26px', overflow: 'hidden', boxShadow: '0 16px 30px -18px rgba(15,118,110,0.5)' }}>
         <canvas ref={canvasRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }} />
         {hint && <div style={{ position: 'absolute', left: '12%', right: '12%', top: '6px', textAlign: 'center', pointerEvents: 'none' }}>
           <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.92)', borderRadius: '18px', padding: '6px 16px', fontFamily: JUA, fontSize: '1.15rem', color: '#7c2d12', boxShadow: '0 4px 12px -6px rgba(0,0,0,0.3)' }}>{hint}</span>
         </div>}
+        <div style={{ position: 'absolute', right: '10px', top: '52px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <button onClick={lookYuna} style={mapBtn('#fce7f3', '#be185d')}><span style={{ fontSize: '1.7rem', lineHeight: 1 }}>📍</span>유나 찾기</button>
+          <button onClick={goHome} style={mapBtn('#fff7ed', '#9a3412')}><span style={{ fontSize: '1.7rem', lineHeight: 1 }}>🏠</span>집으로</button>
+          <button onClick={toggleFull} style={mapBtn(full ? '#334155' : '#ffffff', full ? '#ffffff' : '#0f766e')}><span style={{ fontSize: '1.7rem', lineHeight: 1 }}>{full ? '↙' : '⛶'}</span>{full ? '작게' : '전체화면'}</button>
+        </div>
+        <div style={{ position: 'absolute', left: '10px', bottom: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap', pointerEvents: 'none', maxWidth: 'calc(100% - 150px)' }}>
+          <span style={chip('#0f766e')}>🚗 우리 동네 {TOWNS[ui.view || 'sanbon'].name}</span>
+          <span style={chip('#92400e', '#fef3c7')}>🏅 도장 {ui.stamps}/{ALL_TOWN_SPOTS.length}</span>
+        </div>
         {ui.bell && <button onClick={ringBell} style={{ ...btn(ui.bellOn ? '#dc2626' : '#f97316'), position: 'absolute', right: '16px', bottom: '16px', minHeight: '110px', minWidth: '110px', borderRadius: '50%', fontSize: '1.3rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', animation: ui.bellOn ? 'none' : 'bpsTownPulse 0.9s ease-in-out infinite' }}>
           <span style={{ fontSize: '2.6rem', lineHeight: 1 }}>🔔</span>{ui.bellOn ? '내려요' : '벨 누르기'}
         </button>}
