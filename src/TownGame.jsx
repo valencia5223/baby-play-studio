@@ -11,7 +11,7 @@
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
 import { drawYuna } from './StoryBook.jsx';
-import { TOWNS, TOWN_LIST, ALL_TOWN_SPOTS, SPOT_BY_ID, NODES, EDGES, HILLS, RIVERS, LINES, WORLD_BOUNDS, roadPath, meters, busBoard, canBus, busStyle, busLabel, shortStop, nodeOfStop, stopsAtNode, HOME_STOPS, metroPlan, townAt, loadTown, saveTown, LINE_COLOR, SEAS, ISLANDS, DAMS, BRIDGES, inSea, isRural } from './townData.js';
+import { TOWNS, TOWN_LIST, ALL_TOWN_SPOTS, SPOT_BY_ID, NODES, EDGES, HILLS, RIVERS, LINES, WORLD_BOUNDS, roadPath, meters, busBoard, canBus, busStyle, busLabel, shortStop, nodeOfStop, stopsAtNode, HOME_STOPS, metroPlan, tripPlans, fmtMin, townAt, loadTown, saveTown, LINE_COLOR, SEAS, ISLANDS, DAMS, BRIDGES, inSea, seaNear, isRural } from './townData.js';
 import { VOICE } from './voiceLines.js';
 
 const TAU = Math.PI * 2;
@@ -21,8 +21,6 @@ function rng(seed) { let s = (seed >>> 0) % 2147483647 || 1; return () => { s = 
 const ell = (c, x, y, rx, ry, rot = 0) => { c.beginPath(); c.ellipse(x, y, Math.max(0.1, rx), Math.max(0.1, ry), rot, 0, TAU); };
 const rrect = (c, x, y, w, h, r) => { c.beginPath(); c.roundRect(x, y, w, h, Math.min(r, w / 2, h / 2)); };
 const nodeUV = (i) => ({ u: NODES[i].u, v: NODES[i].v });
-const inHill = (p, pad = 1) => HILLS.some(([u, v, ru, rv]) => ((p.u - u) / ru) ** 2 + ((p.v - v) / rv) ** 2 < pad);
-const nearRiver = (p, k = 0.035) => RIVERS.some(rv => rv.some((a, i) => i > 0 && segDist(p.u, p.v * 0.6, rv[i - 1].u, rv[i - 1].v * 0.6, a.u, a.v * 0.6) < k));
 // 노드 이웃 (지나가는 차)
 const NB = NODES.map(() => []);
 EDGES.forEach(([a, b]) => { NB[a].push(b); NB[b].push(a); });
@@ -168,19 +166,35 @@ function buildTile(ti, tj, L, dpr) {
   spots.forEach(sp => segs.push([X(sp.r), Y(sp.r), X(NODES[sp.node]), Y(NODES[sp.node]), rw]));
   BRIDGES.forEach(br => segs.push([X(br.pts[0]), Y(br.pts[0]), X(br.pts[1]), Y(br.pts[1]), 19 * s]));
   const step = 30 * s, items = [], blocks = [];
+  // 빠르게: 이 조각 근처 것만 추린다
+  const mu = 90 * s / mw + 0.02, mv = 90 * s / mh + 0.02;   // 집 자리는 조각 밖 60~80px 까지 보니 그만큼 넉넉히
+  const hillsHere = HILLS.filter(([u, v, ru, rv]) => u + ru * 1.1 > ti - mu && u - ru * 1.1 < ti + 1 + mu && v + rv * 1.1 > tj - mv && v - rv * 1.1 < tj + 1 + mv);
+  const riversHere = RIVERS.filter(rv => rv.some((a, i) => i > 0 && Math.max(a.u, rv[i - 1].u) > ti - mu - 0.1 && Math.min(a.u, rv[i - 1].u) < ti + 1 + mu + 0.1 && Math.max(a.v, rv[i - 1].v) > tj - mv - 0.1 && Math.min(a.v, rv[i - 1].v) < tj + 1 + mv + 0.1));
+  const seaHere = seaNear(ti - mu, tj - mv, ti + 1 + mu, tj + 1 + mv);
+  const parksHere = parks.filter(pk => near(X(pk.r), Y(pk.r), 0.06 * mw + 90 * s)), flowersHere = flowers.filter(az => near(X(az.a), Y(az.a), 0.06 * mw + 90 * s));
+  const SC = 60 * s, segCells = new Map(), PAD = 52 * s;   // 길에서 이 거리 안이면 집을 안 짓는다 (집 키·길 폭 포함 넉넉히)
+  segs.forEach(sg => {
+    const [ax, ay, bx, by] = sg;
+    for (let cx = Math.floor((Math.min(ax, bx) - PAD) / SC); cx <= Math.floor((Math.max(ax, bx) + PAD) / SC); cx++)
+      for (let cy = Math.floor((Math.min(ay, by) - PAD) / SC); cy <= Math.floor((Math.max(ay, by) + PAD) / SC); cy++) {
+        const k = cx * 100003 + cy; let l = segCells.get(k); if (!l) segCells.set(k, l = []); l.push(sg);
+      }
+  });
   const gx0 = Math.floor((ti * mw - 60 * s) / step), gx1 = Math.ceil(((ti + 1) * mw + 60 * s) / step);
   const gy0 = Math.floor((tj * mh - 80 * s) / step), gy1 = Math.ceil(((tj + 1) * mh + 60 * s) / step);
   for (let gy = gy0; gy <= gy1; gy++) for (let gx = gx0; gx <= gx1; gx++) {
     const rb = rng(((gx * 73856093) ^ (gy * 19349663)) >>> 0 || 7);
     const wx = (gx + 0.5) * step + (rb() - 0.5) * step * 0.5, wy = (gy + 0.7) * step + (rb() - 0.5) * step * 0.4;
     const px = wx - ti * mw, py = wy - tj * mh, p = { u: wx / mw, v: wy / mh };
-    if (inHill(p, 1.15) || inSea(p)) continue;
-    if (nearRiver(p)) { if (rb() < 0.3 && !nearRiver(p, 0.02)) items.push({ k: 't', x: px, y: py }); continue; }
+    if (hillsHere.some(([u, v, ru, rv]) => ((p.u - u) / ru) ** 2 + ((p.v - v) / rv) ** 2 < 1.15) || (seaHere && inSea(p))) continue;
+    const nearRv = (k) => riversHere.some(rv => rv.some((a, i) => i > 0 && segDist(p.u, p.v * 0.6, rv[i - 1].u, rv[i - 1].v * 0.6, a.u, a.v * 0.6) < k));
+    if (riversHere.length && nearRv(0.035)) { if (rb() < 0.3 && !nearRv(0.02)) items.push({ k: 't', x: px, y: py }); continue; }
     const bw = (13 + rb() * 7) * s, bh = (16 + rb() * 18) * s;
-    if (segs.some(([ax, ay, bx, by, w]) => segDist(px, py - bh * 0.4, ax, ay, bx, by) < w / 2 + bh * 0.55 + 3 * s)) continue;
+    const cellSegs = segCells.get(Math.floor(px / SC) * 100003 + Math.floor((py - bh * 0.4) / SC));
+    if (cellSegs && cellSegs.some(([ax, ay, bx, by, w]) => segDist(px, py - bh * 0.4, ax, ay, bx, by) < w / 2 + bh * 0.55 + 3 * s)) continue;
     if (spots.some(sp => Math.hypot(X(sp.a) - px, Y(sp.a) - py + 20 * s) < 62 * s)) continue;
-    if (parks.some(pk => Math.hypot(X(pk.r) - px, Y(pk.r) - py) < 0.045 * mw)) { items.push({ k: 't', x: px, y: py }); continue; }
-    if (flowers.some(az => Math.hypot(X(az.a) - px, Y(az.a) - py) < 0.055 * mw)) continue;
+    if (parksHere.some(pk => Math.hypot(X(pk.r) - px, Y(pk.r) - py) < 0.045 * mw)) { items.push({ k: 't', x: px, y: py }); continue; }
+    if (flowersHere.some(az => Math.hypot(X(az.a) - px, Y(az.a) - py) < 0.055 * mw)) continue;
     if (isRural(p)) {
       const k = rb();
       if (k < 0.32) items.push({ k: 't', x: px, y: py });
@@ -786,7 +800,9 @@ export default function TownGame({ audio, speak }) {
     audio.playXylophone(880, 0.3);
     if (sp.id === g.at) { g.mode = 'card'; sync({ card: sp.id, newStamp: false }); say(VOICE.townArrive(sp)); return; }
     g.sel = sp.id; g.mode = 'choose';
-    sync({ wrong: null, walk: canWalk(sp), bus: canBus(originStops(), sp), metro: !!metroPlan(curSpot(), sp) });
+    // 이동수단마다 경로·걸리는 시간 (위쪽에 보여 준다)
+    const plans = tripPlans(curSpot(), sp, originStops(), canWalk(sp));
+    sync({ wrong: null, walk: canWalk(sp), bus: plans.some(p => p.mode === 'bus' && p.min != null), metro: plans.some(p => p.mode === 'metro'), plans, planMode: null });
     say(VOICE.townHow(sp));
   };
   const canWalk = (sp) => meters(curSpot().r, sp.r) < 900;
@@ -908,11 +924,12 @@ export default function TownGame({ audio, speak }) {
     g.save.stamps[sp.id] = true; g.save.last = { town: sp.town, at: sp.id }; saveTown(g.save);
     sparkle(sp.a, 16); audio.playXylophone(1046.5, 0.4); setTimeout(() => audio.playXylophone(1318.5, 0.5), 160); setTimeout(() => audio.playXylophone(1568, 0.7), 320);
     say(VOICE.townArrive(sp));
-    sync({ card: sp.id, newStamp: isNew });
+    sync({ card: sp.id, newStamp: isNew, planMode: null });
     if (isNew && ALL_TOWN_SPOTS.every(s2 => g.save.stamps[s2.id])) later(() => { say(VOICE.townStampAll()); ALL_TOWN_SPOTS.forEach(s2 => sparkle(s2.a, 6)); }, 4500);
   };
   const closeCard = () => { const g = G.current; g.mode = 'idle'; sync({ card: null }); };
-  const cancel = () => { const g = G.current; g.mode = 'idle'; g.sel = null; sync({ wrong: null }); };
+  const cancel = () => { const g = G.current; g.mode = 'idle'; g.sel = null; sync({ wrong: null, planMode: null }); };
+  const pickPlan = (m, go) => () => { sync({ planMode: m }); go(); };
   const goHome = () => {
     const g = G.current; if (!g) return;
     if (g.mode === 'card') { g.mode = 'idle'; sync({ card: null }); }
@@ -1206,10 +1223,19 @@ export default function TownGame({ audio, speak }) {
         const dark = hr >= 20 || hr < 5.5 ? 1 : hr >= 18 ? (hr - 18) / 2 : hr < 7 ? (7 - hr) / 1.5 : 0;
         if (dark > 0) {
           ctx.fillStyle = `rgba(20,30,80,${0.38 * dark})`; ctx.fillRect(0, 0, W, H);
-          ctx.fillStyle = `rgba(253,224,71,${0.85 * dark})`;
-          const zk = L.mw / LT.mw;   // 배율이 바뀌는 중이면 조각을 늘려 붙인 만큼
           ctx.save();
-          shown.forEach(([tl, dx, dy]) => { ctx.setTransform(dpr * zk, 0, 0, dpr * zk, dpr * dx, dpr * dy); tl.blocks.forEach((bk, i) => { if ((i * 7) % 5 === 0) return; const wx = bk.x + bk.w * 0.18, rows = Math.max(2, Math.floor(bk.h / (bk.w * 0.32))); for (let r = 0; r < rows; r++) if ((i + r) % 3) ctx.fillRect(wx + ((i + r) % 2) * bk.w * 0.42, bk.y - bk.h + bk.h * (0.1 + r * 0.85 / rows), bk.w * 0.22, bk.h * 0.45 / rows); }); });
+          // 창문 불빛은 조각마다 한 번만 그려 두고(tl.night) 매번 붙이기만 한다
+          ctx.globalAlpha = 0.85 * dark;
+          shown.forEach(([tl, dx, dy]) => {
+            if (!tl.night) {
+              const nc = document.createElement('canvas'); nc.width = tl.cv.width; nc.height = tl.cv.height;
+              const n2 = nc.getContext('2d'); n2.scale(dpr, dpr); n2.fillStyle = 'rgb(253,224,71)';
+              tl.blocks.forEach((bk, i) => { if ((i * 7) % 5 === 0) return; const wx = bk.x + bk.w * 0.18, rows = Math.max(2, Math.floor(bk.h / (bk.w * 0.32))); for (let r = 0; r < rows; r++) if ((i + r) % 3) n2.fillRect(wx + ((i + r) % 2) * bk.w * 0.42, bk.y - bk.h + bk.h * (0.1 + r * 0.85 / rows), bk.w * 0.22, bk.h * 0.45 / rows); });
+              tl.night = nc;
+            }
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.drawImage(tl.night, dx, dy, L.mw, L.mh);
+          });
+          ctx.globalAlpha = 1;
           ctx.restore();
         }
         // 반짝이
@@ -1231,6 +1257,9 @@ export default function TownGame({ audio, speak }) {
   const btn = (bg, color = '#ffffff') => ({ border: 'none', borderRadius: '24px', minHeight: '52px', padding: '0 20px', background: bg, color, fontFamily: JUA, fontSize: '1.15rem', cursor: 'pointer', touchAction: 'manipulation', boxShadow: '0 8px 18px -10px rgba(60,40,20,0.6)', whiteSpace: 'nowrap' });
   const big = (bg, color = '#ffffff') => ({ ...btn(bg, color), minHeight: '96px', minWidth: '150px', borderRadius: '28px', fontSize: '1.45rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '10px 18px' });
   const hint = ui.mode === 'idle' ? '👆 가고 싶은 곳을 콕! 손가락으로 끌면 지도가 움직여요' : ui.mode === 'busPick' ? '🚏 가는 버스를 찾아 콕!' : ui.bell ? (ui.bellOn ? '🔔 다음 정류장에서 내려요!' : '🔔 벨을 눌러요!') : ui.mode === 'move' ? '부릉부릉 가는 중...' : '';
+  const plans = ui.plans || [];
+  const going = ui.planMode && ui.planMode !== 'bus' && ui.mode !== 'choose' && ui.mode !== 'card' && ui.mode !== 'idle' ? plans.find(p => p.mode === ui.planMode) : null;
+  const showPlans = ui.mode === 'choose' && sel && plans.length;
   const overlay = { position: 'absolute', inset: 0, background: 'rgba(30,20,10,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' };
   const panel = { background: '#fffdf8', borderRadius: '30px', padding: '20px 22px', boxShadow: '0 20px 40px -18px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', maxWidth: '100%' };
   const walkOk = sel && ui.walk;
@@ -1245,7 +1274,16 @@ export default function TownGame({ audio, speak }) {
       : { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
       <div style={{ flex: 1, minHeight: 0, position: 'relative', borderRadius: full ? '18px' : '26px', overflow: 'hidden', boxShadow: '0 16px 30px -18px rgba(15,118,110,0.5)' }}>
         <canvas ref={canvasRef} onWheel={onWheel} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }} />
-        {hint && <div style={{ position: 'absolute', left: '12%', right: '12%', top: '6px', textAlign: 'center', pointerEvents: 'none' }}>
+        {(showPlans || going) && <div style={{ position: 'absolute', left: '8px', right: '8px', top: '6px', zIndex: 3, display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center', pointerEvents: 'none' }}>
+          {(going ? [going] : plans).map(p => (
+            <div key={p.mode} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: '8px', rowGap: '1px', boxSizing: 'border-box', background: p.min == null ? 'rgba(241,245,249,0.95)' : 'rgba(255,255,255,0.96)', border: p.fast ? '2px solid #f59e0b' : '2px solid transparent', borderRadius: '16px', padding: '5px 12px', boxShadow: '0 4px 12px -6px rgba(0,0,0,0.3)', maxWidth: '100%', opacity: p.min == null ? 0.7 : 1 }}>
+              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{p.icon}</span>
+              <span style={{ fontFamily: JUA, fontSize: '1.05rem', color: '#4a3424', whiteSpace: 'nowrap' }}>{p.name}{p.min != null && <b style={{ color: '#c2410c', marginLeft: '6px' }}>{fmtMin(p.min)}</b>}{p.fast && ' 👍'}</span>
+              <span style={{ fontSize: '0.85rem', color: '#57534e', lineHeight: 1.25, minWidth: 0 }}>{p.text}</span>
+            </div>
+          ))}
+        </div>}
+        {hint && !going && <div style={{ position: 'absolute', left: '12%', right: '12%', top: '6px', textAlign: 'center', pointerEvents: 'none' }}>
           <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.92)', borderRadius: '18px', padding: '6px 16px', fontFamily: JUA, fontSize: '1.15rem', color: '#7c2d12', boxShadow: '0 4px 12px -6px rgba(0,0,0,0.3)' }}>{hint}</span>
         </div>}
         <div style={{ position: 'absolute', right: '10px', top: '52px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1265,14 +1303,14 @@ export default function TownGame({ audio, speak }) {
           <span style={{ fontSize: '2.6rem', lineHeight: 1 }}>🔔</span>{ui.bellOn ? '내려요' : '벨 누르기'}
         </button>}
 
-        {ui.mode === 'choose' && sel && <div style={overlay} onPointerDown={(e) => { if (e.target === e.currentTarget) cancel(); }}>
+        {ui.mode === 'choose' && sel && <div style={{ ...overlay, ...(showPlans && window.innerWidth < 640 ? { paddingTop: '150px', alignItems: 'flex-start', overflowY: 'auto' } : { paddingTop: showPlans ? '60px' : '16px' }) }} onPointerDown={(e) => { if (e.target === e.currentTarget) cancel(); }}>
           <div style={panel}>
             <div style={{ fontFamily: JUA, fontSize: '1.7rem', color: '#4a3424' }}>{sel.emoji} {sel.name}에 갈까요?</div>
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button onClick={goCar} style={big('#f1f5f9', '#0f172a')}><span style={{ fontSize: '2.4rem' }}>🚗</span>아빠 차</button>
-              <button onClick={goBus} style={{ ...big(busNote ? '#e5e7eb' : '#2563eb', busNote ? '#6b7280' : '#ffffff') }}><span style={{ fontSize: '2.4rem', opacity: busNote ? 0.5 : 1 }}>🚌</span>버스{busNote && <span style={{ fontSize: '0.85rem' }}>{busNote}</span>}</button>
-              {ui.metro && <button onClick={goMetro} style={big('#0ea5e9')}><span style={{ fontSize: '2.4rem' }}>🚇</span>지하철</button>}
-              {walkOk && <button onClick={goWalk} style={big('#fce7f3', '#be185d')}><span style={{ fontSize: '2.4rem' }}>🚶</span>걸어가기</button>}
+              <button onClick={pickPlan('car', goCar)} style={big('#f1f5f9', '#0f172a')}><span style={{ fontSize: '2.4rem' }}>🚗</span>아빠 차</button>
+              <button onClick={pickPlan('bus', goBus)} style={{ ...big(busNote ? '#e5e7eb' : '#2563eb', busNote ? '#6b7280' : '#ffffff') }}><span style={{ fontSize: '2.4rem', opacity: busNote ? 0.5 : 1 }}>🚌</span>버스{busNote && <span style={{ fontSize: '0.85rem' }}>{busNote}</span>}</button>
+              {ui.metro && <button onClick={pickPlan('metro', goMetro)} style={big('#0ea5e9')}><span style={{ fontSize: '2.4rem' }}>🚇</span>지하철</button>}
+              {walkOk && <button onClick={pickPlan('walk', goWalk)} style={big('#fce7f3', '#be185d')}><span style={{ fontSize: '2.4rem' }}>🚶</span>걸어가기</button>}
             </div>
             <button onClick={cancel} style={btn('#f6efe7', '#5c5248')}>✕ 안 갈래요</button>
           </div>

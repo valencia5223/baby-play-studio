@@ -59,18 +59,31 @@ const REF = BUS_SANBON.box, SX = REF.x1 - REF.x0, SY = REF.y1 - REF.y0;
 export const wuv = (lon, lat) => ({ u: (lon - REF.x0) / SX, v: (REF.y1 - lat) / SY });
 const W_M = SX * 88400, H_M = SY * 111000;
 export const meters = (a, b) => Math.hypot((a.u - b.u) * W_M, (a.v - b.v) * H_M);
+// 칸 나누기 찾기: 점을 cellM 미터 칸에 넣어 두고, 가까운 칸만 본다 (모든 점과 비교하지 않게)
+function makeGrid(cellM) {
+  const cells = new Map(), cx = (p) => Math.floor(p.u * W_M / cellM), cy = (p) => Math.floor(p.v * H_M / cellM);
+  return {
+    add(i, p) { const k = cx(p) * 1000003 + cy(p); let c = cells.get(k); if (!c) cells.set(k, c = []); c.push(i); },
+    // r 미터 안에 있을 수 있는 점 번호를 모두 fn 에 넘긴다
+    near(p, r, fn) {
+      const x = cx(p), y = cy(p), k = Math.ceil(r / cellM);
+      for (let i = x - k; i <= x + k; i++) for (let j = y - k; j <= y + k; j++) { const c = cells.get(i * 1000003 + j); if (c) for (const n of c) fn(n); }
+    }
+  };
+}
 const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON, BUS_GWANAK, BUS_ANSAN, BUS_SIHEUNG, BUS_DAEBU, BUS_BUCHEON, BUS_INCHEON, BUS_INCHEON_WEST, BUS_INCHEON_NORTH, BUS_GURO, BUS_GANGSEO, BUS_GIMPO, BUS_GANGHWA, BUS_DONGJAK, BUS_SEOCHO, BUS_GANGNAM, BUS_SONGPA, BUS_SUWON, BUS_SUJI, BUS_GIHEUNG];
 
 // ── 길: 모든 동네 정류장을 합친 점 + 버스 노선을 이은 선 ──
 export const NODES = [];          // {u, v, n}
 const stopNode = {}, STOP_NAME = {};
+const mergeGrid = makeGrid(100);   // 55m 안 정류장은 한 점으로 (점은 평균 쪽으로 조금 움직여도 100m 칸 이웃 안)
 BUSES.forEach(B => Object.entries(B.stops).forEach(([id, [name, x, y]]) => {
   if (stopNode[id] != null) return;   // 두 동네 파일에 같이 있는 정류장 (맞닿는 곳)
   STOP_NAME[id] = name;
   const p = wuv(x, y);
   let best = -1, bd = 55;
-  NODES.forEach((nd, i) => { const d = meters(nd, p); if (d < bd) { bd = d; best = i; } });
-  if (best < 0) { NODES.push({ u: p.u, v: p.v, n: 1 }); stopNode[id] = NODES.length - 1; }
+  mergeGrid.near(p, 100, (i) => { const d = meters(NODES[i], p); if (d < bd) { bd = d; best = i; } });
+  if (best < 0) { NODES.push({ u: p.u, v: p.v, n: 1 }); stopNode[id] = NODES.length - 1; mergeGrid.add(NODES.length - 1, p); }
   else { const nd = NODES[best]; nd.u = (nd.u * nd.n + p.u) / (nd.n + 1); nd.v = (nd.v * nd.n + p.v) / (nd.n + 1); nd.n += 1; stopNode[id] = best; }
 }));
 // 같은 노선(id)끼리 동네마다 잘린 구간을 이어 붙인다 (겹치는 정류장으로)
@@ -110,16 +123,30 @@ ROUTES.forEach(r => r.runs.forEach(run => {
     edgeSeen.add(k); EDGES.push([a, b]); ADJ[a].push([b, d]); ADJ[b].push([a, d]);
   }
 }));
-export const nearestNode = (p) => { let best = 0, bd = Infinity; NODES.forEach((nd, i) => { const d = meters(nd, p); if (d < bd) { bd = d; best = i; } }); return best; };
+// 가장 가까운 길 점: 1km 칸에서 넓혀 가며 찾는다 (점이 늘면 칸을 다시 만든다)
+let nodeGrid = null, nodeGridN = 0;
+export const nearestNode = (p) => {
+  if (!nodeGrid || nodeGridN !== NODES.length) { nodeGrid = makeGrid(1000); NODES.forEach((nd, i) => nodeGrid.add(i, nd)); nodeGridN = NODES.length; }
+  let best = 0, bd = Infinity;
+  // 찾은 점이 r 보다 멀면 더 가까운 점이 칸 밖에 있을 수 있으니 r 을 넓혀 다시 본다
+  for (let r = 1000; r <= 64000; r *= 2) { nodeGrid.near(p, r, (i) => { const d = meters(NODES[i], p); if (d < bd) { bd = d; best = i; } }); if (bd <= r) break; }
+  if (bd === Infinity) NODES.forEach((nd, i) => { const d = meters(nd, p); if (d < bd) { bd = d; best = i; } });
+  return best;
+};
+// 길찾기 (다익스트라 + 작은 힙). 목적지 쪽으로 당기는 A* 를 써서 볼 점을 줄인다
 function dijkstra(from, to) {
-  const n = NODES.length, dist = new Array(n).fill(Infinity), prev = new Array(n).fill(-1), done = new Array(n).fill(false);
-  dist[from] = 0;
-  for (;;) {
-    let u = -1, bd = Infinity;
-    for (let i = 0; i < n; i++) if (!done[i] && dist[i] < bd) { bd = dist[i]; u = i; }
-    if (u < 0 || u === to) break;
-    done[u] = true;
-    ADJ[u].forEach(([w, d]) => { if (dist[u] + d < dist[w]) { dist[w] = dist[u] + d; prev[w] = u; } });
+  const n = NODES.length, dist = new Float64Array(n).fill(Infinity), prev = new Int32Array(n).fill(-1), done = new Uint8Array(n);
+  const T = NODES[to], h = (i) => meters(NODES[i], T) * 0.999;
+  const heap = [];   // [추정 거리, 점]
+  const push = (f, i) => { heap.push([f, i]); let k = heap.length - 1; while (k > 0) { const pk = (k - 1) >> 1; if (heap[pk][0] <= heap[k][0]) break; [heap[pk], heap[k]] = [heap[k], heap[pk]]; k = pk; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let k = 0; for (;;) { const l = 2 * k + 1, r = l + 1; let m = k; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === k) break; [heap[m], heap[k]] = [heap[k], heap[m]]; k = m; } } return top; };
+  dist[from] = 0; push(h(from), from);
+  while (heap.length) {
+    const [, u] = pop();
+    if (done[u]) continue;
+    if (u === to) break;
+    done[u] = 1;
+    for (const [w, d] of ADJ[u]) { const nd = dist[u] + d; if (nd < dist[w]) { dist[w] = nd; prev[w] = u; push(nd + h(w), w); } }
   }
   if (!isFinite(dist[to])) return null;
   const path = []; for (let x = to; x >= 0; x = prev[x]) path.unshift(x);
@@ -300,6 +327,8 @@ export const ALL_TOWN_SPOTS = [];
 export const SPOT_BY_ID = {};
 const WALK_STOP_M = 350;
 const worldStops = Object.keys(stopNode).map(id => ({ id: +id, p: NODES[stopNode[id]] }));
+const stopGrid = makeGrid(600); worldStops.forEach((s, i) => stopGrid.add(i, s.p));
+const stopsNear = (p, r) => { const out = []; stopGrid.near(p, r, (i) => { const d = meters(worldStops[i].p, p); if (d < r) out.push({ id: worldStops[i].id, d }); }); return out.sort((x, y) => x.d - y.d); };
 export const TOWN_LIST = TOWN_DEFS.map(def => {
   const box = def.bus.box, toW = boxToWorld(box), kx = (box.x1 - box.x0) / SX, ky = (box.y1 - box.y0) / SY;
   const spots = def.spots.map(sp => {
@@ -307,9 +336,9 @@ export const TOWN_LIST = TOWN_DEFS.map(def => {
     o.node = nearestNode(o.r);
     // 근처 정류장: 받아 둔 장소 정류장 → 없으면 600m 안 가까운 정류장
     o.stops = (def.bus.spotStops[sp.id] || []).filter(id => stopNode[id] != null);
-    if (!o.stops.length) o.stops = worldStops.map(s => ({ id: s.id, d: meters(s.p, o.r) })).filter(s => s.d < 600).sort((x, y) => x.d - y.d).slice(0, 4).map(s => s.id);
+    if (!o.stops.length) o.stops = stopsNear(o.r, 600).slice(0, 4).map(s => s.id);
     // 큰길까지 조금 걸어 나가면 타는 정류장(350m 안)도 같이: 바로 가는 버스가 더 많아진다
-    const walkable = worldStops.map(s => ({ id: s.id, d: meters(s.p, o.r) })).filter(s => s.d < WALK_STOP_M).sort((x, y) => x.d - y.d).map(s => s.id);
+    const walkable = stopsNear(o.r, WALK_STOP_M).map(s => s.id);
     o.stops = [...new Set([...o.stops, ...walkable])];
     return o;
   });
@@ -376,10 +405,16 @@ const inPoly = (p, poly) => {
   return inside;
 };
 // 바다 위인가 (섬은 땅)
-export const inSea = (p) => SEAS.some(sp => inPoly(p, sp)) && !ISLANDS.some(il => inPoly(p, il));
+// 다각형마다 둘레 상자를 미리 구해 두고, 상자 밖이면 바로 넘어간다
+const withBox = (poly) => { const b = { u0: Infinity, v0: Infinity, u1: -Infinity, v1: -Infinity }; poly.forEach(p => { b.u0 = Math.min(b.u0, p.u); b.v0 = Math.min(b.v0, p.v); b.u1 = Math.max(b.u1, p.u); b.v1 = Math.max(b.v1, p.v); }); return { poly, b }; };
+const SEA_BX = SEAS.map(withBox), ISLAND_BX = ISLANDS.map(withBox);
+const inBx = (p, { poly, b }) => p.u >= b.u0 && p.u <= b.u1 && p.v >= b.v0 && p.v <= b.v1 && inPoly(p, poly);
+export const inSea = (p) => SEA_BX.some(sp => inBx(p, sp)) && !ISLAND_BX.some(il => inBx(p, il));
+// 이 네모(u0~u1, v0~v1)에 바다가 걸치는가 (지도 조각을 그릴 때 바다 검사를 건너뛰려고)
+export const seaNear = (u0, v0, u1, v1) => SEA_BX.some(({ b }) => b.u1 >= u0 && b.u0 <= u1 && b.v1 >= v0 && b.v0 <= v1);
 // 시골 (아파트 대신 나무·작은 집): 섬, 그리고 안산 남쪽 시화호 아래(화성 송산 쪽)
 const RURAL_V = wuv(0, 37.285).v, RURAL_U = wuv(126.83, 0).u, RURAL2_V = wuv(0, 37.668).v, RURAL2_U = wuv(126.665, 0).u;
-export const isRural = (p) => ISLANDS.some(il => inPoly(p, il)) || (p.v > RURAL_V && p.u < RURAL_U) || (p.v < RURAL2_V && p.u < RURAL2_U);
+export const isRural = (p) => ISLAND_BX.some(il => inBx(p, il)) || (p.v > RURAL_V && p.u < RURAL_U) || (p.v < RURAL2_V && p.u < RURAL2_U);
 // 이 점은 어느 동네? (동네 버스 지도 범위 가운데에 가장 가까운 곳)
 export function townAt(p) {
   let best = TOWN_LIST[0], bd = Infinity;
@@ -465,6 +500,42 @@ export function busBoard(fromStops, dest, pref = null) {
   return list.sort((a, b) => a.n - b.n || a.route.name.localeCompare(b.route.name, 'ko', { numeric: true }));
 }
 export const canBus = (fromStops, dest) => !!dest.stops.length && busBoard(fromStops, dest).some(x => x.ok);
+
+// ── 가는 방법 미리 보기: 이동수단마다 경로 한 줄 + 걸리는 시간(어림) ──
+// 실제 시간표·막힘은 모르니 대략: 걷기 분당 67m, 버스 기다리기 6분 + 정류장마다 1.8분, 지하철 기다리기 4분 + 역마다 2.2분 + 갈아타기 5분
+const WALK_MPM = 67;
+export const fmtMin = (m) => { m = Math.max(1, Math.round(m)); return m < 60 ? `약 ${m}분` : `약 ${Math.floor(m / 60)}시간${m % 60 ? ` ${m % 60}분` : ''}`; };
+const fmtKm = (d) => (d < 1000 ? `${Math.round(d / 10) * 10}m` : `${(d / 1000).toFixed(d < 10000 ? 1 : 0)}km`);
+const stnName = (id) => SPOT_BY_ID[id].name.replace(/역$/, '');
+export function tripPlans(from, to, fromStops, walkOk) {
+  const plans = [];
+  // 🚗 아빠 차: 길을 따라간 거리. 처음 5km 는 시내(시속 24km), 20km 까지 큰길(시속 42km), 그 뒤는 고속도로(시속 60km)
+  const pts = roadPath(from.r, from.node, to.r, to.node);
+  let d = 0; for (let i = 1; i < pts.length; i++) d += meters(pts[i - 1], pts[i]);
+  plans.push({ mode: 'car', icon: '🚗', name: '아빠 차', text: fmtKm(d), min: 3 + Math.min(d, 5000) / 400 + Math.max(0, Math.min(d, 20000) - 5000) / 700 + Math.max(0, d - 20000) / 1000 });
+  // 🚌 버스: 정류장 수가 가장 적은 버스 (바로 가는 것 → 한 번 갈아타는 것)
+  const best = busBoard(fromStops, to).find(x => x.ok);
+  if (best) {
+    const tr = best.trip, n = best.transfer ? tr.total : tr.stops.length - 1;
+    const sn = nodeOfStop(tr.from), walk1 = sn != null ? meters(from.r, NODES[sn]) : 200;
+    const tn = !best.transfer && nodeOfStop(tr.to) != null ? meters(NODES[nodeOfStop(tr.to)], to.r) : 250;
+    plans.push({ mode: 'bus', icon: '🚌', name: '버스',
+      text: best.transfer ? `${busLabel(best.route.name)}번 → ${shortStop(tr.via)}에서 ${busLabel(tr.next.name)}번 (${n}정류장)` : `${busLabel(best.route.name)}번 · ${n}정류장`,
+      min: (walk1 + tn) / WALK_MPM + 6 + n * 1.8 + (best.transfer ? 7 : 0) });
+  } else plans.push({ mode: 'bus', icon: '🚌', name: '버스', text: '가는 버스가 없어요', min: null });
+  // 🚇 지하철: 탈 역 → (갈아타는 역) → 내릴 역
+  const mp = metroPlan(from, to);
+  if (mp) {
+    const st = mp.legs.reduce((k, l) => k + l.mids.length + 1, 0), walk = meters(from.r, mp.from.r) + meters(mp.to.r, to.r);
+    const text = [stnName(mp.from.id), ...mp.legs.map(l => `—${lineName(l.line.id)}→ ${stnName(l.to)}`)].join(' ');
+    plans.push({ mode: 'metro', icon: '🚇', name: '지하철', text: `${text}${mp.legs.length > 1 ? ` (갈아타기 ${mp.legs.length - 1}번)` : ''}`, min: walk / WALK_MPM + 4 + st * 2.2 + (mp.legs.length - 1) * 5 });
+  }
+  // 🚶 걸어가기
+  if (walkOk) { const w = meters(from.r, to.r) * 1.25; plans.push({ mode: 'walk', icon: '🚶', name: '걸어서', text: fmtKm(w), min: w / WALK_MPM }); }
+  const ok = plans.filter(p => p.min != null);
+  if (ok.length > 1) ok.reduce((a, b) => (b.min < a.min ? b : a)).fast = true;
+  return plans;
+}
 
 // ── 전철 (4호선·1호선·2호선, 경도·위도). 금정역(1↔4)·사당역(2↔4)에서 갈아탄다 ──
 export const LINES = [
