@@ -11,7 +11,7 @@
 // ═════════════════════════════════════════════════════════════════════════════
 import React, { useEffect, useRef, useState } from 'react';
 import { drawYuna } from './StoryBook.jsx';
-import { TOWNS, TOWN_LIST, ALL_TOWN_SPOTS, SPOT_BY_ID, NODES, EDGES, HILLS, RIVERS, LINES, WORLD_BOUNDS, roadPath, meters, busBoard, canBus, busStyle, busLabel, shortStop, nodeOfStop, stopsAtNode, HOME_STOPS, metroPlan, townAt, loadTown, saveTown, LINE_COLOR } from './townData.js';
+import { TOWNS, TOWN_LIST, ALL_TOWN_SPOTS, SPOT_BY_ID, NODES, EDGES, HILLS, RIVERS, LINES, WORLD_BOUNDS, roadPath, meters, busBoard, canBus, busStyle, busLabel, shortStop, nodeOfStop, stopsAtNode, HOME_STOPS, metroPlan, townAt, loadTown, saveTown, LINE_COLOR, SEAS, ISLANDS, DAMS, inSea, isRural } from './townData.js';
 import { VOICE } from './voiceLines.js';
 
 const TAU = Math.PI * 2;
@@ -71,8 +71,26 @@ function buildTile(ti, tj, L, dpr) {
   c.fillStyle = '#b9e3a0'; c.fillRect(0, 0, mw, mh);
   const r0 = rng(ti * 7919 + tj * 104729 + 99991);
   for (let i = 0; i < 260; i++) { c.fillStyle = r0() < 0.5 ? 'rgba(255,255,255,0.18)' : 'rgba(60,120,40,0.12)'; ell(c, r0() * mw, r0() * mh, (2 + r0() * 5) * s, (1 + r0() * 2) * s); c.fill(); }
-  // 냇물: 풀 둑 → 물
   c.lineCap = 'round'; c.lineJoin = 'round';
+  // 바다: 모래 해변 → 물 → 잔물결, 그 위에 섬(모래 → 풀)과 방조제 길
+  const poly = (pts) => { c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(X(p), Y(p)) : c.moveTo(X(p), Y(p)))); c.closePath(); };
+  if (SEAS.length) {
+    SEAS.forEach(sp => { poly(sp); c.strokeStyle = '#f3dfae'; c.lineWidth = 22 * s; c.stroke(); });
+    SEAS.forEach(sp => { poly(sp); c.fillStyle = '#6cc0ee'; c.fill(); c.strokeStyle = '#9fd8f5'; c.lineWidth = 8 * s; c.stroke(); });
+    ISLANDS.forEach(il => { poly(il); c.strokeStyle = '#f3dfae'; c.lineWidth = 18 * s; c.stroke(); c.fillStyle = '#b9e3a0'; c.fill(); });
+    const rw0 = rng(ti * 31 + tj * 977 + 5);
+    c.strokeStyle = 'rgba(255,255,255,0.55)'; c.lineWidth = 2.2 * s;
+    for (let i = 0; i < 90; i++) {
+      const x = rw0() * mw, y = rw0() * mh;
+      if (!inSea({ u: ti + x / mw, v: tj + y / mh })) continue;
+      const w = (8 + rw0() * 8) * s; c.beginPath(); c.moveTo(x - w, y); c.quadraticCurveTo(x - w / 2, y - 4 * s, x, y); c.quadraticCurveTo(x + w / 2, y - 4 * s, x + w, y); c.stroke();
+    }
+    DAMS.forEach(dm => {
+      c.strokeStyle = '#a8a29e'; c.lineWidth = 16 * s; strokePath(c, TL, dm);
+      c.strokeStyle = '#eef0f2'; c.lineWidth = 8 * s; strokePath(c, TL, dm);
+    });
+  }
+  // 냇물: 풀 둑 → 물
   RIVERS.forEach(rv => {
     c.strokeStyle = '#b7e4a0'; c.lineWidth = 44 * s; strokePath(c, TL, rv);
     c.strokeStyle = '#7cc4f2'; c.lineWidth = 24 * s; strokePath(c, TL, rv);
@@ -137,13 +155,19 @@ function buildTile(ti, tj, L, dpr) {
     const rb = rng(((gx * 73856093) ^ (gy * 19349663)) >>> 0 || 7);
     const wx = (gx + 0.5) * step + (rb() - 0.5) * step * 0.5, wy = (gy + 0.7) * step + (rb() - 0.5) * step * 0.4;
     const px = wx - ti * mw, py = wy - tj * mh, p = { u: wx / mw, v: wy / mh };
-    if (inHill(p, 1.15)) continue;
+    if (inHill(p, 1.15) || inSea(p)) continue;
     if (nearRiver(p)) { if (rb() < 0.3 && !nearRiver(p, 0.02)) items.push({ k: 't', x: px, y: py }); continue; }
     const bw = (13 + rb() * 7) * s, bh = (16 + rb() * 18) * s;
     if (segs.some(([ax, ay, bx, by, w]) => segDist(px, py - bh * 0.4, ax, ay, bx, by) < w / 2 + bh * 0.55 + 3 * s)) continue;
     if (spots.some(sp => Math.hypot(X(sp.a) - px, Y(sp.a) - py + 20 * s) < 62 * s)) continue;
     if (parks.some(pk => Math.hypot(X(pk.r) - px, Y(pk.r) - py) < 0.045 * mw)) { items.push({ k: 't', x: px, y: py }); continue; }
     if (flowers.some(az => Math.hypot(X(az.a) - px, Y(az.a) - py) < 0.055 * mw)) continue;
+    if (isRural(p)) {
+      const k = rb();
+      if (k < 0.32) items.push({ k: 't', x: px, y: py });
+      else if (k < 0.4) items.push({ k: 'b', x: px - bw * 0.4, y: py, w: bw * 0.8, h: (9 + rb() * 4) * s, col: PASTEL[Math.floor(rb() * PASTEL.length)], roof: ROOFS[Math.floor(rb() * ROOFS.length)] });
+      continue;
+    }
     items.push(rb() < 0.72 ? { k: 'b', x: px - bw / 2, y: py, w: bw, h: bh, col: PASTEL[Math.floor(rb() * PASTEL.length)], roof: ROOFS[Math.floor(rb() * ROOFS.length)] } : { k: 't', x: px, y: py });
   }
   items.sort((a, b) => a.y - b.y).forEach(it => {
@@ -403,6 +427,57 @@ function drawSpot(c, sp, x, y, u, t, opt) {
     const py = -h - u * 0.55 + Math.sin(t * 2) * u * 0.06;
     c.fillStyle = '#fde68a'; ell(c, 0, py, u * 0.6, u * 0.38); c.fill(); c.strokeStyle = '#b45309'; c.lineWidth = u * 0.04; c.stroke();
     ['#ef4444', '#3b82f6', '#22c55e', '#a855f7'].forEach((col, i) => { c.fillStyle = col; ell(c, -u * 0.32 + i * u * 0.2, py - u * 0.08 + (i % 2) * u * 0.14, u * 0.08, u * 0.08); c.fill(); });
+  } else if (K === 'lighthouse') {
+    // 빨간 등대: 줄무늬 탑 + 빙글 도는 불빛 + 갈매기
+    const h = u * 2.2;
+    c.fillStyle = '#ef4444'; c.beginPath(); c.moveTo(-u * 0.45, 0); c.lineTo(-u * 0.28, -h); c.lineTo(u * 0.28, -h); c.lineTo(u * 0.45, 0); c.closePath(); c.fill();
+    c.fillStyle = '#ffffff'; [0.3, 0.62].forEach(q => { const y0 = -h * q, w0 = u * (0.45 - 0.17 * q); c.fillRect(-w0, y0 - u * 0.12, w0 * 2, u * 0.24); });
+    c.fillStyle = '#fef08a'; rrect(c, -u * 0.25, -h - u * 0.4, u * 0.5, u * 0.4, u * 0.06); c.fill();
+    c.fillStyle = '#b91c1c'; c.beginPath(); c.moveTo(-u * 0.35, -h - u * 0.4); c.lineTo(0, -h - u * 0.75); c.lineTo(u * 0.35, -h - u * 0.4); c.fill();
+    const ang = t * 1.6, by = -h - u * 0.2;
+    c.fillStyle = 'rgba(254,240,138,0.45)'; c.beginPath(); c.moveTo(0, by); c.lineTo(Math.cos(ang) * u * 1.8, by + Math.sin(ang) * u * 0.5 - u * 0.25); c.lineTo(Math.cos(ang) * u * 1.8, by + Math.sin(ang) * u * 0.5 + u * 0.25); c.fill();
+    c.font = `${Math.round(u * 0.45)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('🕊️', u * 0.9 + Math.sin(t * 1.3) * u * 0.4, -h + Math.sin(t * 3) * u * 0.15);
+  } else if (K === 'tidal') {
+    // 조력발전소: 방조제 위 수문 + 달 전망대
+    c.fillStyle = '#94a3b8'; c.fillRect(-u * 1.4, -u * 0.35, u * 2.8, u * 0.35);
+    c.fillStyle = '#475569'; for (let i = 0; i < 4; i++) c.fillRect(-u * 1.2 + i * u * 0.65, -u * 0.3, u * 0.4, u * 0.25);
+    c.strokeStyle = 'rgba(255,255,255,0.8)'; c.lineWidth = u * 0.05; for (let i = 0; i < 4; i++) { const yy = -u * 0.1 + ((t * 0.8 + i * 0.25) % 1) * u * 0.25; c.beginPath(); c.moveTo(-u * 1.1 + i * u * 0.65, yy); c.lineTo(-u * 0.9 + i * u * 0.65, yy); c.stroke(); }
+    c.fillStyle = '#e2e8f0'; c.fillRect(u * 0.55, -u * 2.0, u * 0.3, u * 1.7);
+    c.fillStyle = '#facc15'; c.beginPath(); c.arc(u * 0.7, -u * 2.3, u * 0.42, 0, TAU); c.fill();
+    c.fillStyle = '#6cc0ee'; c.beginPath(); c.arc(u * 0.88, -u * 2.4, u * 0.36, 0, TAU); c.fill();
+  } else if (K === 'beach') {
+    // 해수욕장: 모래밭 + 파라솔 + 모래성 + 철썩 파도
+    c.fillStyle = '#fde68a'; ell(c, 0, -u * 0.25, u * 1.5, u * 0.5); c.fill();
+    const wv = Math.sin(t * 2) * u * 0.08;
+    c.strokeStyle = '#38bdf8'; c.lineWidth = u * 0.1; c.beginPath(); c.ellipse(0, -u * 0.25, u * 1.5 + wv, u * 0.5 + wv * 0.4, 0, Math.PI * 0.95, Math.PI * 2.05); c.stroke();
+    c.strokeStyle = '#78350f'; c.lineWidth = u * 0.07; c.beginPath(); c.moveTo(-u * 0.4, -u * 0.2); c.lineTo(-u * 0.4, -u * 1.5); c.stroke();
+    ['#ef4444', '#ffffff', '#ef4444', '#ffffff'].forEach((col, i) => { c.fillStyle = col; c.beginPath(); c.moveTo(-u * 0.4, -u * 1.35); c.arc(-u * 0.4, -u * 1.35, u * 0.8, Math.PI + i * Math.PI / 4, Math.PI + (i + 1) * Math.PI / 4); c.closePath(); c.fill(); });
+    c.fillStyle = '#d97706'; c.fillRect(u * 0.4, -u * 0.6, u * 0.6, u * 0.35); c.fillRect(u * 0.5, -u * 0.85, u * 0.18, u * 0.25); c.fillRect(u * 0.72, -u * 0.85, u * 0.18, u * 0.25);
+    c.fillStyle = '#ef4444'; c.beginPath(); c.moveTo(u * 0.81, -u * 0.85); c.lineTo(u * 0.81, -u * 1.15); c.lineTo(u * 1.0, -u * 1.05); c.fill();
+  } else if (K === 'grape') {
+    // 포도밭: 덩굴 줄 + 주렁주렁 포도
+    c.strokeStyle = '#78350f'; c.lineWidth = u * 0.06;
+    [-0.9, 0, 0.9].forEach(q => { c.beginPath(); c.moveTo(q * u, 0); c.lineTo(q * u, -u * 1.2); c.stroke(); });
+    c.beginPath(); c.moveTo(-u * 1.1, -u * 1.2); c.lineTo(u * 1.1, -u * 1.2); c.stroke();
+    c.fillStyle = '#4ade80'; [-0.75, -0.25, 0.25, 0.75].forEach(q => { ell(c, q * u, -u * 1.3, u * 0.32, u * 0.2); c.fill(); });
+    [-0.6, 0.05, 0.65].forEach((q, i) => {
+      const sw = Math.sin(t * 2 + i) * u * 0.05;
+      c.fillStyle = '#7c3aed'; [[0, 0], [-0.12, 0], [0.12, 0], [-0.06, 0.12], [0.06, 0.12], [0, 0.24]].forEach(([dx, dy]) => { c.beginPath(); c.arc(q * u + dx * u + sw, -u * 1.05 + dy * u, u * 0.08, 0, TAU); c.fill(); });
+    });
+  } else if (K === 'port') {
+    // 항구: 나무 다리 + 둥실 배 + 누에섬 바람개비
+    c.fillStyle = '#7dd3fc'; ell(c, 0, -u * 0.2, u * 1.6, u * 0.45); c.fill();
+    c.fillStyle = '#a16207'; c.fillRect(-u * 1.4, -u * 0.35, u * 1.1, u * 0.18);
+    const bob2 = Math.sin(t * 2.2) * u * 0.07;
+    c.fillStyle = '#f97316'; c.beginPath(); c.moveTo(-u * 0.1, -u * 0.35 + bob2); c.lineTo(u * 0.9, -u * 0.35 + bob2); c.lineTo(u * 0.7, -u * 0.1 + bob2); c.lineTo(u * 0.1, -u * 0.1 + bob2); c.closePath(); c.fill();
+    c.fillStyle = '#ffffff'; c.beginPath(); c.moveTo(u * 0.4, -u * 0.38 + bob2); c.lineTo(u * 0.4, -u * 1.1 + bob2); c.lineTo(u * 0.85, -u * 0.45 + bob2); c.closePath(); c.fill();
+    [[-0.9, 1.7], [-0.45, 1.5]].forEach(([q, hh], i) => {
+      const bx = q * u, top = -u * hh;
+      c.strokeStyle = '#e5e7eb'; c.lineWidth = u * 0.07; c.beginPath(); c.moveTo(bx, -u * 0.35); c.lineTo(bx, top); c.stroke();
+      c.strokeStyle = '#ffffff'; c.lineWidth = u * 0.06;
+      for (let k = 0; k < 3; k++) { const a = t * 2.5 + i + k * TAU / 3; c.beginPath(); c.moveTo(bx, top); c.lineTo(bx + Math.cos(a) * u * 0.35, top + Math.sin(a) * u * 0.35); c.stroke(); }
+    });
   } else if (K === 'tower') {
     // 유리 빌딩 셋 (반짝이는 창)
     [[-0.7, 1.9, '#bae6fd'], [0, 2.6, '#a5f3fc'], [0.7, 2.1, '#c7d2fe']].forEach(([q, hh, col], i) => {

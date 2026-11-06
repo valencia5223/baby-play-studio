@@ -18,7 +18,8 @@ import BUS_GEUMCHEON from './townBus_geumcheon.json';
 import BUS_GWANAK from './townBus_gwanak.json';
 import BUS_ANSAN from './townBus_ansan.json';
 import BUS_SIHEUNG from './townBus_siheung.json';
-import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST, GWANAK_SPOT_LIST, ANSAN_SPOT_LIST, SIHEUNG_SPOT_LIST } from './townSpots.js';
+import BUS_DAEBU from './townBus_daebu.json';
+import { SPOT_LIST, ANYANG_SPOT_LIST, UIWANG_SPOT_LIST, GWACHEON_SPOT_LIST, GUNPO_SOUTH_SPOT_LIST, SEOKSU_SPOT_LIST, GWANGMYEONG_SPOT_LIST, GEUMCHEON_SPOT_LIST, GWANAK_SPOT_LIST, ANSAN_SPOT_LIST, SIHEUNG_SPOT_LIST, DAEBU_SPOT_LIST } from './townSpots.js';
 
 export const BUS_STYLE = {
   '마을버스': { color: '#facc15', dark: '#ca8a04', label: '마을버스', text: '#713f12' },
@@ -42,7 +43,7 @@ const REF = BUS_SANBON.box, SX = REF.x1 - REF.x0, SY = REF.y1 - REF.y0;
 export const wuv = (lon, lat) => ({ u: (lon - REF.x0) / SX, v: (REF.y1 - lat) / SY });
 const W_M = SX * 88400, H_M = SY * 111000;
 export const meters = (a, b) => Math.hypot((a.u - b.u) * W_M, (a.v - b.v) * H_M);
-const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON, BUS_GWANAK, BUS_ANSAN, BUS_SIHEUNG];
+const BUSES = [BUS_SANBON, BUS_ANYANG, BUS_UIWANG, BUS_GWACHEON, BUS_GUNPOSOUTH, BUS_SEOKSU, BUS_GWANGMYEONG, BUS_GEUMCHEON, BUS_GWANAK, BUS_ANSAN, BUS_SIHEUNG, BUS_DAEBU];
 
 // ── 길: 모든 동네 정류장을 합친 점 + 버스 노선을 이은 선 ──
 export const NODES = [];          // {u, v, n}
@@ -162,7 +163,24 @@ const TOWN_DEFS = [
   { id: 'siheung', name: '시흥', bus: BUS_SIHEUNG, spots: SIHEUNG_SPOT_LIST, label: [0.32, 0.6],
     // 소래산(신천역 동쪽)·군자봉(능곡 남쪽)·수암봉·수리산 서쪽(오른쪽 끝, 군포와 사이)
     hills: [[0.6, 0.05, 0.035, 0.04], [0.76, 0.86, 0.035, 0.04], [1.12, 0.62, 0.12, 0.16], [1.2, 0.85, 0.12, 0.14], [1.15, 0.35, 0.1, 0.12]],
-    areas: [{ name: '정왕동', at: [0.12, 0.92] }, { name: '능곡동', at: [0.72, 0.52] }, { name: '신천동', at: [0.38, 0.2] }, { name: '은계', at: [0.65, 0.06] }] }
+    areas: [{ name: '정왕동', at: [0.12, 0.92] }, { name: '능곡동', at: [0.72, 0.52] }, { name: '신천동', at: [0.38, 0.2] }, { name: '은계', at: [0.65, 0.06] }] },
+  // 대부도·오이도 바닷가 (시흥·안산 서쪽). 대부분 바다(서해·시화호), 시화방조제 길로 대부도 섬에 간다
+  { id: 'daebu', name: '대부도', bus: BUS_DAEBU, spots: DAEBU_SPOT_LIST, label: [0.3, 0.57],
+    // 구봉도·황금산·대부도 남쪽 언덕
+    hills: [[0.07, 0.5, 0.025, 0.025], [0.36, 0.69, 0.03, 0.03], [0.52, 0.86, 0.025, 0.03]],
+    areas: [{ name: '오이도', at: [0.72, 0.12] }, { name: '시화호', at: [0.7, 0.48] }, { name: '시화방조제', at: [0.44, 0.22] }, { name: '서해 바다', at: [0.12, 0.2] }],
+    // 바다 (경도·위도): 서해 + 시화호. 방조제는 그 위에 길로 그린다
+    sea: [[126.500, 37.376], [126.713, 37.376], [126.717, 37.362], [126.703, 37.353], [126.686, 37.348], [126.684, 37.340], [126.698, 37.334], [126.718, 37.324],
+      [126.742, 37.308], [126.768, 37.293], [126.800, 37.289], [126.832, 37.291], [126.828, 37.281], [126.800, 37.276], [126.750, 37.268], [126.705, 37.262],
+      [126.688, 37.245], [126.682, 37.200], [126.678, 37.150], [126.500, 37.150]],
+    // 섬: 대부도 (구봉도·탄도까지 이어진 모양)
+    islands: [[[126.588, 37.300], [126.600, 37.292], [126.615, 37.282], [126.628, 37.268], [126.645, 37.255], [126.668, 37.243], [126.672, 37.225], [126.660, 37.205],
+      [126.652, 37.188], [126.636, 37.186], [126.620, 37.200], [126.598, 37.208], [126.582, 37.222], [126.570, 37.240], [126.560, 37.258], [126.548, 37.272],
+      [126.535, 37.282], [126.540, 37.290], [126.560, 37.288], [126.575, 37.296]],
+      // 누에섬 (탄도항 앞 작은 섬)
+      [[126.628, 37.178], [126.636, 37.176], [126.638, 37.170], [126.630, 37.168], [126.624, 37.172]]],
+    // 시화방조제: 오이도 → 조력발전소 → 대부도 방아머리
+    dams: [[[126.687, 37.338], [126.650, 37.323], [126.608, 37.311], [126.590, 37.299], [126.583, 37.293]]] }
 ];
 const boxToWorld = (box) => (p) => wuv(box.x0 + p[0] * (box.x1 - box.x0), box.y1 - p[1] * (box.y1 - box.y0));
 // 온 동네의 모든 장소
@@ -194,6 +212,25 @@ ALL_TOWN_SPOTS.forEach(s => { if (s.link) s.node = SPOT_BY_ID[s.link].node; }); 
 export const HOME_STOPS = BUS_SANBON.home;
 export const HILLS = TOWN_LIST.flatMap(t => t.hills);
 export const RIVERS = TOWN_LIST.filter(t => t.river).map(t => t.river);
+// 바다·섬·방조제 (온 동네 좌표)
+const toWorldPts = (l) => l.map(([x, y]) => wuv(x, y));
+const SEA_DEFS = TOWN_DEFS.filter(d => d.sea);
+export const SEAS = SEA_DEFS.map(d => toWorldPts(d.sea));
+export const ISLANDS = SEA_DEFS.flatMap(d => (d.islands || []).map(toWorldPts));
+export const DAMS = SEA_DEFS.flatMap(d => (d.dams || []).map(toWorldPts));
+const inPoly = (p, poly) => {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i], b = poly[j];
+    if ((a.v > p.v) !== (b.v > p.v) && p.u < (b.u - a.u) * (p.v - a.v) / (b.v - a.v) + a.u) inside = !inside;
+  }
+  return inside;
+};
+// 바다 위인가 (섬은 땅)
+export const inSea = (p) => SEAS.some(sp => inPoly(p, sp)) && !ISLANDS.some(il => inPoly(p, il));
+// 시골 (아파트 대신 나무·작은 집): 섬, 그리고 안산 남쪽 시화호 아래(화성 송산 쪽)
+const RURAL_V = wuv(0, 37.285).v, RURAL_U = wuv(126.83, 0).u;
+export const isRural = (p) => ISLANDS.some(il => inPoly(p, il)) || (p.v > RURAL_V && p.u < RURAL_U);
 // 이 점은 어느 동네? (동네 버스 지도 범위 가운데에 가장 가까운 곳)
 export function townAt(p) {
   let best = TOWN_LIST[0], bd = Infinity;

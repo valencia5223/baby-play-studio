@@ -30,7 +30,9 @@ const TOWNS = {
   // 안산: 군포 남쪽(대야미·송부) 바로 왼쪽
   ansan: { out: 'townBus_ansan.json', box: { x0: 126.760, x1: 126.880, y0: 37.290, y1: 37.345 }, home: [], extra: [] },
   // 시흥: 안산 위, 광명 왼쪽
-  siheung: { out: 'townBus_siheung.json', box: { x0: 126.730, x1: 126.850, y0: 37.345, y1: 37.455 }, home: [], extra: [] }
+  siheung: { out: 'townBus_siheung.json', box: { x0: 126.730, x1: 126.850, y0: 37.345, y1: 37.455 }, home: [], extra: [] },
+  // 대부도·오이도 바닷가: 시흥·안산 서쪽 (대부 북쪽 방아머리 ~ 남쪽 탄도). 대부분 바다
+  daebu: { out: 'townBus_daebu.json', box: { x0: 126.540, x1: 126.760, y0: 37.185, y1: 37.380 }, home: [], extra: [] }
 };
 const TOWN = process.argv[2] || 'sanbon';
 if (!TOWNS[TOWN]) throw new Error(`동네 이름: ${Object.keys(TOWNS).join(', ')}`);

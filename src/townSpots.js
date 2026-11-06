@@ -249,6 +249,23 @@ export const SIHEUNG_SPOT_LIST = [
   { id: 'eungyeLake', name: '은계호수공원', emoji: '🦆', kind: 'lake', real: [126.8040, 37.4430], at: [0.62, 0.11], stop: ['은계호수공원'],
     desc: '은계호수공원이에요! 호수 둘레를 아장아장 산책해요.' }
 ];
+// 🌊 대부도·오이도 바닷가 (시흥·안산 서쪽). 시화방조제로 이어진 섬
+export const DAEBU_SPOT_LIST = [
+  { id: 'oidoLighthouse', name: '오이도 빨강등대', emoji: '🗼', kind: 'lighthouse', real: [126.6878, 37.3454], at: [0.67, 0.18], stop: ['빨강등대'],
+    desc: '오이도 빨강등대예요! 빨간 등대가 밤바다를 반짝반짝 비춰 줘요. 갈매기도 끼룩끼룩!' },
+  { id: 'tidalPark', name: '시화나래 조력공원', emoji: '🌙', kind: 'tidal', real: [126.6080, 37.3111], at: [0.31, 0.35], stop: ['조력발전소'],
+    desc: '시화나래 조력공원이에요! 바닷물이 들어오고 나가는 힘으로 전기를 만들어요. 높은 달 전망대도 있어요!' },
+  { id: 'bangamori', name: '방아머리 해수욕장', emoji: '🏖️', kind: 'beach', real: [126.5800, 37.2915], at: [0.18, 0.45], stop: ['방아머리'],
+    desc: '방아머리 해수욕장이에요! 모래성 쌓고 파도랑 놀아요. 철썩철썩!' },
+  { id: 'daebuGrape', name: '대부도 포도밭', emoji: '🍇', kind: 'grape', real: [126.6000, 37.2560], at: [0.27, 0.64], stop: ['대부동복지체육센터'],
+    desc: '대부도 포도밭이에요! 달콤한 포도가 주렁주렁 열려요. 냠냠!' },
+  { id: 'glassIsland', name: '유리섬 박물관', emoji: '🔮', kind: 'art', real: [126.6017, 37.2217], at: [0.28, 0.81], stop: ['유리섬'],
+    desc: '유리섬 박물관이에요! 반짝반짝 예쁜 유리 그릇을 만들어요.' },
+  { id: 'seaArboretum', name: '바다향기수목원', emoji: '🌲', kind: 'park', real: [126.6440, 37.2240], at: [0.47, 0.8], stop: ['바다향기수목원'],
+    desc: '바다향기수목원이에요! 바닷바람 부는 숲길을 산책해요.' },
+  { id: 'tando', name: '탄도항', emoji: '⛵', kind: 'port', real: [126.6458, 37.1943], at: [0.48, 0.95], stop: ['탄도'],
+    desc: '탄도항이에요! 배가 둥실둥실, 바다 건너 누에섬에는 커다란 바람개비가 빙글빙글 돌아요.' }
+];
 export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST,
   gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST, gwanak: GWANAK_SPOT_LIST,
-  ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST };
+  ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST, daebu: DAEBU_SPOT_LIST };
