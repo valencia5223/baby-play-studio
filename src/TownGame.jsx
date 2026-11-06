@@ -702,7 +702,7 @@ export default function TownGame({ audio, speak }) {
   const curSpot = () => SPOT_BY_ID[G.current.at];
 
   // 장소 콕
-  const originStops = () => { const g = G.current; return g.at === 'home' ? HOME_STOPS : curSpot().stops; };
+  const originStops = () => { const g = G.current; return g.at === 'home' ? [...new Set([...HOME_STOPS, ...curSpot().stops])] : curSpot().stops; };
   const tapSpot = (sp) => {
     const g = G.current;
     if (g.mode !== 'idle') return;
@@ -796,7 +796,7 @@ export default function TownGame({ audio, speak }) {
   const goBus = () => {
     const g = G.current, sp = SPOT_BY_ID[g.sel];
     if (!canBus(originStops(), sp)) { say(VOICE.townNoBus(sp)); audio.playFreq(300, 'triangle', 0.15, 0.3); return; }
-    openBoard(originStops(), g.at === 'home' ? '우리집 앞 정류장' : `${curSpot().name} 정류장`, g.at === 'home' ? HOME_STOPS[0] : null, false);
+    openBoard(originStops(), g.at === 'home' ? '우리집 앞 정류장' : `${curSpot().name} 근처 정류장`, g.at === 'home' ? HOME_STOPS[0] : null, false);
   };
   const pickBus = (id) => {
     const g = G.current, sp = SPOT_BY_ID[g.sel], ch = g.board.find(c => c.route.id === id);

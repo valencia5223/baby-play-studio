@@ -186,6 +186,7 @@ const boxToWorld = (box) => (p) => wuv(box.x0 + p[0] * (box.x1 - box.x0), box.y1
 // 온 동네의 모든 장소
 export const ALL_TOWN_SPOTS = [];
 export const SPOT_BY_ID = {};
+const WALK_STOP_M = 350;
 const worldStops = Object.keys(stopNode).map(id => ({ id: +id, p: NODES[stopNode[id]] }));
 export const TOWN_LIST = TOWN_DEFS.map(def => {
   const box = def.bus.box, toW = boxToWorld(box), kx = (box.x1 - box.x0) / SX, ky = (box.y1 - box.y0) / SY;
@@ -195,6 +196,9 @@ export const TOWN_LIST = TOWN_DEFS.map(def => {
     // 근처 정류장: 받아 둔 장소 정류장 → 없으면 600m 안 가까운 정류장
     o.stops = (def.bus.spotStops[sp.id] || []).filter(id => stopNode[id] != null);
     if (!o.stops.length) o.stops = worldStops.map(s => ({ id: s.id, d: meters(s.p, o.r) })).filter(s => s.d < 600).sort((x, y) => x.d - y.d).slice(0, 4).map(s => s.id);
+    // 큰길까지 조금 걸어 나가면 타는 정류장(350m 안)도 같이: 바로 가는 버스가 더 많아진다
+    const walkable = worldStops.map(s => ({ id: s.id, d: meters(s.p, o.r) })).filter(s => s.d < WALK_STOP_M).sort((x, y) => x.d - y.d).map(s => s.id);
+    o.stops = [...new Set([...o.stops, ...walkable])];
     return o;
   });
   spots.forEach(o => { ALL_TOWN_SPOTS.push(o); SPOT_BY_ID[o.id] = o; });
