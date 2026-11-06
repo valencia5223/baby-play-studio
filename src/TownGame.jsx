@@ -227,7 +227,8 @@ function drawSpot(c, sp, x, y, u, t, opt) {
     c.fillStyle = '#a16207'; rrect(c, -u * 0.18, -u * 0.38, u * 0.36, u * 0.38, u * 0.06); c.fill();
     if (gm) {
       c.font = `${Math.round(u * 0.62)}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText('👵', -u * 0.32, -h - u * 0.55 + Math.sin(t * 3) * u * 0.05); c.fillText('👴', u * 0.36, -h - u * 0.55 + Math.sin(t * 3 + 1.5) * u * 0.05);
+      if (sp.id === 'yonginGrandpa') c.fillText('👴', 0, -h - u * 0.55 + Math.sin(t * 3) * u * 0.05);   // 용인 할비집: 할비만
+      else { c.fillText('👵', -u * 0.32, -h - u * 0.55 + Math.sin(t * 3) * u * 0.05); c.fillText('👴', u * 0.36, -h - u * 0.55 + Math.sin(t * 3 + 1.5) * u * 0.05); }
     } else {
     // 하트 깃발
     c.strokeStyle = '#64748b'; c.lineWidth = u * 0.06; c.beginPath(); c.moveTo(w * 0.3, -h - u * 0.16); c.lineTo(w * 0.3, -h - u * 1.0); c.stroke();
@@ -513,6 +514,27 @@ function drawSpot(c, sp, x, y, u, t, opt) {
     c.beginPath(); c.moveTo(-u * 0.36, -u * 0.04); c.lineTo(-u * 0.52, -u * 0.3); c.lineTo(-u * 0.4, -u * 0.3); c.lineTo(-u * 0.24, -u * 0.04); c.closePath(); c.fill();
     c.fillStyle = '#93c5fd'; for (let i = 0; i < 4; i++) { c.beginPath(); c.arc(-u * 0.12 + i * u * 0.12, -u * 0.02, u * 0.03, 0, TAU); c.fill(); }
     c.restore();
+  } else if (K === 'fortress') {
+    // 옛 성: 돌 성벽(톱니 모양 위) + 가운데 둥근 성문 + 기와 지붕 누각 + 펄럭이는 깃발
+    c.fillStyle = '#d6d3d1'; c.fillRect(-u * 1.5, -u * 0.75, u * 3, u * 0.75); c.strokeStyle = '#78716c'; c.lineWidth = u * 0.04; c.strokeRect(-u * 1.5, -u * 0.75, u * 3, u * 0.75);
+    c.fillStyle = '#a8a29e'; for (let i = 0; i < 7; i++) c.fillRect(-u * 1.5 + i * u * 0.45, -u * 0.9, u * 0.28, u * 0.16);
+    c.strokeStyle = 'rgba(120,113,108,0.5)'; c.lineWidth = u * 0.025; for (let r = 1; r < 3; r++) { c.beginPath(); c.moveTo(-u * 1.5, -u * 0.25 * r); c.lineTo(u * 1.5, -u * 0.25 * r); c.stroke(); }
+    c.fillStyle = '#44403c'; c.beginPath(); c.moveTo(-u * 0.3, 0); c.lineTo(-u * 0.3, -u * 0.4); c.arc(0, -u * 0.4, u * 0.3, Math.PI, 0); c.lineTo(u * 0.3, 0); c.fill();
+    c.fillStyle = '#b91c1c'; c.fillRect(-u * 0.55, -u * 1.3, u * 1.1, u * 0.42);
+    c.fillStyle = '#334155'; c.beginPath(); c.moveTo(-u * 0.85, -u * 1.28); c.quadraticCurveTo(0, -u * 1.45, u * 0.85, -u * 1.28); c.lineTo(u * 0.55, -u * 1.62); c.lineTo(-u * 0.55, -u * 1.62); c.closePath(); c.fill();
+    c.strokeStyle = '#78716c'; c.lineWidth = u * 0.04; c.beginPath(); c.moveTo(u * 1.25, -u * 0.9); c.lineTo(u * 1.25, -u * 1.7); c.stroke();
+    const fw = Math.sin(t * 5) * u * 0.06; c.fillStyle = '#facc15'; c.beginPath(); c.moveTo(u * 1.25, -u * 1.7); c.lineTo(u * 1.7, -u * 1.58 + fw); c.lineTo(u * 1.25, -u * 1.45); c.fill();
+  } else if (K === 'folk') {
+    // 민속촌: 노란 초가지붕 집 둘 + 나무 울타리 + 장독
+    [[-0.65, 0.95], [0.6, 0.8]].forEach(([q, k]) => {
+      const x0 = q * u, w = u * 1.0 * k, h = u * 0.55 * k;
+      c.fillStyle = '#f5f0e1'; c.fillRect(x0 - w / 2, -h, w, h); c.strokeStyle = '#78350f'; c.lineWidth = u * 0.04; c.strokeRect(x0 - w / 2, -h, w, h);
+      c.fillStyle = '#92400e'; c.fillRect(x0 - w * 0.12, -h * 0.75, w * 0.24, h * 0.75);
+      c.fillStyle = '#eab308'; ell(c, x0, -h, w * 0.66, h * 0.62); c.fill(); c.strokeStyle = '#a16207'; c.lineWidth = u * 0.03; c.stroke();
+      c.fillStyle = '#ca8a04'; ell(c, x0, -h - h * 0.3, w * 0.3, h * 0.18); c.fill();
+    });
+    c.strokeStyle = '#92400e'; c.lineWidth = u * 0.04; for (let i = 0; i < 8; i++) { const x = -u * 1.4 + i * u * 0.4; c.beginPath(); c.moveTo(x, u * 0.05); c.lineTo(x, -u * 0.25); c.stroke(); }
+    c.fillStyle = '#7c2d12'; ell(c, u * 1.35, -u * 0.18, u * 0.16, u * 0.2); c.fill(); ell(c, u * 1.12, -u * 0.13, u * 0.12, u * 0.15); c.fill();
   } else if (K === 'aquarium') {
     // 수족관: 파란 건물 + 큰 유리창 속을 헤엄치는 물고기·상어 + 뽀글 거품
     c.fillStyle = '#dbeafe'; rrect(c, -u * 1.35, -u * 1.25, u * 2.7, u * 1.25, u * 0.25); c.fill(); c.strokeStyle = '#1d4ed8'; c.lineWidth = u * 0.05; c.stroke();
@@ -561,9 +583,9 @@ function drawSpot(c, sp, x, y, u, t, opt) {
   c.font = `${fs}px ${JUA}`; c.textAlign = 'center'; c.textBaseline = 'middle';
   const label = sp.name + (opt.stamp ? ' 🏅' : ''), tw = c.measureText(label).width + fs * 0.9;
   c.fillStyle = opt.sel ? '#facc15' : 'rgba(255,255,255,0.95)'; rrect(c, -tw / 2, u * 0.25, tw, fs * 1.45, fs * 0.7); c.fill();
-  const fam = sp.id === 'home' ? '#f472b6' : sp.id === 'grandma' ? '#22c55e' : null;
+  const fam = sp.id === 'home' ? '#f472b6' : sp.kind === 'grandma' ? '#22c55e' : null;
   c.strokeStyle = fam || 'rgba(120,90,60,0.35)'; c.lineWidth = fam ? 2.5 : 1.2; c.stroke();
-  c.fillStyle = sp.id === 'home' ? '#be185d' : sp.id === 'grandma' ? '#166534' : '#4a3424'; c.fillText(label, 0, u * 0.25 + fs * 0.75);
+  c.fillStyle = sp.id === 'home' ? '#be185d' : sp.kind === 'grandma' ? '#166534' : '#4a3424'; c.fillText(label, 0, u * 0.25 + fs * 0.75);
   c.restore();
 }
 

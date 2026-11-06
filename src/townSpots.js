@@ -470,9 +470,9 @@ export const SEOCHO_SPOT_LIST = [
 ];
 // 🏙️ 서울 강남 (강남역·압구정·코엑스·대모산)
 export const GANGNAM_SPOT_LIST = [
-  { id: 'gangnamStn', name: '강남역', emoji: '🚉', kind: 'station', lines: ['2'], real: [127.0276, 37.4979], at: [0.04, 0.53], stop: ['강남역'],
+  { id: 'gangnamStn', name: '강남역', emoji: '🚉', kind: 'station', lines: ['2', '신분당'], real: [127.0276, 37.4979], at: [0.04, 0.53], stop: ['강남역'],
     desc: '강남역이에요! 초록 2호선이 서고, 사람이랑 높은 빌딩이 아주 많아요.' },
-  { id: 'yangjaeStn', name: '양재역', emoji: '🚉', kind: 'station', lines: ['3'], real: [127.0344, 37.4840], at: [0.145, 0.729], stop: ['양재역'],
+  { id: 'yangjaeStn', name: '양재역', emoji: '🚉', kind: 'station', lines: ['3', '신분당'], real: [127.0344, 37.4840], at: [0.145, 0.729], stop: ['양재역'],
     desc: '양재역이에요! 주황 3호선 전철이 서요.' },
   { id: 'yangjaeForest', name: '양재 시민의숲', emoji: '🌲', kind: 'park', real: [127.0375, 37.4700], at: [0.192, 0.929], stop: ['시민의숲'],
     desc: '양재 시민의숲이에요! 키 큰 나무가 빽빽한 숲 공원이에요.' },
@@ -507,12 +507,66 @@ export const SONGPA_SPOT_LIST = [
     desc: '잠실 한강공원이에요! 넓은 한강에서 오리배가 둥실둥실 떠다녀요.' },
   { id: 'garakMarket', name: '가락시장', emoji: '🍉', kind: 'market', real: [127.1183, 37.4925], at: [0.472, 0.7], stop: ['가락시장'],
     desc: '가락시장이에요! 과일이랑 채소랑 생선이 산더미처럼 모이는 커다란 시장이에요.' },
-  { id: 'suseoStn', name: '수서역', emoji: '🚄', kind: 'ktx', lines: ['3'], real: [127.1017, 37.4873], at: [0.195, 0.769], stop: ['수서역'],
+  { id: 'suseoStn', name: '수서역', emoji: '🚄', kind: 'ktx', lines: ['3', '분당'], real: [127.1017, 37.4873], at: [0.195, 0.769], stop: ['수서역'],
     desc: '수서역이에요! 아주 빠른 기차 SRT가 쌩 출발해요. 주황 3호선도 서요.' }
+];
+// 🏯 수원 (의왕 아래). 수원역·수원 화성·광교
+export const SUWON_SPOT_LIST = [
+  { id: 'suwonStn', name: '수원역', emoji: '🚉', kind: 'station', lines: ['1', '분당'], real: [127.0016, 37.2659], at: [0.416, 0.568], stop: ['수원역'],
+    desc: '수원역이에요! 남색 1호선이랑 노란 수인분당선, 멀리 가는 기차도 서요.' },
+  { id: 'hwaseong', name: '수원 화성', emoji: '🏯', kind: 'fortress', real: [127.0136, 37.2818], at: [0.536, 0.303], stop: ['화성행궁', '행궁동', '팔달문'],
+    desc: '수원 화성이에요! 아주 옛날 임금님이 쌓은 커다란 돌 성벽이에요. 성문 위에 깃발이 펄럭펄럭!' },
+  { id: 'suwonMarket', name: '수원 남문시장', emoji: '🛒', kind: 'market', real: [127.0170, 37.2775], at: [0.57, 0.375], stop: ['남문', '지동시장', '팔달문'],
+    desc: '수원 남문시장이에요! 성문 옆 시장이라 통닭이랑 떡이랑 맛있는 게 많아요.' },
+  { id: 'suwonHall', name: '수원시청', emoji: '🏛️', kind: 'hall', real: [127.0286, 37.2635], at: [0.686, 0.608], stop: ['수원시청'],
+    desc: '수원시청이에요! 수원을 돌보는 큰 건물이에요. 노란 수인분당선 역도 있어요.' },
+  { id: 'suwonStadium', name: '수원월드컵경기장', emoji: '⚽', kind: 'stadium', real: [127.0368, 37.2866], at: [0.768, 0.223], stop: ['월드컵경기장'],
+    desc: '수원월드컵경기장이에요! 커다란 축구장에서 골! 하고 다 같이 소리쳐요.' },
+  { id: 'starfieldSuwon', name: '스타필드 수원', emoji: '🛍️', kind: 'shops', real: [127.0003, 37.2875], at: [0.403, 0.208], stop: ['스타필드'],
+    desc: '스타필드 수원이에요! 커다란 쇼핑몰 안에 높다란 책 도서관이 있어요.' },
+  { id: 'seoho', name: '서호공원', emoji: '🦆', kind: 'pond', real: [126.9895, 37.2800], at: [0.295, 0.333], stop: ['서호', '농촌진흥청'],
+    desc: '서호공원이에요! 넓은 호수에 오리랑 새들이 둥둥 떠 있어요.' },
+  { id: 'gwanggyoLake', name: '광교호수공원', emoji: '🌊', kind: 'lake', real: [127.0660, 37.2830], at: [1.06, 0.283], stop: ['광교호수공원', '원천호수', '신대호수'],
+    desc: '광교호수공원이에요! 커다란 호수 둘레에 놀이터랑 물놀이터가 있어요.' }
+];
+// 🚇 용인 수지 (의왕 동쪽). 신분당선
+export const SUJI_SPOT_LIST = [
+  { id: 'gwanggyoStn', name: '광교역', emoji: '🚉', kind: 'station', lines: ['신분당'], real: [127.0446, 37.3021], at: [0.051, 0.965], stop: ['광교역', '경기대'],
+    desc: '광교역이에요! 빨간 신분당선 끝 역이에요. 운전하는 사람이 없는 전철이에요!' },
+  { id: 'lotteMallSuji', name: '롯데몰 수지', emoji: '🛍️', kind: 'shops', real: [127.0730, 37.3140], at: [0.367, 0.767], stop: ['성복역', '롯데몰'],
+    desc: '롯데몰 수지예요! 빨간 신분당선 성복역 바로 위에 있는 쇼핑몰이에요.' },
+  { id: 'sujiGuStn', name: '수지구청역', emoji: '🚉', kind: 'station', lines: ['신분당'], real: [127.0945, 37.3226], at: [0.606, 0.623], stop: ['수지구청'],
+    desc: '수지구청역이에요! 빨간 신분당선 전철이 서요.' },
+  { id: 'shinsegaeGyeonggi', name: '신세계백화점 경기점', emoji: '🏬', kind: 'dept', sign: '신세계', real: [127.1085, 37.3240], at: [0.76, 0.62], stop: ['죽전역', '신세계'],
+    desc: '신세계백화점 경기점이에요! 노란 수인분당선 죽전역 바로 옆 커다란 백화점이에요.' },
+  { id: 'dongcheonStn', name: '동천역', emoji: '🚉', kind: 'station', lines: ['신분당'], real: [127.1080, 37.3380], at: [0.756, 0.367], stop: ['동천역'],
+    desc: '동천역이에요! 빨간 신분당선 전철이 서요.' },
+  { id: 'gwanggyosan', name: '광교산', emoji: '⛰️', kind: 'mountain', real: [127.0420, 37.3480], at: [0.022, 0.2], stop: ['광교산', '반딧불이'],
+    desc: '광교산이에요! 반딧불이가 사는 맑은 계곡이 있는 산이에요.' }
+];
+// 👴 용인 기흥 (수원 동쪽). 용인 할비집·민속촌·에버랜드
+export const GIHEUNG_SPOT_LIST = [
+  { id: 'yonginGrandpa', name: '용인 할비집', emoji: '👴', kind: 'grandma', real: [127.1276, 37.2928], at: [0.451, 0.111], stop: ['하마비마을동일하이빌2차', '동일하이빌2차'],
+    desc: '용인 할비집이에요! 할비가 유나 왔구나 하고 꼭 안아 줘요.' },
+  { id: 'guseongStn', name: '구성역', emoji: '🚉', kind: 'station', lines: ['분당'], real: [127.1058, 37.2989], at: [0.305, 0.017], stop: ['구성역'],
+    desc: '구성역이에요! 노란 수인분당선 전철이 서요. 용인 할비집이랑 가까워요.' },
+  { id: 'kidsMuseum', name: '경기도어린이박물관', emoji: '🧸', kind: 'science', real: [127.1105, 37.2875], at: [0.338, 0.22], stop: ['어린이박물관', '경기도박물관'],
+    desc: '경기도어린이박물관이에요! 만지고 놀면서 배우는 신나는 박물관이에요.' },
+  { id: 'giheungStn', name: '기흥역', emoji: '🚉', kind: 'station', lines: ['분당'], real: [127.1155, 37.2755], at: [0.37, 0.377], stop: ['기흥역'],
+    desc: '기흥역이에요! 노란 수인분당선이랑 용인 경전철을 갈아타요.' },
+  { id: 'folkVillage', name: '한국민속촌', emoji: '🛖', kind: 'folk', real: [127.1200, 37.2588], at: [0.4, 0.634], stop: ['민속촌'],
+    desc: '한국민속촌이에요! 옛날 초가집이랑 기와집이 있고, 옛날 옷 입은 사람들이 있어요.' },
+  { id: 'giheungLake', name: '기흥호수공원', emoji: '🦢', kind: 'lake', real: [127.1135, 37.2440], at: [0.357, 0.862], stop: ['기흥호수', '신갈저수지', '기흥저수지'],
+    desc: '기흥호수공원이에요! 커다란 호수 둘레를 따라 걷고 자전거도 타요.' },
+  { id: 'dongbaekLake', name: '동백호수공원', emoji: '⛲', kind: 'pond', real: [127.1520, 37.2700], at: [0.613, 0.462], stop: ['동백호수공원', '호수공원'],
+    desc: '동백호수공원이에요! 호수 가운데에서 분수가 쏴아 올라와요.' },
+  { id: 'everland', name: '에버랜드', emoji: '🎢', kind: 'themepark', real: [127.2020, 37.2930], at: [0.947, 0.108], stop: ['에버랜드'],
+    desc: '에버랜드예요! 신나는 놀이기구도 타고, 사파리에서 사자랑 곰이랑 판다도 봐요!' }
 ];
 export const TOWN_SPOT_LISTS = { sanbon: SPOT_LIST, anyang: ANYANG_SPOT_LIST, uiwang: UIWANG_SPOT_LIST, gwacheon: GWACHEON_SPOT_LIST,
   gunposouth: GUNPO_SOUTH_SPOT_LIST, seoksu: SEOKSU_SPOT_LIST, gwangmyeong: GWANGMYEONG_SPOT_LIST, geumcheon: GEUMCHEON_SPOT_LIST, gwanak: GWANAK_SPOT_LIST,
   ansan: ANSAN_SPOT_LIST, siheung: SIHEUNG_SPOT_LIST, daebu: DAEBU_SPOT_LIST, bucheon: BUCHEON_SPOT_LIST, incheon: INCHEON_SPOT_LIST,
   incheonwest: INCHEON_WEST_SPOT_LIST, incheonnorth: INCHEON_NORTH_SPOT_LIST,
   guro: GURO_SPOT_LIST, gangseo: GANGSEO_SPOT_LIST, gimpo: GIMPO_SPOT_LIST, ganghwa: GANGHWA_SPOT_LIST,
-  dongjak: DONGJAK_SPOT_LIST, seocho: SEOCHO_SPOT_LIST, gangnam: GANGNAM_SPOT_LIST, songpa: SONGPA_SPOT_LIST };
+  dongjak: DONGJAK_SPOT_LIST, seocho: SEOCHO_SPOT_LIST, gangnam: GANGNAM_SPOT_LIST, songpa: SONGPA_SPOT_LIST,
+  suwon: SUWON_SPOT_LIST, suji: SUJI_SPOT_LIST, giheung: GIHEUNG_SPOT_LIST };

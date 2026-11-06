@@ -43,7 +43,11 @@ const TOWNS = {
   incheonnorth: { out: 'townBus_incheonnorth.json', box: { x0: 126.600, x1: 126.800, y0: 37.530, y1: 37.610 }, home: [], extra: [] },
   // 김포: 인천 서구 위 (한강 하구). 강화도: 김포 서쪽 섬
   gimpo: { out: 'townBus_gimpo.json', box: { x0: 126.540, x1: 126.800, y0: 37.590, y1: 37.770 }, home: [], extra: [] },
-  ganghwa: { out: 'townBus_ganghwa.json', box: { x0: 126.330, x1: 126.545, y0: 37.580, y1: 37.800 }, home: [], extra: [] }
+  ganghwa: { out: 'townBus_ganghwa.json', box: { x0: 126.330, x1: 126.545, y0: 37.580, y1: 37.800 }, home: [], extra: [] },
+  // 수원 (의왕 아래), 용인 수지 (의왕 동쪽), 용인 기흥 (수원 동쪽, 용인 할비집·에버랜드)
+  suwon: { out: 'townBus_suwon.json', box: { x0: 126.960, x1: 127.060, y0: 37.240, y1: 37.300 }, home: [], extra: [] },
+  suji: { out: 'townBus_suji.json', box: { x0: 127.040, x1: 127.130, y0: 37.300, y1: 37.360 }, home: [], extra: [] },
+  giheung: { out: 'townBus_giheung.json', box: { x0: 127.060, x1: 127.210, y0: 37.235, y1: 37.300 }, home: [], extra: [] }
 };
 const TOWN = process.argv[2] || 'sanbon';
 if (!TOWNS[TOWN]) throw new Error(`동네 이름: ${Object.keys(TOWNS).join(', ')}`);
@@ -61,6 +65,7 @@ async function api(svc, op, q) {
     try {
       const r = await fetch(u); const t = await r.text();
       const j = JSON.parse(t).response;
+      if (!j) throw new Error(`응답 이상: ${t.replace(/\s+/g, ' ').slice(0, 300)}`);
       return j.msgBody || {};
     } catch (e) { if (i === 2) throw new Error(hide(e.message)); await new Promise(res => setTimeout(res, 800)); }
   }
