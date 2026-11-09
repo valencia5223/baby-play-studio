@@ -28,7 +28,7 @@ export const INGREDIENTS = {
   // 손님이 좋아하는 재료 (모든 메뉴에 하나씩 더 나온다)
   carrot: { name: '당근' }, honey: { name: '꿀' }, bamboo: { name: '대나무 잎' }, meat: { name: '고기' }, fish: { name: '생선' },
   acorn: { name: '도토리' }, apple: { name: '사과' },
-  // 팬케이크·케이크·김밥·아이스크림
+  // 팝콘·케이크·김밥·아이스크림
   butter: { name: '버터' }, blueberry: { name: '블루베리' }, choco: { name: '초콜릿' }, sprinkles: { name: '스프링클' }, cherry: { name: '체리' },
   danmuji: { name: '단무지' }, spinach: { name: '시금치' },
   vanilla: { name: '바닐라' }, icStrawberry: { name: '딸기 맛' }, icChoco: { name: '초코 맛' }, icMelon: { name: '멜론 맛' },
@@ -44,15 +44,17 @@ export const INGREDIENTS = {
   // 떡볶이·스파게티·카레·커피
   tteok: { name: '떡' }, eomuk: { name: '어묵' }, sauceTomato: { name: '토마토 소스' }, sauceCream: { name: '크림 소스' },
   potato: { name: '감자' }, onion: { name: '양파' },
-  milk: { name: '우유' }, ice: { name: '얼음' }, whip: { name: '휘핑크림' }, syrup: { name: '캐러멜' }
+  milk: { name: '우유' }, ice: { name: '얼음' }, whip: { name: '휘핑크림' }, syrup: { name: '캐러멜' },
+  // 팥빙수·붕어빵
+  redBean: { name: '팥' }, condensed: { name: '연유' }, custard: { name: '슈크림' }
 };
 
 export const KITCHEN_MENUS = [
   { id: 'sandwich', name: '샌드위치', items: ['cheese', 'ham', 'lettuce', 'tomato', 'egg'] },
   { id: 'pizza', name: '피자', items: ['cheese', 'pepperoni', 'pepper', 'mushroom', 'corn', 'olive'] },
   { id: 'skewer', name: '과일 꼬치', items: ['strawberry', 'banana', 'kiwi', 'orange'] },
-  // 팬 3장 굽기(붓기 → 보글보글 → 톡 뒤집기) → 쌓아서 꿀·과일 올리기
-  { id: 'pancake', name: '팬케이크', items: ['honey', 'butter', 'strawberry', 'banana', 'blueberry'] },
+  // 달걀 콕콕 톡톡 깨기 → 지글지글 굽기 → 케첩 그림·재료 올리기 (가끔 노른자 두 개)
+  { id: 'friedegg', name: '달걀프라이', items: ['ketchup', 'ham', 'lettuce', 'tomato', 'cheese'] },
   // 생크림 쓱쓱 바르기 → 꾸미기 → 초 꽂기 (손님이 먹기 전에 촛불을 후 분다)
   { id: 'cake', name: '케이크', items: ['strawberry', 'blueberry', 'choco', 'sprinkles', 'cherry'] },
   // 밥 쓱쓱 펴기 → 재료 올리기 → 돌돌 말기 → 콕콕 썰기
@@ -88,11 +90,16 @@ export const KITCHEN_MENUS = [
   // 채소 썰기(CURRY_VEG) → 냄비에 재료 → 휘휘 젓기 → 밥 옆에
   { id: 'curry', name: '카레라이스', items: ['meat', 'mushroom', 'egg'] },
   // 컵 놓기 → 원두 갈기 → 버튼 눌러 추출 → 우유·얼음·휘핑크림
-  { id: 'coffee', name: '커피', items: ['milk', 'ice', 'whip', 'syrup', 'choco'] }
+  { id: 'coffee', name: '커피', items: ['milk', 'ice', 'whip', 'syrup', 'choco'] },
+  // 옥수수 넣기 → 냄비 흔들흔들(펑펑) → 통에 담아 맛 입히기
+  { id: 'popcorn', name: '팝콘', items: ['corn', 'butter', 'syrup', 'choco', 'sprinkles'] },
+  // 빙수기 손잡이 빙글빙글 → 눈꽃 얼음 → 팥·연유·과일
+  { id: 'bingsu', name: '팥빙수', items: ['redBean', 'condensed', 'tteok', 'strawberry', 'kiwi'] },
+  // 틀에 반죽 붓기 → 속 넣기 → 뚜껑 덮고 굽기 → 톡 뒤집기
+  { id: 'bungeo', name: '붕어빵', items: ['redBean', 'custard', 'choco', 'cheese'] }
 ];
 export const ICE_FLAVORS = ['vanilla', 'icStrawberry', 'icChoco', 'icMelon'];
 export const ICE_MAX = 4;         // 아이스크림 최대 몇 단
-export const PANCAKE_COUNT = 3;   // 굽는 팬케이크 장 수
 export const KIMBAP_MAX = 6;      // 김밥 재료 줄 수
 export const KIMBAP_SLICES = 8;   // 썰면 나오는 조각 수 (한 번 누를 때 2개씩)
 export const DECO_MAX = 40;

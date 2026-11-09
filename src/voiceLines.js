@@ -2,6 +2,7 @@ import { FISH_SPECIES, STAGE_NAMES, breedOf } from './aquariumData.js';
 import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID, CROPS } from './farmData.js';
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
 import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
+import { HOSPITAL_PATIENTS, HOSPITAL_SYMPTOMS, HOSPITAL_TEMPS } from './hospitalData.js';
 import { BASKET_MAX, COUNTER_GOODS, ASK_MAX_N, SHOP_GOODS, BILLS, wonText, TOTAL_MAX } from './shopData.js';
 import { TOWN_LIST, busSpoken, TRANSFERS, SPOT_BY_ID, lineName } from './townData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
@@ -219,7 +220,6 @@ export const VOICE = {
     sandwich: '샌드위치를 만들어요! 빵 위에 재료를 콕콕 올려 보세요!',
     pizza: '피자를 만들어요! 빨간 소스를 쓱쓱 발라 보세요!',
     skewer: '과일 꼬치를 만들어요! 과일을 콕 눌러서 썰어 보세요!',
-    pancake: '팬케이크를 만들어요! 팬을 콕 눌러서 반죽을 부어 보세요!',
     cake: '케이크를 만들어요! 하얀 생크림을 쓱쓱 발라 보세요!',
     kimbap: '김밥을 만들어요! 김 위에 밥을 쓱쓱 펴 보세요!',
     icecream: '아이스크림을 만들어요! 좋아하는 맛을 콕콕 올려 보세요!',
@@ -237,9 +237,22 @@ export const VOICE = {
     burger: '햄버거를 만들어요! 팬을 콕 눌러서 고기를 구워 보세요!',
     spaghetti: '스파게티를 만들어요! 냄비를 콕 눌러서 면을 넣어 보세요!',
     curry: '카레라이스를 만들어요! 채소를 콕콕 눌러서 썰어 보세요!',
-    coffee: '커피를 만들어요! 컵을 콕 눌러서 커피 머신에 놓아 보세요!'
+    coffee: '커피를 만들어요! 컵을 콕 눌러서 커피 머신에 놓아 보세요!',
+    friedegg: '달걀프라이를 만들어요! 달걀을 콕콕 눌러서 톡톡 깨 보세요!',
+    popcorn: '팝콘을 만들어요! 옥수수를 콕콕 냄비에 넣어 보세요!',
+    bingsu: '팥빙수를 만들어요! 손잡이를 빙글빙글 돌려서 얼음을 갈아 보세요!',
+    bungeo: '붕어빵을 만들어요! 틀을 콕 눌러서 반죽을 부어 보세요!'
   })[m.id],
   kitchenEggCover: () => '폭신폭신 달걀 이불을 덮어요!',
+  kitchenShake: () => '냄비를 흔들흔들! 팝콘이 펑펑 튀어요!',
+  kitchenPopDone: () => '펑펑! 팝콘이 가득 됐어요!',
+  kitchenPopFlavor: () => '이제 맛있는 맛을 입혀 보세요!',
+  kitchenBingsuTop: () => '사르르 눈꽃 얼음! 팥이랑 맛있는 걸 올려 보세요!',
+  kitchenBungeoClose: () => '뚜껑을 덮고 구워요. 지글지글!',
+  kitchenBungeoFlip: () => '지글지글! 톡 눌러서 틀을 뒤집어 보세요!',
+  kitchenBungeoDing: () => '띵! 붕어빵이 다 구워졌어요!',
+  kitchenTwoYolks: () => '우와! 노른자가 두 개예요!',
+  kitchenEggDone: () => '노릇노릇! 달걀프라이가 다 익었어요!',
   kitchenDraw: () => '손가락으로 쓱쓱 그림을 그려 보세요!',
   kitchenCupcakeDing: () => '띵! 컵케이크가 다 구워졌어요! 크림으로 쓱쓱 꾸며 보세요!',
   kitchenSpin: () => '손가락으로 빙글빙글 돌려 보세요!',
@@ -268,9 +281,7 @@ export const VOICE = {
   kitchenFry: () => '지글지글! 도넛을 튀겨요!',
   kitchenGlaze: () => '노릇노릇! 이제 맛있는 옷을 입혀 보세요!',
   kitchenPour: () => '주르륵! 반죽을 부어요!',
-  kitchenFlip: () => '보글보글! 톡 눌러서 뒤집어 보세요!',
   kitchenFlipped: () => '휙! 뒤집었어요!',
-  kitchenOneMore: () => '한 장 더 만들어요!',
   kitchenCandle: () => '초를 꽂아요! 반짝반짝!',
   kitchenBlow: () => '후우! 촛불을 껐어요!',
   kitchenFill: () => '이제 재료를 콕콕 올려 보세요!',
@@ -287,6 +298,27 @@ export const VOICE = {
   kitchenServe: () => '다 만들었어요! 손님에게 갖다 주세요!',
   kitchenYum: (g) => `냠냠! 정말 맛있어요! ${attachJosa(g.name, '이/가')} 고맙대요!`,
   kitchenYumFav: (g) => `냠냠! 좋아하는 ${INGREDIENTS[g.fav].name}까지! ${attachJosa(g.name, '이/가')} 엄청 행복하대요!`,
+  // 🏥 병원 놀이
+  hospArrive: (p, sym) => `똑똑! ${attachJosa(p.name, '이/가')} 병원에 왔어요. ${sym.map(k => ({ fever: '열이 펄펄 나요', nose: '콧물이 줄줄 나요', wound: '넘어져서 아야 했어요' }[k])).join('. 그리고 ')}!`,
+  hospTempGo: () => '체온계를 귀에 살짝 대 보세요. 열이 있는지 재 봐요!',
+  hospTemp: (temp, fever) => (fever ? `삐빅! ${temp.toFixed(1)}도! 열이 나요. 시원한 열 시트를 이마에 붙여 주세요!` : `삐빅! ${temp.toFixed(1)}도! 열이 없어요. 튼튼해요!`),
+  hospSheetDone: () => '이마에 착! 시원해요. 열이 내려가요!',
+  hospThroatGo: () => '이번엔 목을 봐요. 손전등을 입에 비춰 보세요!',
+  hospAh: () => '아아~',
+  hospThroatDone: (fever) => (fever ? '목이 조금 빨개요. 푹 쉬면 금방 나아요!' : '목이 아주 튼튼해요!'),
+  hospSteth: () => '먼저 청진기로 콩닥콩닥 심장 소리를 들어 봐요. 가슴에 콕콕 대 보세요!',
+  hospStethDone: () => '콩닥콩닥! 심장 소리가 씩씩해요!',
+  hospNose: () => '콧물을 빼 줄까요? 콧물 기계의 버튼을 눌러 켜 보세요!',
+  hospNoseOn: () => '위잉! 이제 노즐을 잡고 콧구멍에 쏙 넣어 보세요!',
+  hospNoseOther: () => '쏙! 이번엔 다른 쪽 콧구멍도 해 볼까요?',
+  hospNoseDone: () => '콧물이 다 나왔어요! 코가 뻥 뚫렸어요!',
+  hospCream: () => '아야 한 곳에 약을 쓱쓱 발라 주세요!',
+  hospCreamDone: () => '약을 다 발랐어요! 이제 밴드를 붙여 주세요!',
+  hospBandDone: () => '밴드 짠! 이제 하나도 안 아파요!',
+  hospCandy: () => '잘 참았어요! 선물로 달콤한 사탕을 손에 쥐여 주세요!',
+  hospCandyDone: () => '와, 사탕이다! 고맙습니다!',
+  hospThanks: (p) => `${attachJosa(p.name, '이/가')} 다 나았어요! 의사 선생님, 고맙습니다!`,
+  hospWait: () => '반짝반짝 빛나는 도구를 골라 보세요!',
 
   // 📸 동물 · 탈것 · 바다생물 소리 / 🍎 과일
   itemSound: (item) => `${item.name}! ${item.soundText}`,
@@ -396,10 +428,17 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   KITCHEN_MENUS.forEach(m => lines.push(VOICE.kitchenMenu(m)));
   Object.keys(INGREDIENTS).forEach(id => lines.push(VOICE.kitchenIng(id)));
   lines.push(VOICE.kitchenFull(), VOICE.kitchenBread(), VOICE.kitchenTopping(), VOICE.kitchenBake(), VOICE.kitchenDing(), VOICE.kitchenStick(), VOICE.kitchenServe(),
-    VOICE.kitchenPour(), VOICE.kitchenFlip(), VOICE.kitchenFlipped(), VOICE.kitchenOneMore(), VOICE.kitchenCandle(), VOICE.kitchenBlow(), VOICE.kitchenFill(), VOICE.kitchenRoll(), VOICE.kitchenCut(),
+    VOICE.kitchenPour(), VOICE.kitchenFlipped(), VOICE.kitchenCandle(), VOICE.kitchenBlow(), VOICE.kitchenFill(), VOICE.kitchenRoll(), VOICE.kitchenCut(),
     VOICE.kitchenBlend(), VOICE.kitchenJuicePour(), VOICE.kitchenCookieDing(), VOICE.kitchenPress(), VOICE.kitchenWrap(), VOICE.kitchenWater(), VOICE.kitchenBoil(), VOICE.kitchenFry(), VOICE.kitchenGlaze(),
     VOICE.kitchenEggCover(), VOICE.kitchenDraw(), VOICE.kitchenCupcakeDing(), VOICE.kitchenSpin(), VOICE.kitchenFold(), VOICE.kitchenSteam(), VOICE.kitchenSaucePour(), VOICE.kitchenStir(),
-    VOICE.kitchenPattyFlip(), VOICE.kitchenBun(), VOICE.kitchenPasta(), VOICE.kitchenPastaSauce(), VOICE.kitchenTwirl(), VOICE.kitchenCurryPot(), VOICE.kitchenBeans(), VOICE.kitchenGrind(), VOICE.kitchenBrewBtn(), VOICE.kitchenBrew(), VOICE.kitchenCoffeeAdd());
+    VOICE.kitchenPattyFlip(), VOICE.kitchenBun(), VOICE.kitchenPasta(), VOICE.kitchenPastaSauce(), VOICE.kitchenTwirl(), VOICE.kitchenCurryPot(), VOICE.kitchenBeans(), VOICE.kitchenGrind(), VOICE.kitchenBrewBtn(), VOICE.kitchenBrew(), VOICE.kitchenCoffeeAdd(),
+    VOICE.kitchenShake(), VOICE.kitchenPopDone(), VOICE.kitchenPopFlavor(), VOICE.kitchenBingsuTop(), VOICE.kitchenBungeoClose(), VOICE.kitchenBungeoFlip(), VOICE.kitchenBungeoDing(), VOICE.kitchenTwoYolks(), VOICE.kitchenEggDone());
+  HOSPITAL_PATIENTS.forEach(p => { lines.push(VOICE.hospThanks(p)); HOSPITAL_SYMPTOMS.forEach(sym => lines.push(VOICE.hospArrive(p, sym))); });
+  HOSPITAL_TEMPS.fever.forEach(v => lines.push(VOICE.hospTemp(v, true)));
+  HOSPITAL_TEMPS.normal.forEach(v => lines.push(VOICE.hospTemp(v, false)));
+  lines.push(VOICE.hospTempGo(), VOICE.hospSheetDone(), VOICE.hospThroatGo(), VOICE.hospAh(), VOICE.hospThroatDone(true), VOICE.hospThroatDone(false));
+  lines.push(VOICE.hospSteth(), VOICE.hospStethDone(), VOICE.hospNose(), VOICE.hospNoseOn(), VOICE.hospNoseOther(), VOICE.hospNoseDone(), VOICE.hospCream(), VOICE.hospCreamDone(),
+    VOICE.hospBandDone(), VOICE.hospCandy(), VOICE.hospCandyDone(), VOICE.hospWait());
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
   fruits.forEach(i => lines.push(VOICE.tasty(i)));
   animals.forEach(i => lines.push(VOICE.quiz(i.name, false)));

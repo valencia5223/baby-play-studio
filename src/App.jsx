@@ -39,6 +39,7 @@ import StoryBook from './StoryBook.jsx';
 import PhoneCall from './PhoneCall.jsx';
 import BirthdayParty from './BirthdayParty.jsx';
 import KitchenGame from './KitchenGame.jsx';
+import HospitalGame from './HospitalGame.jsx';
 import ShopGame from './ShopGame.jsx';
 import TownGame from './TownGame.jsx';
 import STORY_VOICE_INDEX from './storyVoiceIndex.json';
@@ -2973,15 +2974,17 @@ const OCEAN_CREATURES = [
 // 🧩 아기 퍼즐 데이터. cols × rows 가 조각 수 (사과 2조각 ~ 판다 12조각으로 테마마다 다르다)
 // ═════════════════════════════════════════════════════════════════════════════
 const BABY_PUZZLES = [
+  // 조각이 적은 것부터. cut: stagger(줄마다 조각 수가 다른 돌기 퍼즐)·jigsaw(돌기 격자)·curvy(S자 격자)·waves(물결 띠)·pie(부채꼴)·bricks(엇갈린 줄)·rings(가운데 동그라미 + 둘레)
+  { id: 'chick', cut: { type: 'stagger', rows: [1, 2] }, name: '병아리', icon: '🐥', label: '🐥 병아리', color: '#eab308', bg: '#fefce8', desc: '울타리 앞 아기 병아리' },
   { id: 'dog', cut: { type: 'jigsaw', cols: 2, rows: 2 }, name: '강아지', icon: '🐶', label: '🐶 강아지 얼굴', color: '#f97316', bg: '#fff7ed', desc: '들판에서 공놀이하는 강아지' },
-  { id: 'cat', cut: { type: 'pie', n: 4 }, name: '고양이', icon: '🐱', label: '🐱 고양이 얼굴', color: '#ec4899', bg: '#fdf2f8', desc: '꽃밭 울타리에 앉은 고양이' },
-  { id: 'lion', cut: { type: 'bricks', rows: [2, 3, 2] }, name: '사자', icon: '🦁', label: '🦁 사자 얼굴', color: '#d97706', bg: '#fefce8', desc: '노을 진 초원의 사자' },
-  { id: 'rabbit', cut: { type: 'waves', n: 4, dir: 'v' }, name: '토끼', icon: '🐰', label: '🐰 토끼 얼굴', color: '#f43f5e', bg: '#fff1f2', desc: '당근밭의 깡충 토끼' },
+  { id: 'cat', cut: { type: 'stagger', rows: [2, 3] }, name: '고양이', icon: '🐱', label: '🐱 고양이 얼굴', color: '#ec4899', bg: '#fdf2f8', desc: '꽃밭 울타리에 앉은 고양이' },
+  { id: 'penguin', cut: { type: 'jigsaw', cols: 2, rows: 3 }, name: '펭귄', icon: '🐧', label: '🐧 펭귄', color: '#0284c7', bg: '#f0f9ff', desc: '얼음 나라의 펭귄' },
   { id: 'pig', cut: { type: 'curvy', cols: 3, rows: 2 }, name: '돼지', icon: '🐷', label: '🐷 돼지 얼굴', color: '#f43f5e', bg: '#ffe4e6', desc: '진흙탕에서 노는 돼지' },
-  { id: 'bear', cut: { type: 'jigsaw', cols: 3, rows: 3 }, name: '곰돌이', icon: '🐻', label: '🐻 곰돌이 얼굴', color: '#b45309', bg: '#fef3c7', desc: '숲속에서 꿀단지를 찾은 곰돌이' },
-  { id: 'panda', cut: { type: 'bricks', rows: [3, 4, 3] }, name: '판다', icon: '🐼', label: '🐼 판다 얼굴', color: '#0f172a', bg: '#f8fafc', desc: '대나무 숲의 판다' },
-  { id: 'frog', cut: { type: 'pie', n: 6 }, name: '개구리', icon: '🐸', label: '🐸 개구리 얼굴', color: '#16a34a', bg: '#f0fdf4', desc: '연잎 위의 개구리' },
-  { id: 'apple', cut: { type: 'waves', n: 2, dir: 'v' }, name: '빨간 사과', icon: '🍎', label: '🍎 빨간 사과', color: '#dc2626', bg: '#fee2e2', desc: '과수원 언덕의 빨간 사과' }
+  { id: 'lion', cut: { type: 'bricks', rows: [2, 3, 2] }, name: '사자', icon: '🦁', label: '🦁 사자 얼굴', color: '#d97706', bg: '#fefce8', desc: '노을 진 초원의 사자' },
+  { id: 'monkey', cut: { type: 'stagger', rows: [3, 2, 3] }, name: '원숭이', icon: '🐵', label: '🐵 원숭이', color: '#92400e', bg: '#fef3c7', desc: '정글에서 바나나 먹는 원숭이' },
+  { id: 'elephant', cut: { type: 'jigsaw', cols: 3, rows: 3 }, name: '코끼리', icon: '🐘', label: '🐘 코끼리', color: '#64748b', bg: '#f1f5f9', desc: '연못에서 물놀이하는 코끼리' },
+  { id: 'bear', cut: { type: 'bricks', rows: [3, 4, 3] }, name: '곰돌이', icon: '🐻', label: '🐻 곰돌이 얼굴', color: '#b45309', bg: '#fef3c7', desc: '숲속에서 꿀단지를 찾은 곰돌이' },
+  { id: 'panda', cut: { type: 'jigsaw', cols: 4, rows: 4 }, name: '판다', icon: '🐼', label: '🐼 판다 얼굴', color: '#0f172a', bg: '#f8fafc', desc: '대나무 숲의 판다' }
 ];
 
 // 🧩 퍼즐 300x300 고화질 벡터 아트워크 그룹 (단일 루트 SVG에서 1/4 조각으로 완벽 분할)
@@ -3046,24 +3049,6 @@ function PuzzleArtworkG({ id }) {
       </g>
     );
   }
-  if (id === 'rabbit') {
-    return (
-      <g>
-        <ellipse cx="105" cy="70" rx="26" ry="65" fill="#ffffff" stroke="#f43f5e" strokeWidth="5" transform="rotate(-8 105 70)" />
-        <ellipse cx="105" cy="70" rx="14" ry="48" fill="#fda4af" transform="rotate(-8 105 70)" />
-        <ellipse cx="195" cy="70" rx="26" ry="65" fill="#ffffff" stroke="#f43f5e" strokeWidth="5" transform="rotate(8 195 70)" />
-        <ellipse cx="195" cy="70" rx="14" ry="48" fill="#fda4af" transform="rotate(8 195 70)" />
-        <circle cx="150" cy="175" r="105" fill="#ffffff" stroke="#f43f5e" strokeWidth="5" />
-        <circle cx="110" cy="160" r="15" fill="#e11d48" /><circle cx="114" cy="155" r="5" fill="#ffffff" /><circle cx="107" cy="165" r="2.5" fill="#ffffff" />
-        <circle cx="190" cy="160" r="15" fill="#e11d48" /><circle cx="194" cy="155" r="5" fill="#ffffff" /><circle cx="187" cy="165" r="2.5" fill="#ffffff" />
-        <polygon points="150,190 140,178 160,178" fill="#fb7185" />
-        <rect x="141" y="196" width="8" height="12" rx="2" fill="#ffffff" stroke="#e11d48" strokeWidth="1.5" />
-        <rect x="151" y="196" width="8" height="12" rx="2" fill="#ffffff" stroke="#e11d48" strokeWidth="1.5" />
-        <circle cx="85" cy="188" r="18" fill="#fecdd3" />
-        <circle cx="215" cy="188" r="18" fill="#fecdd3" />
-      </g>
-    );
-  }
   if (id === 'bear') {
     return (
       <g>
@@ -3099,23 +3084,6 @@ function PuzzleArtworkG({ id }) {
       </g>
     );
   }
-  if (id === 'frog') {
-    return (
-      <g>
-        <circle cx="90" cy="85" r="45" fill="#22c55e" stroke="#15803d" strokeWidth="5" />
-        <circle cx="210" cy="85" r="45" fill="#22c55e" stroke="#15803d" strokeWidth="5" />
-        <circle cx="90" cy="85" r="26" fill="#ffffff" /><circle cx="93" cy="85" r="14" fill="#0f172a" /><circle cx="98" cy="80" r="5" fill="#ffffff" />
-        <circle cx="210" cy="85" r="26" fill="#ffffff" /><circle cx="207" cy="85" r="14" fill="#0f172a" /><circle cx="212" cy="80" r="5" fill="#ffffff" />
-        <ellipse cx="150" cy="175" rx="125" ry="95" fill="#22c55e" stroke="#15803d" strokeWidth="5" />
-        <ellipse cx="150" cy="195" rx="75" ry="55" fill="#a7f3d0" />
-        <circle cx="140" cy="155" r="4" fill="#15803d" />
-        <circle cx="160" cy="155" r="4" fill="#15803d" />
-        <path d="M 75 175 Q 150 240 225 175" stroke="#065f46" strokeWidth="6" strokeLinecap="round" fill="none" />
-        <circle cx="75" cy="175" r="18" fill="#fca5a5" />
-        <circle cx="225" cy="175" r="18" fill="#fca5a5" />
-      </g>
-    );
-  }
   if (id === 'pig') {
     return (
       <g>
@@ -3146,18 +3114,63 @@ function PuzzleArtworkG({ id }) {
       </g>
     );
   }
-  // Default: apple
+  if (id === 'chick') {
+    return (
+      <g>
+        <path d="M 138 46 Q 130 18 146 12 Q 150 30 156 20 Q 168 8 172 28 Q 166 36 162 48 Z" fill="#facc15" stroke="#ca8a04" strokeWidth="4" strokeLinejoin="round" />
+        <circle cx="150" cy="160" r="118" fill="#fde047" stroke="#ca8a04" strokeWidth="6" />
+        <circle cx="108" cy="140" r="14" fill="#1e293b" /><circle cx="112" cy="135" r="5" fill="#ffffff" />
+        <circle cx="192" cy="140" r="14" fill="#1e293b" /><circle cx="196" cy="135" r="5" fill="#ffffff" />
+        <path d="M 124 170 Q 150 160 176 170 L 150 204 Z" fill="#fb923c" stroke="#ea580c" strokeWidth="4" strokeLinejoin="round" />
+        <circle cx="80" cy="185" r="18" fill="#fb923c" opacity="0.4" />
+        <circle cx="220" cy="185" r="18" fill="#fb923c" opacity="0.4" />
+      </g>
+    );
+  }
+  if (id === 'penguin') {
+    return (
+      <g>
+        <circle cx="150" cy="160" r="122" fill="#1e293b" stroke="#0f172a" strokeWidth="6" />
+        <path d="M150 100 C 122 62, 52 92, 62 160 C 70 228, 120 262, 150 262 C 180 262, 230 228, 238 160 C 248 92, 178 62, 150 100 Z" fill="#ffffff" />
+        <circle cx="112" cy="150" r="13" fill="#0f172a" /><circle cx="116" cy="145" r="4.5" fill="#ffffff" />
+        <circle cx="188" cy="150" r="13" fill="#0f172a" /><circle cx="192" cy="145" r="4.5" fill="#ffffff" />
+        <path d="M 128 180 Q 150 170 172 180 Q 150 206 128 180 Z" fill="#fb923c" stroke="#ea580c" strokeWidth="3" strokeLinejoin="round" />
+        <circle cx="86" cy="196" r="16" fill="#fda4af" opacity="0.8" />
+        <circle cx="214" cy="196" r="16" fill="#fda4af" opacity="0.8" />
+      </g>
+    );
+  }
+  if (id === 'monkey') {
+    return (
+      <g>
+        <circle cx="45" cy="150" r="38" fill="#92400e" stroke="#78350f" strokeWidth="5" /><circle cx="45" cy="150" r="20" fill="#fecaca" />
+        <circle cx="255" cy="150" r="38" fill="#92400e" stroke="#78350f" strokeWidth="5" /><circle cx="255" cy="150" r="20" fill="#fecaca" />
+        <circle cx="150" cy="155" r="115" fill="#92400e" stroke="#78350f" strokeWidth="6" />
+        <path d="M140 46 Q150 22 160 46" stroke="#78350f" strokeWidth="6" fill="none" strokeLinecap="round" />
+        <path d="M150 122 C 128 84, 66 92, 72 140 C 58 178, 82 250, 150 250 C 218 250, 242 178, 228 140 C 234 92, 172 84, 150 122 Z" fill="#fde2c4" />
+        <circle cx="116" cy="145" r="12" fill="#3b1d06" /><circle cx="119" cy="141" r="4.5" fill="#ffffff" />
+        <circle cx="184" cy="145" r="12" fill="#3b1d06" /><circle cx="187" cy="141" r="4.5" fill="#ffffff" />
+        <ellipse cx="142" cy="186" rx="4" ry="5" fill="#78350f" /><ellipse cx="158" cy="186" rx="4" ry="5" fill="#78350f" />
+        <path d="M 118 206 Q 150 232 182 206" stroke="#78350f" strokeWidth="5" strokeLinecap="round" fill="none" />
+        <circle cx="94" cy="192" r="14" fill="#fca5a5" opacity="0.7" />
+        <circle cx="206" cy="192" r="14" fill="#fca5a5" opacity="0.7" />
+      </g>
+    );
+  }
+  // 코끼리 (그 밖의 id 도 코끼리로)
   return (
     <g>
-      <path d="M 150 75 Q 165 30 175 20" stroke="#78350f" strokeWidth="12" strokeLinecap="round" fill="none" />
-      <path d="M 160 45 Q 210 25 210 65 Q 175 75 160 45 Z" fill="#22c55e" stroke="#15803d" strokeWidth="4" />
-      <path d="M 150 85 C 95 65 35 110 45 185 C 55 255 120 280 150 270 C 180 280 245 255 255 185 C 265 110 205 65 150 85 Z" fill="#ef4444" stroke="#b91c1c" strokeWidth="6" />
-      <path d="M 75 120 Q 95 105 110 120" stroke="#fca5a5" strokeWidth="8" strokeLinecap="round" fill="none" />
-      <circle cx="115" cy="175" r="11" fill="#450a0a" /><circle cx="118" cy="172" r="3.5" fill="#ffffff" />
-      <circle cx="185" cy="175" r="11" fill="#450a0a" /><circle cx="188" cy="172" r="3.5" fill="#ffffff" />
-      <path d="M 135 195 Q 150 210 165 195" stroke="#450a0a" strokeWidth="4.5" strokeLinecap="round" fill="none" />
-      <circle cx="95" cy="195" r="14" fill="#fecdd3" opacity="0.8" />
-      <circle cx="205" cy="195" r="14" fill="#fecdd3" opacity="0.8" />
+      <ellipse cx="60" cy="145" rx="52" ry="76" fill="#94a3b8" stroke="#475569" strokeWidth="5" /><ellipse cx="66" cy="150" rx="31" ry="52" fill="#fbcfe8" />
+      <ellipse cx="240" cy="145" rx="52" ry="76" fill="#94a3b8" stroke="#475569" strokeWidth="5" /><ellipse cx="234" cy="150" rx="31" ry="52" fill="#fbcfe8" />
+      <circle cx="150" cy="140" r="96" fill="#cbd5e1" stroke="#475569" strokeWidth="6" />
+      <path d="M118 196 Q108 220 128 224" fill="#fffbeb" stroke="#a8a29e" strokeWidth="3" strokeLinejoin="round" />
+      <path d="M182 196 Q192 220 172 224" fill="#fffbeb" stroke="#a8a29e" strokeWidth="3" strokeLinejoin="round" />
+      <path d="M130 172 Q126 246 140 274 Q150 292 168 282 Q180 274 170 264 Q160 270 158 256 Q156 226 170 172 Z" fill="#cbd5e1" stroke="#475569" strokeWidth="5" strokeLinejoin="round" />
+      {[214, 232, 250].map(y => <path key={y} d={`M${137 + (y - 214) * 0.05} ${y} q12 4 22 0`} stroke="#94a3b8" strokeWidth="3" fill="none" strokeLinecap="round" />)}
+      <circle cx="116" cy="132" r="12" fill="#1e293b" /><circle cx="119" cy="128" r="4.5" fill="#ffffff" />
+      <circle cx="184" cy="132" r="12" fill="#1e293b" /><circle cx="187" cy="128" r="4.5" fill="#ffffff" />
+      <circle cx="96" cy="176" r="15" fill="#fda4af" opacity="0.7" />
+      <circle cx="204" cy="176" r="15" fill="#fda4af" opacity="0.7" />
     </g>
   );
 }
@@ -3242,33 +3255,6 @@ function PuzzleSceneG({ id }) {
       </g>
     );
   }
-  if (id === 'rabbit') {
-    return (
-      <g>
-        <rect width="300" height="300" fill="#dbeafe" />
-        <circle cx="45" cy="45" r="22" fill="#fde047" />
-        <PzCloud x={210} y={42} s={0.9} />
-        <rect y="160" width="300" height="140" fill="#86efac" />
-        {[0, 1, 2].map(r => <rect key={r} y={178 + r * 40} width="300" height="18" fill="#b45309" opacity="0.75" />)}
-        {[0, 1, 2].map(r => Array.from({ length: 6 }, (_, i) => {
-          const x = 22 + i * 52 + (r % 2) * 24, y = 182 + r * 40;
-          if (x > 95 && x < 205 && r > 0) return null;
-          return (
-            <g key={`${r}-${i}`}>
-              <path d={`M${x - 6} ${y} L${x + 6} ${y} L${x} ${y + 20} Z`} fill="#f97316" />
-              <path d={`M${x} ${y} L${x - 7} ${y - 12} M${x} ${y} L${x} ${y - 14} M${x} ${y} L${x + 7} ${y - 12}`} stroke="#16a34a" strokeWidth="3.5" strokeLinecap="round" />
-            </g>
-          );
-        }))}
-        <circle cx="194" cy="262" r="12" fill="#ffffff" stroke="#f43f5e" strokeWidth="3" />
-        <ellipse cx="150" cy="252" rx="46" ry="38" fill="#ffffff" stroke="#f43f5e" strokeWidth="4" />
-        <ellipse cx="126" cy="287" rx="17" ry="9" fill="#ffffff" stroke="#f43f5e" strokeWidth="3" />
-        <ellipse cx="174" cy="287" rx="17" ry="9" fill="#ffffff" stroke="#f43f5e" strokeWidth="3" />
-        <g transform="translate(118 252) rotate(-30)"><path d="M-6 0 L6 0 L0 26 Z" fill="#f97316" /><path d="M0 0 L-6 -10 M0 0 L6 -10" stroke="#16a34a" strokeWidth="3.5" strokeLinecap="round" /></g>
-        <PzHead id="rabbit" x={150} y={172} s={0.42} cy={175} />
-      </g>
-    );
-  }
   if (id === 'pig') {
     return (
       <g>
@@ -3346,50 +3332,100 @@ function PuzzleSceneG({ id }) {
       </g>
     );
   }
-  if (id === 'frog') {
+  if (id === 'chick') {
+    // 울타리 앞 풀밭, 깨진 달걀 껍데기 옆의 아기 병아리
     return (
       <g>
-        <rect width="300" height="300" fill="#bae6fd" />
-        <PzCloud x={70} y={36} s={0.8} /><PzCloud x={230} y={50} />
-        <rect y="112" width="300" height="188" fill="#38bdf8" />
-        <path d="M0 112 Q150 100 300 114 L300 124 L0 124 Z" fill="#7dd3fc" />
-        {[[60, 160, 40], [235, 150, 34], [90, 290, 50], [250, 282, 40]].map(([x, y, r], i) => <ellipse key={i} cx={x} cy={y} rx={r} ry={r * 0.22} fill="none" stroke="#e0f2fe" strokeWidth="2.5" opacity="0.8" />)}
-        {[[16, 150], [30, 140], [282, 160]].map(([x, y], i) => <g key={i}><line x1={x} y1={y + 70} x2={x} y2={y - 20} stroke="#15803d" strokeWidth="4" /><rect x={x - 4} y={y - 30} width="8" height="24" rx="4" fill="#78350f" /></g>)}
-        {/* 연잎: 둥근 잎에 쐐기 모양 홈 */}
-        {[[62, 202, 30], [246, 226, 24]].map(([x, y, r], i) => (
-          <g key={i}>
-            <ellipse cx={x} cy={y} rx={r} ry={r * 0.36} fill="#22c55e" stroke="#15803d" strokeWidth="2" />
-            <path d={`M${x} ${y} L${x + r * 1.02} ${y - r * 0.12} L${x + r * 1.02} ${y + r * 0.14} Z`} fill="#38bdf8" />
-          </g>
-        ))}
-        <g transform="translate(246 212)">{[0, 60, 120, 180, 240, 300].map(a => <ellipse key={a} cx="0" cy="-8" rx="5" ry="10" fill="#f9a8d4" transform={`rotate(${a})`} />)}<circle r="5" fill="#fde047" /></g>
-        <ellipse cx="150" cy="264" rx="96" ry="28" fill="#16a34a" stroke="#14532d" strokeWidth="3" />
-        <path d="M150 264 L248 254 L248 276 Z" fill="#38bdf8" />
-        <ellipse cx="108" cy="262" rx="22" ry="10" fill="#22c55e" stroke="#15803d" strokeWidth="3" />
-        <ellipse cx="192" cy="262" rx="22" ry="10" fill="#22c55e" stroke="#15803d" strokeWidth="3" />
-        <ellipse cx="150" cy="246" rx="46" ry="28" fill="#22c55e" stroke="#15803d" strokeWidth="4" />
-        <PzHead id="frog" x={150} y={196} s={0.42} cy={150} />
+        <rect width="300" height="300" fill="#e0f2fe" />
+        <circle cx="252" cy="46" r="22" fill="#fde047" /><circle cx="252" cy="46" r="30" fill="#fde047" opacity="0.3" />
+        <PzCloud x={78} y={44} /><PzCloud x={178} y={70} s={0.7} />
+        {[0, 1, 2, 3, 4, 5, 6, 7].map(i => <path key={i} d={`M${10 + i * 40} 196 L${10 + i * 40} 136 L${20 + i * 40} 126 L${30 + i * 40} 136 L${30 + i * 40} 196 Z`} fill="#ffffff" stroke="#a16207" strokeWidth="2.5" />)}
+        <rect y="146" width="300" height="9" fill="#fef3c7" stroke="#a16207" strokeWidth="2" />
+        <rect y="170" width="300" height="9" fill="#fef3c7" stroke="#a16207" strokeWidth="2" />
+        <rect y="188" width="300" height="112" fill="#a3e635" />
+        <path d="M0 190 Q150 178 300 192 L300 200 L0 200 Z" fill="#84cc16" />
+        {[[30, 228, '#f472b6'], [268, 222, '#ffffff'], [282, 272, '#f97316'], [232, 288, '#a855f7']].map(([x, y, c], i) => <PzFlower key={i} x={x} y={y} c={c} />)}
+        {[[110, 292], [20, 290], [215, 236], [250, 252]].map(([x, y], i) => <PzTuft key={i} x={x} y={y} c="#4d7c0f" />)}
+        <path d="M38 256 L46 244 L54 256 L62 242 L70 256 L78 242 L86 256 L94 244 L102 256 Q102 290 70 290 Q38 290 38 256 Z" fill="#fffbeb" stroke="#d6d3d1" strokeWidth="3" strokeLinejoin="round" />
+        <path d="M110 288 l8 -8 l8 8 M118 280 v10" stroke="#f97316" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <path d="M168 288 l8 -8 l8 8 M176 280 v10" stroke="#f97316" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <ellipse cx="150" cy="248" rx="52" ry="38" fill="#fde047" stroke="#ca8a04" strokeWidth="4" />
+        <path d="M188 236 Q218 230 210 258 Q196 260 188 248 Z" fill="#facc15" stroke="#ca8a04" strokeWidth="3" strokeLinejoin="round" />
+        <PzHead id="chick" x={146} y={188} s={0.42} />
       </g>
     );
   }
-  // 사과: 과수원 언덕
+  if (id === 'penguin') {
+    // 얼음 나라: 빙산·이글루·눈송이
+    return (
+      <g>
+        <rect width="300" height="300" fill="#bfdbfe" />
+        {[[30, 30], [90, 60], [150, 22], [200, 70], [270, 30], [120, 110], [40, 120], [280, 120]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 2 ? 3 : 4.5} fill="#ffffff" opacity="0.9" />)}
+        <path d="M-10 196 L52 96 L84 136 L112 104 L150 196 Z" fill="#f0f9ff" stroke="#93c5fd" strokeWidth="3" strokeLinejoin="round" />
+        <path d="M52 96 L62 140 L84 136" fill="#dbeafe" />
+        <rect y="190" width="300" height="110" fill="#f1f5f9" />
+        <path d="M0 192 Q150 182 300 194" stroke="#93c5fd" strokeWidth="3" fill="none" />
+        <path d="M196 200 A48 48 0 0 1 292 200 Z" fill="#ffffff" stroke="#93c5fd" strokeWidth="3" />
+        <path d="M206 182 L282 182 M200 194 L288 194 M228 160 L228 182 M262 162 L262 182 M244 152 L244 166" stroke="#bfdbfe" strokeWidth="2.5" />
+        <path d="M230 200 A14 14 0 0 1 258 200 Z" fill="#334155" />
+        <rect y="268" width="300" height="32" fill="#7dd3fc" />
+        <path d="M0 268 Q40 262 80 268 T160 268 T240 268 T320 268" stroke="#e0f2fe" strokeWidth="3" fill="none" />
+        <g transform="translate(236 284)"><ellipse rx="14" ry="7" fill="#f97316" /><path d="M12 0 L22 -7 L22 7 Z" fill="#f97316" /><circle cx="-7" cy="-2" r="2" fill="#0f172a" /></g>
+        <ellipse cx="102" cy="246" rx="11" ry="26" fill="#1e293b" transform="rotate(25 102 246)" />
+        <ellipse cx="198" cy="246" rx="11" ry="26" fill="#1e293b" transform="rotate(-25 198 246)" />
+        <ellipse cx="128" cy="290" rx="17" ry="7" fill="#fb923c" />
+        <ellipse cx="172" cy="290" rx="17" ry="7" fill="#fb923c" />
+        <ellipse cx="150" cy="246" rx="48" ry="44" fill="#1e293b" stroke="#0f172a" strokeWidth="4" />
+        <ellipse cx="150" cy="254" rx="32" ry="34" fill="#ffffff" />
+        <PzHead id="penguin" x={150} y={176} s={0.42} />
+      </g>
+    );
+  }
+  if (id === 'monkey') {
+    // 정글: 덩굴·야자수·바나나
+    return (
+      <g>
+        <rect width="300" height="300" fill="#dcfce7" />
+        <ellipse cx="20" cy="10" rx="70" ry="40" fill="#4ade80" /><ellipse cx="280" cy="0" rx="80" ry="44" fill="#22c55e" />
+        {[60, 118, 205].map((x, i) => (
+          <g key={i}>
+            <path d={`M${x} 0 Q${x + 14} 60 ${x - 4} ${110 + i * 12}`} stroke="#15803d" strokeWidth="4" fill="none" />
+            {[30, 62, 94].map(y => <ellipse key={y} cx={x + 8} cy={y + i * 6} rx="9" ry="5" fill="#22c55e" transform={`rotate(${y % 2 ? 30 : -30} ${x + 8} ${y + i * 6})`} />)}
+          </g>
+        ))}
+        <path d="M262 214 Q252 150 266 90" stroke="#92400e" strokeWidth="14" fill="none" strokeLinecap="round" />
+        {[-60, -20, 20, 60].map(a => <ellipse key={a} cx="266" cy="90" rx="44" ry="11" fill="#16a34a" transform={`rotate(${a + 180} 266 90) translate(-36 0)`} />)}
+        <g transform="translate(250 112)">{[-10, 0, 10].map(dx => <path key={dx} d={`M${dx} 0 q-6 18 6 26`} stroke="#facc15" strokeWidth="7" fill="none" strokeLinecap="round" />)}</g>
+        <path d="M0 214 Q150 198 300 218 L300 300 L0 300 Z" fill="#65a30d" />
+        {[[30, 250], [96, 292], [220, 288], [282, 246]].map(([x, y], i) => <PzTuft key={i} x={x} y={y} c="#365314" />)}
+        <path d="M192 270 Q242 272 236 230 Q232 204 212 214" stroke="#92400e" strokeWidth="10" fill="none" strokeLinecap="round" />
+        <ellipse cx="128" cy="290" rx="18" ry="9" fill="#fde2c4" stroke="#78350f" strokeWidth="3" />
+        <ellipse cx="172" cy="290" rx="18" ry="9" fill="#fde2c4" stroke="#78350f" strokeWidth="3" />
+        <ellipse cx="150" cy="250" rx="46" ry="40" fill="#92400e" stroke="#78350f" strokeWidth="4" />
+        <ellipse cx="150" cy="258" rx="28" ry="26" fill="#fde2c4" />
+        <path d="M80 236 Q92 206 122 210 Q100 220 92 242 Z" fill="#facc15" stroke="#ca8a04" strokeWidth="2.5" strokeLinejoin="round" />
+        <ellipse cx="108" cy="244" rx="12" ry="24" fill="#92400e" stroke="#78350f" strokeWidth="3" transform="rotate(40 108 244)" />
+        <PzHead id="monkey" x={150} y={180} s={0.42} cy={155} />
+      </g>
+    );
+  }
+  // 코끼리: 연못에서 코로 물 뿜기
   return (
     <g>
-      <rect width="300" height="300" fill="#e0f2fe" />
-      <circle cx="262" cy="40" r="20" fill="#fde047" />
-      <PzCloud x={120} y={36} s={0.8} />
-      <path d="M0 200 Q150 170 300 198 L300 300 L0 300 Z" fill="#86efac" />
-      {[[42, 150], [250, 158]].map(([x, y], i) => (
-        <g key={i}>
-          <rect x={x - 6} y={y} width="12" height="50" fill="#92400e" />
-          <circle cx={x} cy={y - 18} r="36" fill="#22c55e" /><circle cx={x - 22} cy={y - 2} r="22" fill="#16a34a" /><circle cx={x + 22} cy={y - 2} r="22" fill="#16a34a" />
-          {[[-16, -30], [10, -26], [-4, -6], [20, -2], [-24, 0]].map(([dx, dy], j) => <circle key={j} cx={x + dx} cy={y + dy} r="5" fill="#ef4444" />)}
-        </g>
-      ))}
-      <path d="M40 262 L92 262 L84 292 L48 292 Z" fill="#d97706" stroke="#92400e" strokeWidth="3" />
-      {[[52, 256], [66, 252], [80, 256]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="8" fill="#ef4444" />)}
-      {[[230, 270, '#f472b6'], [270, 250, '#facc15'], [20, 230, '#ffffff']].map(([x, y, c], i) => <PzFlower key={i} x={x} y={y} c={c} />)}
-      <PzHead id="apple" x={160} y={206} s={0.5} cy={170} />
+      <rect width="300" height="300" fill="#bae6fd" />
+      <circle cx="252" cy="44" r="22" fill="#fde047" /><circle cx="252" cy="44" r="30" fill="#fde047" opacity="0.3" />
+      <PzCloud x={150} y={40} s={0.9} />
+      <path d="M0 176 Q150 160 300 180 L300 300 L0 300 Z" fill="#bef264" />
+      <path d="M272 210 Q266 150 278 104" stroke="#92400e" strokeWidth="12" fill="none" strokeLinecap="round" />
+      {[-50, -10, 30, 70].map(a => <ellipse key={a} cx="278" cy="104" rx="38" ry="10" fill="#16a34a" transform={`rotate(${a + 180} 278 104) translate(-30 0)`} />)}
+      <ellipse cx="66" cy="276" rx="72" ry="22" fill="#38bdf8" stroke="#0ea5e9" strokeWidth="3" />
+      <ellipse cx="60" cy="274" rx="40" ry="9" fill="none" stroke="#e0f2fe" strokeWidth="2.5" />
+      {[[52, 142, 7], [36, 164, 6], [70, 124, 6], [24, 188, 5], [88, 112, 5], [16, 212, 4]].map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} fill="#38bdf8" stroke="#ffffff" strokeWidth="2" />)}
+      {[[150, 290], [230, 250], [268, 280]].map(([x, y], i) => <PzTuft key={i} x={x} y={y} c="#4d7c0f" />)}
+      <PzLegs xs={[136, 158, 200, 222]} y={240} h={42} w={20} c="#94a3b8" stroke="#475569" />
+      <path d="M236 232 Q252 240 248 256" stroke="#475569" strokeWidth="4" fill="none" strokeLinecap="round" />
+      <ellipse cx="180" cy="234" rx="62" ry="38" fill="#cbd5e1" stroke="#475569" strokeWidth="4" />
+      <PzHead id="elephant" x={122} y={186} s={0.42} cy={150} />
     </g>
   );
 }
@@ -3490,6 +3526,64 @@ function puzzleGeo(theme) {
       rim.push(r1.B);
       pieces.push(makePiece([r0.pts, rim, rev(r1.pts)]));
     }
+  } else if (cut.type === 'rings') {
+    // 가운데 물결 동그라미 한 조각 + 둘레를 n 조각으로 (자르는 선마다 돌기)
+    const n = cut.n, C = [150 + jit(10), 150 + jit(10)], rr = 66 + jit(6), amp = 5 + rnd() * 4, ph = rnd() * 6, a0 = rnd() * Math.PI * 2, TAU = Math.PI * 2;
+    const ringPt = (a) => { const r = rr + Math.sin(a * 5 + ph) * amp; return [C[0] + Math.cos(a) * r, C[1] + Math.sin(a) * r]; };
+    const STEP = TAU / 96;
+    const arc = (from, to) => { const out = [ringPt(from)], dir = to > from ? 1 : -1; for (let k = Math.ceil(from / STEP) * dir; dir > 0 ? k * STEP < to : -k * STEP > to; k++) { const a = dir > 0 ? k * STEP : -k * STEP; if (Math.abs(a - from) > 0.001) out.push(ringPt(a)); } out.push(ringPt(to)); return out; };
+    const per = (q) => { q = ((q % 1200) + 1200) % 1200; return q < 300 ? [q, 0] : q < 600 ? [300, q - 300] : q < 900 ? [900 - q, 300] : [0, 1200 - q]; };
+    const sOf = ([x, y]) => (y <= 0.001 ? x : x >= 299.999 ? 300 + y : y >= 299.999 ? 900 - x : 1200 - y);
+    const rays = [];
+    for (let i = 0; i < n; i++) {
+      const a = a0 + (i / n) * TAU + jit(0.15), dx = Math.cos(a), dy = Math.sin(a);
+      const tt = Math.min(...[dx > 0 ? (300 - C[0]) / dx : Infinity, dx < 0 ? -C[0] / dx : Infinity, dy > 0 ? (300 - C[1]) / dy : Infinity, dy < 0 ? -C[1] / dy : Infinity]);
+      const A = ringPt(a), B = [C[0] + dx * tt, C[1] + dy * tt];
+      rays.push({ a, B, s: sOf(B), pts: knobEdge(A, B, rnd() < 0.5 ? 1 : -1, 0.5 + jit(0.06), 0.8 + rnd() * 0.25, Math.min(48, (tt - rr) * 0.6)) });
+    }
+    rays.sort((p, q) => p.s - q.s);
+    pieces.push(makePiece([arc(0, TAU)]));
+    for (let i = 0; i < n; i++) {
+      const r0 = rays[i], r1 = rays[(i + 1) % n];
+      let s1 = r1.s; if (s1 <= r0.s) s1 += 1200;
+      let a1 = r1.a; while (a1 <= r0.a) a1 += TAU;
+      const rim = [r0.B];
+      [0, 300, 600, 900, 1200, 1500, 1800].forEach(cs => { if (cs > r0.s && cs < s1) rim.push(per(cs)); });
+      rim.push(r1.B);
+      pieces.push(makePiece([r0.pts, rim, rev(r1.pts), arc(a1, r0.a)]));
+    }
+  } else if (cut.type === 'stagger') {
+    // 진짜 직소처럼 모든 경계에 돌기. 줄마다 조각 수가 달라(rows: [1, 2] 등) 3·5·8조각도 자연스럽게 나눈다
+    const rows = cut.rows, nR = rows.length, h = 300 / nR;
+    const XT = [], XB = [];   // 줄마다 세로 자르는 선의 위·아래 x (조금씩 기울어짐)
+    rows.forEach((k) => {
+      const t = [0], b = [0];
+      for (let i = 1; i < k; i++) { const x = (300 * i) / k + jit((300 / k) * 0.12); t.push(x + jit(9)); b.push(x + jit(9)); }
+      t.push(300); b.push(300); XT.push(t); XB.push(b);
+    });
+    // 줄 경계 r: 위 줄 아래끝·아래 줄 위끝 x 를 꺾는 점으로, 높이를 조금씩 흔든다
+    const bounds = Array.from({ length: nR + 1 }, (_, r) => {
+      if (r === 0 || r === nR) return null;
+      const xs = [...XB[r - 1], ...XT[r]].sort((a, b) => a - b).filter((x, i, a) => i === 0 || x - a[i - 1] > 0.5);
+      const yBase = r * h + jit(h * 0.08);
+      const pts = xs.map((x) => [x, yBase + (x > 0 && x < 300 ? jit(h * 0.1) : jit(h * 0.04))]);
+      const segs = [];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i], p1 = pts[i + 1], len = p1[0] - p0[0];
+        segs.push({ x0: p0[0], x1: p1[0], pts: len > 46 ? knobEdge(p0, p1, rnd() < 0.5 ? 1 : -1, 0.4 + rnd() * 0.2, 0.8 + rnd() * 0.3, Math.min(len * 0.9, h)) : [p0, p1] });
+      }
+      return { pts, segs };
+    });
+    const yAt = (r, x) => { if (r === 0) return 0; if (r === nR) return 300; const p = bounds[r].pts.find((q) => Math.abs(q[0] - x) < 0.6); return p[1]; };
+    const along = (r, xa, xb) => (r === 0 ? [[xa, 0], [xb, 0]] : r === nR ? [[xa, 300], [xb, 300]]
+      : bounds[r].segs.filter((s) => s.x0 >= xa - 0.6 && s.x1 <= xb + 0.6).flatMap((s) => s.pts));
+    rows.forEach((k, r) => {
+      const cuts = XT[r].map((xt, i) => {
+        const xb = XB[r][i], A = [xt, yAt(r, xt)], B = [xb, yAt(r + 1, xb)];
+        return i === 0 || i === k ? [A, B] : knobEdge(A, B, rnd() < 0.5 ? 1 : -1, 0.4 + rnd() * 0.2, 0.8 + rnd() * 0.3, Math.min(300 / k, h) * 0.95);
+      });
+      for (let i = 0; i < k; i++) pieces.push(makePiece([along(r, XT[r][i], XT[r][i + 1]), cuts[i + 1], rev(along(r + 1, XB[r][i], XB[r][i + 1])), rev(cuts[i])]));
+    });
   } else if (cut.type === 'bricks') {
     // 벽돌: 줄마다 조각 수가 다르고(엇갈림), 줄 경계는 물결, 줄 안의 세로 선에는 돌기
     const rows = cut.rows, nR = rows.length, curves = [];
@@ -3689,9 +3783,10 @@ export default function App() {
   // 🌊 바다속 탐험 상태
 
   // 🧩 아기 퍼즐 상태 (드래그 앤 드롭 지원). 조각 번호는 왼쪽 위부터 가로로 0, 1, 2 …
-  const [puzzleTheme, setPuzzleTheme] = useState(() => BABY_PUZZLES[0]); // 기본: 강아지
-  const [placedPieces, setPlacedPieces] = useState([false, false, false, false]);
-  const [trayPieces, setTrayPieces] = useState(() => [2, 0, 3, 1]); // 셔플된 조각
+  const [puzzleTheme, setPuzzleTheme] = useState(() => BABY_PUZZLES[0]); // 기본: 첫 퍼즐 (조각이 가장 적은 것)
+  // 조각 수는 퍼즐마다 달라서 첫 퍼즐 조각 수로 시작한다
+  const [placedPieces, setPlacedPieces] = useState(() => puzzleGeo(BABY_PUZZLES[0]).pieces.map(() => false));
+  const [trayPieces, setTrayPieces] = useState(() => { const n = puzzleGeo(BABY_PUZZLES[0]).pieces.length; return Array.from({ length: n }, (_, i) => (i + 1) % n); }); // 섞인 조각
   const [puzzleCompleted, setPuzzleCompleted] = useState(false);
 
   const puzzleBoardRef = useRef(null);
@@ -4205,7 +4300,7 @@ export default function App() {
   // 🧩 지금 퍼즐의 조각 모양, 퍼즐판 배율(그림 300 → 화면 px), 트레이 한 줄 조각 수
   const puzzlePieces = puzzleGeo(puzzleTheme).pieces;
   const puzzleScale = puzzleBoardPx / 300;
-  const puzzleTrayCols = puzzleTrayPx > 640 ? Math.min(puzzlePieces.length, puzzlePieces.length <= 4 ? 4 : puzzlePieces.length <= 6 ? 6 : 5) : puzzlePieces.length <= 4 ? 2 : puzzlePieces.length <= 9 ? 3 : 4;
+  const puzzleTrayCols = puzzleTrayPx > 640 ? Math.min(puzzlePieces.length, puzzlePieces.length <= 4 ? 4 : puzzlePieces.length <= 6 ? 6 : puzzlePieces.length <= 10 ? 5 : 6) : puzzlePieces.length <= 4 ? 2 : puzzlePieces.length <= 9 ? 3 : 4;
 
   const isCardTab = CARD_CATEGORIES.some(c => c.id === activeTab);
   const isScrollableTab = ['cards', 'animal', 'fruit', 'vehicle', 'song', 'lotto'].includes(activeTab);
@@ -4322,19 +4417,20 @@ export default function App() {
           }}>
             🌙 그림책
           </button>
-          {/* 🎰 로또 뽑기 (탭 줄 대신 맨 위에) */}
+          {/* 🚗 우리 동네 (탭 줄 대신 맨 위에, 예전 로또 뽑기 자리) */}
           <button onClick={() => {
             audioEngine.interruptVoice();
-            setActiveTab('lotto');
+            setActiveTab('town');
             audioEngine.playFreq(520, 'sine', 0.15);
-          }} title="로또 번호 캡슐 뽑기" style={{
+          }} title="우리 동네 - 아빠 차·버스 타기" style={{
             display: 'flex', alignItems: 'center', gap: '6px', padding: '0 18px', height: '48px', borderRadius: '24px', whiteSpace: 'nowrap',
             fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontWeight: 400, fontSize: '1.05rem', cursor: 'pointer',
-            border: 'none', background: activeTab === 'lotto' ? '#c4b5fd' : '#ede9fe', color: activeTab === 'lotto' ? '#2e1065' : '#6d4fc4',
-            boxShadow: activeTab === 'lotto' ? '0 8px 18px -8px rgba(109,40,217,0.55)' : 'none'
+            border: 'none', background: activeTab === 'town' ? '#b2ece4' : '#e0f7f3', color: activeTab === 'town' ? '#0f5f56' : '#1f8a7c',
+            boxShadow: activeTab === 'town' ? '0 8px 18px -8px rgba(15,95,86,0.55)' : 'none'
           }}>
-            🎰 로또 뽑기
+            🚗 우리 동네
           </button>
+          {/* 🎰 로또 뽑기는 숨겼다 (LottoGacha.jsx·public/lotto 는 그대로, 위 버튼처럼 setActiveTab('lotto') 버튼을 되살리면 다시 보인다) */}
           {/* 부모용 버튼 (아기가 잘 누르지 않게 작고 차분하게 한 묶음) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: '#f6efe7', borderRadius: '20px', padding: '3px', marginLeft: '4px' }}>
             <button onClick={() => setIsIpadFrame(!isIpadFrame)} title={isIpadFrame ? 'iPad 12.9" 규격뷰' : '전체화면'} style={{
@@ -4374,9 +4470,10 @@ export default function App() {
             // 파스텔 테마: pastel = 고른 메뉴 바탕, soft = 그림 동그라미, ink = 글자
             // 📸 생생 카드는 맨 위 헤더 버튼으로 옮겼다
             { id: 'kitchen', icon: '🍳', label: '요리 놀이', sub: '동물 친구 식당', pastel: '#ffc9c9', soft: '#ffe8e8', ink: '#9b2c2c' },
+            { id: 'hospital', icon: '🏥', label: '병원 놀이', sub: '아픈 친구 치료해요', pastel: '#b2f2e0', soft: '#e3faf2', ink: '#087f5b' },
             { id: 'ocean', icon: '🐠', label: '내 어항', sub: '물고기 키우기', pastel: '#b9e3f5', soft: '#e3f4fb', ink: '#1d5f7a' },
             { id: 'shop', icon: '🛒', label: '동물 마을 가게', sub: '사과 두 개 주세요!', pastel: '#c8ebc0', soft: '#e8f7e4', ink: '#2f6b25' },
-            { id: 'town', icon: '🚗', label: '우리 동네', sub: '아빠 차·버스 타기', pastel: '#b2ece4', soft: '#e0f7f3', ink: '#0f5f56' },
+            // 🚗 우리 동네는 맨 위 헤더 버튼으로 옮겼다
             // 🐮 내 목장·🌱 텃밭 가꾸기는 메뉴에서만 뺐다 (FarmGame.jsx·GardenGame.jsx·저장 데이터는 그대로, 기차 마을이 목장 동물 그림을 빌려 쓰므로 파일은 지우지 말 것. 아래 줄을 되살리면 다시 보인다)
             // { id: 'farm', icon: '🐮', label: '내 목장', sub: '동물 키우기', pastel: '#c8ebc0', soft: '#e8f7e4', ink: '#2f6b25' },
             // { id: 'garden', icon: '🌱', label: '텃밭 가꾸기', sub: '심고 물 주고 수확', pastel: '#e3eeb4', soft: '#f3f8de', ink: '#5a6b16' },
@@ -4387,7 +4484,7 @@ export default function App() {
             { id: 'birthday', icon: '🎂', label: '생일 파티', sub: '촛불 후~ 불기', pastel: '#fecdd3', soft: '#ffe4e6', ink: '#9f1239' },
             // 📞 전화 놀이는 잠시 메뉴에서만 뺐다 (PhoneCall.jsx·Supabase baby-call/baby-voice 는 그대로, 아래 줄을 되살리면 다시 보인다)
             // { id: 'phone', icon: '📞', label: '전화 놀이', sub: '친구와 통화해요', pastel: '#c4f0de', soft: '#e3f8ef', ink: '#1f6f55' },
-            // 🎵 동요 재생·🎰 로또 뽑기는 맨 위 헤더 버튼으로 옮겼다
+            // 🎵 동요 재생·🚗 우리 동네는 맨 위 헤더 버튼으로 옮겼다 (🎰 로또 뽑기는 숨김)
           ].map(tab => {
             const isActive = activeTab === tab.id;
             return (
@@ -4425,7 +4522,7 @@ export default function App() {
         {/* 캔버스 영역 (스크롤 메뉴와 비스크롤 고정 메뉴 분기) */}
         <div style={{
           flex: 1,
-          padding: ['paint', 'story', 'phone', 'birthday', 'kitchen', 'town'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
+          padding: ['paint', 'story', 'phone', 'birthday', 'kitchen', 'hospital', 'town'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
           position: 'relative',
           background: '#fffdfa',
           overflowY: isScrollableTab ? 'auto' : 'hidden',
@@ -4700,6 +4797,9 @@ export default function App() {
           {activeTab === 'birthday' && <BirthdayParty audio={audioEngine} />}
           {/* ===== 🍳 요리 놀이: 동물 친구 식당 (KitchenGame.jsx) ===== */}
           {activeTab === 'kitchen' && <KitchenGame audio={audioEngine} speak={speakNaturalKorean} />}
+
+          {/* ===== 🏥 병원 놀이: 아기·어린이·동물 친구 치료하기 (HospitalGame.jsx) ===== */}
+          {activeTab === 'hospital' && <HospitalGame audio={audioEngine} speak={speakNaturalKorean} />}
           {/* ===== 🛒 동물 마을 가게 (ShopGame.jsx) ===== */}
           {activeTab === 'shop' && <ShopGame audio={audioEngine} speak={speakNaturalKorean} />}
           {/* ===== 🚗 우리 동네 군포 (TownGame.jsx) ===== */}
@@ -4736,7 +4836,7 @@ export default function App() {
           {/* ===== 모듈 4: 🧩 아기 퍼즐 맞추기 (테마마다 조각 수가 다른 직소 조각 + 원터치/드래그 안착) ===== */}
           {activeTab === 'puzzle' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-              {/* 테마 선택 바 (8종 동물 & 과일 퍼즐) */}
+              {/* 테마 선택 바 (동물 퍼즐, 조각 적은 순) */}
               <div style={{
                 display: 'flex', gap: '8px', marginBottom: '0.8rem', overflowX: 'auto',
                 padding: '8px 12px', background: '#f5f3ff', borderRadius: '20px',
@@ -4802,21 +4902,20 @@ export default function App() {
                     className={puzzleCompleted ? 'puzzle-completed-board' : ''}
                     style={{
                       width: `${puzzleBoardPx}px`, height: `${puzzleBoardPx}px`, boxSizing: 'content-box',
-                      background: '#ead9b8', borderRadius: '22px',
-                      border: puzzleCompleted ? '7px solid #eab308' : '7px solid #b08968',
+                      background: '#ffffff', borderRadius: '22px',
+                      border: puzzleCompleted ? '7px solid #eab308' : '7px solid #e2e8f0',
                       boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
                       overflow: 'hidden', position: 'relative', transition: 'border-color 0.3s ease'
                     }}
                   >
                     <svg viewBox="0 0 300 300" width={puzzleBoardPx} height={puzzleBoardPx} style={{ position: 'absolute', left: 0, top: 0, display: 'block' }}>
-                      <rect width="300" height="300" fill="#ead9b8" />
-                      <rect width="300" height="300" filter="url(#pz-paper)" />
-                      <g opacity="0.22"><PuzzleSceneG id={puzzleTheme.id} /></g>
+                      <rect width="300" height="300" fill="#ffffff" />
+                      {/* 진짜 퍼즐판처럼 흰 바탕에 조각 모양 선만 (정답 그림은 보여 주지 않는다) */}
                       {puzzlePieces.map((piece, idx) => (placedPieces[idx] ? null : (
                         <path
                           key={idx} d={piece.d}
-                          fill={hoverSlotIdx === idx ? 'rgba(251,191,36,0.5)' : 'rgba(120,80,40,0.08)'}
-                          stroke="rgba(120,80,40,0.55)" strokeWidth="1.5" strokeDasharray="5 4"
+                          fill={hoverSlotIdx === idx ? 'rgba(251,191,36,0.45)' : '#ffffff'}
+                          stroke="#b6bfcc" strokeWidth="2" strokeLinejoin="round"
                         />
                       )))}
                     </svg>
