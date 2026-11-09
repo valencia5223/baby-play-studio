@@ -5,6 +5,7 @@ import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
 import { HOSPITAL_PATIENTS, HOSPITAL_SYMPTOMS, HOSPITAL_TEMPS } from './hospitalData.js';
 import { BASKET_MAX, COUNTER_GOODS, ASK_MAX_N, SHOP_GOODS, BILLS, wonText, TOTAL_MAX } from './shopData.js';
 import { TOWN_LIST, busSpoken, TRANSFERS, SPOT_BY_ID, lineName } from './townData.js';
+import { RADISH_HELPERS, RADISH_SIZES, FIELD_NORMAL } from './radishData.js';
 const KOR_COUNT = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -361,7 +362,26 @@ export const VOICE = {
   townCrossArrive: (t) => `${t.name}에 왔어요! 어디에 가 볼까요?`,
   townNeedStation: () => '지하철은 역에서 탈 수 있어요! 먼저 역으로 가 봐요!',
   townMetroWalk: (st) => `가까운 ${st.name}까지 걸어가서 지하철을 타요!`,
-  townMetroTransfer: (st, line) => `${st.name}에서 ${lineName(line)}으로 갈아타요!`
+  townMetroTransfer: (st, line) => `${st.name}에서 ${lineName(line)}으로 갈아타요!`,
+
+  // 🌱 무 뽑기 (RadishGame.jsx)
+  radishWelcome: () => '무 밭에 왔어요! 뽑고 싶은 무를 콕 눌러 보세요!',
+  radishGrab: () => '무 잎을 꽉 잡았어요! 손가락으로 위로 쭉 당겨 보세요!',
+  radishGiantGrab: () => '우와, 엄청 커다란 왕무예요! 영차 영차 당겨 봐요!',
+  radishHeave: (i) => ['끙차!', '영차!', '으라차차!'][i],
+  radishChorus: () => '영차 영차! 다 같이 영차!',
+  radishWiggle: () => '좌우로 흔들흔들 하면 더 잘 뽑혀요!',
+  radishAlmost: () => '조금만 더! 무가 쑥쑥 올라와요!',
+  radishPop: (size) => ({ small: '쏙! 귀여운 꼬마 무가 뽑혔어요!', mid: '쑥! 무가 뽑혔어요!', big: '쑤욱! 큼직한 무가 뽑혔어요!', giant: '쑤우욱! 커다란 왕무가 뽑혔어요! 다 같이 엉덩방아 쿵!' }[size]),
+  radishClean: () => '흙이 잔뜩 묻었어요. 쓱쓱 털어 주세요!',
+  radishCleanDone: () => '깨끗해졌어요! 하얗고 예쁜 무예요. 콕 눌러서 바구니에 넣어요!',
+  radishBasket: (n) => `바구니에 쏙! 무 ${KOR_COUNT[n] || n} 개!`,
+  radishStuck: (h) => `꿈쩍도 안 해요! ${attachJosa(h.name, '을/를')} 불러 볼까요?`,
+  radishCall: (h) => `${h.call}, 도와주세요!`,
+  radishCome: (h) => `${attachJosa(h.name, '이/가')} 도와주러 왔어요! 다 같이 영차 영차 당겨요!`,
+  radishGiantDone: () => '다 같이 힘을 모으니까 왕무가 뽑혔어요! 최고예요!',
+  radishAllDone: () => '무를 모두 뽑았어요! 유나 최고! 새 밭에서 또 뽑아 볼까요?',
+  radishNewField: () => '새 밭에 무가 쑥쑥 자랐어요! 뽑고 싶은 무를 콕 눌러 보세요!'
 };
 
 // 앱에서 나올 수 있는 모든 문장 목록 (MP3 생성 스크립트용)
@@ -439,6 +459,12 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   lines.push(VOICE.hospTempGo(), VOICE.hospSheetDone(), VOICE.hospThroatGo(), VOICE.hospAh(), VOICE.hospThroatDone(true), VOICE.hospThroatDone(false));
   lines.push(VOICE.hospSteth(), VOICE.hospStethDone(), VOICE.hospNose(), VOICE.hospNoseOn(), VOICE.hospNoseOther(), VOICE.hospNoseDone(), VOICE.hospCream(), VOICE.hospCreamDone(),
     VOICE.hospBandDone(), VOICE.hospCandy(), VOICE.hospCandyDone(), VOICE.hospWait());
+  lines.push(VOICE.radishWelcome(), VOICE.radishGrab(), VOICE.radishGiantGrab(), VOICE.radishChorus(), VOICE.radishWiggle(), VOICE.radishAlmost(),
+    VOICE.radishClean(), VOICE.radishCleanDone(), VOICE.radishGiantDone(), VOICE.radishAllDone(), VOICE.radishNewField());
+  [0, 1, 2].forEach(i => lines.push(VOICE.radishHeave(i)));
+  Object.keys(RADISH_SIZES).forEach(k => lines.push(VOICE.radishPop(k)));
+  for (let n = 1; n <= FIELD_NORMAL + 1; n++) lines.push(VOICE.radishBasket(n));
+  RADISH_HELPERS.forEach(h => lines.push(VOICE.radishStuck(h), VOICE.radishCall(h), VOICE.radishCome(h)));
   [...animals, ...fruits, ...vehicles].forEach(i => lines.push(i.soundText ? VOICE.itemSound(i) : VOICE.tasty(i)));
   fruits.forEach(i => lines.push(VOICE.tasty(i)));
   animals.forEach(i => lines.push(VOICE.quiz(i.name, false)));

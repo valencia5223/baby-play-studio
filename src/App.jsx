@@ -42,6 +42,7 @@ import KitchenGame from './KitchenGame.jsx';
 import HospitalGame from './HospitalGame.jsx';
 import ShopGame from './ShopGame.jsx';
 import TownGame from './TownGame.jsx';
+import RadishGame from './RadishGame.jsx';
 import STORY_VOICE_INDEX from './storyVoiceIndex.json';
 
 // 남성 아나운서 음성 MP3가 준비된 문장 키 목록 (npm run voices 로 생성)
@@ -4430,6 +4431,19 @@ export default function App() {
           }}>
             🚗 우리 동네
           </button>
+          {/* 🌱 무 뽑기 체험 (RadishGame.jsx: 유나가 밭에서 무를 뽑고, 왕무는 가족·동물 친구와 줄줄이) */}
+          <button onClick={() => {
+            audioEngine.interruptVoice();
+            setActiveTab('radish');
+            audioEngine.playFreq(520, 'sine', 0.15);
+          }} title="무 뽑기 체험" style={{
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '0 18px', height: '48px', borderRadius: '24px', whiteSpace: 'nowrap',
+            fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontWeight: 400, fontSize: '1.05rem', cursor: 'pointer',
+            border: 'none', background: activeTab === 'radish' ? '#c0eb75' : '#f1f9e4', color: activeTab === 'radish' ? '#2b5b0f' : '#4d7c0f',
+            boxShadow: activeTab === 'radish' ? '0 8px 18px -8px rgba(77,124,15,0.55)' : 'none'
+          }}>
+            🌱 무 뽑기
+          </button>
           {/* 🎰 로또 뽑기는 숨겼다 (LottoGacha.jsx·public/lotto 는 그대로, 위 버튼처럼 setActiveTab('lotto') 버튼을 되살리면 다시 보인다) */}
           {/* 부모용 버튼 (아기가 잘 누르지 않게 작고 차분하게 한 묶음) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: '#f6efe7', borderRadius: '20px', padding: '3px', marginLeft: '4px' }}>
@@ -4522,7 +4536,7 @@ export default function App() {
         {/* 캔버스 영역 (스크롤 메뉴와 비스크롤 고정 메뉴 분기) */}
         <div style={{
           flex: 1,
-          padding: ['paint', 'story', 'phone', 'birthday', 'kitchen', 'hospital', 'town'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
+          padding: ['paint', 'story', 'phone', 'birthday', 'kitchen', 'hospital', 'town', 'radish'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
           position: 'relative',
           background: '#fffdfa',
           overflowY: isScrollableTab ? 'auto' : 'hidden',
@@ -4804,6 +4818,7 @@ export default function App() {
           {activeTab === 'shop' && <ShopGame audio={audioEngine} speak={speakNaturalKorean} />}
           {/* ===== 🚗 우리 동네 군포 (TownGame.jsx) ===== */}
           {activeTab === 'town' && <TownGame audio={audioEngine} speak={speakNaturalKorean} />}
+          {activeTab === 'radish' && <RadishGame audio={audioEngine} speak={speakNaturalKorean} />}
           {activeTab === 'story' && (
             <StoryBook
               audio={audioEngine}
