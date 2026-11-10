@@ -827,7 +827,7 @@ function AdventureScene({ audio, speak, onRestart }) {
       g.shoes = sp.id; sp.grp.visible = false; yuna.wearShoes(sp); audio.playPopSound(); pop('👟', g.x, 0.6, g.z); g.happyUntil = g.t + 1.2;
       return !prev;
     };
-    W.shoePairs.forEach(sp => tapObjs.push(...addTap([sp.grp], [sp.x, 3.76], [sp.x, SHOE_ROW_Z[sp.row]], () => { if (wearShoe(sp)) say(VOICE.advShoesOn()); })));
+    // 현관 바닥 신발은 보기만 한다 (현관문 앞에 있어 문 쪽을 누르면 신발이 먼저 눌려 고르기 창이 안 뜨던 문제). 신발은 고르기 창에서만 신는다
     // 신발 고르기 창에서 고르면 바로 신고, 가려던 곳으로 계속 간다
     const pickShoe = (id) => {
       const sp = W.shoePairs.find(o => o.id === id); if (!sp) return;
@@ -998,6 +998,13 @@ function AdventureScene({ audio, speak, onRestart }) {
         const outNow = inCorridor(g.x + 0.15, g.z);
         if (outNow && !g.holding) { g.holding = true; g.happyUntil = g.t + 1; say(VOICE.advHold(PN)); for (let i = 0; i < 3; i++) later(() => pop('💗', (g.x + P.x) / 2, 1.4, (g.z + P.z) / 2), i * 150); }
         else if (!outNow && g.holding && g.x > 0.15) { g.holding = false; P.x = PW.x; P.z = PW.z; }
+        // 중문을 지나 현관에 들어서면 (신발이 없을 때) 신발 고르기 창. 닫으면 현관을 나갔다 다시 들어올 때 다시 뜬다
+        const inEntr = g.x > 0.06 && g.x < 0.98 && g.z > 2.84 && g.z < 4.38;
+        if (inEntr && !g.inEntr && !g.shoes && !g.picking) {
+          const goal = g.path[g.path.length - 1]; g.afterShoes = goal && goal.x < 0.06 ? goal : null;   // 문 밖으로 가던 중이면 고른 뒤 계속 간다
+          g.path = []; g.pending = null; g.picking = true; setShoePick(true); say(VOICE.advShoesNeed());
+        }
+        g.inEntr = inEntr;
       }
       if (g.mode === 'home' && inCorridor(g.x + 0.15, g.z) && g.holding) { once('corridor', () => say(VOICE.advCorridor())); if (g.z < HALL_Z - 0.2 && g.x > 0.1 && g.el.state === 'idle') once('hall', () => say(VOICE.advCallHint())); }
 
