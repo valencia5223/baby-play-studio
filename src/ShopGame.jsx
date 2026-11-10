@@ -838,7 +838,7 @@ export default function ShopGame({ audio, speak }) {
   const openDoor = () => { const g = G.current; if (g.t > g.doorUntil + 0.4) g.doorT = g.t; g.doorUntil = g.t + 1.5; };
   const spawn = () => {
     const g = G.current, L = g.L; if (!L || g.custs.length >= 2) return;
-    const ids = KITCHEN_GUESTS.map(k => k.id).filter(id => id !== g.lastGuest && !g.custs.some(c => c.id === id));
+    const ids = KITCHEN_GUESTS.filter(k => !k.party).map(k => k.id).filter(id => id !== g.lastGuest && !g.custs.some(c => c.id === id));
     const id = ids[Math.floor(Math.random() * ids.length)]; g.lastGuest = id;
     const v = makeVisit(id);
     const c = { uid: ++g.uid, id, steps: v.steps, step: 0, payBy: v.payBy, basket: [], askGot: [], want: v.ask, hasBk: false, bag: false, xf: L.doorX / L.W, txf: 0, yk: 0, tyk: 0, dep: Math.random(), dir: 1,

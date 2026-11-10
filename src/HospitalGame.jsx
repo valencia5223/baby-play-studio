@@ -44,12 +44,13 @@ const TEMP_SEC = 1.3;     // 귀에 대고 있으면 삐빅 할 때까지
 const THROAT_SEC = 1.8;   // 입에 비추고 목을 보는 시간   // 콧구멍 한쪽 콧물을 다 빼는 데 걸리는 시간
 
 // ─────────────────────────── 아기·어린이 (앞을 보고 앉음, 바닥 가운데가 0) ───────────────────────────
-function drawKid(ctx, S, t, happy, mouth, id) {
-  const baby = id === 'baby', girl = id === 'girl';
+// id: baby · girl · boy · yuna(요리 놀이 손님 유나: 양갈래 + 노란 옷 + 분홍 머리끈)
+export function drawKid(ctx, S, t, happy, mouth, id) {
+  const baby = id === 'baby', yuna = id === 'yuna', girl = id === 'girl' || yuna;
   const SK = '#ffe2cc', SKD = '#f3c19c', LINE = 'rgba(170,100,70,0.45)';
-  const top = baby ? '#a5d8ff' : girl ? '#ffafcc' : '#8cc8ff';
-  const topD = baby ? '#74c0fc' : girl ? '#f783ac' : '#4dabf7';
-  const hair = baby ? '#b07a45' : girl ? '#6b3f26' : '#3b2a20';
+  const top = baby ? '#a5d8ff' : yuna ? '#ffe066' : girl ? '#ffafcc' : '#8cc8ff';
+  const topD = baby ? '#74c0fc' : yuna ? '#fab005' : girl ? '#f783ac' : '#4dabf7';
+  const hair = baby ? '#b07a45' : yuna ? '#3b2a20' : girl ? '#6b3f26' : '#3b2a20';
   const o = (x, y, rx, ry, rot = 0) => ell(ctx, x * S, y * S, rx * S, ry * S, rot);
   const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x * S, y * S, w * S, h * S, r * S); };
   const br = 1 + Math.sin(t * 2) * 0.012;
@@ -105,7 +106,7 @@ function drawKid(ctx, S, t, happy, mouth, id) {
   if (girl) {   // 양 갈래 머리 + 리본
     ctx.fillStyle = hair; [-1, 1].forEach(k => { o(k * 0.29, hy + 0.08, 0.08, 0.13, k * -0.2); ctx.fill(); });
     [-1, 1].forEach(k => {
-      ctx.fillStyle = '#f03e3e';
+      ctx.fillStyle = yuna ? '#f472b6' : '#f03e3e';
       ctx.beginPath(); ctx.moveTo(k * 0.25 * S, (hy - 0.04) * S); ctx.lineTo(k * 0.33 * S, (hy - 0.1) * S); ctx.lineTo(k * 0.33 * S, (hy + 0.01) * S); ctx.closePath(); ctx.fill();
       ctx.beginPath(); ctx.moveTo(k * 0.25 * S, (hy - 0.04) * S); ctx.lineTo(k * 0.17 * S, (hy - 0.1) * S); ctx.lineTo(k * 0.17 * S, (hy + 0.01) * S); ctx.closePath(); ctx.fill();
       o(k * 0.25, hy - 0.045, 0.025, 0.025); ctx.fill();

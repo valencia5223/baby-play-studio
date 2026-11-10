@@ -2,6 +2,9 @@
 // 실패는 없다: 아무 재료나 넣어도 손님은 맛있게 먹는다. 손님마다 제일 좋아하는 재료(fav)가 있어 넣어 주면 더 기뻐한다.
 
 export const KITCHEN_GUESTS = [
+  // 생일 파티에서 온 손님 (party: 동물 마을 가게에는 오지 않는다)
+  { id: 'shark', name: '아기상어', fav: 'fish', party: true },
+  { id: 'yuna', name: '유나', fav: 'banana', party: true },
   { id: 'rabbit', name: '토끼', fav: 'carrot' },
   { id: 'bear', name: '곰', fav: 'honey' },
   { id: 'panda', name: '판다', fav: 'bamboo' },

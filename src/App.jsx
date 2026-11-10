@@ -40,6 +40,7 @@ import PhoneCall from './PhoneCall.jsx';
 import BirthdayParty from './BirthdayParty.jsx';
 import KitchenGame from './KitchenGame.jsx';
 import HospitalGame from './HospitalGame.jsx';
+import { AccountButton } from './LoginGate.jsx';
 import ShopGame from './ShopGame.jsx';
 import TownGame from './TownGame.jsx';
 import RadishGame from './RadishGame.jsx';
@@ -4462,6 +4463,7 @@ export default function App() {
               {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
               {soundEnabled ? '소리 켜짐' : '음소거'}
             </button>
+            <AccountButton />
           </div>
         </div>
       </header>
@@ -4476,7 +4478,7 @@ export default function App() {
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav className="bps-nav" style={{
-          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px',
+          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px',
           padding: '10px 12px', background: '#fffcf8', borderBottom: '1px solid #f3e8dc',
           flexShrink: 0
         }}>
@@ -4495,7 +4497,8 @@ export default function App() {
             // { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
             { id: 'puzzle', icon: '🧩', label: '아기 퍼즐', sub: '조각 맞추기', pastel: '#ddd2fa', soft: '#f1ecfd', ink: '#55399e' },
             { id: 'paint', icon: '🎨', label: '무지개 물감', sub: '터치 감각 미술', pastel: '#ffe0b2', soft: '#fff2df', ink: '#9a5b0d' },
-            { id: 'birthday', icon: '🎂', label: '생일 파티', sub: '촛불 후~ 불기', pastel: '#fecdd3', soft: '#ffe4e6', ink: '#9f1239' },
+            // 🎂 생일 파티는 요리 놀이로 합쳤다 (케이크를 주면 촛불·생일 노래 2절·가사). BirthdayParty.jsx 는 요리 놀이가 동물 그림을 빌려 쓰므로 지우지 말 것
+            // { id: 'birthday', icon: '🎂', label: '생일 파티', sub: '촛불 후~ 불기', pastel: '#fecdd3', soft: '#ffe4e6', ink: '#9f1239' },
             // 📞 전화 놀이는 잠시 메뉴에서만 뺐다 (PhoneCall.jsx·Supabase baby-call/baby-voice 는 그대로, 아래 줄을 되살리면 다시 보인다)
             // { id: 'phone', icon: '📞', label: '전화 놀이', sub: '친구와 통화해요', pastel: '#c4f0de', soft: '#e3f8ef', ink: '#1f6f55' },
             // 🎵 동요 재생·🚗 우리 동네는 맨 위 헤더 버튼으로 옮겼다 (🎰 로또 뽑기는 숨김)

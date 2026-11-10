@@ -3,6 +3,8 @@
 //  - 캔버스 한 장 (왼쪽/위: 식당 카운터와 손님, 오른쪽/아래: 위에서 내려다본 주방 탁자 + 재료 칸)
 //  - 음식은 실사 느낌으로 그라데이션·광택·질감을 넣어 그리고, 재료 그림은 처음 한 번만 그려 저장해 두고 복사한다(spriteCache)
 //  - 손님 그림은 생일 파티의 앞을 보고 앉은 동물(판다·사자·고양이)을 빌려 쓰고, 토끼·곰은 여기서 같은 방식으로 그린다
+//    아기상어는 어항 그림(drawFish), 유나는 병원 놀이 어린이 그림(drawKid 'yuna')을 빌려 쓴다
+//  - 생일 파티는 여기로 합쳤다: 케이크(촛불)를 주면 생일 노래 MP3 를 2절까지 틀고 아래에 노래방 가사를 보여 준 뒤 촛불을 끈다
 //  - 실패는 없다: 재료를 누르거나 끌어다 놓으면 무조건 들어간다. 손님이 좋아하는 재료(fav)를 넣으면 더 기뻐한다
 //  - 음성은 남성 아나운서 MP3 (VOICE.kitchen*, npm run voices)
 // ═════════════════════════════════════════════════════════════════════════════
@@ -10,9 +12,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { KITCHEN_GUESTS, GUEST_BY_ID, INGREDIENTS, KITCHEN_MENUS, MENU_BY_ID, SANDWICH_MAX, SKEWER_SLOTS, PIZZA_MAX, ICE_FLAVORS, ICE_MAX, KIMBAP_MAX, KIMBAP_SLICES, DECO_MAX, JUICE_MAX, COOKIE_CUTTERS, COOKIE_MAX, RB_MAX, RB_PRESS, DONUT_GLAZES,
   OMU_SAUCES, COTTON_MAX, MANDU_MAX, MANDU_PLEATS, HOTDOG_ROLLS, BURGER_MAX } from './kitchenData.js';
 import { drawPanda, drawLion, drawCat, sitBody, friendlyEyes, smileMouth } from './BirthdayParty.jsx';
-import { BDAY_MP3, BDAY_MP3_LINES, bdayLyrics } from './birthdayData.js';
-// 생일 노래 MP3 에서 트는 구간 (1절: 가사는 7.1초~19.6초, 앞 반주 조금 포함)
-const SONG_FROM = 5.0, SONG_TO = 20.3;
+import { BDAY_MP3, BDAY_MP3_LINES, bdayMp3Lyrics } from './birthdayData.js';
+import { drawFish } from './AquariumGame.jsx';
+import { FISH_BY_ID } from './aquariumData.js';
+import { drawKid } from './HospitalGame.jsx';
+// 생일 노래 MP3 에서 트는 구간 (1절 한국어 + 2절 영어 끝까지, 앞 반주 조금 포함. 파일 길이 37.2초)
+const SONG_FROM = 5.0, SONG_TO = 37.2;
 import { VOICE } from './voiceLines.js';
 
 const TAU = Math.PI * 2;
@@ -2806,7 +2811,15 @@ function drawHippo(ctx, S, t, happy, mouth = 0) {
   blush(ctx, S, hy + S * 0.04, 0.2, 0.35);
   ctx.restore();
 }
-export const GUEST_FN = { rabbit: drawRabbit, bear: drawBear, panda: drawPanda, lion: drawLion, cat: drawCat, dog: drawDog, monkey: drawMonkey, mouse: drawMouse, squirrel: drawSquirrel, pig: drawPig, chick: drawChick, fox: drawFox, penguin: drawPenguin, elephant: drawElephant, koala: drawKoala, hippo: drawHippo };
+// 아기상어: 카운터 위에 둥실 떠 있다 (옆모습)
+function drawSharkGuest(ctx, S, t, happy) {
+  const sp = FISH_BY_ID.shark; if (!sp) return;
+  ctx.save(); ctx.translate(-S * 0.05, -S * 0.62 + Math.sin(t * 1.6) * S * 0.04);
+  drawFish(ctx, sp, S * 1.1, { phase: t * (happy ? 7 : 4), growth: 1, happy: true, detail: true, gloss: true, lit: 0.6 });
+  ctx.restore();
+}
+const drawYunaGuest = (ctx, S, t, happy, mouth) => drawKid(ctx, S, t, happy, mouth, 'yuna');
+export const GUEST_FN = { shark: drawSharkGuest, yuna: drawYunaGuest, rabbit: drawRabbit, bear: drawBear, panda: drawPanda, lion: drawLion, cat: drawCat, dog: drawDog, monkey: drawMonkey, mouse: drawMouse, squirrel: drawSquirrel, pig: drawPig, chick: drawChick, fox: drawFox, penguin: drawPenguin, elephant: drawElephant, koala: drawKoala, hippo: drawHippo };
 
 // ═══════════════ 배경 ═══════════════
 function layout(W, H) {
@@ -2939,7 +2952,7 @@ export default function KitchenGame({ audio, speak }) {
   // 게임 상태는 매 화면 바뀌므로 React 상태가 아닌 ref 에 두고(처음 effect 에서 만듦), 버튼에 필요한 것만 ui 로 옮긴다(sync)
   const G = useRef(null);
   const [ui, setUi] = useState({ phase: 'arrive', menu: null, step: null, n: 0, land: true, guest: KITCHEN_GUESTS[0].id });
-  const sync = () => { const g = G.current, st = g.st; setUi({ phase: g.phase, menu: g.menu, step: g.step, n: st.layers.length + st.toppings.length + st.skewer.length + st.scoops.length + st.syrup + (st.noodleT != null ? 1 : 0) + st.glaze.filter(Boolean).length + st.strokes.length + (st.sauce ? 1 : 0) + st.ice + st.whip + (st.milk != null ? 1 : 0), land: g.L ? g.L.land : true, guest: g.order[g.gi], lyric: g.lyric || null }); };
+  const sync = () => { const g = G.current, st = g.st; setUi({ phase: g.phase, menu: g.menu, step: g.step, n: st.layers.length + st.toppings.length + st.skewer.length + st.scoops.length + st.syrup + (st.noodleT != null ? 1 : 0) + st.glaze.filter(Boolean).length + st.strokes.length + (st.sauce ? 1 : 0) + st.ice + st.whip + (st.milk != null ? 1 : 0), land: g.L ? g.L.land : true, guest: g.order[g.gi], lyricK: g.lyricK ?? null }); };
   const later = (fn, ms) => { const g = G.current; const id = setTimeout(() => { g.timers = g.timers.filter(x => x !== id); fn(); }, ms); g.timers.push(id); };
   const say = (text) => { if (speak && text) speak(text); };
   const guest = () => GUEST_BY_ID[G.current.order[G.current.gi]];
@@ -3494,16 +3507,17 @@ export default function KitchenGame({ audio, speak }) {
   // 노래가 끝나면: 촛불 후~ (그림 루프가 blowAt 에 불을 끄고 연기를 낸다) → 먹기
   const afterSong = () => {
     const g = G.current; if (!g.song || g.song.done) return;
-    g.song.done = true; g.lyric = null;
+    g.song.done = true; g.lyricK = null;
     const a = songRef.current; if (a) { try { a.pause(); } catch { /* 무시 */ } }
     g.blowAt = g.t - g.phaseT + 0.9;
     later(() => { if (G.current.phase === 'eat') { audio.playNoise(0.7, 0.35, 900, 0.5); say(VOICE.kitchenBlow()); } }, 400);
     scheduleBites(1.2);
     sync();
   };
-  // 생일 노래: 넣어 둔 MP3(public/birthday) 1절만. 소리를 껐거나 못 틀면 가사만 같은 시간 동안 보여 준다
+  // 생일 노래: 넣어 둔 MP3(public/birthday) 2절까지. 소리를 껐거나 못 틀면 가사만 같은 시간 동안 보여 준다
   const songRef = useRef(null);
-  const stopSong = () => { const a = songRef.current; if (a) { try { a.pause(); } catch { /* 무시 */ } } const g = G.current; if (g && g.lyric) { g.lyric = null; sync(); } };
+  const lyricRef = useRef(null);   // 아래 가사 칸 (색칠 진행을 직접 바꾼다)
+  const stopSong = () => { const a = songRef.current; if (a) { try { a.pause(); } catch { /* 무시 */ } } const g = G.current; if (g && g.lyricK != null) { g.lyricK = null; sync(); } };
   const playSong = () => {
     if (audio.muted) return;
     if (!songRef.current) songRef.current = new Audio();
@@ -3643,9 +3657,12 @@ export default function KitchenGame({ audio, speak }) {
             const a = songRef.current, live = !!(a && a.src && !a.paused && a.currentTime >= SONG_FROM - 0.5);
             const sec = live ? a.currentTime : SONG_FROM + (t - g.song.t0);
             if (live) a.volume = clamp01(Math.min((sec - SONG_FROM) / 0.5, (SONG_TO - sec) / 0.7));
-            const k = BDAY_MP3_LINES.slice(0, 4).findIndex(([s0, s1]) => sec >= s0 && sec < s1);
-            const text = k >= 0 ? `🎵 ${bdayLyrics(gu)[k].text} 🎵` : '🎵 🎵 🎵';
-            if (text !== g.lyric) { g.lyric = text; sync(); }
+            // 가사: 지금 줄(사이 반주 때는 다음 줄을 흐리게), 진행만큼 색칠 (React 를 매 화면 다시 그리지 않게 CSS 변수로)
+            const k = BDAY_MP3_LINES.findIndex(([s0, s1]) => sec >= s0 && sec < s1);
+            let show = BDAY_MP3_LINES.findIndex(([, s1]) => sec < s1); if (show < 0) show = BDAY_MP3_LINES.length - 1;
+            if (show !== g.lyricK) { g.lyricK = show; sync(); }
+            const lb = lyricRef.current;
+            if (lb) { const [s0, s1] = BDAY_MP3_LINES[show]; lb.style.setProperty('--p', `${Math.round(clamp01((sec - s0) / (s1 - s0)) * 100)}%`); lb.style.opacity = k >= 0 ? '1' : '0.6'; }
             g.happyUntil = t + 0.2;
             if (k >= 0) mouth = Math.max(mouth, 0.22 * Math.abs(Math.sin(sec * 4)));
             if (Math.random() < 0.04) g.parts.push({ kind: 'note', x: L.gx + (Math.random() - 0.5) * L.S * 1.2, y: L.gy - L.S * 1.0, vx: (Math.random() - 0.5) * 20, vy: -45, born: t, life: 2, col: ['#f472b6', '#8b5cf6', '#f59e0b', '#22c55e'][Math.floor(Math.random() * 4)], ch: Math.random() < 0.5 ? '♪' : '♫' });
@@ -4162,7 +4179,7 @@ export default function KitchenGame({ audio, speak }) {
     'bungeo:ready': '👆 틀을 톡! 눌러서 뒤집어요', 'bungeo:flip': '✨ 휙!', 'bungeo:bake2': '🔥 노릇노릇 굽는 중...', 'bungeo:open': '✨ 다 구워졌어요!', 'bungeo:opened': '✨ 다 구워졌어요!',
     'friedegg:crack': '🥚 달걀을 콕콕 눌러서 톡톡 깨요', 'friedegg:drop': '🍳 톡! 퐁!', 'friedegg:fry': '🔥 지글지글 익는 중...', 'friedegg:plate': '✨ 접시에 담아요', 'friedegg:top': '🍅 케첩을 콕! 골라서 그림을 그리고, 재료도 올려요'
   };
-  const hint = ui.phase === 'cook' ? HINT[`${ui.menu}:${ui.step}`] : ui.phase === 'serve' ? (ui.land ? '👈 접시를 손님에게 갖다 주세요!' : '👆 접시를 손님에게 갖다 주세요!') : ui.phase === 'eat' || ui.phase === 'carry' ? (ui.lyric || '😋 냠냠 먹는 중...') : null;
+  const hint = ui.phase === 'cook' ? HINT[`${ui.menu}:${ui.step}`] : ui.phase === 'serve' ? (ui.land ? '👈 접시를 손님에게 갖다 주세요!' : '👆 접시를 손님에게 갖다 주세요!') : ui.phase === 'eat' || ui.phase === 'carry' ? (ui.lyricK != null ? '🎂 다 같이 생일 노래를 불러요!' : '😋 냠냠 먹는 중...') : null;
   const workArea = ui.land ? { left: '34%', right: '1.5%', top: '6%', bottom: '6%' } : { left: '3%', right: '3%', top: '39%', bottom: '3%' };
 
   return (
@@ -4179,6 +4196,7 @@ export default function KitchenGame({ audio, speak }) {
         {hint && <div style={{ position: 'absolute', left: workArea.left, right: workArea.right, top: ui.land ? '12px' : workArea.top, textAlign: 'center', pointerEvents: 'none' }}>
           <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.88)', borderRadius: '18px', padding: '6px 16px', fontFamily: JUA, fontSize: '1.25rem', color: '#7c2d12', boxShadow: '0 4px 12px -6px rgba(0,0,0,0.3)' }}>{hint}</span>
         </div>}
+        {ui.lyricK != null && <Karaoke line={bdayMp3Lyrics(gu)[ui.lyricK]} boxRef={lyricRef} />}
         {ui.phase === 'menu' && (
           <div style={{ position: 'absolute', ...workArea, display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', padding: '4px 2px' }}>
             <div style={{ marginTop: 'auto', textAlign: 'center', fontFamily: JUA, fontSize: '1.5rem', color: '#7c2d12', textShadow: '0 2px 0 #fff' }}>무엇을 만들어 줄까요?</div>
@@ -4201,6 +4219,22 @@ export default function KitchenGame({ audio, speak }) {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// 생일 노래 가사 (화면 아래 가운데, 노래방처럼 왼쪽부터 색칠, 손님 이름은 노란색). 진행은 boxRef 의 --p 로 그림 루프가 바꾼다
+function Karaoke({ line, boxRef }) {
+  if (!line) return null;
+  const parts = line.name ? line.text.split(line.name) : [line.text];
+  const paint = (a, b) => ({ backgroundImage: `linear-gradient(90deg, ${a} var(--p, 0%), ${b} var(--p, 0%))`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' });
+  return (
+    <div style={{ position: 'absolute', left: 0, right: 0, bottom: '14px', display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+      <div ref={boxRef} style={{ background: 'rgba(255,255,255,0.94)', borderRadius: '22px', padding: '8px 24px', boxShadow: '0 8px 20px -12px rgba(157,23,77,0.6)', fontFamily: JUA, fontSize: 'clamp(1.5rem, 3.4vw, 2.3rem)', lineHeight: 1.25, maxWidth: '94%', textAlign: 'center' }}>
+        <span style={paint('#db2777', '#d4c4cc')}>🎵 {parts[0]}</span>
+        {line.name && <span style={{ ...paint('#f59e0b', '#fcd34d'), padding: '0 2px' }}>{line.name}</span>}
+        <span style={paint('#db2777', '#d4c4cc')}>{parts[1] || ''} 🎵</span>
       </div>
     </div>
   );
