@@ -41,6 +41,7 @@ import BirthdayParty from './BirthdayParty.jsx';
 import KitchenGame from './KitchenGame.jsx';
 import HospitalGame from './HospitalGame.jsx';
 import { AccountButton } from './LoginGate.jsx';
+const AdventureGame = React.lazy(() => import('./AdventureGame.jsx'));   // 3D(three.js)라 열 때만 불러온다
 import ShopGame from './ShopGame.jsx';
 import TownGame from './TownGame.jsx';
 import RadishGame from './RadishGame.jsx';
@@ -4478,7 +4479,7 @@ export default function App() {
       }}>
         {/* 탭 네비게이션 (동물·과일·탈것은 '생생 카드' 하나로 모았다) */}
         <nav className="bps-nav" style={{
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px',
+          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px',
           padding: '10px 12px', background: '#fffcf8', borderBottom: '1px solid #f3e8dc',
           flexShrink: 0
         }}>
@@ -4497,6 +4498,7 @@ export default function App() {
             // { id: 'train', label: '🚂 기차 마을', sub: '칙칙폭폭 달려요', color: '#0ea5e9' },
             { id: 'puzzle', icon: '🧩', label: '아기 퍼즐', sub: '조각 맞추기', pastel: '#ddd2fa', soft: '#f1ecfd', ink: '#55399e' },
             { id: 'paint', icon: '🎨', label: '무지개 물감', sub: '터치 감각 미술', pastel: '#ffe0b2', soft: '#fff2df', ink: '#9a5b0d' },
+            { id: 'adventure', icon: '🏡', label: '유나의 모험', sub: '집에서 출발!', pastel: '#bfdbfe', soft: '#e3effe', ink: '#1e4e8c' },
             // 🎂 생일 파티는 요리 놀이로 합쳤다 (케이크를 주면 촛불·생일 노래 2절·가사). BirthdayParty.jsx 는 요리 놀이가 동물 그림을 빌려 쓰므로 지우지 말 것
             // { id: 'birthday', icon: '🎂', label: '생일 파티', sub: '촛불 후~ 불기', pastel: '#fecdd3', soft: '#ffe4e6', ink: '#9f1239' },
             // 📞 전화 놀이는 잠시 메뉴에서만 뺐다 (PhoneCall.jsx·Supabase baby-call/baby-voice 는 그대로, 아래 줄을 되살리면 다시 보인다)
@@ -4539,7 +4541,7 @@ export default function App() {
         {/* 캔버스 영역 (스크롤 메뉴와 비스크롤 고정 메뉴 분기) */}
         <div style={{
           flex: 1,
-          padding: ['paint', 'story', 'phone', 'birthday', 'kitchen', 'hospital', 'town', 'radish'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
+          padding: ['paint', 'story', 'phone', 'birthday', 'kitchen', 'hospital', 'town', 'radish', 'adventure'].includes(activeTab) ? '0.6rem 1rem' : '1.2rem 1.6rem',
           position: 'relative',
           background: '#fffdfa',
           overflowY: isScrollableTab ? 'auto' : 'hidden',
@@ -4817,6 +4819,7 @@ export default function App() {
 
           {/* ===== 🏥 병원 놀이: 아기·어린이·동물 친구 치료하기 (HospitalGame.jsx) ===== */}
           {activeTab === 'hospital' && <HospitalGame audio={audioEngine} speak={speakNaturalKorean} />}
+          {activeTab === 'adventure' && <React.Suspense fallback={<div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏡</div>}><AdventureGame audio={audioEngine} speak={speakNaturalKorean} /></React.Suspense>}
           {/* ===== 🛒 동물 마을 가게 (ShopGame.jsx) ===== */}
           {activeTab === 'shop' && <ShopGame audio={audioEngine} speak={speakNaturalKorean} />}
           {/* ===== 🚗 우리 동네 군포 (TownGame.jsx) ===== */}

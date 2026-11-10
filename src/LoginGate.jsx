@@ -15,6 +15,7 @@ export default function LoginGate({ children }) {
     return () => { alive = false; sub.subscription.unsubscribe(); };
   }, []);
 
+  if (import.meta.env.DEV && window.location.search.includes('devskip')) return children;   // 개발 서버 자동 테스트용 (배포본에는 없음)
   if (state === 'in') return children;
   if (state === 'loading') return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: JUA, fontSize: '2rem', color: '#c084fc' }}>🐼</div>;
   return <LoginForm />;

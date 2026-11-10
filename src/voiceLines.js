@@ -3,6 +3,7 @@ import { FARM_SPECIES, FARM_STAGE_NAMES, farmSpeciesAt, farmBreedOf, FARM_BY_ID,
 import { TRAIN_STATIONS, PASSENGERS, CARGO_COLORS } from './trainData.js';
 import { KITCHEN_GUESTS, KITCHEN_MENUS, INGREDIENTS } from './kitchenData.js';
 import { HOSPITAL_PATIENTS, HOSPITAL_SYMPTOMS, HOSPITAL_TEMPS } from './hospitalData.js';
+import { ADV_FLOORS } from './adventureData.js';
 import { BASKET_MAX, COUNTER_GOODS, ASK_MAX_N, SHOP_GOODS, BILLS, wonText, TOTAL_MAX } from './shopData.js';
 import { TOWN_LIST, busSpoken, TRANSFERS, SPOT_BY_ID, lineName } from './townData.js';
 import { RADISH_HELPERS, RADISH_SIZES, FIELD_NORMAL } from './radishData.js';
@@ -320,6 +321,22 @@ export const VOICE = {
   hospCandyDone: () => '와, 사탕이다! 고맙습니다!',
   hospThanks: (p) => `${attachJosa(p.name, '이/가')} 다 나았어요! 의사 선생님, 고맙습니다!`,
   hospWait: () => '반짝반짝 빛나는 도구를 골라 보세요!',
+  // 🏡 유나의 모험 (집 → 복도 → 엘리베이터)
+  advStart: () => '유나네 집이에요! 가고 싶은 곳을 콕 눌러 보세요. 밖에 나가려면 현관으로 가요!',
+  advShoesNeed: () => '밖에 나가려면 신발을 신어야 해요! 신발을 콕 눌러 보세요.',
+  advShoesOn: () => '신발을 신었어요! 이제 현관문을 열고 나가요.',
+  advCorridor: () => '복도에 나왔어요! 엘리베이터 쪽으로 걸어가요.',
+  advCallHint: () => '엘리베이터 버튼을 콕 눌러 보세요!',
+  advCalled: () => '버튼을 눌렀어요! 엘리베이터가 오고 있어요.',
+  advArrive: () => '띵동! 엘리베이터가 왔어요. 안으로 들어가요!',
+  advInside: () => '몇 층으로 갈까요? 밖에 나가려면 일 층을 눌러요!',
+  advGo: (n) => `${n}층으로 가요!`,
+  advHere: (n) => `여기가 ${n}층이에요.`,
+  advWrong: (n) => `여기는 ${n}층이에요. 밖에 나가려면 일 층을 눌러요!`,
+  advDone: () => '일 층에 도착했어요! 문이 열립니다. 유나야, 잘했어요!',
+  advBall: () => '통통통! 공이 굴러가요!',
+  advTeddy: () => '곰돌이를 꼭 안아 줬어요!',
+  advBlocks: () => '우와! 블록을 높이 높이 쌓았어요!',
 
   // 📸 동물 · 탈것 · 바다생물 소리 / 🍎 과일
   itemSound: (item) => `${item.name}! ${item.soundText}`,
@@ -459,6 +476,8 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   lines.push(VOICE.hospTempGo(), VOICE.hospSheetDone(), VOICE.hospThroatGo(), VOICE.hospAh(), VOICE.hospThroatDone(true), VOICE.hospThroatDone(false));
   lines.push(VOICE.hospSteth(), VOICE.hospStethDone(), VOICE.hospNose(), VOICE.hospNoseOn(), VOICE.hospNoseOther(), VOICE.hospNoseDone(), VOICE.hospCream(), VOICE.hospCreamDone(),
     VOICE.hospBandDone(), VOICE.hospCandy(), VOICE.hospCandyDone(), VOICE.hospWait());
+  lines.push(VOICE.advStart(), VOICE.advShoesNeed(), VOICE.advShoesOn(), VOICE.advCorridor(), VOICE.advCallHint(), VOICE.advCalled(), VOICE.advArrive(), VOICE.advInside(), VOICE.advDone(), VOICE.advBall(), VOICE.advTeddy(), VOICE.advBlocks());
+  for (let n = 1; n <= ADV_FLOORS; n++) lines.push(VOICE.advGo(n), VOICE.advHere(n), VOICE.advWrong(n));
   lines.push(VOICE.radishWelcome(), VOICE.radishGrab(), VOICE.radishGiantGrab(), VOICE.radishChorus(), VOICE.radishWiggle(), VOICE.radishAlmost(),
     VOICE.radishClean(), VOICE.radishCleanDone(), VOICE.radishGiantDone(), VOICE.radishAllDone(), VOICE.radishNewField());
   [0, 1, 2].forEach(i => lines.push(VOICE.radishHeave(i)));
