@@ -323,7 +323,8 @@ export const VOICE = {
   hospWait: () => '반짝반짝 빛나는 도구를 골라 보세요!',
   // 🏡 유나의 모험 (집 → 복도 → 엘리베이터)
   advStart: () => '유나네 집이에요! 가고 싶은 곳을 콕 눌러 보세요. 밖에 나가려면 현관으로 가요!',
-  advShoesNeed: () => '밖에 나가려면 신발을 신어야 해요! 신발을 콕 눌러 보세요.',
+  advShoesNeed: () => '밖에 나가려면 신발을 신어야 해요! 어떤 신발을 신을까요?',
+  advShoesPicked: () => '신발을 신었어요! 이제 밖으로 나가요.',
   advShoesOn: () => '신발을 신었어요! 이제 현관문을 열고 나가요.',
   advCorridor: () => '복도에 나왔어요! 엘리베이터 쪽으로 걸어가요.',
   advCallHint: () => '엘리베이터 버튼을 콕 눌러 보세요!',
@@ -333,7 +334,9 @@ export const VOICE = {
   advGo: (n) => `${n}층으로 가요!`,
   advHere: (n) => `여기가 ${n}층이에요.`,
   advWrong: (n) => `여기는 ${n}층이에요. 밖에 나가려면 일 층을 눌러요!`,
-  advDone: () => '일 층에 도착했어요! 문이 열립니다. 유나야, 잘했어요!',
+  advHold: (p) => `${p} 손을 꼭 잡았어요! 같이 가요.`,
+  advLobby: () => '일 층에 도착했어요! 왼쪽이나 오른쪽 계단으로 밖에 나가요.',
+  advOutside: () => '밖에 나왔어요! 와, 바람이 시원해요. 유나야, 잘했어요!',
   advBall: () => '통통통! 공이 굴러가요!',
   advTeddy: () => '곰돌이를 꼭 안아 줬어요!',
   advBlocks: () => '우와! 블록을 높이 높이 쌓았어요!',
@@ -476,7 +479,7 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   lines.push(VOICE.hospTempGo(), VOICE.hospSheetDone(), VOICE.hospThroatGo(), VOICE.hospAh(), VOICE.hospThroatDone(true), VOICE.hospThroatDone(false));
   lines.push(VOICE.hospSteth(), VOICE.hospStethDone(), VOICE.hospNose(), VOICE.hospNoseOn(), VOICE.hospNoseOther(), VOICE.hospNoseDone(), VOICE.hospCream(), VOICE.hospCreamDone(),
     VOICE.hospBandDone(), VOICE.hospCandy(), VOICE.hospCandyDone(), VOICE.hospWait());
-  lines.push(VOICE.advStart(), VOICE.advShoesNeed(), VOICE.advShoesOn(), VOICE.advCorridor(), VOICE.advCallHint(), VOICE.advCalled(), VOICE.advArrive(), VOICE.advInside(), VOICE.advDone(), VOICE.advBall(), VOICE.advTeddy(), VOICE.advBlocks());
+  lines.push(VOICE.advStart(), VOICE.advShoesNeed(), VOICE.advShoesPicked(), VOICE.advShoesOn(), VOICE.advCorridor(), VOICE.advCallHint(), VOICE.advCalled(), VOICE.advArrive(), VOICE.advInside(), VOICE.advLobby(), VOICE.advOutside(), ...['엄마', '아빠'].flatMap(p => [VOICE.advHold(p)]), VOICE.advBall(), VOICE.advTeddy(), VOICE.advBlocks());
   for (let n = 1; n <= ADV_FLOORS; n++) lines.push(VOICE.advGo(n), VOICE.advHere(n), VOICE.advWrong(n));
   lines.push(VOICE.radishWelcome(), VOICE.radishGrab(), VOICE.radishGiantGrab(), VOICE.radishChorus(), VOICE.radishWiggle(), VOICE.radishAlmost(),
     VOICE.radishClean(), VOICE.radishCleanDone(), VOICE.radishGiantDone(), VOICE.radishAllDone(), VOICE.radishNewField());

@@ -101,7 +101,8 @@ await Promise.all(Array.from({ length: CONCURRENCY }, worker));
 
 // 더 이상 쓰지 않는 파일 정리
 fs.readdirSync(outDir).forEach(f => {
-  if (f.endsWith('.mp3') && !byKey.has(f.slice(0, -4))) fs.unlinkSync(path.join(outDir, f));
+  if (!f.endsWith('.mp3') || byKey.has(f.slice(0, -4))) return;
+  try { fs.unlinkSync(path.join(outDir, f)); } catch (e) { console.log(`  (지우지 못함, 다른 프로그램이 쓰는 중: ${f})`); }   // OneDrive 동기화 등으로 잠긴 파일은 건너뜀
 });
 
 const available = [...byKey.keys()].filter(k => fs.existsSync(path.join(outDir, `${k}.mp3`))).sort();
