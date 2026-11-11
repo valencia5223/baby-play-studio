@@ -329,7 +329,9 @@ export const VOICE = {
   bathYunaSplash: () => '첨벙첨벙! 유나가 신났어요!',
   bathTowel: () => '수건으로 물기를 닦닦 닦아 줘요.',
   bathDry: () => '드라이어로 위잉 말려 줘요.',
-  bathTowelGo: () => '깨끗하게 다 헹궜어요! 수건 버튼을 누르면 욕조에서 나와요.',
+  bathCleanGo: () => '깨끗하게 다 헹궜어요! 그런데 바닥에 물이 많이 튀었어요. 청소 버튼을 눌러요.',
+  bathClean: () => '밀대로 바닥 물기를 쓱쓱 밀어 줘요.',
+  bathCleanDone: () => '바닥이 반짝반짝! 이제 수건 버튼을 누르면 욕조에서 나와요.',
   bathOut: () => '목욕 끝! 욕조에서 나와요. 몸을 콕 누르면 수건을 둘러 줘요.',
   bathCape: () => '배트맨~ 멋짐~~ 엄마한테 자랑해~',
   bathToRoom: () => '방으로 가서 드라이어로 위잉 말려 줘요.',
@@ -499,8 +501,8 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   lines.push(VOICE.hospTempGo(), VOICE.hospSheetDone(), VOICE.hospThroatGo(), VOICE.hospAh(), VOICE.hospThroatDone(true), VOICE.hospThroatDone(false));
   lines.push(VOICE.hospSteth(), VOICE.hospStethDone(), VOICE.hospNose(), VOICE.hospNoseOn(), VOICE.hospNoseOther(), VOICE.hospNoseDone(), VOICE.hospCream(), VOICE.hospCreamDone(),
     VOICE.hospBandDone(), VOICE.hospCandy(), VOICE.hospCandyDone(), VOICE.hospWait());
-  lines.push(VOICE.bathPick(), VOICE.bathRinse(), VOICE.bathShake(), VOICE.bathYunaSplash(), VOICE.bathTowel(), VOICE.bathDry(), VOICE.bathTowelGo(), VOICE.bathOut(), VOICE.bathCape(), VOICE.bathToRoom(), VOICE.bathDried(), VOICE.bathMilk(), VOICE.bathMilkDone(), VOICE.bathBrush(), VOICE.bathBrushDone(), VOICE.bathGargle(), VOICE.bathReady(),
-    ...['멍멍이', '야옹이', '유나'].map(n => VOICE.bathHello(n)),
+  lines.push(VOICE.bathPick(), VOICE.bathRinse(), VOICE.bathShake(), VOICE.bathYunaSplash(), VOICE.bathTowel(), VOICE.bathDry(), VOICE.bathCleanGo(), VOICE.bathClean(), VOICE.bathCleanDone(), VOICE.bathOut(), VOICE.bathCape(), VOICE.bathToRoom(), VOICE.bathDried(), VOICE.bathMilk(), VOICE.bathMilkDone(), VOICE.bathBrush(), VOICE.bathBrushDone(), VOICE.bathGargle(), VOICE.bathReady(),
+    ...['멍멍이', '야옹이', '유나', '깡총이', '곰돌이', '판다', '꿀꿀이', '펭펭이'].map(n => VOICE.bathHello(n)),
     ...['babyShark', 'momShark', 'dadShark', 'turtle', 'chickY', 'chickW'].map(id => VOICE.bathToy(id)));
   lines.push(VOICE.advStart(), VOICE.advShoesNeed(), VOICE.advShoesPicked(), VOICE.advShoesOn(), VOICE.advCorridor(), VOICE.advCallHint(), VOICE.advCalled(), VOICE.advArrive(), VOICE.advInside(), VOICE.advLobby(), VOICE.advOutside(), ...['엄마', '아빠'].flatMap(p => [VOICE.advHold(p)]), VOICE.advBall(), VOICE.advTeddy(), VOICE.advBlocks());
   for (let n = 1; n <= ADV_FLOORS; n++) lines.push(VOICE.advGo(n), VOICE.advHere(n), VOICE.advWrong(n));

@@ -1,6 +1,6 @@
 // 🛁 뽀글뽀글 목욕 놀이 (three.js 3D)
-//  - 우리 집 욕실(하늘색 타일·세면대)의 벽에 붙은 큰 흰 붙박이 욕조에서 강아지 · 고양이 · 유나 중 하나를 씻긴다. 물 위에는 아기상어·엄마상어·아빠상어·거북이·노란 병아리·하얀 병아리 장난감이 둥둥
-//  - 도구: 비누 스펀지(문지르면 거품, 얼룩이 거품에 덮임) → 샤워기(물줄기로 거품·얼룩 헹굼) → (다 헹구면 부르르 털기) → 수건(물기 닦기) → 드라이어(복슬복슬)
+//  - 우리 집 욕실(하늘색 타일·세면대)의 벽에 붙은 큰 흰 붙박이 욕조에서 강아지 · 고양이 · 유나 · 토끼 · 곰 · 판다 · 돼지 · 펭귄 중 하나를 씻긴다. 물 위에는 아기상어·엄마상어·아빠상어·거북이·노란 병아리·하얀 병아리 장난감이 둥둥
+//  - 도구: 비누 스펀지(문지르면 거품, 얼룩이 거품에 덮임) → 샤워기(물줄기로 거품·얼룩 헹굼) → (다 헹구면 부르르 털기) → 밀대(바닥 물웅덩이 청소) → 수건 → 드라이어(복슬복슬)
 //    순서는 자유. 지금 할 차례인 도구 버튼이 반짝이고 음성으로 알려 준다
 //  - 장난감: 처음엔 욕조 위 벽 선반에 나란히. 끌어서 욕조에 놓으면 퐁당 물에 떠다니고, 욕조 밖에 놓으면 선반으로 돌아간다.
 //    누르면 소리(상어는 아기상어 멜로디). 비눗방울은 누르면 터진다. 물을 누르면 물결
@@ -21,7 +21,12 @@ const SHELF_Y = 0.88, SHELF_W = 1.3, SHELF_Z = -0.34;   // 장난감 선반 윗�
 const BATH_FRIENDS = [
   { id: 'dog', name: '멍멍이', icon: '🐶', label: '강아지', color: '#f59f00' },
   { id: 'cat', name: '야옹이', icon: '🐱', label: '고양이', color: '#e8590c' },
-  { id: 'yuna', name: '유나', icon: '👧', label: '유나', color: '#f06595' }
+  { id: 'yuna', name: '유나', icon: '👧', label: '유나', color: '#f06595' },
+  { id: 'rabbit', name: '깡총이', icon: '🐰', label: '토끼', color: '#f783ac' },
+  { id: 'bear', name: '곰돌이', icon: '🐻', label: '곰', color: '#a0522d' },
+  { id: 'panda', name: '판다', icon: '🐼', label: '판다', color: '#495057' },
+  { id: 'pig', name: '꿀꿀이', icon: '🐷', label: '돼지', color: '#f06595' },
+  { id: 'penguin', name: '펭펭이', icon: '🐧', label: '펭귄', color: '#1c7ed6' }
 ];
 const BATH_TOYS = [
   { id: 'babyShark', kind: 'shark', color: '#ffd43b', size: 0.82, pitch: 1.25 },
@@ -76,8 +81,8 @@ function insideTub(x, z, m = 1) {
 // ─────────────────────────────── 욕실 ───────────────────────────────
 function makeBathroom(scene) {
   const g = new THREE.Group(); scene.add(g);
-  const floorTex = tileTex('#dff3fb', '#cfeaf6', 'rgba(110,160,180,0.5)'); floorTex.repeat.set(8, 6);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 3.2), S('#ffffff', { map: floorTex, roughness: 0.35 })); floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 0.1); floor.receiveShadow = true; g.add(floor);
+  const floorTex = tileTex('#dff3fb', '#cfeaf6', 'rgba(110,160,180,0.5)'); floorTex.repeat.set(8, 8);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 4.4), S('#ffffff', { map: floorTex, roughness: 0.35 })); floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 0.7); floor.receiveShadow = true; g.add(floor);
   const wallTex = tileTex('#f2fafd', '#e6f4fa', 'rgba(140,180,200,0.45)'); wallTex.repeat.set(10, 6);
   const back = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 2.6), S('#ffffff', { map: wallTex, roughness: 0.3 })); back.position.set(0.9, 1.3, -0.42); back.receiveShadow = true; g.add(back);
   const wl = wallTex.clone(); wl.needsUpdate = true; wl.repeat.set(7, 6);
@@ -215,6 +220,74 @@ function makeFriend(id) {
     const Yax = new THREE.Vector3(0, 1, 0);
     [0.25, 0.45, 0.65, 0.84].forEach(q => { const p = curve.getPoint(q), b = mesh(new THREE.CylinderGeometry(0.0255, 0.0255, 0.014, 14), stripe, p.x, p.y, p.z, tail); b.quaternion.setFromUnitVectors(Yax, curve.getTangent(q)); });
     root.userData = { head, tail, sound: 'cat', mouth: new THREE.Vector3(0, -0.062, 0.148) };
+  } else if (id !== 'yuna') {
+    // 토끼 · 곰 · 판다 · 돼지 · 펭귄: 강아지와 같은 앉은 몸에 종류별 귀 · 코 · 무늬 · 꼬리
+    const P = {
+      rabbit: { coat: '#fbf8f4', belly: '#fffaf5', muzzle: '#ffffff', paw: '#fde4e8', foot: '#fff3f5', nose: '#f28ba1' },
+      bear: { coat: '#b98352', belly: '#e9cba0', muzzle: '#efd6b3', paw: '#e9cba0', foot: '#a8733f', nose: '#2b1a10' },
+      panda: { coat: '#f8f9fa', belly: '#ffffff', muzzle: '#ffffff', paw: '#2b2b30', foot: '#2b2b30', nose: '#1f1f24' },
+      pig: { coat: '#ffc7d2', belly: '#ffe1e7', muzzle: null, paw: '#f5a3b5', foot: '#e88aa0', nose: '#b5546d' },
+      penguin: { coat: '#334155', belly: '#ffffff', muzzle: null, paw: '#334155', foot: '#f59e0b', nose: '#f59e0b' }
+    }[id];
+    const coat = S(P.coat, { roughness: 0.85 }), belly = S(P.belly, { roughness: 0.85 }), paw = S(P.paw, { roughness: 0.85 });
+    fur.push(coat, belly, paw);
+    addPart(mesh(sph(0.16), coat, 0, 0.31, -0.03, root)).scale.set(1, 1.15, 1.05);                         // 몸
+    addPart(mesh(sph(0.105), belly, 0, 0.43, 0.065, root)).scale.set(id === 'penguin' ? 1.2 : 1, 1.05, 0.85);   // 배
+    const head = new THREE.Group(); head.position.set(0, 0.6, 0.05); root.add(head);
+    const skull = addPart(mesh(sph(0.145, 28, 20), coat, 0, 0, 0, head)); skull.scale.set(1.1, 1, 0.98);
+    const dark = S('#2b2b30', { roughness: 0.85 });
+    if (id === 'panda') [-1, 1].forEach(k => decal(skull, 0.145, new THREE.Vector3(k * 0.4, 0.12, 0.9), 0.04, 0.052, dark).rotateZ(k * 0.55));   // 눈 둘레 까만 무늬
+    if (id === 'penguin') [-1, 1].forEach(k => decal(skull, 0.145, new THREE.Vector3(k * 0.36, -0.05, 0.93), 0.062, 0.07, S('#ffffff', { roughness: 0.8 })));   // 하얀 얼굴
+    if (P.muzzle) addPart(mesh(sph(0.065), S(P.muzzle, { roughness: 0.85 }), 0, -0.055, 0.11, head)).scale.set(1.2, 0.82, 0.8);   // 주둥이
+    const noseM = S(P.nose, { roughness: 0.3 });
+    let mouthY = -0.065, mouthZ = 0.162;
+    if (id === 'pig') {   // 납작한 돼지코 + 콧구멍
+      const sn = mesh(new THREE.CylinderGeometry(0.048, 0.05, 0.05, 24), S('#f5a3b5', { roughness: 0.5 }), 0, -0.035, 0.13, head); sn.rotation.x = Math.PI / 2; sn.scale.z = 0.72;
+      [-1, 1].forEach(k => mesh(sph(0.011), noseM, k * 0.018, -0.035, 0.155, head).scale.set(0.8, 1.2, 0.4));
+      mouthY = -0.085; mouthZ = 0.135;
+    } else if (id === 'penguin') {   // 주황 부리 (위아래 두 쪽)
+      const up = mesh(new THREE.ConeGeometry(0.03, 0.07, 14), noseM, 0, -0.035, 0.165, head); up.rotation.x = Math.PI / 2; up.scale.set(1.3, 1, 0.6);
+      const lo = mesh(new THREE.ConeGeometry(0.022, 0.045, 14), S('#fb923c', { roughness: 0.3 }), 0, -0.055, 0.155, head); lo.rotation.x = Math.PI / 2; lo.scale.set(1.2, 1, 0.5);
+      mouthY = -0.05; mouthZ = 0.19;
+    } else {
+      mesh(sph(id === 'rabbit' ? 0.016 : 0.024), noseM, 0, -0.03, 0.165, head).scale.set(1.35, 0.9, 0.9);
+    }
+    if (id !== 'penguin') {
+      const smile = mesh(new THREE.TorusGeometry(0.018, 0.0035, 6, 16, Math.PI), S('#5a2e1e'), 0, mouthY, mouthZ, head); smile.rotation.z = Math.PI; smile.castShadow = false;
+    }
+    if (id === 'rabbit') [-1, 1].forEach(k => mesh(new THREE.BoxGeometry(0.012, 0.016, 0.004), S('#ffffff', { roughness: 0.3 }), k * 0.0065, mouthY - 0.02, mouthZ - 0.004, head));   // 앞니
+    [-1, 1].forEach(k => {
+      if (id === 'panda') mesh(sph(0.03), S('#ffffff', { roughness: 0.3 }), k * 0.058, 0.02, 0.118, head).scale.set(1, 1.1, 0.45);   // 까만 무늬 위에 하얀 눈 테두리
+      eye(head, k * 0.058, 0.02, 0.124, 0.024);
+      mesh(sph(0.026), blushMat(), k * 0.1, -0.04, 0.108, head).scale.set(1.1, 0.65, 0.4);
+      const eg = new THREE.Group(); head.add(eg);
+      if (id === 'rabbit') {   // 길게 선 귀 (안쪽 분홍)
+        eg.position.set(k * 0.06, 0.11, -0.01); eg.rotation.z = -k * 0.18;
+        addPart(mesh(new THREE.CapsuleGeometry(0.036, 0.13, 6, 12), coat, 0, 0.09, 0, eg)).scale.z = 0.55;
+        mesh(new THREE.CapsuleGeometry(0.021, 0.11, 6, 10), S('#f8bfcb', { roughness: 0.6 }), 0, 0.09, 0.016, eg).scale.z = 0.3;
+      } else if (id === 'bear' || id === 'panda') {   // 동그란 귀
+        eg.position.set(k * 0.112, 0.112, -0.01);
+        addPart(mesh(sph(0.05), id === 'panda' ? dark : coat, 0, 0, 0, eg)).scale.z = 0.7;
+        if (id === 'bear') mesh(sph(0.03), S('#e3b98a', { roughness: 0.85 }), 0, -0.004, 0.022, eg).scale.z = 0.5;
+      } else if (id === 'pig') {   // 앞으로 살짝 접힌 세모 귀
+        eg.position.set(k * 0.1, 0.11, 0.0); eg.rotation.set(0.5, 0, -k * 0.45);
+        mesh(new THREE.ConeGeometry(0.048, 0.09, 4), S('#f5a3b5', { roughness: 0.6 }), 0, 0.03, 0, eg).scale.z = 0.4;
+      }
+      ears.push(eg);
+    });
+    if (id === 'penguin') {   // 날개
+      [-1, 1].forEach(k => { const w = addPart(mesh(sph(0.07), coat, k * 0.165, 0.33, 0.0, root)); w.scale.set(0.35, 1.25, 0.75); w.rotation.z = k * 0.3; });
+    } else [-1, 1].forEach(k => addPart(mesh(sph(0.045), paw, k * 0.08, 0.37, 0.15, root)).scale.set(1, 0.8, 1.2));   // 앞발
+    [-1, 1].forEach(k => mesh(sph(0.05), S(P.foot, { roughness: 0.7 }), k * 0.1, 0.15, 0.1, root).scale.set(1, id === 'penguin' ? 0.4 : 0.7, 1.35));   // 뒷발
+    if (id === 'panda') [-1, 1].forEach(k => decal(root.children[0], 0.16, new THREE.Vector3(k * 0.75, 0.5, 0.42), 0.06, 0.08, dark));   // 어깨 까만 띠
+    const tail = new THREE.Group(); tail.position.set(0, 0.25, -0.2); root.add(tail);
+    if (id === 'pig') {   // 꼬불 꼬리
+      const pts = []; for (let i = 0; i <= 20; i++) { const a = i / 20 * Math.PI * 3; pts.push(new THREE.Vector3(Math.cos(a) * 0.025, 0.04 + Math.sin(a) * 0.025, -i * 0.003)); }
+      mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.008, 8), S('#f39aae', { roughness: 0.6 }), 0, 0, 0, tail);
+    } else if (id === 'penguin') {
+      mesh(new THREE.ConeGeometry(0.04, 0.06, 10), coat, 0, -0.06, 0, tail).rotation.x = -2.2;
+    } else mesh(sph(id === 'rabbit' ? 0.05 : 0.035), id === 'panda' ? dark : coat, 0, 0, 0, tail);   // 동그란 꼬리
+    root.userData = { head, tail, sound: id, mouth: new THREE.Vector3(0, mouthY, mouthZ + 0.004) };
   } else {
     // 유나: 물에 앉아 어깨까지 보인다. 밝은 살색, 진갈색 양 갈래 머리 + 분홍 리본 (선택창 유나와 같은 모습)
     const skin = S('#ffd9bf', { roughness: 0.6 }), hair = S('#3b2a20', { roughness: 0.75 }), ribbon = S('#f472b6', { roughness: 0.45 });
@@ -311,8 +384,19 @@ function makeTools(scene) {
   mesh(new THREE.CylinderGeometry(0.009, 0.011, 0.15, 10), S('#f783ac', { roughness: 0.35 }), -0.035, 0, 0, brush).rotation.z = Math.PI / 2;
   mesh(new THREE.BoxGeometry(0.045, 0.014, 0.016), S('#ffffff', { roughness: 0.4 }), 0.06, 0, 0, brush);
   mesh(new THREE.BoxGeometry(0.04, 0.018, 0.016), S('#a5d8ff', { roughness: 0.8 }), 0.06, 0, -0.014, brush);
-  [sponge, shower, towel, dryer, brush].forEach(t => { t.visible = false; });
-  return { soap: sponge, shower, towel, dryer, brush };
+  // 밀대 스위퍼: 납작한 하늘색 판 + 아래 하얀 걸레 + 긴 손잡이 (판만 미는 방향으로 돈다)
+  const mop = new THREE.Group(); scene.add(mop);
+  const mopHead = new THREE.Group(); mop.add(mopHead);
+  mesh(new THREE.BoxGeometry(0.36, 0.022, 0.1), S('#4dabf7', { roughness: 0.4 }), 0, 0.026, 0, mopHead);
+  const cloth = mesh(new THREE.BoxGeometry(0.38, 0.016, 0.12), S('#f8f9fa', { roughness: 1 }), 0, 0.008, 0, mopHead);
+  [-0.04, 0, 0.04].forEach(z => mesh(new THREE.BoxGeometry(0.382, 0.017, 0.006), S('#d0ebff', { roughness: 1 }), 0, 0.008, z, mopHead));
+  mesh(sph(0.022, 12, 8), S('#1c7ed6', { roughness: 0.4 }), 0, 0.042, 0, mop);   // 이음새
+  const stick = new THREE.Group(); stick.position.y = 0.045; stick.rotation.set(0.95, 0, 0.2); mop.add(stick);
+  mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.8, 10), S('#ced4da', { metalness: 0.7, roughness: 0.25 }), 0, 0.4, 0, stick);
+  mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.16, 12), S('#f783ac', { roughness: 0.45 }), 0, 0.74, 0, stick);
+  mop.userData = { head: mopHead, cloth };
+  [sponge, shower, towel, dryer, brush, mop].forEach(t => { t.visible = false; });
+  return { soap: sponge, shower, towel, dryer, brush, mop };
 }
 
 // ─────────────────────────────── 화면 ───────────────────────────────
@@ -321,12 +405,14 @@ const TOOLS = [
   { id: 'shower', icon: '🚿', label: '샤워기' },
   { id: 'towel', icon: null, label: '수건' },
   { id: 'dryer', icon: '💨', label: '드라이어' },
-  { id: 'brush', icon: '🪥', label: '칫솔' }
+  { id: 'brush', icon: '🪥', label: '칫솔' },
+  { id: 'mop', icon: '🧹', label: '밀대' }
 ];
 // 단계마다 보이는 도구
-const STAGE_TOOLS = { soap: ['soap', 'shower'], shower: ['soap', 'shower'], towel: ['towel'], dryer: ['dryer'], brush: ['brush'] };
+const STAGE_TOOLS = { soap: ['soap', 'shower'], shower: ['soap', 'shower'], towel: ['towel'], dryer: ['dryer'], brush: ['brush'], clean: ['mop'] };
 // 다음 장소로 가는 큰 버튼
 const GO_BTN = {
+  cleanGo: { icon: '🧹', label: '바닥 청소', bg: '#12b886' },
   towelGo: { icon: null, label: '수건 두르기', bg: '#f783ac' },   // 그림은 흰 수건
   milkGo: { icon: '🥛', label: '우유 마시기', bg: '#4dabf7' },
   brushGo: { icon: '🪥', label: '양치하기', bg: '#20c997' },
@@ -337,6 +423,8 @@ const HINTS = {
   shower: '🚿 샤워기로 거품을 쏴아 헹궈요',
   towel: '✋ 몸을 콕 누르면 수건을 둘러요',
   caped: '🦸 수건 망토 멋져요!',
+  cleanGo: '💦 바닥에 물이 흥건해요! 청소해요',
+  clean: '🧹 밀대로 바닥 물기를 쓱쓱 밀어요',
   towelGo: '🛁 수건을 눌러 욕조에서 나와요',
   out: '🛁 욕조에서 폴짝 나와요',
   dryer: '💨 방에서 드라이어로 위잉 말려요',
@@ -379,12 +467,12 @@ function GuestPic({ id, size = 170 }) {
 
 function FriendPicker({ onPick }) {
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.4rem', background: 'linear-gradient(#e0f4fc, #f3fbff)', borderRadius: '26px', padding: '1rem' }}>
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.2rem', background: 'linear-gradient(#e0f4fc, #f3fbff)', borderRadius: '26px', padding: '1rem' }}>
       <div style={{ fontFamily: JUA, fontSize: '2rem', color: '#1d6fa5' }}>🛁 누구랑 목욕할까요?</div>
-      <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '760px' }}>
         {BATH_FRIENDS.map(f => (
-          <button key={f.id} onClick={() => onPick(f.id)} style={{ width: '210px', height: '230px', borderRadius: '30px', border: `5px solid ${f.color}`, background: '#ffffff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', touchAction: 'manipulation', boxShadow: '0 14px 26px -16px rgba(0,0,0,0.45)' }}>
-            {GUEST_FN[f.id] ? <GuestPic id={f.id} /> : <span style={{ fontSize: '5.5rem', lineHeight: 1 }}>{f.icon}</span>}
+          <button key={f.id} onClick={() => onPick(f.id)} style={{ width: '170px', height: '190px', borderRadius: '30px', border: `5px solid ${f.color}`, background: '#ffffff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', touchAction: 'manipulation', boxShadow: '0 14px 26px -16px rgba(0,0,0,0.45)' }}>
+            {GUEST_FN[f.id] ? <GuestPic id={f.id} size={136} /> : <span style={{ fontSize: '5.5rem', lineHeight: 1 }}>{f.icon}</span>}
             <span style={{ fontFamily: JUA, fontSize: '1.6rem', color: '#374151' }}>{f.label}</span>
           </button>
         ))}
@@ -429,7 +517,8 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
       mat: { p: [0.1, 0.015 + SIT, 0.74], cam: [0.15, 1.25, 2.05], look: [0.1, 0.4, 0.62], head: -0.12 },
       room: { p: [0.3, 0.006 + SIT, 5.92], cam: [0.5, 1.7, 7.45], look: [0.3, 0.38, 5.82], head: -0.15 },
       living: { p: [6.75, 0.008 + SIT, 5.0], cam: [6.85, 1.8, 6.85], look: [6.8, 0.38, 4.95], head: -0.15 },
-      sink: { p: [1.6, 0.38 + SIT, 0.37], cam: [1.8, 1.5, 1.95], look: [1.62, 0.86, 0.2], head: -0.12 }
+      sink: { p: [1.6, 0.38 + SIT, 0.37], cam: [1.8, 1.5, 1.95], look: [1.62, 0.86, 0.2], head: -0.12 },
+      floor: { cam: [0.75, 2.2, 2.55], look: [0.75, 0, 0.9] }   // 욕실 바닥 청소 (위에서 내려다봄)
     };
     const camG = { p: new THREE.Vector3(), l: new THREE.Vector3() }, camL = new THREE.Vector3(), camTmp = new THREE.Vector3();
     let camFar = 1, camSnap = true, cur = scene, house = null;
@@ -599,6 +688,35 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
     const ripples = [];
     const addRipple = (x, z, amp = 0.006) => { if (ripples.length > 7) ripples.shift(); ripples.push({ x, z, t: 0, amp }); };
 
+    // ── 바닥 물웅덩이 (청소 단계) · 배수구 ──
+    // 웅덩이 = 가장자리가 울퉁불퉁한 납작한 원판. 가운데는 맑고 테두리는 물이 볼록해 하얗게 빛난다
+    const DRAIN = new THREE.Vector3(1.05, 0, 1.25);
+    {
+      const drain = new THREE.Group(); drain.position.copy(DRAIN); scene.add(drain);
+      const dm0 = mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.004, 28), S('#ced4da', { metalness: 0.85, roughness: 0.25 }), 0, 0.002, 0, drain); dm0.castShadow = false; dm0.receiveShadow = true;
+      for (let i = -2; i <= 2; i++) mesh(new THREE.BoxGeometry(0.1 - Math.abs(i) * 0.02, 0.002, 0.009), S('#495057'), 0, 0.0045, i * 0.022, drain).castShadow = false;
+    }
+    const puddleTex = canvasTex(128, 128, (c, w, h) => {
+      const g = c.createRadialGradient(64, 64, 0, 64, 64, 64);
+      g.addColorStop(0, 'rgba(176,218,242,0.42)'); g.addColorStop(0.72, 'rgba(160,208,238,0.55)'); g.addColorStop(0.9, 'rgba(236,248,255,0.95)'); g.addColorStop(1, 'rgba(236,248,255,0)');
+      c.fillStyle = g; c.fillRect(0, 0, w, h);
+    });
+    const puddleMat = new THREE.MeshPhysicalMaterial({ map: puddleTex, transparent: true, roughness: 0.03, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 2.2, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+    const puddles = [];
+    const spawnPuddles = () => {
+      for (let tries = 0; puddles.length < 10 && tries < 500; tries++) {
+        const big = puddles.length < 6, r = big ? 0.09 + Math.random() * 0.07 : 0.028 + Math.random() * 0.025;
+        const x = -0.6 + Math.random() * 2.6, z = 0.5 + Math.random() * 0.95;
+        if (x > -0.47 - r && x < 0.67 + r && z < 1.0 + r) continue;   // 욕실 매트 위는 빼고
+        if (Math.hypot(x - DRAIN.x, z - DRAIN.z) < 0.2 + r || puddles.some(q => Math.hypot(q.x - x, q.z - z) < q.r + r + 0.08)) continue;
+        const geo = new THREE.CircleGeometry(1, 48), gp = geo.attributes.position, ph = [Math.random() * 6, Math.random() * 6, Math.random() * 6];
+        for (let i = 1; i < gp.count; i++) { const x0 = gp.getX(i), y0 = gp.getY(i), a = Math.atan2(y0, x0), k = 1 + 0.2 * Math.sin(2 * a + ph[0]) + 0.12 * Math.sin(3 * a + ph[1]) + 0.06 * Math.sin(5 * a + ph[2]); gp.setXY(i, x0 * k, y0 * k * 0.8); }
+        const m = new THREE.Mesh(geo, puddleMat.clone()); m.rotation.set(-Math.PI / 2, 0, Math.random() * 6.28); m.renderOrder = 1; m.receiveShadow = true;
+        m.position.set(x, 0.003, z); m.scale.set(r, r, 1); scene.add(m);
+        puddles.push({ m, x, z, r, hp: 1, small: !big, gone: false });
+      }
+    };
+
     // ── 몸을 타고 흘러내리는 물줄기 (물 / 비눗물) ──
     // 물줄기 머리는 몸 부분(구)의 표면 방향 dir 을 중력 쪽으로 미끄러지며, 지나간 자리에 젖은 자국(trail)을 남긴다.
     // 부분 아래쪽 끝에 닿으면 떨어져 아래 몸에 다시 붙거나, 물에 퐁 떨어진다.
@@ -728,6 +846,10 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
     const go = (what) => {
       if (moving) return;
       if (what === 'towelGo' && st.stage === 'towelGo') { getOut(); }
+      else if (what === 'cleanGo' && st.stage === 'cleanGo') {
+        setStage('clean', VOICE.bathClean()); setSpot('floor');
+        st.mopYaw = 0; st.mopP = null; tools.mop.position.set(1.75, 0, 1.3); tools.mop.userData.head.rotation.y = 0; tools.mop.visible = true;
+      }
       else if (what === 'milkGo' && st.stage === 'milkGo') {
         setStage('milk', VOICE.bathMilk());
         transition(() => {
@@ -790,7 +912,7 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
       if (!ptr.down || e.pointerId !== ptr.id) return;
       ptr.moved = Math.max(ptr.moved, Math.hypot(e.clientX - ptr.sx, e.clientY - ptr.sy)); pick(e);
       // 장난감 끌기: 손가락 아래 물 높이 지점을 따라 물 위로 살짝 든 채 움직인다
-      if (!ptr.drag && !moving && (tool_.current === 'soap' || tool_.current === 'brush')) act(0, false);   // 느린 기기에서도 문지른 길을 빠짐없이
+      if (!ptr.drag && !moving && (tool_.current === 'soap' || tool_.current === 'brush' || tool_.current === 'mop')) act(0, false);   // 느린 기기에서도 문지른 길을 빠짐없이
       if (ptr.drag && ptr.moved >= 12) { const h = new THREE.Vector3(); if (ray.ray.intersectPlane(holdPlane, h)) { const o = ptr.drag; o.held = true; const nx = Math.max(-0.82, Math.min(0.82, h.x)), nz = Math.max(-0.36, Math.min(0.6, h.z)); o.vx = (nx - o.x) * 8; o.vz = (nz - o.z) * 8; o.x = nx; o.z = nz; } }
     };
     const onUp = (e) => {
@@ -809,6 +931,7 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
         ptr.drag = null;
       }
       Object.values(tools).forEach(t => { t.visible = false; });
+      if (st.stage === 'clean') tools.mop.visible = true;   // 밀대는 바닥에 세워 둔다
       if (ptr.nextTool) { tool_.current = ptr.nextTool; ptr.nextTool = null; }
     };
     cv.addEventListener('pointerdown', onDown); cv.addEventListener('pointermove', onMove); cv.addEventListener('pointerup', onUp); cv.addEventListener('pointercancel', onUp); cv.addEventListener('lostpointercapture', onUp); window.addEventListener('pointerup', onUp);
@@ -828,7 +951,32 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
 
     // 도구 사용 (누르고 있는 동안 매 프레임)
     let sndT = 0;
+    // 밀대: 손가락 아래 바닥으로 따라오고, 판은 미는 방향에 맞춰 돈다. 판에 걸린 웅덩이는 밀리면서 줄어든다
+    const clothDry = new THREE.Color('#f8f9fa'), clothWet = new THREE.Color('#9fc3d6');
+    const mopAct = (dt, first) => {
+      sndT -= dt;
+      const p = new THREE.Vector3(); if (!ray.ray.intersectPlane(floorPlane, p)) return;
+      p.x = Math.max(-0.65, Math.min(2.15, p.x)); p.z = Math.max(0.5, Math.min(1.6, p.z));
+      const mp = tools.mop, prev = first || !st.mopP ? p : st.mopP, mv = p.clone().sub(prev), dist = mv.length();
+      st.mopP = p.clone(); mp.visible = true; mp.position.copy(p);
+      if (dist > 0.003) { let da = Math.atan2(mv.x, mv.z) - st.mopYaw; while (da > Math.PI / 2) da -= Math.PI; while (da < -Math.PI / 2) da += Math.PI; st.mopYaw += da * 0.35; }
+      mp.userData.head.rotation.y = st.mopYaw;
+      const ax = Math.cos(st.mopYaw), az = -Math.sin(st.mopYaw);   // 판의 긴 방향
+      let wiped = false;
+      puddles.forEach(q => {
+        if (q.gone) return;
+        const dx = q.x - p.x, dz = q.z - p.z, along = dx * ax + dz * az, perp = Math.abs(-dx * az + dz * ax);
+        if (Math.abs(along) < 0.19 + q.r * 0.4 && perp < 0.06 + q.r * 0.6) { wiped = true; q.hp -= dist * (q.small ? 14 : 5) + dt * 0.35; q.x += mv.x * 0.55; q.z += mv.z * 0.55; }
+      });
+      if (wiped) {
+        st.mopWet = Math.min(1, (st.mopWet || 0) + dt * 0.5); st.happyT = Math.max(st.happyT, 0.3);
+        if (Math.random() < 0.35 && dist > 0.004) addDrop(p.x + mv.x * 3, 0.02, p.z + mv.z * 3, mv.x * 20, 0.25, mv.z * 20, 0.005);
+      }
+      mp.userData.cloth.material.color.copy(clothDry).lerp(clothWet, (st.mopWet || 0) * 0.7);   // 걸레가 점점 젖는다
+      if (dist > 0.006 && sndT <= 0) { sndT = 0.11; audio.playNoise(0.1, wiped ? 0.14 : 0.07, wiped ? 900 : 1600, 1.0); }
+    };
     const act = (dt, first) => {
+      if (tool_.current === 'mop') { if (st.stage === 'clean') mopAct(dt, first); return; }
       const h = hitFriend(), tl = tools[tool_.current];
       let target = null, onBody = false, normal = null;
       if (h) { target = h.point.clone(); onBody = true; normal = h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld) : new THREE.Vector3(0, 0, 1); }
@@ -940,7 +1088,7 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
         else {
           foams.forEach(f => { if (!f.die) f.die = 0.001; });
           if (!st.shaken) { if (!ptr.down) doShake(); }   // 누르고 있는 동안은 계속 샤워
-          else if (st.shakeT > 1.4) setStage('towelGo', VOICE.bathTowelGo());   // 수건 버튼을 누르면 나온다
+          else if (st.shakeT > 1.4) { spawnPuddles(); setStage('cleanGo', VOICE.bathCleanGo()); }   // 바닥에 튄 물을 닦고 → 수건
         }
       } else if (st.stage === 'towel' && st.capeT != null && st.capeT < 1) {
         st.capeT = Math.min(1, st.capeT + dt / 1.0); const e = 1 - Math.pow(1 - st.capeT, 3);
@@ -954,7 +1102,26 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
         if (st.capeT >= 1) { st.wet = 0; st.happyT = 4; setStage('caped'); say(VOICE.bathCape()); cheer(8); audio.playYum(); later(() => goRoom(), 4800); }
       }
       else if (st.stage === 'dryer') { if (st.fluff >= 1 && !ptr.down && !moving) { setStage('milkGo', VOICE.bathDried()); st.happyT = 2; cheer(); audio.playYum(); Object.values(tools).forEach(t => { t.visible = false; }); } }
+      else if (st.stage === 'clean') {
+        // 남은 게 작은 물방울이나 거의 닦인 웅덩이뿐이면 저절로 마른다
+        const lp = puddles.filter(q => !q.gone);
+        if (lp.length && !ptr.down && lp.every(q => q.small || q.hp < 0.25)) lp.forEach(q => { q.fade = true; });
+        if (!lp.length && !st.cleanDone) {
+          st.cleanDone = true; tools.mop.visible = false; st.happyT = 2; audio.playYum();
+          for (let i = 0; i < 8; i++) later(() => pop('✨', -0.4 + Math.random() * 2.3, 0.02, 0.6 + Math.random() * 0.8), i * 110);
+          later(() => { setStage('towelGo', VOICE.bathCleanDone()); setSpot('tub'); }, 900);
+        }
+      }
       else if (st.stage === 'brush') { if (st.brush >= 1 && !ptr.down) { setStage('rinseGo', VOICE.bathBrushDone()); st.happyT = 2; cheer(); tools.brush.visible = false; } }
+
+      // 물웅덩이: 닦인 만큼 작아지고 옅어짐, 배수구에 밀어 넣으면 꼬르륵
+      puddles.forEach(q => {
+        if (q.gone) return;
+        if (Math.hypot(q.x - DRAIN.x, q.z - DRAIN.z) < 0.09 + q.r * 0.3) { q.hp -= dt * 1.6; if (!q.gurgle) { q.gurgle = true; audio.playFreq(190, 'sine', 0.2, 0.35); setTimeout(() => audio.playFreq(120, 'sine', 0.3, 0.3), 140); } }
+        if (q.fade) q.hp -= dt * 0.7;
+        if (q.hp <= 0) { q.gone = true; scene.remove(q.m); q.m.geometry.dispose(); q.m.material.dispose(); if (!q.small) pop('✨', q.x, 0.02, q.z); return; }
+        const s = q.r * (0.3 + 0.7 * q.hp); q.m.scale.set(s, s, 1); q.m.position.set(q.x, 0.003, q.z); q.m.material.opacity = Math.min(1, q.hp * 1.6);
+      });
 
       // 욕조에서 나오기: 포물선으로 폴짝
       if (st.hop) {
@@ -1100,7 +1267,7 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
       renderer.render(cur, camera);
     };
     raf = requestAnimationFrame(loop);
-    if (import.meta.env.DEV) window.__bath = { st, ptr, dirts, foams, toys, fr, camera, scene, tool_, get milkCup() { return milkCup; }, rinseCup };
+    if (import.meta.env.DEV) window.__bath = { st, ptr, dirts, foams, toys, fr, camera, scene, tool_, puddles, tools, get milkCup() { return milkCup; }, rinseCup };
 
     return () => {
       alive = false; cancelAnimationFrame(raf); timers.forEach(clearTimeout); ro.disconnect();
@@ -1114,7 +1281,7 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
 
   useEffect(() => { if (apiRef.current.setTool) apiRef.current.setTool(tool); }, [tool]);
   // 할 차례가 바뀌면 그 도구를 골라 준다 (아기가 도구를 몰라도 이어서 놀 수 있게)
-  useEffect(() => { if (['soap', 'shower', 'towel', 'dryer', 'brush'].includes(ui.stage)) setTool(ui.stage); }, [ui.stage]);
+  useEffect(() => { if (['soap', 'shower', 'towel', 'dryer', 'brush'].includes(ui.stage)) setTool(ui.stage); else if (ui.stage === 'clean') setTool('mop'); }, [ui.stage]);
 
   const big = (bg, color = '#ffffff') => ({ border: 'none', borderRadius: '24px', minHeight: '52px', padding: '0 20px', background: bg, color, fontFamily: JUA, fontSize: '1.15rem', cursor: 'pointer', touchAction: 'manipulation', whiteSpace: 'nowrap' });
   return (
