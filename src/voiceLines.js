@@ -321,6 +321,26 @@ export const VOICE = {
   hospCandyDone: () => '와, 사탕이다! 고맙습니다!',
   hospThanks: (p) => `${attachJosa(p.name, '이/가')} 다 나았어요! 의사 선생님, 고맙습니다!`,
   hospWait: () => '반짝반짝 빛나는 도구를 골라 보세요!',
+  // 🛁 뽀글뽀글 목욕 놀이
+  bathPick: () => '누구랑 목욕할까요? 친구를 골라 주세요!',
+  bathHello: (name) => `${name}랑 목욕해요! 비누로 뽀득뽀득 문질러 줘요.`,
+  bathRinse: () => '거품이 가득! 이제 샤워기로 쏴아 헹궈요.',
+  bathShake: () => '부르르르! 물방울이 튀어요!',
+  bathYunaSplash: () => '첨벙첨벙! 유나가 신났어요!',
+  bathTowel: () => '수건으로 물기를 닦닦 닦아 줘요.',
+  bathDry: () => '드라이어로 위잉 말려 줘요.',
+  bathTowelGo: () => '깨끗하게 다 헹궜어요! 수건 버튼을 누르면 욕조에서 나와요.',
+  bathOut: () => '목욕 끝! 욕조에서 나와요. 몸을 콕 누르면 수건을 둘러 줘요.',
+  bathCape: () => '배트맨~ 멋짐~~ 엄마한테 자랑해~',
+  bathToRoom: () => '방으로 가서 드라이어로 위잉 말려 줘요.',
+  bathDried: () => '보송보송해졌어요! 이제 우유 마시러 가요.',
+  bathMilk: () => '우유를 눌러서 쪽쪽 마셔요.',
+  bathMilkDone: () => '우유를 다 마셨어요! 이제 이를 닦아요.',
+  bathBrush: () => '칫솔로 치카치카 이를 닦아 줘요.',
+  bathBrushDone: () => '이가 반짝반짝! 이제 입을 헹궈요.',
+  bathGargle: () => '컵을 눌러서 가글가글 입을 헹궈요.',
+  bathReady: () => '이제 잘 준비 끝!',
+  bathToy: (id) => ({ babyShark: '아기상어 뚜 루루 뚜루!', momShark: '엄마상어 뚜 루루 뚜루!', dadShark: '아빠상어 뚜 루루 뚜루!', turtle: '거북이가 엉금엉금 헤엄쳐요!', chickY: '노란 병아리 삐약삐약!', chickW: '하얀 병아리 삐약삐약!' })[id] || '',
   // 🏡 유나의 모험 (집 → 복도 → 엘리베이터)
   advStart: () => '유나네 집이에요! 가고 싶은 곳을 콕 눌러 보세요. 밖에 나가려면 현관으로 가요!',
   advShoesNeed: () => '밖에 나가려면 신발을 신어야 해요! 어떤 신발을 신을까요?',
@@ -479,6 +499,9 @@ export function collectVoiceLines({ animals, fruits, vehicles, feedAnimals, food
   lines.push(VOICE.hospTempGo(), VOICE.hospSheetDone(), VOICE.hospThroatGo(), VOICE.hospAh(), VOICE.hospThroatDone(true), VOICE.hospThroatDone(false));
   lines.push(VOICE.hospSteth(), VOICE.hospStethDone(), VOICE.hospNose(), VOICE.hospNoseOn(), VOICE.hospNoseOther(), VOICE.hospNoseDone(), VOICE.hospCream(), VOICE.hospCreamDone(),
     VOICE.hospBandDone(), VOICE.hospCandy(), VOICE.hospCandyDone(), VOICE.hospWait());
+  lines.push(VOICE.bathPick(), VOICE.bathRinse(), VOICE.bathShake(), VOICE.bathYunaSplash(), VOICE.bathTowel(), VOICE.bathDry(), VOICE.bathTowelGo(), VOICE.bathOut(), VOICE.bathCape(), VOICE.bathToRoom(), VOICE.bathDried(), VOICE.bathMilk(), VOICE.bathMilkDone(), VOICE.bathBrush(), VOICE.bathBrushDone(), VOICE.bathGargle(), VOICE.bathReady(),
+    ...['멍멍이', '야옹이', '유나'].map(n => VOICE.bathHello(n)),
+    ...['babyShark', 'momShark', 'dadShark', 'turtle', 'chickY', 'chickW'].map(id => VOICE.bathToy(id)));
   lines.push(VOICE.advStart(), VOICE.advShoesNeed(), VOICE.advShoesPicked(), VOICE.advShoesOn(), VOICE.advCorridor(), VOICE.advCallHint(), VOICE.advCalled(), VOICE.advArrive(), VOICE.advInside(), VOICE.advLobby(), VOICE.advOutside(), ...['엄마', '아빠'].flatMap(p => [VOICE.advHold(p)]), VOICE.advBall(), VOICE.advTeddy(), VOICE.advBlocks());
   for (let n = 1; n <= ADV_FLOORS; n++) lines.push(VOICE.advGo(n), VOICE.advHere(n), VOICE.advWrong(n));
   lines.push(VOICE.radishWelcome(), VOICE.radishGrab(), VOICE.radishGiantGrab(), VOICE.radishChorus(), VOICE.radishWiggle(), VOICE.radishAlmost(),

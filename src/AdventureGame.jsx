@@ -302,7 +302,9 @@ function makeYuna() {
 }
 
 // ─────────────────────────────── 세상 만들기 ───────────────────────────────
-function makeWorld() {
+// 목욕 놀이(BathGame)도 이 집(현관 오른쪽 방 · 거실)을 그대로 쓴다
+// eslint-disable-next-line react-refresh/only-export-components
+export function makeWorld() {
   const scene = new THREE.Scene(); scene.background = new THREE.Color('#cdeafd');
   const floorG = new THREE.Group(), lobbyG = new THREE.Group(), coreG = new THREE.Group();   // 우리 층 / 1층 / 엘리베이터(늘 보임)
   scene.add(floorG, lobbyG, coreG); lobbyG.visible = false;
