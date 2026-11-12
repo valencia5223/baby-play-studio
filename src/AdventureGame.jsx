@@ -191,7 +191,9 @@ function makeShoe(kind, color) {
 
 // ─────────────────────────────── 엄마 · 아빠 ───────────────────────────────
 // 어른 (키 약 1.75m). 다리·팔은 엉덩이·어깨에서 흔들린다
-function makeParent(kind) {
+// 목욕 놀이(BathGame)의 안방 잠자리 장면도 이 엄마·아빠를 쓴다
+// eslint-disable-next-line react-refresh/only-export-components
+export function makeParent(kind) {
   const root = new THREE.Group();
   const L = (c) => new THREE.MeshLambertMaterial({ color: c });
   const mom = kind === 'mom';
