@@ -494,7 +494,8 @@ const HINTS = {
   bedIn: '🛏️ 침대에 영차 올라가요',
   blanket: '🛏️ 이불을 콕 눌러 덮어 줘요',
   light: '💡 침대 위 전등을 눌러 불을 꺼요',
-  end: '🌙 쉿, 코~ 자요'
+  end: '🌙 이제 잘 준비 끝!',
+  sleep: '🌙 쉿, 코~ 자요'   // 유나: 안방에서 잠들면
 };
 
 export default function BathGame(props) {
@@ -1381,7 +1382,7 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
           } else if (A.t < 3.9) { st.rotY = 0; }
           else {
             st.cupA = null; st.gargles++; st.happyT = 1;
-            if (st.gargles >= 2) { setStage('bedGo', VOICE.bathBedGo()); cheer(); audio.playYum(); } else say(VOICE.bathGargle());
+            if (st.gargles >= 2) { if (friendId === 'yuna') { setStage('bedGo', VOICE.bathBedGo()); cheer(); audio.playYum(); } else finish(); } else say(VOICE.bathGargle());   // 안방 잠자리는 유나만
           }
         }
       }
@@ -1512,7 +1513,7 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         <button onClick={onChange} style={big('#f6efe7', '#5c5248')}>🔄 친구 바꾸기</button>
         <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
-          <span style={{ display: 'inline-block', background: '#e7f5ff', borderRadius: '18px', padding: '6px 18px', fontFamily: JUA, fontSize: '1.3rem', color: '#1e3a5f' }}>{HINTS[ui.stage]}</span>
+          <span style={{ display: 'inline-block', background: '#e7f5ff', borderRadius: '18px', padding: '6px 18px', fontFamily: JUA, fontSize: '1.3rem', color: '#1e3a5f' }}>{HINTS[ui.stage === 'end' && friendId === 'yuna' ? 'sleep' : ui.stage]}</span>
         </div>
         <div style={{ width: '130px' }} />
       </div>
@@ -1542,7 +1543,7 @@ function BathScene({ audio, speak, animals, friendId, onAgain, onChange }) {
         )}
         {ui.done && (
           <div style={{ position: 'absolute', left: 0, right: 0, bottom: '18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', pointerEvents: 'none' }}>
-            <div style={{ fontFamily: JUA, fontSize: '2rem', color: '#db2777', textShadow: '0 3px 0 #fff', background: 'rgba(255,255,255,0.85)', borderRadius: '22px', padding: '6px 22px' }}>🌙 잘 자요, 좋은 꿈 꿔요!</div>
+            <div style={{ fontFamily: JUA, fontSize: '2rem', color: '#db2777', textShadow: '0 3px 0 #fff', background: 'rgba(255,255,255,0.85)', borderRadius: '22px', padding: '6px 22px' }}>{friendId === 'yuna' ? '🌙 잘 자요, 좋은 꿈 꿔요!' : '🌙 이제 잘 준비 끝!'}</div>
             <div style={{ display: 'flex', gap: '12px', pointerEvents: 'auto' }}>
               <button onClick={onAgain} style={big('#4dabf7')}>🛁 한 번 더</button>
               <button onClick={onChange} style={big('#f783ac')}>🐾 다른 친구</button>
