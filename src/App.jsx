@@ -4434,20 +4434,20 @@ export default function App() {
           }}>
             🚗 우리 동네
           </button>
-          {/* 🌱 무 뽑기 체험 (RadishGame.jsx: 유나가 밭에서 무를 뽑고, 왕무는 가족·동물 친구와 줄줄이) */}
+          {/* 🌱 무 뽑기는 숨겼다 (RadishGame.jsx·radishData.js·음성은 그대로, 위 버튼처럼 setActiveTab('radish') 버튼을 되살리면 다시 보인다) */}
+          {/* 🎰 로또 뽑기 (LottoGacha.jsx, 어른용) */}
           <button onClick={() => {
             audioEngine.interruptVoice();
-            setActiveTab('radish');
+            setActiveTab('lotto');
             audioEngine.playFreq(520, 'sine', 0.15);
-          }} title="무 뽑기 체험" style={{
+          }} title="로또 번호 캡슐 뽑기" style={{
             display: 'flex', alignItems: 'center', gap: '6px', padding: '0 18px', height: '48px', borderRadius: '24px', whiteSpace: 'nowrap',
             fontFamily: "'Jua', 'Gowun Dodum', sans-serif", fontWeight: 400, fontSize: '1.05rem', cursor: 'pointer',
-            border: 'none', background: activeTab === 'radish' ? '#c0eb75' : '#f1f9e4', color: activeTab === 'radish' ? '#2b5b0f' : '#4d7c0f',
-            boxShadow: activeTab === 'radish' ? '0 8px 18px -8px rgba(77,124,15,0.55)' : 'none'
+            border: 'none', background: activeTab === 'lotto' ? '#c7d2fe' : '#eef2ff', color: activeTab === 'lotto' ? '#1e1b4b' : '#4338ca',
+            boxShadow: activeTab === 'lotto' ? '0 8px 18px -8px rgba(67,56,202,0.55)' : 'none'
           }}>
-            🌱 무 뽑기
+            🎰 로또 뽑기
           </button>
-          {/* 🎰 로또 뽑기는 숨겼다 (LottoGacha.jsx·public/lotto 는 그대로, 위 버튼처럼 setActiveTab('lotto') 버튼을 되살리면 다시 보인다) */}
           {/* 부모용 버튼 (아기가 잘 누르지 않게 작고 차분하게 한 묶음) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: '#f6efe7', borderRadius: '20px', padding: '3px', marginLeft: '4px' }}>
             <button onClick={() => setIsIpadFrame(!isIpadFrame)} title={isIpadFrame ? 'iPad 12.9" 규격뷰' : '전체화면'} style={{
@@ -4505,7 +4505,7 @@ export default function App() {
             // { id: 'birthday', icon: '🎂', label: '생일 파티', sub: '촛불 후~ 불기', pastel: '#fecdd3', soft: '#ffe4e6', ink: '#9f1239' },
             // 📞 전화 놀이는 잠시 메뉴에서만 뺐다 (PhoneCall.jsx·Supabase baby-call/baby-voice 는 그대로, 아래 줄을 되살리면 다시 보인다)
             // { id: 'phone', icon: '📞', label: '전화 놀이', sub: '친구와 통화해요', pastel: '#c4f0de', soft: '#e3f8ef', ink: '#1f6f55' },
-            // 🎵 동요 재생·🚗 우리 동네는 맨 위 헤더 버튼으로 옮겼다 (🎰 로또 뽑기는 숨김)
+            // 🎵 동요 재생·🚗 우리 동네·🎰 로또 뽑기는 맨 위 헤더 버튼으로 옮겼다
           ].map(tab => {
             const isActive = activeTab === tab.id;
             return (
