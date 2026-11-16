@@ -321,15 +321,29 @@ export function drawYuna(ctx, pose, S, t, night) {
     ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
   };
   const shY = -S * 0.56, shX = S * 0.13, armW = S * 0.065;
+  const sit = pose === 'potty' || pose === 'wipe';   // 아기 변기에 앉은 자세
   // 다리
-  if (pose !== 'bath') {
-    limb(-S * 0.07, -S * 0.25, -S * 0.07, -S * 0.12, -S * 0.08, -S * 0.02, S * 0.075, night ? '#ddd6fe' : skin);
-    limb(S * 0.07, -S * 0.25, S * 0.07, -S * 0.12, S * 0.08, -S * 0.02, S * 0.075, night ? '#ddd6fe' : skin);
+  if (sit) {
+    // 변기에 앉아 무릎을 살짝 벌리고 발은 바닥에, 내린 팬티는 정강이에
+    drawPotty(ctx, S);
+    limb(-S * 0.07, -S * 0.19, -S * 0.15, -S * 0.17, -S * 0.15, -S * 0.02, S * 0.075, skin);
+    limb(S * 0.07, -S * 0.19, S * 0.15, -S * 0.17, S * 0.15, -S * 0.02, S * 0.075, skin);
+    ctx.fillStyle = '#ef4444';
+    [-1, 1].forEach(sd => { ctx.beginPath(); ctx.ellipse(sd * S * 0.16, -S * 0.015, S * 0.065, S * 0.035, 0, 0, TAU); ctx.fill(); });
+    ctx.fillStyle = '#f9a8d4'; ctx.beginPath(); ctx.roundRect(-S * 0.2, -S * 0.06, S * 0.4, S * 0.04, S * 0.02); ctx.fill();
+    ctx.fillStyle = '#f472b6'; ctx.fillRect(-S * 0.2, -S * 0.06, S * 0.4, S * 0.012);
+    ctx.translate(0, S * 0.06);   // 윗몸은 앉은 만큼 낮게
+  } else if (pose !== 'bath') {
+    const step = pose === 'walk' ? Math.sin(t * 7) : 0, lift = (k) => Math.max(0, step * k) * S * 0.05;
+    limb(-S * 0.07, -S * 0.25, -S * 0.07, -S * 0.12 - lift(1), -S * 0.08, -S * 0.02 - lift(1), S * 0.075, night ? '#ddd6fe' : skin);
+    limb(S * 0.07, -S * 0.25, S * 0.07, -S * 0.12 - lift(-1), S * 0.08, -S * 0.02 - lift(-1), S * 0.075, night ? '#ddd6fe' : skin);
     ctx.fillStyle = night ? '#f9a8d4' : '#ef4444';
-    [-1, 1].forEach(sd => { ctx.beginPath(); ctx.ellipse(sd * S * 0.09, -S * 0.015, S * 0.065, S * 0.035, 0, 0, TAU); ctx.fill(); });
+    [-1, 1].forEach(sd => { ctx.beginPath(); ctx.ellipse(sd * S * 0.09, -S * 0.015 - lift(-sd), S * 0.065, S * 0.035, 0, 0, TAU); ctx.fill(); });
+    if (pose === 'walk') ctx.translate(0, -Math.abs(step) * S * 0.015);   // 총총 걸을 때 통통
   }
+  if (pose === 'tummy') ctx.translate(Math.sin(t * 9) * S * 0.008, 0);   // 배가 살살~ 꼼지락
   // 팔 (자세별) — [어깨→팔꿈치→손] 왼팔, 오른팔
-  const wave = Math.sin(t * 3);
+  const wave = Math.sin(t * 3), swing = Math.sin(t * 7) * S * 0.05;
   const arms = {
     stand: [[-shX, shY, -S * 0.22, -S * 0.42, -S * 0.24, -S * 0.3], [shX, shY, S * 0.22, -S * 0.42, S * 0.24, -S * 0.3]],
     stretch: [[-shX, shY, -S * 0.24, -S * 0.75, -S * 0.2 - wave * S * 0.02, -S * 0.95], [shX, shY, S * 0.24, -S * 0.75, S * 0.2 + wave * S * 0.02, -S * 0.95]],
@@ -338,7 +352,13 @@ export function drawYuna(ctx, pose, S, t, night) {
     feed: [[-shX, shY, -S * 0.22, -S * 0.42, -S * 0.24, -S * 0.3], [shX, shY, S * 0.3, -S * 0.66, S * 0.42, -S * 0.8]],
     water: [[-shX, shY, -S * 0.2, -S * 0.42, S * 0.05, -S * 0.42], [shX, shY, S * 0.25, -S * 0.46, S * 0.32, -S * 0.42]],
     kiss: [[-shX, shY, -S * 0.22, -S * 0.6, -S * 0.12, -S * 0.72], [shX, shY, S * 0.22, -S * 0.6, S * 0.12, -S * 0.72]],
-    bath: [[-shX, shY, -S * 0.3, -S * 0.62, -S * 0.36, -S * 0.78 - wave * S * 0.04], [shX, shY, S * 0.3, -S * 0.62, S * 0.36, -S * 0.78 + wave * S * 0.04]]
+    bath: [[-shX, shY, -S * 0.3, -S * 0.62, -S * 0.36, -S * 0.78 - wave * S * 0.04], [shX, shY, S * 0.3, -S * 0.62, S * 0.36, -S * 0.78 + wave * S * 0.04]],
+    tummy: [[-shX, shY, -S * 0.21, -S * 0.42, -S * 0.06, -S * 0.36], [shX, shY, S * 0.21, -S * 0.42, S * 0.06, -S * 0.36]],
+    walk: [[-shX, shY, -S * 0.21 + swing, -S * 0.42, -S * 0.22 + swing * 1.6, -S * 0.3], [shX, shY, S * 0.21 - swing, -S * 0.42, S * 0.22 - swing * 1.6, -S * 0.3]],
+    potty: [[-shX, shY, -S * 0.21, -S * 0.4, -S * 0.15, -S * 0.25], [shX, shY, S * 0.21, -S * 0.4, S * 0.15, -S * 0.25]],
+    wipe: [[-shX, shY, -S * 0.21, -S * 0.4, -S * 0.15, -S * 0.25], [shX, shY, S * 0.27, -S * 0.4, S * 0.25, -S * 0.27 + wave * S * 0.02]],
+    wave: [[-shX, shY, -S * 0.22, -S * 0.42, -S * 0.24, -S * 0.3], [shX, shY, S * 0.27, -S * 0.7, S * 0.3 + Math.sin(t * 8) * S * 0.06, -S * 0.9]],
+    wash: [[-shX, shY, -S * 0.2, -S * 0.42, S * 0.01 + Math.sin(t * 8) * S * 0.03, -S * 0.44], [shX, shY, S * 0.2, -S * 0.42, -S * 0.01 - Math.sin(t * 8) * S * 0.03, -S * 0.42]]
   }[pose] || [];
   // 몸 (원피스·잠옷)
   ctx.fillStyle = pose === 'bath' ? skin : cloth;
@@ -372,6 +392,7 @@ export function drawYuna(ctx, pose, S, t, night) {
   ctx.fillStyle = cheek; [-0.58, 0.58].forEach(dx => { ctx.beginPath(); ctx.arc(dx * r, hy + r * 0.32, r * 0.15, 0, TAU); ctx.fill(); });
   if (pose === 'kiss') { ctx.fillStyle = '#e11d48'; ctx.beginPath(); ctx.ellipse(0, hy + r * 0.45, r * 0.09, r * 0.12, 0, 0, TAU); ctx.fill(); }
   else if (pose === 'eat') { ctx.fillStyle = '#9f1239'; ctx.beginPath(); ctx.ellipse(0, hy + r * 0.45, r * 0.12, r * 0.08 + Math.abs(wave) * r * 0.05, 0, 0, TAU); ctx.fill(); }
+  else if (pose === 'tummy') { ctx.fillStyle = '#9f1239'; ctx.beginPath(); ctx.ellipse(0, hy + r * 0.45, r * 0.09, r * 0.11, 0, 0, TAU); ctx.fill(); }   // 어? 하는 입
   else { ctx.strokeStyle = '#be123c'; ctx.beginPath(); ctx.arc(0, hy + r * 0.3, r * 0.22, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke(); }
   // 손에 든 물건
   const R = arms[1];
@@ -386,6 +407,12 @@ export function drawYuna(ctx, pose, S, t, night) {
     ctx.restore();
   } else if (pose === 'feed' && R) {
     for (let i = 0; i < 6; i++) { const q = ((t * 0.8 + i / 6) % 1); ctx.fillStyle = ['#ea580c', '#65a30d', '#ca8a04'][i % 3]; ctx.beginPath(); ctx.arc(R[4] + S * 0.06 + i * S * 0.012, R[5] + q * S * 0.3, S * 0.012, 0, TAU); ctx.fill(); }
+  } else if (pose === 'wipe' && R) {
+    // 휴지 한 칸
+    ctx.save(); ctx.translate(R[4], R[5]); ctx.rotate(0.3);
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(-S * 0.045, -S * 0.08, S * 0.09, S * 0.09, S * 0.012); ctx.fill(); ctx.stroke();
+    ctx.restore();
   } else if (pose === 'water' && R) {
     // 물뿌리개
     const cx = R[4] + S * 0.05, cy = R[5] + S * 0.02;
@@ -395,8 +422,22 @@ export function drawYuna(ctx, pose, S, t, night) {
   }
 }
 
+// 아기 변기 (원점 = 바닥 가운데, S = 유나 키 기준): 분홍 몸통 + 흰 앉는 테 + 오리 얼굴
+function drawPotty(ctx, S) {
+  ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.beginPath(); ctx.ellipse(0, 0, S * 0.24, S * 0.03, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#f9a8d4';
+  ctx.beginPath(); ctx.moveTo(-S * 0.25, -S * 0.2); ctx.lineTo(S * 0.25, -S * 0.2); ctx.quadraticCurveTo(S * 0.22, -S * 0.02, S * 0.17, 0); ctx.lineTo(-S * 0.17, 0); ctx.quadraticCurveTo(-S * 0.22, -S * 0.02, -S * 0.25, -S * 0.2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.roundRect(-S * 0.19, -S * 0.17, S * 0.05, S * 0.13, S * 0.02); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(0, -S * 0.2, S * 0.28, S * 0.055, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#fbcfe8'; ctx.beginPath(); ctx.ellipse(0, -S * 0.2, S * 0.18, S * 0.028, 0, 0, TAU); ctx.fill();
+  // 앞의 노란 오리 얼굴
+  ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.arc(0, -S * 0.12, S * 0.045, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.ellipse(0, -S * 0.106, S * 0.022, S * 0.011, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#1f2937'; [-1, 1].forEach(k => { ctx.beginPath(); ctx.arc(k * S * 0.018, -S * 0.13, S * 0.007, 0, TAU); ctx.fill(); });
+}
+
 // ─────────────────────────────── 소품 ───────────────────────────────
-const BACK_PROPS = new Set(['moon', 'sun', 'cave', 'bed', 'tank', 'sink', 'garden', 'eggs', 'teddy']);
+const BACK_PROPS = new Set(['moon', 'sun', 'cave', 'bed', 'tank', 'sink', 'garden', 'eggs', 'teddy', 'toilet', 'tissue', 'stickers', 'potty']);
 function drawProp(ctx, p, W, H, t, actorsAt) {
   const m = Math.min(W, H), x = (p.x ?? 0.5) * W, y = (p.y ?? 0.5) * H, s = (p.s ?? 0.2) * m;
   const emoji = (ch, ex, ey, size, alpha = 1) => {
@@ -511,6 +552,73 @@ function drawProp(ctx, p, W, H, t, actorsAt) {
       ['🌱', '🥕', '🌱', '🥬'].forEach((ch, i) => emoji(ch, x - s * 0.45 + i * s * 0.3, y - s * 0.26 + Math.sin(t * 2 + i) * 2, s * 0.22));
       break;
     }
+    case 'undies': {
+      // 딸기 그림 분홍 팬티 (둥실둥실)
+      const yy = y + Math.sin(t * 1.5) * s * 0.06;
+      ctx.fillStyle = '#f9a8d4';
+      ctx.beginPath(); ctx.moveTo(x - s * 0.5, yy - s * 0.3); ctx.lineTo(x + s * 0.5, yy - s * 0.3); ctx.lineTo(x + s * 0.46, yy + s * 0.06);
+      ctx.quadraticCurveTo(x + s * 0.18, yy + s * 0.08, x + s * 0.12, yy + s * 0.36); ctx.lineTo(x - s * 0.12, yy + s * 0.36);
+      ctx.quadraticCurveTo(x - s * 0.18, yy + s * 0.08, x - s * 0.46, yy + s * 0.06); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#f472b6'; ctx.beginPath(); ctx.roundRect(x - s * 0.52, yy - s * 0.34, s * 1.04, s * 0.1, s * 0.04); ctx.fill();
+      ctx.fillStyle = '#ec4899'; [-1, 1].forEach(k => { ctx.beginPath(); ctx.ellipse(x + k * s * 0.06, yy - s * 0.29, s * 0.06, s * 0.035, k * 0.5, 0, TAU); ctx.fill(); });   // 리본
+      emoji('🍓', x - s * 0.16, yy - s * 0.06, s * 0.2); emoji('🍓', x + s * 0.18, yy - s * 0.04, s * 0.16);
+      break;
+    }
+    case 'potty': ctx.save(); ctx.translate(x, y); drawPotty(ctx, s * 1.1); ctx.restore(); break;
+    case 'toilet': {
+      // 큰 변기: 물통 + 손잡이 + 변기통. flush 면 안에서 물이 빙글빙글 돌며 내려간다
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.roundRect(x - s * 0.28, y - s * 0.95, s * 0.56, s * 0.46, s * 0.05); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#94a3b8'; ctx.beginPath(); ctx.roundRect(x - s * 0.24, y - s * 0.88, s * 0.12, s * 0.035, s * 0.015); ctx.fill();   // 물 내리는 손잡이
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(x - s * 0.18, y); ctx.lineTo(x + s * 0.18, y); ctx.lineTo(x + s * 0.13, y - s * 0.3); ctx.lineTo(x - s * 0.13, y - s * 0.3); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(x, y - s * 0.4, s * 0.34, s * 0.14, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#bae6fd'; ctx.beginPath(); ctx.ellipse(x, y - s * 0.41, s * 0.25, s * 0.09, 0, 0, TAU); ctx.fill();
+      if (p.flush) {
+        ctx.save(); ctx.beginPath(); ctx.ellipse(x, y - s * 0.41, s * 0.25, s * 0.09, 0, 0, TAU); ctx.clip();
+        ctx.strokeStyle = 'rgba(14,116,144,0.7)'; ctx.lineWidth = 3;
+        for (let i = 0; i < 4; i++) { const a = t * 5 + i * TAU / 4; ctx.beginPath(); ctx.ellipse(x, y - s * 0.41, s * (0.07 + i * 0.045), s * (0.025 + i * 0.016), 0, a, a + 2.2); ctx.stroke(); }
+        ctx.restore();
+        for (let i = 0; i < 5; i++) { const q = (t * 0.7 + i / 5) % 1; emoji('💧', x + Math.cos(i * 2.4) * s * 0.18, y - s * 0.45 - q * s * 0.22, s * 0.08, 1 - q); }
+      }
+      break;
+    }
+    case 'tissue': {
+      // 벽 휴지걸이 + 살랑이는 휴지 한 줄
+      ctx.fillStyle = '#94a3b8'; ctx.beginPath(); ctx.roundRect(x - s * 0.4, y - s * 0.32, s * 0.8, s * 0.08, s * 0.04); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, s * 0.3, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#d1d5db'; ctx.beginPath(); ctx.arc(x, y, s * 0.08, 0, TAU); ctx.fill();
+      const sw = Math.sin(t * 1.6) * s * 0.06;
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(x + s * 0.02, y + s * 0.2); ctx.lineTo(x + s * 0.3, y + s * 0.15);
+      ctx.quadraticCurveTo(x + s * 0.32 + sw, y + s * 0.5, x + s * 0.3 + sw, y + s * 0.8); ctx.lineTo(x + s * 0.02 + sw, y + s * 0.8); ctx.closePath(); ctx.fill(); ctx.stroke();
+      break;
+    }
+    case 'stickers': {
+      // 칭찬 스티커판: 마지막 칸 별이 방금 붙은 듯 반짝
+      const w = s * 1.1, h = s * 0.95;
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, s * 0.08); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#b45309'; ctx.font = `${Math.round(s * 0.13)}px ${JUA}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('칭찬 스티커', x, y - h * 0.36);
+      for (let i = 0; i < 9; i++) {
+        const cx = x + ((i % 3) - 1) * w * 0.28, cy = y - h * 0.08 + Math.floor(i / 3) * h * 0.24;
+        ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.arc(cx, cy, s * 0.09, 0, TAU); ctx.fill();
+        if (i < 6) emoji('⭐', cx, cy, s * 0.15);
+        else if (i === 6) emoji('🌟', cx, cy, s * 0.15 * (1.15 + Math.sin(t * 5) * 0.2));
+      }
+      break;
+    }
+    case 'say': {
+      // 말풍선 (text)
+      const fs = Math.round(m * 0.06);
+      ctx.font = `${fs}px ${JUA}`; const tw = ctx.measureText(p.text || '').width, bw = tw + fs * 1.4, bh = fs * 1.9, by = y + Math.sin(t * 2) * m * 0.008;
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.roundRect(x - bw / 2, by - bh / 2, bw, bh, bh / 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x - bw * 0.22, by + bh / 2 - 3); ctx.lineTo(x - bw * 0.36, by + bh * 0.95); ctx.lineTo(x - bw * 0.06, by + bh / 2 - 3); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x - bw * 0.22, by + bh / 2); ctx.lineTo(x - bw * 0.36, by + bh * 0.95); ctx.lineTo(x - bw * 0.06, by + bh / 2); ctx.stroke();
+      ctx.fillStyle = '#be185d'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.text || '', x, by + fs * 0.05);
+      break;
+    }
     default: break;
   }
 }
@@ -590,9 +698,11 @@ function Cover({ story }) {
 // ─────────────────────────────── 화면 ───────────────────────────────
 // 이야기가 끝난 뒤 '잘 자요' 장면
 const SLEEP_SCENE = { bg: { kind: 'room', time: 'night' }, actors: [{ t: 'yuna', pose: 'sleep', x: 0.55, y: 0.86, s: 0.7, night: true }], props: [{ t: 'zzz', x: 0.5, y: 0.45 }, { t: 'teddy', x: 0.28, y: 0.72, s: 0.12 }] };
+// 낮 그림책(day)을 다 읽은 뒤 '참 잘했어요' 장면
+const CHEER_SCENE = { bg: { kind: 'room', time: 'day' }, actors: [{ t: 'yuna', pose: 'stretch', x: 0.4, y: 0.92, s: 0.62 }], props: [{ t: 'stickers', x: 0.78, y: 0.5, s: 0.34 }, { t: 'sparkle', x: 0.4, y: 0.6 }] };
 export default function StoryBook({ audio, playLine, stopLine, lullabyUrl }) {
   const [settings, setSettings] = useState(loadSettings);
-  const [view, setView] = useState('shelf');          // 'shelf' 책장 | 'read' 읽기 | 'end' 잘 자요 | 'limit' 오늘은 끝
+  const [view, setView] = useState('shelf');          // 'shelf' 책장 | 'read' 읽기 | 'end' 잘 자요 | 'limit' 오늘은 끝 | 'cheer' 낮 그림책 칭찬
   const [storyIdx, setStoryIdx] = useState(0);
   const [page, setPage] = useState(0);
   const [auto, setAuto] = useState(true);
@@ -644,6 +754,11 @@ export default function StoryBook({ audio, playLine, stopLine, lullabyUrl }) {
 
   const goEnd = () => {
     clearTimers(); stopLine(); setSpeaking(false);
+    if (story.day) {   // 낮 그림책: 자장가 없이 칭찬
+      setView('cheer'); audio.playFanfare && audio.playFanfare();
+      after(() => playLine(story.endLine), 1200);
+      return;
+    }
     setView('end');
     after(() => playLine(STORY_END_LINE), 500);
     startLullaby(settings.timer);
@@ -682,6 +797,7 @@ export default function StoryBook({ audio, playLine, stopLine, lullabyUrl }) {
   useEffect(() => {
     if (view === 'read') sceneRef.current = STORIES[storyIdx].pages[page];
     else if (view === 'end' || view === 'limit') sceneRef.current = SLEEP_SCENE;
+    else if (view === 'cheer') sceneRef.current = CHEER_SCENE;
   }, [view, storyIdx, page]);
 
   // 그림 그리기 루프
@@ -709,6 +825,11 @@ export default function StoryBook({ audio, playLine, stopLine, lullabyUrl }) {
   const openStory = (i) => {
     audio.playFreq(520, 'sine', 0.15);
     stopLullaby();
+    if (STORIES[i].day) {   // 낮 그림책은 하룻밤 이야기 수에 안 센다
+      updateSettings({ last: STORIES[i].id });
+      setStoryIdx(i); setPage(0); setAuto(true); autoRef.current = true; setView('read');
+      return;
+    }
     const nk = nightKey();
     const count = settings.night === nk ? settings.count : 0;
     if (settings.limit && count >= settings.limit) {
@@ -774,7 +895,7 @@ export default function StoryBook({ audio, playLine, stopLine, lullabyUrl }) {
       <div style={{ flex: 1, minHeight: 0, borderRadius: '28px', background: shelfBg, padding: '1.2rem 1.4rem', display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative', overflow: 'hidden' }}>
         {night && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(2px 2px at 10% 20%, #fff, transparent), radial-gradient(2px 2px at 30% 70%, #fff, transparent), radial-gradient(1.5px 1.5px at 60% 30%, #fff, transparent), radial-gradient(2px 2px at 85% 15%, #fff, transparent), radial-gradient(1.5px 1.5px at 75% 80%, #fff, transparent), radial-gradient(1.5px 1.5px at 45% 50%, #fff, transparent)', opacity: 0.7 }} />}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-          <h2 style={{ margin: 0, fontFamily: JUA, fontWeight: 400, fontSize: '2rem', color: night ? '#fef9c3' : '#4c1d95' }}>🌙 잠자리 그림책</h2>
+          <h2 style={{ margin: 0, fontFamily: JUA, fontWeight: 400, fontSize: '2rem', color: night ? '#fef9c3' : '#4c1d95' }}>📚 그림책</h2>
           <button onClick={() => setShowSettings(v => !v)} title="부모 설정" style={{ border: 'none', borderRadius: '16px', padding: '6px 12px', cursor: 'pointer', fontWeight: 800, fontSize: '0.8rem', background: night ? 'rgba(255,255,255,0.15)' : '#ede9fe', color: night ? '#e0e7ff' : '#5b21b6' }}>⚙︎ 부모 설정</button>
         </div>
         {showSettings && (
@@ -809,14 +930,14 @@ export default function StoryBook({ audio, playLine, stopLine, lullabyUrl }) {
 
   // ── 읽기 / 잘 자요 ──
   const pg = view === 'read' ? story.pages[page] : null;
-  const dark = view !== 'read';
+  const dark = view === 'end' || view === 'limit';
   const mins = Math.floor(lullabyLeft / 60), secs = lullabyLeft % 60;
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '0.7rem', borderRadius: '28px', padding: '0.8rem', background: dark || night ? '#1e1b4b' : '#f5f3ff' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
         <button onClick={backToShelf} style={{ border: 'none', borderRadius: '22px', padding: '0 18px', height: '48px', cursor: 'pointer', fontFamily: JUA, fontSize: '1.05rem', background: dark || night ? 'rgba(255,255,255,0.15)' : '#ede9fe', color: dark || night ? '#e0e7ff' : '#4c1d95' }}>📚 책장</button>
         <div style={{ flex: 1, fontFamily: JUA, fontSize: '1.3rem', color: dark || night ? '#fef9c3' : story.ink, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {view === 'read' ? story.title : '잘 자요 🌙'}
+          {view === 'read' ? story.title : view === 'cheer' ? '참 잘했어요 👏' : '잘 자요 🌙'}
         </div>
         {view === 'read' && (
           <button onClick={() => {
@@ -837,6 +958,11 @@ export default function StoryBook({ audio, playLine, stopLine, lullabyUrl }) {
             <button aria-label="다음 쪽" onClick={() => goPage(1)} style={bigBtn({ position: 'absolute', right: '12px', top: '50%', marginTop: '-36px' })}>▶</button>
           </>
         )}
+        {view === 'cheer' && (
+          <div style={{ position: 'absolute', left: 0, right: 0, top: '6%', display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+            <div style={{ fontFamily: JUA, fontSize: '2.6rem', color: '#db2777', background: 'rgba(255,255,255,0.88)', borderRadius: '26px', padding: '6px 26px', textShadow: '0 3px 0 #fff' }}>혼자서도 잘해요! 👏</div>
+          </div>
+        )}
         {dark && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,10,45,0.35)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '6%', gap: '12px', pointerEvents: 'none' }}>
             <div style={{ fontFamily: JUA, fontSize: '2.6rem', color: '#fef9c3', textShadow: '0 4px 18px rgba(0,0,0,0.5)' }}>{view === 'limit' ? '이제 코 자요 🌙' : '잘 자요, 좋은 꿈 꿔요 🌙'}</div>
@@ -855,6 +981,11 @@ export default function StoryBook({ audio, playLine, stopLine, lullabyUrl }) {
           <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
             {story.pages.map((_, i) => <span key={i} style={{ width: i === page ? '22px' : '10px', height: '10px', borderRadius: '6px', background: i === page ? '#a78bfa' : (night ? 'rgba(255,255,255,0.25)' : '#ddd6fe'), transition: 'width 0.2s' }} />)}
           </div>
+        </div>
+      ) : view === 'cheer' ? (
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <button onClick={() => openStory(storyIdx)} style={{ border: 'none', borderRadius: '24px', padding: '0 22px', height: '56px', cursor: 'pointer', fontFamily: JUA, fontSize: '1.1rem', background: night ? 'rgba(255,255,255,0.15)' : '#fef3c7', color: night ? '#e0e7ff' : '#92400e' }}>🔁 다시 읽기</button>
+          <button onClick={backToShelf} style={{ border: 'none', borderRadius: '24px', padding: '0 22px', height: '56px', cursor: 'pointer', fontFamily: JUA, fontSize: '1.1rem', background: '#a78bfa', color: '#ffffff' }}>📚 다른 이야기</button>
         </div>
       ) : (
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>

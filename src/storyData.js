@@ -3,8 +3,10 @@
 //   위치 x·y 는 그림 칸 안의 비율(0~1), s 는 그림 칸 짧은 변에 대한 크기 비율
 //   actors:  { t: 'fish', sp: 어항 종류 id, g: 성장 0~1, dir: 1 오른쪽 / -1 왼쪽, swim: 살랑살랑 헤엄, sleep }
 //            { t: 'animal', sp: 목장 종류 id, g, dir, sleep, lie }
-//            { t: 'yuna', pose: stand·stretch·brush·eat·feed·water·bath·kiss·sleep, night: 잠옷 }
+//            { t: 'yuna', pose: stand·stretch·brush·eat·feed·water·bath·kiss·sleep·tummy·walk·potty·wipe·wave·wash, night: 잠옷 }
 //   props:   moon · sun · stars · zzz · hearts · eggs · bubbles · tank · bed · table · sink · tub · can · garden · teddy · jelly · cave · lily · fireflies
+//            · undies(딸기 팬티) · potty(아기 변기) · toilet(flush: 물 내림) · tissue(휴지걸이) · stickers(칭찬 스티커판) · say(text: 말풍선)
+//   이야기에 day: true 면 낮 그림책 (하룻밤 수에 안 세고, 끝나면 칭찬 화면 + endLine)
 
 export const STORY_SHELF_LINE = '어떤 이야기를 읽어 줄까요?';
 export const STORY_END_LINE = '오늘 이야기는 여기까지예요. 잘 자요. 좋은 꿈 꿔요.';
@@ -230,12 +232,82 @@ export const STORIES = [
         props: [{ t: 'teddy', x: 0.28, y: 0.72, s: 0.12 }, { t: 'zzz', x: 0.5, y: 0.45 }]
       }
     ]
+  },
+  {
+    // 🚽 배변 훈련 그림책 (낮 이야기: 하룻밤 수에 안 세고, 다 읽으면 '잘 자요' 대신 칭찬 화면)
+    id: 'potty',
+    title: '쉬~ 하고 싶을 땐',
+    day: true,
+    endLine: '쉬나 응가가 마려우면 언제든지 엄마 아빠한테 말해 줘요. 유나는 할 수 있어요!',
+    color: '#fef08a', ink: '#854d0e', cover: { bg: 'bathroom', time: 'morning', yuna: 'potty' },
+    pages: [
+      {
+        text: '유나는 이제 언니 팬티를 입어요. 딸기가 그려진 분홍 팬티! 기저귀야, 그동안 고마웠어.',
+        bg: { kind: 'room', time: 'morning' },
+        actors: [{ t: 'yuna', pose: 'stretch', x: 0.34, y: 0.92, s: 0.6 }],
+        props: [{ t: 'undies', x: 0.7, y: 0.45, s: 0.26 }, { t: 'sparkle', x: 0.7, y: 0.45 }]
+      },
+      {
+        text: '놀다가 배가 살살~ 어? 쉬가 하고 싶어요. 유나는 꼭 말해요. "엄마, 쉬 마려워요!"',
+        bg: { kind: 'room', time: 'day' },
+        actors: [{ t: 'yuna', pose: 'tummy', x: 0.42, y: 0.92, s: 0.6 }],
+        props: [{ t: 'teddy', x: 0.76, y: 0.84, s: 0.14 }, { t: 'say', x: 0.66, y: 0.3, text: '엄마, 쉬!' }]
+      },
+      {
+        text: '화장실로 총총총! 늦지 않게 얼른 가요.',
+        bg: { kind: 'bathroom', time: 'morning' },
+        actors: [{ t: 'yuna', pose: 'walk', x: 0.36, y: 0.92, s: 0.6 }],
+        props: [{ t: 'potty', x: 0.74, y: 0.9, s: 0.62 }]
+      },
+      {
+        text: '팬티를 쑥 내리고, 아기 변기에 앉아요. 영차!',
+        bg: { kind: 'bathroom', time: 'morning' },
+        actors: [{ t: 'yuna', pose: 'potty', x: 0.5, y: 0.92, s: 0.62 }],
+        props: [{ t: 'tissue', x: 0.72, y: 0.56, s: 0.18 }]
+      },
+      {
+        text: '쉬는 졸졸졸, 응가는 끙~ 퐁당! 아, 시원하다!',
+        bg: { kind: 'bathroom', time: 'morning' },
+        actors: [{ t: 'yuna', pose: 'potty', x: 0.5, y: 0.92, s: 0.62 }],
+        props: [{ t: 'tissue', x: 0.72, y: 0.56, s: 0.18 }, { t: 'say', x: 0.74, y: 0.28, text: '시원해!' }]
+      },
+      {
+        text: '다 했으면 휴지로 앞에서 뒤로 살살 닦아요.',
+        bg: { kind: 'bathroom', time: 'morning' },
+        actors: [{ t: 'yuna', pose: 'wipe', x: 0.5, y: 0.92, s: 0.62 }],
+        props: [{ t: 'tissue', x: 0.72, y: 0.56, s: 0.18 }]
+      },
+      {
+        text: '응가를 변기에 쏙! 물을 내려요. 쏴아아~ 응가야, 잘 가! 안녕!',
+        bg: { kind: 'bathroom', time: 'morning' },
+        actors: [{ t: 'yuna', pose: 'wave', x: 0.3, y: 0.92, s: 0.6 }],
+        props: [{ t: 'toilet', x: 0.7, y: 0.92, s: 0.6, flush: true }]
+      },
+      {
+        text: '비누로 손을 뽀득뽀득 씻어요. 손이 깨끗해졌어요!',
+        bg: { kind: 'bathroom', time: 'morning' },
+        actors: [{ t: 'yuna', pose: 'wash', x: 0.4, y: 0.92, s: 0.6 }],
+        props: [{ t: 'sink', x: 0.68, y: 0.92, s: 0.5 }, { t: 'bubbles', x: 0.42, y: 0.5, small: true }]
+      },
+      {
+        text: '엄마가 꼬옥 안아 주며 말해요. "혼자 쉬 했네! 정말 멋져!" 칭찬 스티커도 하나 붙여요.',
+        bg: { kind: 'room', time: 'day' },
+        actors: [{ t: 'yuna', pose: 'stretch', x: 0.3, y: 0.92, s: 0.6 }],
+        props: [{ t: 'stickers', x: 0.7, y: 0.42, s: 0.4 }, { t: 'hearts', x: 0.3, y: 0.3 }]
+      },
+      {
+        text: '가끔 실수해도 괜찮아요. 다음에 또 하면 돼요. 유나는 할 수 있어요!',
+        bg: { kind: 'room', time: 'day' },
+        actors: [{ t: 'yuna', pose: 'stand', x: 0.42, y: 0.92, s: 0.6 }],
+        props: [{ t: 'teddy', x: 0.68, y: 0.84, s: 0.14 }, { t: 'hearts', x: 0.55, y: 0.35 }]
+      }
+    ]
   }
 ];
 
 // 그림책에서 나오는 모든 문장 (여성 목소리 MP3 생성용)
 export function collectStoryLines() {
   const lines = [STORY_SHELF_LINE, STORY_END_LINE, STORY_LIMIT_LINE];
-  STORIES.forEach(s => { lines.push(s.title); s.pages.forEach(p => lines.push(p.text)); });
+  STORIES.forEach(s => { lines.push(s.title); if (s.endLine) lines.push(s.endLine); s.pages.forEach(p => lines.push(p.text)); });
   return lines;
 }
